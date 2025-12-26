@@ -85,3 +85,49 @@ This overview describes how the documentation is organized, who each category se
 - Milestone summaries
 - Status updates
 - Delivery retrospectives or timelines
+
+## Documentation lifecycle
+
+### Ownership expectations
+- Every doc should have a named owner (team or individual) responsible for accuracy.
+- Owners are accountable for updates when related behavior, contracts, or workflows change.
+- If a doc has no clear owner, assign one before merging changes that depend on it.
+
+### Review cadence
+- Review docs at least once per release or quarterly (whichever comes first).
+- Prioritize reviews for docs referenced by active work items or recent releases.
+
+### Deprecation and archival
+- Mark deprecated docs with a clear status and a pointer to the replacement.
+- Move archived docs to `/docs/60-tracking/archived/` and add a short note in the
+  original location linking to the archive entry.
+- Keep archived docs read-only except for annotation metadata.
+
+### Metadata conventions (front matter)
+Documentation can use optional YAML front matter aligned with work item conventions in
+[workbench-spec](/docs/00-overview/workbench-spec.md):
+- `owner`: team or individual responsible for the doc.
+- `status`: e.g., `draft`, `active`, `deprecated`, `archived`.
+- `updated`: ISO date (YYYY-MM-DD).
+- `related`: use `related.specs` when a work item references this doc.
+
+Example:
+```md
+---
+owner: platform
+status: active
+updated: 2025-01-15
+related:
+  specs:
+    - /docs/00-overview/documentation-structure.md
+---
+```
+
+### Work item documentation checklist
+- Link specs/ADRs in the work item front matter (`related.specs`, `related.adrs`).
+- Create or update docs when:
+  - new user-facing behavior is introduced,
+  - contracts, schemas, or interfaces change,
+  - runbooks or operational procedures change.
+- Add or refresh doc front matter (`owner`, `status`, `updated`) when changes land.
+- Confirm archived/deprecated docs are moved and referenced correctly.
