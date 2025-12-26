@@ -1,0 +1,28 @@
+{
+  "paths": {
+    "docsRoot": "docs",
+    "workRoot": "work",
+    "itemsDir": "work/items",
+    "doneDir": "work/done",
+    "templatesDir": "work/templates",
+    "workboardFile": "work/WORKBOARD.md"
+  },
+  "ids": {
+    "width": 4,
+    "prefixes": {
+      "bug": "BUG",
+      "task": "TASK",
+      "spike": "SPIKE"
+    }
+  },
+  "git": {
+    "branchPattern": "work/{id}-{slug}",
+    "commitMessagePattern": "Promote {id}: {title}",
+    "defaultBaseBranch": "main",
+    "requireCleanWorkingTree": true
+  },
+  "github": {
+    "provider": "gh",
+    "defaultDraft": false
+  }
+}
