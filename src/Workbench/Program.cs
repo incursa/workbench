@@ -101,47 +101,95 @@ doctorCommand.SetHandler((string? repo, string format) =>
             config.Paths.TemplatesDir
         };
         var missing = paths.Where(p => !Directory.Exists(Path.Combine(repoRoot, p))).ToList();
+        var checks = new List<object>();
+        var hasError = configError is not null || schemaErrors.Count > 0;
+        var hasWarnings = false;
+
+        try
+        {
+            var gitResult = GitService.Run(repoRoot, "--version");
+            if (gitResult.ExitCode == 0)
+            {
+                checks.Add(new { name = "git", status = "ok", details = new { version = gitResult.StdOut } });
+            }
+            else
+            {
+                checks.Add(new { name = "git", status = "warn", details = new { error = gitResult.StdErr } });
+                hasWarnings = true;
+            }
+        }
+        catch (Exception)
+        {
+            checks.Add(new { name = "git", status = "warn", details = new { error = "git not installed or not on PATH." } });
+            hasWarnings = true;
+        }
+
+        checks.Add(new { name = "repo", status = "ok", details = new { path = repoRoot } });
+
+        if (File.Exists(configPath) && configError is null && schemaErrors.Count == 0)
+        {
+            checks.Add(new { name = "config", status = "ok", details = new { path = configPath } });
+        }
+        else
+        {
+            var details = new
+            {
+                path = configPath,
+                error = configError,
+                schemaErrors
+            };
+            checks.Add(new { name = "config", status = "warn", details });
+            hasWarnings = true;
+        }
+
+        if (missing.Count == 0)
+        {
+            checks.Add(new { name = "paths", status = "ok" });
+        }
+        else
+        {
+            checks.Add(new { name = "paths", status = "warn", details = new { missing } });
+            hasWarnings = true;
+        }
+
+        var ghStatus = GithubService.CheckAuthStatus(repoRoot);
+        if (ghStatus.Status == "ok")
+        {
+            checks.Add(new { name = "gh", status = "ok", details = new { version = ghStatus.Version } });
+        }
+        else
+        {
+            checks.Add(new { name = "gh", status = ghStatus.Status, details = new { reason = ghStatus.Reason } });
+            hasWarnings = true;
+        }
+
         if (resolvedFormat == "json")
         {
             WriteJson(new
             {
-                ok = configError is null && schemaErrors.Count == 0,
+                ok = !hasError,
                 data = new
                 {
                     repoRoot,
-                    configPath,
-                    configError,
-                    configSchemaErrors = schemaErrors,
-                    missing
+                    checks
                 }
             });
         }
         else
         {
             Console.WriteLine($"Repo: {repoRoot}");
-            Console.WriteLine(File.Exists(configPath) ? "Config: ok" : "Config: missing");
-            if (configError is not null)
+            Console.WriteLine("Checks:");
+            foreach (var check in checks)
             {
-                Console.WriteLine($"Config error: {configError}");
-            }
-            if (schemaErrors.Count > 0)
-            {
-                Console.WriteLine("Config schema errors:");
-                foreach (var error in schemaErrors)
-                {
-                    Console.WriteLine($"- {error}");
-                }
-            }
-            if (missing.Count > 0)
-            {
-                Console.WriteLine("Missing paths:");
-                foreach (var path in missing)
-                {
-                    Console.WriteLine($"- {path}");
-                }
+                Console.WriteLine($"- {check}");
             }
         }
-        return configError is null && schemaErrors.Count == 0 ? 0 : 2;
+
+        if (hasError)
+        {
+            return 2;
+        }
+        return hasWarnings ? 1 : 0;
     }
     catch (Exception ex)
     {

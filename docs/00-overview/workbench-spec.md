@@ -510,6 +510,10 @@ Prefix: WB
 Test data:
 - /testdata/ small fixtures for markdown parsing and validation.
 
+How to run:
+- `dotnet test tests/Workbench.Tests/Workbench.Tests.csproj`
+- `dotnet test Workbench.slnx` (solution-wide)
+
 ---
 
 ## Packaging
