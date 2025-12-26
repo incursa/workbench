@@ -4,5 +4,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Workbench.Tests/Workbench.Tests.csproj" />
+    <Project Path="tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj" />
   </Folder>
 </Solution>

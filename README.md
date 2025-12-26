@@ -16,6 +16,18 @@ Run the automated tests:
 dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
 ```
 
+Run integration tests:
+
+```bash
+dotnet test tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
+```
+
+Run GitHub CLI-dependent integration tests:
+
+```bash
+WORKBENCH_RUN_GH_TESTS=1 dotnet test tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
+```
+
 ## Run (CLI)
 
 Run the CLI locally:
