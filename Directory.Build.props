@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Version>0.1.0</Version>
+    <Authors>Workman Contributors</Authors>
+    <Company>Workman</Company>
+    <Product>Workman CLI</Product>
+    <Copyright>Copyright © $(Authors)</Copyright>
+    <RepositoryUrl>https://github.com/bravellian/workbench</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>
