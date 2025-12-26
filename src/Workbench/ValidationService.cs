@@ -6,6 +6,8 @@ public sealed class ValidationResult
 {
     public List<string> Errors { get; } = new();
     public List<string> Warnings { get; } = new();
+    public int WorkItemCount { get; set; }
+    public int MarkdownFileCount { get; set; }
 }
 
 public static class ValidationService
@@ -13,9 +15,15 @@ public static class ValidationService
     public static ValidationResult ValidateRepo(string repoRoot, WorkbenchConfig config)
     {
         var result = new ValidationResult();
+        var configErrors = SchemaValidationService.ValidateConfig(repoRoot);
+        foreach (var error in configErrors)
+        {
+            result.Errors.Add(error);
+        }
         var items = CollectWorkItems(repoRoot, config);
-        ValidateItems(items, config, result);
-        ValidateMarkdownLinks(repoRoot, result);
+        result.WorkItemCount = items.Count;
+        ValidateItems(repoRoot, items, config, result);
+        result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, result);
         return result;
     }
 
@@ -37,7 +45,7 @@ public static class ValidationService
         return items;
     }
 
-    private static void ValidateItems(List<WorkItemRecord> items, WorkbenchConfig config, ValidationResult result)
+    private static void ValidateItems(string repoRoot, List<WorkItemRecord> items, WorkbenchConfig config, ValidationResult result)
     {
         var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var idPattern = new Regex($"^[A-Z]+-\\d{{{config.Ids.Width}}}$");
@@ -61,6 +69,11 @@ public static class ValidationService
             }
 
             var data = frontMatter!.Data;
+            var schemaErrors = SchemaValidationService.ValidateFrontMatter(repoRoot, item.Path, data);
+            foreach (var schemaError in schemaErrors)
+            {
+                result.Errors.Add(schemaError);
+            }
             var id = GetString(data, "id");
             var type = GetString(data, "type");
             var status = GetString(data, "status");
@@ -206,10 +219,12 @@ public static class ValidationService
         return Path.GetFullPath(Path.Combine(baseDir, link));
     }
 
-    private static void ValidateMarkdownLinks(string repoRoot, ValidationResult result)
+    private static int ValidateMarkdownLinks(string repoRoot, ValidationResult result)
     {
+        var count = 0;
         foreach (var file in EnumerateMarkdownFiles(repoRoot))
         {
+            count++;
             var content = File.ReadAllText(file);
             foreach (var link in ExtractMarkdownLinks(content))
             {
@@ -250,6 +265,7 @@ public static class ValidationService
                 }
             }
         }
+        return count;
     }
 
     private static IEnumerable<string> EnumerateMarkdownFiles(string repoRoot)

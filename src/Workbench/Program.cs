@@ -91,6 +91,7 @@ doctorCommand.SetHandler((string? repo, string format) =>
         var repoRoot = ResolveRepo(repo);
         var resolvedFormat = ResolveFormat(format);
         var config = WorkbenchConfig.Load(repoRoot, out var configError);
+        var schemaErrors = SchemaValidationService.ValidateConfig(repoRoot);
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
         var paths = new[]
         {
@@ -104,12 +105,13 @@ doctorCommand.SetHandler((string? repo, string format) =>
         {
             WriteJson(new
             {
-                ok = configError is null,
+                ok = configError is null && schemaErrors.Count == 0,
                 data = new
                 {
                     repoRoot,
                     configPath,
                     configError,
+                    configSchemaErrors = schemaErrors,
                     missing
                 }
             });
@@ -122,6 +124,14 @@ doctorCommand.SetHandler((string? repo, string format) =>
             {
                 Console.WriteLine($"Config error: {configError}");
             }
+            if (schemaErrors.Count > 0)
+            {
+                Console.WriteLine("Config schema errors:");
+                foreach (var error in schemaErrors)
+                {
+                    Console.WriteLine($"- {error}");
+                }
+            }
             if (missing.Count > 0)
             {
                 Console.WriteLine("Missing paths:");
@@ -131,7 +141,7 @@ doctorCommand.SetHandler((string? repo, string format) =>
                 }
             }
         }
-        return configError is null ? 0 : 2;
+        return configError is null && schemaErrors.Count == 0 ? 0 : 2;
     }
     catch (Exception ex)
     {
@@ -894,9 +904,11 @@ root.AddCommand(createCommand);
 
 var validateCommand = new Command("validate", "Validate work items, links, and schemas.");
 var strictOption = new Option<bool>("--strict", "Treat warnings as errors.");
+var verboseOption = new Option<bool>("--verbose", "Show detailed validation output.");
 validateCommand.AddOption(strictOption);
+validateCommand.AddOption(verboseOption);
 validateCommand.AddAlias("verify");
-validateCommand.SetHandler((string? repo, string format, bool strict) =>
+validateCommand.SetHandler((string? repo, string format, bool strict, bool verbose) =>
 {
     try
     {
@@ -920,12 +932,23 @@ validateCommand.SetHandler((string? repo, string format, bool strict) =>
                 {
                     errors = result.Errors,
                     warnings = result.Warnings,
-                    counts = new { errors = result.Errors.Count, warnings = result.Warnings.Count }
+                    counts = new
+                    {
+                        errors = result.Errors.Count,
+                        warnings = result.Warnings.Count,
+                        workItems = result.WorkItemCount,
+                        markdownFiles = result.MarkdownFileCount
+                    }
                 }
             });
         }
         else
         {
+            if (verbose)
+            {
+                Console.WriteLine($"Work items scanned: {result.WorkItemCount}");
+                Console.WriteLine($"Markdown files scanned: {result.MarkdownFileCount}");
+            }
             if (result.Errors.Count > 0)
             {
                 Console.WriteLine("Errors:");
@@ -954,7 +977,7 @@ validateCommand.SetHandler((string? repo, string format, bool strict) =>
         Console.WriteLine(ex.Message);
         return 2;
     }
-}, repoOption, formatOption, strictOption);
+}, repoOption, formatOption, strictOption, verboseOption);
 root.AddCommand(validateCommand);
 
 return await root.InvokeAsync(args);
