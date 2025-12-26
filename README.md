@@ -40,6 +40,17 @@ Run the full test suite (matches CI expectations):
 dotnet test Workbench.slnx
 ```
 
+## CI
+
+GitHub Actions runs build and test jobs for each OS/.NET SDK pair in the matrix
+(`ubuntu-latest`, `windows-latest`, `macos-latest` with .NET `10.0.x`). The
+workflow runs:
+
+```bash
+dotnet build Workbench.slnx
+dotnet test Workbench.slnx
+```
+
 ## Build (AOT)
 
 Publish a single native binary:

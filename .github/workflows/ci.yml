@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build-test:
+    name: Build and test (${{ matrix.os }}, .NET ${{ matrix.dotnet }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dotnet: ["10.0.x"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+          cache: true
+          cache-dependency-path: |
+            **/*.slnx
+            **/*.csproj
+            **/packages.lock.json
+
+      - name: Build
+        run: dotnet build Workbench.slnx
+
+      - name: Test
+        run: dotnet test Workbench.slnx
