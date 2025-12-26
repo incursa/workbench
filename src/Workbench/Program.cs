@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using System.Text.Json;
 using Workbench;
 
@@ -76,16 +75,16 @@ root.AddGlobalOption(noColorOption);
 root.AddGlobalOption(quietOption);
 
 var versionCommand = new Command("version", "Print CLI version.");
-versionCommand.SetHandler((InvocationContext context) =>
+versionCommand.SetHandler(() =>
 {
     var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0";
     Console.WriteLine(version);
-    context.ExitCode = 0;
+    return 0;
 });
 root.AddCommand(versionCommand);
 
 var doctorCommand = new Command("doctor", "Check git, config, and expected paths.");
-doctorCommand.SetHandler((InvocationContext context, string? repo, string format) =>
+doctorCommand.SetHandler((string? repo, string format) =>
 {
     try
     {
@@ -188,15 +187,14 @@ doctorCommand.SetHandler((InvocationContext context, string? repo, string format
 
         if (hasError)
         {
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
-        context.ExitCode = hasWarnings ? 1 : 0;
+        return hasWarnings ? 1 : 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption);
 root.AddCommand(doctorCommand);
@@ -205,7 +203,7 @@ var scaffoldForceOption = new Option<bool>("--force", "Overwrite existing files.
 var scaffoldCommand = new Command("scaffold", "Create the default folder structure, templates, and config.");
 scaffoldCommand.AddOption(scaffoldForceOption);
 scaffoldCommand.AddAlias("init");
-scaffoldCommand.SetHandler((InvocationContext context, string? repo, string format, bool force) =>
+scaffoldCommand.SetHandler((string? repo, string format, bool force) =>
 {
     try
     {
@@ -245,19 +243,19 @@ scaffoldCommand.SetHandler((InvocationContext context, string? repo, string form
                 }
             }
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, scaffoldForceOption);
 root.AddCommand(scaffoldCommand);
 
 var configCommand = new Command("config", "Configuration commands.");
 var configShowCommand = new Command("show", "Print effective config (defaults + repo config + CLI overrides).");
-configShowCommand.SetHandler((InvocationContext context, string? repo, string format) =>
+configShowCommand.SetHandler((string? repo, string format) =>
 {
     try
     {
@@ -289,12 +287,12 @@ configShowCommand.SetHandler((InvocationContext context, string? repo, string fo
             }
             Console.WriteLine(JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
         }
-        context.ExitCode = configError is null ? 0 : 2;
+        return configError is null ? 0 : 2;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption);
 configCommand.AddCommand(configShowCommand);
@@ -353,7 +351,7 @@ itemNewCommand.AddOption(itemTitleOption);
 itemNewCommand.AddOption(itemStatusOption);
 itemNewCommand.AddOption(itemPriorityOption);
 itemNewCommand.AddOption(itemOwnerOption);
-itemNewCommand.SetHandler((InvocationContext context, string? repo, string format, string type, string title, string? status, string? priority, string? owner) =>
+itemNewCommand.SetHandler((string? repo, string format, string type, string title, string? status, string? priority, string? owner) =>
 {
     try
     {
@@ -363,8 +361,7 @@ itemNewCommand.SetHandler((InvocationContext context, string? repo, string forma
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var result = WorkItemService.CreateItem(repoRoot, config, type, title, status, priority, owner);
         if (resolvedFormat == "json")
@@ -384,12 +381,12 @@ itemNewCommand.SetHandler((InvocationContext context, string? repo, string forma
         {
             Console.WriteLine($"{result.Id} created at {result.Path}");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, itemTypeOption, itemTitleOption, itemStatusOption, itemPriorityOption, itemOwnerOption);
 itemCommand.AddCommand(itemNewCommand);
@@ -403,7 +400,7 @@ var includeDoneOption = new Option<bool>("--include-done", "Include items from w
 itemListCommand.AddOption(listTypeOption);
 itemListCommand.AddOption(listStatusOption);
 itemListCommand.AddOption(includeDoneOption);
-itemListCommand.SetHandler((InvocationContext context, string? repo, string format, string? type, string? status, bool includeDone) =>
+itemListCommand.SetHandler((string? repo, string format, string? type, string? status, bool includeDone) =>
 {
     try
     {
@@ -413,8 +410,7 @@ itemListCommand.SetHandler((InvocationContext context, string? repo, string form
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var list = WorkItemService.ListItems(repoRoot, config, includeDone);
         var items = list.Items;
@@ -452,12 +448,12 @@ itemListCommand.SetHandler((InvocationContext context, string? repo, string form
                 Console.WriteLine($"{item.Id}\t{item.Status}\t{item.Title}");
             }
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, listTypeOption, listStatusOption, includeDoneOption);
 itemCommand.AddCommand(itemListCommand);
@@ -465,7 +461,7 @@ itemCommand.AddCommand(itemListCommand);
 var itemShowCommand = new Command("show", "Show metadata and resolved path for an item.");
 var itemIdArg = new Argument<string>("id", "Work item ID (e.g., TASK-0042).");
 itemShowCommand.AddArgument(itemIdArg);
-itemShowCommand.SetHandler((InvocationContext context, string? repo, string format, string id) =>
+itemShowCommand.SetHandler((string? repo, string format, string id) =>
 {
     try
     {
@@ -475,8 +471,7 @@ itemShowCommand.SetHandler((InvocationContext context, string? repo, string form
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
@@ -511,12 +506,12 @@ itemShowCommand.SetHandler((InvocationContext context, string? repo, string form
             Console.WriteLine($"Status: {item.Status}");
             Console.WriteLine($"Path: {item.Path}");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, itemIdArg);
 itemCommand.AddCommand(itemShowCommand);
@@ -528,7 +523,7 @@ var noteOption = new Option<string?>("--note", "Append a note.");
 itemStatusCommand.AddArgument(statusIdArg);
 itemStatusCommand.AddArgument(statusValueArg);
 itemStatusCommand.AddOption(noteOption);
-itemStatusCommand.SetHandler((InvocationContext context, string? repo, string format, string id, string status, string? note) =>
+itemStatusCommand.SetHandler((string? repo, string format, string id, string status, string? note) =>
 {
     try
     {
@@ -538,8 +533,7 @@ itemStatusCommand.SetHandler((InvocationContext context, string? repo, string fo
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var updated = WorkItemService.UpdateStatus(path, status, note);
@@ -551,12 +545,12 @@ itemStatusCommand.SetHandler((InvocationContext context, string? repo, string fo
         {
             Console.WriteLine($"{updated.Id} status updated to {updated.Status}.");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, statusIdArg, statusValueArg, noteOption);
 itemCommand.AddCommand(itemStatusCommand);
@@ -566,7 +560,7 @@ var closeIdArg = new Argument<string>("id", "Work item ID.");
 var moveOption = new Option<bool>("--move", "Move to work/done.");
 itemCloseCommand.AddArgument(closeIdArg);
 itemCloseCommand.AddOption(moveOption);
-itemCloseCommand.SetHandler((InvocationContext context, string? repo, string format, string id, bool move) =>
+itemCloseCommand.SetHandler((string? repo, string format, string id, bool move) =>
 {
     try
     {
@@ -576,8 +570,7 @@ itemCloseCommand.SetHandler((InvocationContext context, string? repo, string for
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var updated = WorkItemService.Close(path, move, config, repoRoot);
@@ -598,12 +591,12 @@ itemCloseCommand.SetHandler((InvocationContext context, string? repo, string for
         {
             Console.WriteLine($"{updated.Id} closed.");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, closeIdArg, moveOption);
 itemCommand.AddCommand(itemCloseCommand);
@@ -613,7 +606,7 @@ var moveIdArg = new Argument<string>("id", "Work item ID.");
 var moveToOption = new Option<string>("--to", "Destination path.") { IsRequired = true };
 itemMoveCommand.AddArgument(moveIdArg);
 itemMoveCommand.AddOption(moveToOption);
-itemMoveCommand.SetHandler((InvocationContext context, string? repo, string format, string id, string to) =>
+itemMoveCommand.SetHandler((string? repo, string format, string id, string to) =>
 {
     try
     {
@@ -623,8 +616,7 @@ itemMoveCommand.SetHandler((InvocationContext context, string? repo, string form
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var updated = WorkItemService.Move(path, to, repoRoot);
@@ -637,12 +629,12 @@ itemMoveCommand.SetHandler((InvocationContext context, string? repo, string form
         {
             Console.WriteLine($"{updated.Id} moved to {updated.Path}.");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, moveIdArg, moveToOption);
 itemCommand.AddCommand(itemMoveCommand);
@@ -652,7 +644,7 @@ var renameIdArg = new Argument<string>("id", "Work item ID.");
 var renameTitleOption = new Option<string>("--title", "New title.") { IsRequired = true };
 itemRenameCommand.AddArgument(renameIdArg);
 itemRenameCommand.AddOption(renameTitleOption);
-itemRenameCommand.SetHandler((InvocationContext context, string? repo, string format, string id, string title) =>
+itemRenameCommand.SetHandler((string? repo, string format, string id, string title) =>
 {
     try
     {
@@ -662,8 +654,7 @@ itemRenameCommand.SetHandler((InvocationContext context, string? repo, string fo
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var updated = WorkItemService.Rename(path, title, config, repoRoot);
@@ -676,12 +667,12 @@ itemRenameCommand.SetHandler((InvocationContext context, string? repo, string fo
         {
             Console.WriteLine($"{updated.Id} renamed to {updated.Path}.");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, renameIdArg, renameTitleOption);
 itemCommand.AddCommand(itemRenameCommand);
@@ -700,7 +691,7 @@ Command BuildAddCommand(string typeName)
     cmd.AddOption(statusOption);
     cmd.AddOption(priorityOption);
     cmd.AddOption(ownerOption);
-    cmd.SetHandler((InvocationContext context, string? repo, string format, string title, string? status, string? priority, string? owner) =>
+    cmd.SetHandler((string? repo, string format, string title, string? status, string? priority, string? owner) =>
     {
         try
         {
@@ -710,8 +701,7 @@ Command BuildAddCommand(string typeName)
             if (configError is not null)
             {
                 Console.WriteLine($"Config error: {configError}");
-                context.ExitCode = 2;
-                return;
+                return 2;
             }
             var result = WorkItemService.CreateItem(repoRoot, config, typeName, title, status, priority, owner);
             if (resolvedFormat == "json")
@@ -722,12 +712,12 @@ Command BuildAddCommand(string typeName)
             {
                 Console.WriteLine($"{result.Id} created at {result.Path}");
             }
-            context.ExitCode = 0;
+            return 0;
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
-            context.ExitCode = 2;
+            return 2;
         }
     }, repoOption, formatOption, titleOption, statusOption, priorityOption, ownerOption);
     return cmd;
@@ -739,7 +729,7 @@ root.AddCommand(addCommand);
 
 var boardCommand = new Command("board", "Workboard commands.");
 var boardRegenCommand = new Command("regen", "Regenerate work/WORKBOARD.md.");
-boardRegenCommand.SetHandler((InvocationContext context, string? repo, string format) =>
+boardRegenCommand.SetHandler((string? repo, string format) =>
 {
     try
     {
@@ -749,8 +739,7 @@ boardRegenCommand.SetHandler((InvocationContext context, string? repo, string fo
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var result = WorkboardService.Regenerate(repoRoot, config);
         if (resolvedFormat == "json")
@@ -761,12 +750,12 @@ boardRegenCommand.SetHandler((InvocationContext context, string? repo, string fo
         {
             Console.WriteLine($"Workboard regenerated: {result.Path}");
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption);
 boardCommand.AddCommand(boardRegenCommand);
@@ -791,7 +780,6 @@ promoteCommand.AddOption(promoteBaseOption);
 promoteCommand.AddOption(promoteDraftOption);
 promoteCommand.AddOption(promoteNoDraftOption);
 promoteCommand.SetHandler((
-    InvocationContext context,
     string? repo,
     string format,
     string type,
@@ -811,14 +799,12 @@ promoteCommand.SetHandler((
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         if (config.Git.RequireCleanWorkingTree && !GitService.IsClean(repoRoot))
         {
             Console.WriteLine("Working tree is not clean.");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
 
         var status = start ? "in-progress" : null;
@@ -868,12 +854,12 @@ promoteCommand.SetHandler((
                 Console.WriteLine($"PR: {prUrl}");
             }
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, promoteTypeOption, promoteTitleOption, promotePushOption, promoteStartOption, promotePrOption, promoteBaseOption, promoteDraftOption, promoteNoDraftOption);
 root.AddCommand(promoteCommand);
@@ -888,7 +874,7 @@ prCreateCommand.AddArgument(prIdArg);
 prCreateCommand.AddOption(prBaseOption);
 prCreateCommand.AddOption(prDraftOption);
 prCreateCommand.AddOption(prFillOption);
-prCreateCommand.SetHandler((InvocationContext context, string? repo, string format, string id, string? baseBranch, bool draft, bool fill) =>
+prCreateCommand.SetHandler((string? repo, string format, string id, string? baseBranch, bool draft, bool fill) =>
 {
     try
     {
@@ -898,8 +884,7 @@ prCreateCommand.SetHandler((InvocationContext context, string? repo, string form
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
@@ -913,12 +898,12 @@ prCreateCommand.SetHandler((InvocationContext context, string? repo, string form
         {
             Console.WriteLine(prUrl);
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, prIdArg, prBaseOption, prDraftOption, prFillOption);
 prCommand.AddCommand(prCreateCommand);
@@ -930,7 +915,7 @@ createPrCommand.AddArgument(prIdArg);
 createPrCommand.AddOption(prBaseOption);
 createPrCommand.AddOption(prDraftOption);
 createPrCommand.AddOption(prFillOption);
-createPrCommand.SetHandler((InvocationContext context, string? repo, string format, string id, string? baseBranch, bool draft, bool fill) =>
+createPrCommand.SetHandler((string? repo, string format, string id, string? baseBranch, bool draft, bool fill) =>
 {
     try
     {
@@ -940,8 +925,7 @@ createPrCommand.SetHandler((InvocationContext context, string? repo, string form
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var path = WorkItemService.GetItemPathById(repoRoot, config, id);
         var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
@@ -955,12 +939,12 @@ createPrCommand.SetHandler((InvocationContext context, string? repo, string form
         {
             Console.WriteLine(prUrl);
         }
-        context.ExitCode = 0;
+        return 0;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, prIdArg, prBaseOption, prDraftOption, prFillOption);
 createCommand.AddCommand(createPrCommand);
@@ -972,7 +956,7 @@ var verboseOption = new Option<bool>("--verbose", "Show detailed validation outp
 validateCommand.AddOption(strictOption);
 validateCommand.AddOption(verboseOption);
 validateCommand.AddAlias("verify");
-validateCommand.SetHandler((InvocationContext context, string? repo, string format, bool strict, bool verbose) =>
+validateCommand.SetHandler((string? repo, string format, bool strict, bool verbose) =>
 {
     try
     {
@@ -982,8 +966,7 @@ validateCommand.SetHandler((InvocationContext context, string? repo, string form
         if (configError is not null)
         {
             Console.WriteLine($"Config error: {configError}");
-            context.ExitCode = 2;
-            return;
+            return 2;
         }
         var result = ValidationService.ValidateRepo(repoRoot, config);
         var exit = result.Errors.Count > 0 ? 2 : result.Warnings.Count > 0 ? (strict ? 2 : 1) : 0;
@@ -1035,12 +1018,12 @@ validateCommand.SetHandler((InvocationContext context, string? repo, string form
                 Console.WriteLine("Validation passed.");
             }
         }
-        context.ExitCode = exit;
+        return exit;
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
-        context.ExitCode = 2;
+        return 2;
     }
 }, repoOption, formatOption, strictOption, verboseOption);
 root.AddCommand(validateCommand);
