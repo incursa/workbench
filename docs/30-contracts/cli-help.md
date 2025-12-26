@@ -43,6 +43,7 @@ Commands:
 
 - `workbench doctor`
   - Check git, config, and expected paths.
+  - Includes `gh` availability/auth checks; unauthenticated `gh` reports a warning.
   - Example: `workbench doctor`
 
 - `workbench init [--force]`

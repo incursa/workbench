@@ -5,6 +5,7 @@ namespace Workbench;
 public static class GithubService
 {
     public sealed record CommandResult(int ExitCode, string StdOut, string StdErr);
+    public sealed record AuthStatus(string Status, string? Reason, string? Version);
 
     public static CommandResult Run(string repoRoot, params string[] args)
     {
@@ -26,8 +27,59 @@ public static class GithubService
         return new CommandResult(process.ExitCode, stdout.Trim(), stderr.Trim());
     }
 
+    public static AuthStatus CheckAuthStatus(string repoRoot)
+    {
+        try
+        {
+            var versionResult = Run(repoRoot, "--version");
+            var version = versionResult.ExitCode == 0 ? versionResult.StdOut : null;
+            if (versionResult.ExitCode != 0)
+            {
+                return new AuthStatus("warn", versionResult.StdErr.Length > 0 ? versionResult.StdErr : "gh --version failed.", version);
+            }
+
+            var authResult = Run(repoRoot, "auth", "status");
+            if (authResult.ExitCode != 0)
+            {
+                var reason = authResult.StdErr.Length > 0 ? authResult.StdErr : "gh auth status failed.";
+                return new AuthStatus("warn", reason, version);
+            }
+
+            return new AuthStatus("ok", null, version);
+        }
+        catch (Exception)
+        {
+            return new AuthStatus("skip", "gh not installed or not on PATH.", null);
+        }
+    }
+
+    public static void EnsureAuthenticated(string repoRoot)
+    {
+        AuthStatus status;
+        try
+        {
+            status = CheckAuthStatus(repoRoot);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"gh auth check failed: {ex.Message}");
+        }
+
+        if (status.Status == "skip")
+        {
+            throw new InvalidOperationException("gh is not installed or not on PATH.");
+        }
+
+        if (status.Status == "warn")
+        {
+            throw new InvalidOperationException("gh is installed but not authenticated. Run `gh auth login`.");
+        }
+    }
+
     public static string CreatePullRequest(string repoRoot, string title, string body, string? baseBranch, bool draft)
     {
+        EnsureAuthenticated(repoRoot);
+
         var args = new List<string> { "pr", "create", "--title", title, "--body", body };
         if (!string.IsNullOrWhiteSpace(baseBranch))
         {

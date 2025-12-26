@@ -88,6 +88,9 @@ Data:
 }
 ```
 
+Notes:
+- `gh` is `warn` when installed but not authenticated; run `gh auth login` to fix.
+
 ## workbench scaffold
 
 Data:
