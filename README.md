@@ -1,19 +1,25 @@
 # Workbench
 
-## Build (local)
+Workbench is a .NET-based CLI for interacting with the Workbench tooling.
 
-Build the solution:
+## Quickstart
+
+### Prerequisites
+
+- .NET SDK (latest stable recommended)
+
+### Build
 
 ```bash
 dotnet build Workbench.slnx
 ```
 
-## Test
+## Pack (NuGet tool)
 
-Run the automated tests:
+Build the .NET tool package:
 
 ```bash
-dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
+dotnet pack src/Workbench/Workbench.csproj -c Release
 ```
 
 Run integration tests:
@@ -30,10 +36,16 @@ WORKBENCH_RUN_GH_TESTS=1 dotnet test tests/Workbench.IntegrationTests/Workbench.
 
 ## Run (CLI)
 
-Run the CLI locally:
+Run the automated tests:
 
 ```bash
 dotnet run --project src/Workbench/Workbench.csproj -- --help
+```
+
+### Test
+
+```bash
+dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
 ```
 
 ## Verification
@@ -41,6 +53,17 @@ dotnet run --project src/Workbench/Workbench.csproj -- --help
 Run the full test suite (matches CI expectations):
 
 ```bash
+dotnet test Workbench.slnx
+```
+
+## CI
+
+GitHub Actions runs build and test jobs for each OS/.NET SDK pair in the matrix
+(`ubuntu-latest`, `windows-latest`, `macos-latest` with .NET `10.0.x`). The
+workflow runs:
+
+```bash
+dotnet build Workbench.slnx
 dotnet test Workbench.slnx
 ```
 
@@ -57,3 +80,9 @@ Replace the runtime identifier with your target (e.g., `win-x64`, `linux-x64`).
 ## Command reference
 
 See the full CLI command list and options in `docs/30-contracts/cli-help.md`.
+
+## Contributing
+
+- [Contribution guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
