@@ -8,6 +8,14 @@ Build the solution:
 dotnet build Workbench.slnx
 ```
 
+## Pack (NuGet tool)
+
+Build the .NET tool package:
+
+```bash
+dotnet pack src/Workbench/Workbench.csproj -c Release
+```
+
 ## Test
 
 Run the automated tests:
