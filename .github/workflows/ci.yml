@@ -24,6 +24,7 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet }}
           cache: true
+          global-json-file: global.json
           cache-dependency-path: |
             **/*.slnx
             **/*.csproj
