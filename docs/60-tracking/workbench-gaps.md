@@ -1,3 +1,13 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+owner: platform
+status: active
+updated: 2025-12-27
+---
+
 # Workbench Gaps And TODOs
 
 This file tracks missing features, gaps, and decisions to revisit.

@@ -1,3 +1,13 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+owner: platform
+status: active
+updated: 2025-12-27
+---
+
 # Documentation structure
 
 ## Purpose
@@ -114,6 +124,10 @@ Documentation can use optional YAML front matter aligned with work item conventi
 Example:
 ```md
 ---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
 owner: platform
 status: active
 updated: 2025-01-15

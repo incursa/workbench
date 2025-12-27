@@ -1,3 +1,13 @@
+---
+workbench:
+  type: adr
+  workItems: []
+  codeRefs: []
+owner: <owner>
+status: template
+updated: 0000-00-00
+---
+
 # ADR-0000: <title>
 
 - Status: proposed | accepted | superseded | deprecated

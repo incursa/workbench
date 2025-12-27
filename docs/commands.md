@@ -1,3 +1,13 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+owner: platform
+status: active
+updated: 2025-12-27
+---
+
 # Command Output Contracts
 
 All JSON output follows a consistent envelope. Table output is human-readable and not specified here.

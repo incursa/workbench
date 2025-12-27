@@ -1,3 +1,13 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+owner: <owner>
+status: template
+updated: 0000-00-00
+---
+
 # Contract: <title>
 
 ## Overview

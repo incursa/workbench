@@ -1,3 +1,13 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+owner: <owner>
+status: template
+updated: 0000-00-00
+---
+
 # Document Templates
 
 Reusable templates for common documentation types. Copy these into the
