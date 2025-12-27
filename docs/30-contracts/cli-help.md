@@ -98,10 +98,49 @@ Commands:
   - Regenerate slug from title, rename the file, and update inbound links.
   - Example: `workbench item rename TASK-0042 --title "Finalize promotion workflow"`
 
+- `workbench item link <ID> [--spec <path...>] [--adr <path...>] [--file <path...>] [--pr <url...>] [--issue <id...>] [--dry-run]`
+  - Add spec/ADR/file/PR/issue links to a work item and update doc backlinks when applicable.
+  - Example: `workbench item link TASK-0042 --spec /docs/10-product/payment-flow.md --pr https://github.com/org/repo/pull/12`
+
+- `workbench item unlink <ID> [--spec <path...>] [--adr <path...>] [--file <path...>] [--pr <url...>] [--issue <id...>] [--dry-run]`
+  - Remove spec/ADR/file/PR/issue links from a work item and update doc backlinks when applicable.
+  - Example: `workbench item unlink TASK-0042 --adr /docs/40-decisions/2025-01-01-audit-logs.md`
+
 - `workbench board regen`
   - Regenerate `work/WORKBOARD.md`.
   - Example: `workbench board regen`
 
+- `workbench doc new --type <spec|adr|doc|runbook|guide> --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]`
+  - Create a documentation file with Workbench front matter and optional backlinks.
+  - Example: `workbench doc new --type spec --title "Payment flow" --work-item TASK-0042`
+
+- `workbench doc sync [--all] [--dry-run]`
+  - Sync doc/work item backlinks. `--all` adds Workbench front matter to all docs; `--dry-run` reports changes without writing.
+  - Example: `workbench doc sync --all --dry-run`
+
+- `workbench spec new --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]`
+  - Create a spec document and auto-link work items.
+  - Example: `workbench spec new --title "Access model" --work-item TASK-0100`
+
+- `workbench spec link --path <...> --work-item <ID...> [--dry-run]`
+  - Link a spec document to work items.
+  - Example: `workbench spec link --path /docs/10-product/access-model.md --work-item TASK-0100`
+
+- `workbench spec unlink --path <...> --work-item <ID...> [--dry-run]`
+  - Unlink a spec document from work items.
+  - Example: `workbench spec unlink --path /docs/10-product/access-model.md --work-item TASK-0100`
+
+- `workbench adr new --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]`
+  - Create an ADR document and auto-link work items.
+  - Example: `workbench adr new --title "Persist audit logs" --work-item TASK-0123`
+
+- `workbench adr link --path <...> --work-item <ID...> [--dry-run]`
+  - Link an ADR document to work items.
+  - Example: `workbench adr link --path /docs/40-decisions/2025-01-01-audit-logs.md --work-item TASK-0123`
+
+- `workbench adr unlink --path <...> --work-item <ID...> [--dry-run]`
+  - Unlink an ADR document from work items.
+  - Example: `workbench adr unlink --path /docs/40-decisions/2025-01-01-audit-logs.md --work-item TASK-0123`
 - `workbench promote --type <...> --title "<...>" [--push] [--start] [--pr] [--base <branch>] [--draft|--no-draft]`
   - Create a work item, branch, and commit in one step; optionally create a PR.
   - Example: `workbench promote --type task --title "Add validate command" --start --pr --draft`

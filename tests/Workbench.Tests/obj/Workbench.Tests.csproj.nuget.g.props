@@ -12,4 +12,33 @@
   <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <SourceRoot Include="/Users/samuel/.nuget/packages/" />
   </ItemGroup>
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)mstest.analyzers/4.0.2/buildTransitive/MSTest.Analyzers.props" Condition="Exists('$(NuGetPackageRoot)mstest.analyzers/4.0.2/buildTransitive/MSTest.Analyzers.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.platform/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Platform.props" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.platform/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Platform.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.platform.msbuild/2.0.2/buildTransitive/Microsoft.Testing.Platform.MSBuild.props" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.platform.msbuild/2.0.2/buildTransitive/Microsoft.Testing.Platform.MSBuild.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.extensions.telemetry/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Extensions.Telemetry.props" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.extensions.telemetry/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Extensions.Telemetry.props')" />
+    <Import Project="$(NuGetPackageRoot)mstest.testadapter/4.0.2/buildTransitive/net9.0/MSTest.TestAdapter.props" Condition="Exists('$(NuGetPackageRoot)mstest.testadapter/4.0.2/buildTransitive/net9.0/MSTest.TestAdapter.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.extensions.trxreport/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Extensions.TrxReport.props" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.extensions.trxreport/2.0.2/buildTransitive/net9.0/Microsoft.Testing.Extensions.TrxReport.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.testing.extensions.codecoverage/18.1.0/buildTransitive/net8.0/Microsoft.Testing.Extensions.CodeCoverage.props" Condition="Exists('$(NuGetPackageRoot)microsoft.testing.extensions.codecoverage/18.1.0/buildTransitive/net8.0/Microsoft.Testing.Extensions.CodeCoverage.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.sourcelink.common/8.0.0/build/Microsoft.SourceLink.Common.props" Condition="Exists('$(NuGetPackageRoot)microsoft.sourcelink.common/8.0.0/build/Microsoft.SourceLink.Common.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.build.tasks.git/8.0.0/build/Microsoft.Build.Tasks.Git.props" Condition="Exists('$(NuGetPackageRoot)microsoft.build.tasks.git/8.0.0/build/Microsoft.Build.Tasks.Git.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.sourcelink.github/8.0.0/build/Microsoft.SourceLink.GitHub.props" Condition="Exists('$(NuGetPackageRoot)microsoft.sourcelink.github/8.0.0/build/Microsoft.SourceLink.GitHub.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/4.14.0/buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.props" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/4.14.0/buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.props')" />
+    <Import Project="$(NuGetPackageRoot)meziantou.analyzer/2.0.264/buildTransitive/Meziantou.Analyzer.props" Condition="Exists('$(NuGetPackageRoot)meziantou.analyzer/2.0.264/buildTransitive/Meziantou.Analyzer.props')" />
+    <Import Project="$(NuGetPackageRoot)bravellian.generators/2025.12.15.1154/buildTransitive/Bravellian.Generators.props" Condition="Exists('$(NuGetPackageRoot)bravellian.generators/2025.12.15.1154/buildTransitive/Bravellian.Generators.props')" />
+  </ImportGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <PkgSonarAnalyzer_CSharp Condition=" '$(PkgSonarAnalyzer_CSharp)' == '' ">/Users/samuel/.nuget/packages/sonaranalyzer.csharp/10.16.1.129956</PkgSonarAnalyzer_CSharp>
+    <PkgRoslynator_Formatting_Analyzers Condition=" '$(PkgRoslynator_Formatting_Analyzers)' == '' ">/Users/samuel/.nuget/packages/roslynator.formatting.analyzers/4.15.0</PkgRoslynator_Formatting_Analyzers>
+    <PkgRoslynator_CodeAnalysis_Analyzers Condition=" '$(PkgRoslynator_CodeAnalysis_Analyzers)' == '' ">/Users/samuel/.nuget/packages/roslynator.codeanalysis.analyzers/4.15.0</PkgRoslynator_CodeAnalysis_Analyzers>
+    <PkgRoslynator_Analyzers Condition=" '$(PkgRoslynator_Analyzers)' == '' ">/Users/samuel/.nuget/packages/roslynator.analyzers/4.15.0</PkgRoslynator_Analyzers>
+    <PkgNSubstitute_Analyzers_CSharp Condition=" '$(PkgNSubstitute_Analyzers_CSharp)' == '' ">/Users/samuel/.nuget/packages/nsubstitute.analyzers.csharp/1.0.17</PkgNSubstitute_Analyzers_CSharp>
+    <PkgMSTest_Analyzers Condition=" '$(PkgMSTest_Analyzers)' == '' ">/Users/samuel/.nuget/packages/mstest.analyzers/4.0.2</PkgMSTest_Analyzers>
+    <PkgMicrosoft_VisualStudio_Threading_Analyzers Condition=" '$(PkgMicrosoft_VisualStudio_Threading_Analyzers)' == '' ">/Users/samuel/.nuget/packages/microsoft.visualstudio.threading.analyzers/17.14.15</PkgMicrosoft_VisualStudio_Threading_Analyzers>
+    <PkgMicrosoft_SourceLink_Common Condition=" '$(PkgMicrosoft_SourceLink_Common)' == '' ">/Users/samuel/.nuget/packages/microsoft.sourcelink.common/8.0.0</PkgMicrosoft_SourceLink_Common>
+    <PkgMicrosoft_Build_Tasks_Git Condition=" '$(PkgMicrosoft_Build_Tasks_Git)' == '' ">/Users/samuel/.nuget/packages/microsoft.build.tasks.git/8.0.0</PkgMicrosoft_Build_Tasks_Git>
+    <PkgMicrosoft_SourceLink_GitHub Condition=" '$(PkgMicrosoft_SourceLink_GitHub)' == '' ">/Users/samuel/.nuget/packages/microsoft.sourcelink.github/8.0.0</PkgMicrosoft_SourceLink_GitHub>
+    <PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers)' == '' ">/Users/samuel/.nuget/packages/microsoft.codeanalysis.bannedapianalyzers/4.14.0</PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers>
+    <PkgErrorProne_NET_CoreAnalyzers Condition=" '$(PkgErrorProne_NET_CoreAnalyzers)' == '' ">/Users/samuel/.nuget/packages/errorprone.net.coreanalyzers/0.8.2-beta.1</PkgErrorProne_NET_CoreAnalyzers>
+  </PropertyGroup>
 </Project>

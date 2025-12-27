@@ -1,24 +1,986 @@
 {
   "version": 3,
   "targets": {
-    "net10.0": {}
+    "net10.0": {
+      "Bravellian.Generators/2025.12.15.1154": {
+        "type": "package",
+        "dependencies": {
+          "CommunityToolkit.Diagnostics": "8.4.0",
+          "FluentValidation": "11.12.0"
+        },
+        "contentFiles": {
+          "contentFiles/any/any/_._": {
+            "buildAction": "None",
+            "codeLanguage": "any",
+            "copyToOutput": false
+          }
+        },
+        "build": {
+          "buildTransitive/Bravellian.Generators.props": {}
+        }
+      },
+      "CommunityToolkit.Diagnostics/8.4.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/CommunityToolkit.Diagnostics.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/CommunityToolkit.Diagnostics.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "DotNet.ReproducibleBuilds.Isolated/1.2.39": {
+        "type": "package"
+      },
+      "ErrorProne.NET.CoreAnalyzers/0.8.2-beta.1": {
+        "type": "package"
+      },
+      "FluentValidation/12.1.1": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/FluentValidation.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/FluentValidation.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Humanizer.Core/2.14.1": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Humanizer.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Humanizer.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Json.More.Net/2.1.1": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/Json.More.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/Json.More.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "JsonPointer.Net/5.3.1": {
+        "type": "package",
+        "dependencies": {
+          "Humanizer.Core": "2.14.1",
+          "Json.More.Net": "2.1.1"
+        },
+        "compile": {
+          "lib/net9.0/JsonPointer.Net.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/JsonPointer.Net.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "JsonSchema.Net/7.3.2": {
+        "type": "package",
+        "dependencies": {
+          "JsonPointer.Net": "5.3.1"
+        },
+        "compile": {
+          "lib/net9.0/JsonSchema.Net.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/JsonSchema.Net.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "Meziantou.Analyzer/2.0.264": {
+        "type": "package",
+        "build": {
+          "buildTransitive/Meziantou.Analyzer.props": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/Meziantou.Analyzer.props": {}
+        }
+      },
+      "Microsoft.Build.Tasks.Git/8.0.0": {
+        "type": "package",
+        "build": {
+          "build/Microsoft.Build.Tasks.Git.props": {},
+          "build/Microsoft.Build.Tasks.Git.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/Microsoft.Build.Tasks.Git.props": {},
+          "buildMultiTargeting/Microsoft.Build.Tasks.Git.targets": {}
+        }
+      },
+      "Microsoft.CodeAnalysis.BannedApiAnalyzers/4.14.0": {
+        "type": "package",
+        "build": {
+          "buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.props": {},
+          "buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.targets": {}
+        }
+      },
+      "Microsoft.DotNet.ILCompiler/10.0.1": {
+        "type": "package",
+        "build": {
+          "build/Microsoft.DotNet.ILCompiler.props": {}
+        }
+      },
+      "Microsoft.NET.ILLink.Tasks/10.0.1": {
+        "type": "package",
+        "build": {
+          "build/Microsoft.NET.ILLink.Tasks.props": {}
+        }
+      },
+      "Microsoft.SourceLink.Common/8.0.0": {
+        "type": "package",
+        "build": {
+          "build/Microsoft.SourceLink.Common.props": {},
+          "build/Microsoft.SourceLink.Common.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/Microsoft.SourceLink.Common.props": {},
+          "buildMultiTargeting/Microsoft.SourceLink.Common.targets": {}
+        }
+      },
+      "Microsoft.SourceLink.GitHub/8.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        },
+        "build": {
+          "build/Microsoft.SourceLink.GitHub.props": {},
+          "build/Microsoft.SourceLink.GitHub.targets": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/Microsoft.SourceLink.GitHub.props": {},
+          "buildMultiTargeting/Microsoft.SourceLink.GitHub.targets": {}
+        }
+      },
+      "Microsoft.VisualStudio.Threading.Analyzers/17.14.15": {
+        "type": "package",
+        "build": {
+          "buildTransitive/Microsoft.VisualStudio.Threading.Analyzers.targets": {}
+        }
+      },
+      "Roslynator.Analyzers/4.15.0": {
+        "type": "package"
+      },
+      "Roslynator.CodeAnalysis.Analyzers/4.15.0": {
+        "type": "package"
+      },
+      "Roslynator.Formatting.Analyzers/4.15.0": {
+        "type": "package"
+      },
+      "SonarAnalyzer.CSharp/10.16.1.129956": {
+        "type": "package"
+      },
+      "System.CommandLine/2.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.CommandLine.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.CommandLine.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "resource": {
+          "lib/net8.0/cs/System.CommandLine.resources.dll": {
+            "locale": "cs"
+          },
+          "lib/net8.0/de/System.CommandLine.resources.dll": {
+            "locale": "de"
+          },
+          "lib/net8.0/es/System.CommandLine.resources.dll": {
+            "locale": "es"
+          },
+          "lib/net8.0/fr/System.CommandLine.resources.dll": {
+            "locale": "fr"
+          },
+          "lib/net8.0/it/System.CommandLine.resources.dll": {
+            "locale": "it"
+          },
+          "lib/net8.0/ja/System.CommandLine.resources.dll": {
+            "locale": "ja"
+          },
+          "lib/net8.0/ko/System.CommandLine.resources.dll": {
+            "locale": "ko"
+          },
+          "lib/net8.0/pl/System.CommandLine.resources.dll": {
+            "locale": "pl"
+          },
+          "lib/net8.0/pt-BR/System.CommandLine.resources.dll": {
+            "locale": "pt-BR"
+          },
+          "lib/net8.0/ru/System.CommandLine.resources.dll": {
+            "locale": "ru"
+          },
+          "lib/net8.0/tr/System.CommandLine.resources.dll": {
+            "locale": "tr"
+          },
+          "lib/net8.0/zh-Hans/System.CommandLine.resources.dll": {
+            "locale": "zh-Hans"
+          },
+          "lib/net8.0/zh-Hant/System.CommandLine.resources.dll": {
+            "locale": "zh-Hant"
+          }
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "Bravellian.Generators/2025.12.15.1154": {
+      "sha512": "AtxcUAyHOA1XHRBqfd9SBx53SF3WQx5ax+jQLMIpuNcw7R98lIZzxRC1uCZgCNw1Lps8Ycxg9X8cSwWm1me1gg==",
+      "type": "package",
+      "path": "bravellian.generators/2025.12.15.1154",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/cs/Bravellian.Generators.dll",
+        "analyzers/dotnet/cs/System.IO.Pipelines.dll",
+        "analyzers/dotnet/cs/System.Text.Json.dll",
+        "bravellian.generators.2025.12.15.1154.nupkg.sha512",
+        "bravellian.generators.nuspec",
+        "build/Bravellian.Generators.props",
+        "buildTransitive/Bravellian.Generators.props",
+        "contentFiles/any/any/_._",
+        "nuget_logo.png"
+      ]
+    },
+    "CommunityToolkit.Diagnostics/8.4.0": {
+      "sha512": "/9Nuy8EWo0ZYQsjn3h4OGxjCWVYXl3TV3fvv29f8IVqplXgXGRzIpbtHEHGOfykh+TPbzUclzIfMCBzmgblKDA==",
+      "type": "package",
+      "path": "communitytoolkit.diagnostics/8.4.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "License.md",
+        "ThirdPartyNotices.txt",
+        "communitytoolkit.diagnostics.8.4.0.nupkg.sha512",
+        "communitytoolkit.diagnostics.nuspec",
+        "lib/net8.0/CommunityToolkit.Diagnostics.dll",
+        "lib/net8.0/CommunityToolkit.Diagnostics.pdb",
+        "lib/net8.0/CommunityToolkit.Diagnostics.xml",
+        "lib/netstandard2.0/CommunityToolkit.Diagnostics.dll",
+        "lib/netstandard2.0/CommunityToolkit.Diagnostics.pdb",
+        "lib/netstandard2.0/CommunityToolkit.Diagnostics.xml",
+        "lib/netstandard2.1/CommunityToolkit.Diagnostics.dll",
+        "lib/netstandard2.1/CommunityToolkit.Diagnostics.pdb",
+        "lib/netstandard2.1/CommunityToolkit.Diagnostics.xml"
+      ]
+    },
+    "DotNet.ReproducibleBuilds.Isolated/1.2.39": {
+      "sha512": "N5LaMgUe+X1fJg6VbX+bjhig9U4qV2AlA1s1KhhP9mrW64O444xSr53fsif8gdfeticVf/GrVP/LCIETcQXQlw==",
+      "type": "package",
+      "path": "dotnet.reproduciblebuilds.isolated/1.2.39",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "Sdk/Sdk.props",
+        "Sdk/Sdk.targets",
+        "dotnet.reproduciblebuilds.isolated.1.2.39.nupkg.sha512",
+        "dotnet.reproduciblebuilds.isolated.nuspec"
+      ]
+    },
+    "ErrorProne.NET.CoreAnalyzers/0.8.2-beta.1": {
+      "sha512": "8zTBD0fGHSZzwUCqm7b9DykXDBWA8swQ71mB9Jli2n8MYThLrqnJL9xK3rNol21oGFn0q/JfaGYJbSheTXqeYA==",
+      "type": "package",
+      "path": "errorprone.net.coreanalyzers/0.8.2-beta.1",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/cs/ErrorProne.Net.CoreAnalyzers.CodeFixes.dll",
+        "analyzers/dotnet/cs/ErrorProne.Net.CoreAnalyzers.dll",
+        "analyzers/dotnet/cs/RuntimeContracts.dll",
+        "errorprone.net.coreanalyzers.0.8.2-beta.1.nupkg.sha512",
+        "errorprone.net.coreanalyzers.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "FluentValidation/12.1.1": {
+      "sha512": "EPpkIe1yh1a0OXyC100oOA8WMbZvqUu5plwhvYcb7oSELfyUZzfxV48BLhvs3kKo4NwG7MGLNgy1RJiYtT8Dpw==",
+      "type": "package",
+      "path": "fluentvalidation/12.1.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "fluent-validation-icon.png",
+        "fluentvalidation.12.1.1.nupkg.sha512",
+        "fluentvalidation.nuspec",
+        "lib/net8.0/FluentValidation.dll",
+        "lib/net8.0/FluentValidation.xml"
+      ]
+    },
+    "Humanizer.Core/2.14.1": {
+      "sha512": "lQKvtaTDOXnoVJ20ibTuSIOf2i0uO0MPbDhd1jm238I+U/2ZnRENj0cktKZhtchBMtCUSRQ5v4xBCUbKNmyVMw==",
+      "type": "package",
+      "path": "humanizer.core/2.14.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "humanizer.core.2.14.1.nupkg.sha512",
+        "humanizer.core.nuspec",
+        "lib/net6.0/Humanizer.dll",
+        "lib/net6.0/Humanizer.xml",
+        "lib/netstandard1.0/Humanizer.dll",
+        "lib/netstandard1.0/Humanizer.xml",
+        "lib/netstandard2.0/Humanizer.dll",
+        "lib/netstandard2.0/Humanizer.xml",
+        "logo.png"
+      ]
+    },
+    "Json.More.Net/2.1.1": {
+      "sha512": "ZXAKl2VsdnIZeUo1PFII3Oi1m1L4YQjEyDjygHfHln5vgsjgIo749X6xWkv7qFYp8RROES+vOEfDcvvoVgs8kA==",
+      "type": "package",
+      "path": "json.more.net/2.1.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "json-logo-256.png",
+        "json.more.net.2.1.1.nupkg.sha512",
+        "json.more.net.nuspec",
+        "lib/net8.0/Json.More.dll",
+        "lib/net8.0/Json.More.xml",
+        "lib/net9.0/Json.More.dll",
+        "lib/net9.0/Json.More.xml",
+        "lib/netstandard2.0/Json.More.dll",
+        "lib/netstandard2.0/Json.More.xml"
+      ]
+    },
+    "JsonPointer.Net/5.3.1": {
+      "sha512": "3e2OJjU0OaE26XC/klgxbJuXvteFWTDJIJv0ITYWcJEoskq7jzUwPSC1s0iz4wPPQnfN7vwwFmg2gJfwRAPwgw==",
+      "type": "package",
+      "path": "jsonpointer.net/5.3.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "json-logo-256.png",
+        "jsonpointer.net.5.3.1.nupkg.sha512",
+        "jsonpointer.net.nuspec",
+        "lib/net8.0/JsonPointer.Net.dll",
+        "lib/net8.0/JsonPointer.Net.xml",
+        "lib/net9.0/JsonPointer.Net.dll",
+        "lib/net9.0/JsonPointer.Net.xml",
+        "lib/netstandard2.0/JsonPointer.Net.dll",
+        "lib/netstandard2.0/JsonPointer.Net.xml"
+      ]
+    },
+    "JsonSchema.Net/7.3.2": {
+      "sha512": "x+xwg6GyKFCkM5/i3MKvJtYcOH3vPFAqZhxnOM5x/0hvewOccBACNOWeei75U7gPa8kYRfpXk33GG67q28D86g==",
+      "type": "package",
+      "path": "jsonschema.net/7.3.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "json-logo-256.png",
+        "jsonschema.net.7.3.2.nupkg.sha512",
+        "jsonschema.net.nuspec",
+        "lib/net8.0/JsonSchema.Net.dll",
+        "lib/net8.0/JsonSchema.Net.pdb",
+        "lib/net8.0/JsonSchema.Net.xml",
+        "lib/net9.0/JsonSchema.Net.dll",
+        "lib/net9.0/JsonSchema.Net.pdb",
+        "lib/net9.0/JsonSchema.Net.xml",
+        "lib/netstandard2.0/JsonSchema.Net.dll",
+        "lib/netstandard2.0/JsonSchema.Net.pdb",
+        "lib/netstandard2.0/JsonSchema.Net.xml"
+      ]
+    },
+    "Meziantou.Analyzer/2.0.264": {
+      "sha512": "zRG13RDG446rZNdd/YjKRd4utpbjleRDUqNQSrX0etMnH8Rz9NBlXUpS5aR2ExoOokhNfkdOW8HpLzjLj5x0hQ==",
+      "type": "package",
+      "path": "meziantou.analyzer/2.0.264",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.txt",
+        "README.md",
+        "analyzers/dotnet/roslyn3.8/cs/Meziantou.Analyzer.CodeFixers.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Meziantou.Analyzer.dll",
+        "analyzers/dotnet/roslyn4.14/cs/Meziantou.Analyzer.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.14/cs/Meziantou.Analyzer.dll",
+        "analyzers/dotnet/roslyn4.2/cs/Meziantou.Analyzer.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.2/cs/Meziantou.Analyzer.dll",
+        "analyzers/dotnet/roslyn4.4/cs/Meziantou.Analyzer.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.4/cs/Meziantou.Analyzer.dll",
+        "analyzers/dotnet/roslyn4.6/cs/Meziantou.Analyzer.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.6/cs/Meziantou.Analyzer.dll",
+        "analyzers/dotnet/roslyn4.8/cs/Meziantou.Analyzer.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.8/cs/Meziantou.Analyzer.dll",
+        "build/Meziantou.Analyzer.props",
+        "buildMultiTargeting/Meziantou.Analyzer.props",
+        "buildTransitive/Meziantou.Analyzer.props",
+        "configuration/default.editorconfig",
+        "configuration/none.editorconfig",
+        "icon.png",
+        "meziantou.analyzer.2.0.264.nupkg.sha512",
+        "meziantou.analyzer.nuspec"
+      ]
+    },
+    "Microsoft.Build.Tasks.Git/8.0.0": {
+      "sha512": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ==",
+      "type": "package",
+      "path": "microsoft.build.tasks.git/8.0.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "build/Microsoft.Build.Tasks.Git.props",
+        "build/Microsoft.Build.Tasks.Git.targets",
+        "buildMultiTargeting/Microsoft.Build.Tasks.Git.props",
+        "buildMultiTargeting/Microsoft.Build.Tasks.Git.targets",
+        "microsoft.build.tasks.git.8.0.0.nupkg.sha512",
+        "microsoft.build.tasks.git.nuspec",
+        "tools/core/Microsoft.Build.Tasks.Git.dll",
+        "tools/core/cs/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/de/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/es/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/fr/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/it/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/ja/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/ko/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/pl/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/pt-BR/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/ru/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/tr/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/zh-Hans/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/core/zh-Hant/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/Microsoft.Build.Tasks.Git.dll",
+        "tools/net472/System.Collections.Immutable.dll",
+        "tools/net472/cs/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/de/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/es/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/fr/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/it/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/ja/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/ko/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/pl/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/pt-BR/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/ru/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/tr/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/zh-Hans/Microsoft.Build.Tasks.Git.resources.dll",
+        "tools/net472/zh-Hant/Microsoft.Build.Tasks.Git.resources.dll"
+      ]
+    },
+    "Microsoft.CodeAnalysis.BannedApiAnalyzers/4.14.0": {
+      "sha512": "gSWJlDWwmDhtbrEJGiHqvEjz9KthIiFD0qYB8zZ6a7z+xpMSPEtM9yTYELSa58iFWYlzSRqP9FXO6KoT3+ZMtg==",
+      "type": "package",
+      "path": "microsoft.codeanalysis.bannedapianalyzers/4.14.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "ThirdPartyNotices.txt",
+        "analyzers/dotnet/cs/Microsoft.CodeAnalysis.BannedApiAnalyzers.dll",
+        "analyzers/dotnet/cs/Microsoft.CodeAnalysis.CSharp.BannedApiAnalyzers.dll",
+        "analyzers/dotnet/cs/cs/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/de/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/es/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/fr/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/it/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/ja/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/ko/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/pl/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/pt-BR/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/ru/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/tr/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/zh-Hans/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/cs/zh-Hant/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/Microsoft.CodeAnalysis.BannedApiAnalyzers.dll",
+        "analyzers/dotnet/vb/Microsoft.CodeAnalysis.VisualBasic.BannedApiAnalyzers.dll",
+        "analyzers/dotnet/vb/cs/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/de/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/es/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/fr/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/it/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/ja/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/ko/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/pl/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/pt-BR/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/ru/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/tr/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/zh-Hans/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "analyzers/dotnet/vb/zh-Hant/Microsoft.CodeAnalysis.BannedApiAnalyzers.resources.dll",
+        "buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.props",
+        "buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.targets",
+        "documentation/Microsoft.CodeAnalysis.BannedApiAnalyzers.md",
+        "documentation/Microsoft.CodeAnalysis.BannedApiAnalyzers.sarif",
+        "editorconfig/AllRulesDefault/.editorconfig",
+        "editorconfig/AllRulesDisabled/.editorconfig",
+        "editorconfig/AllRulesEnabled/.editorconfig",
+        "editorconfig/ApiDesignRulesDefault/.editorconfig",
+        "editorconfig/ApiDesignRulesEnabled/.editorconfig",
+        "editorconfig/DataflowRulesDefault/.editorconfig",
+        "editorconfig/DataflowRulesEnabled/.editorconfig",
+        "editorconfig/PortedFromFxCopRulesDefault/.editorconfig",
+        "editorconfig/PortedFromFxCopRulesEnabled/.editorconfig",
+        "microsoft.codeanalysis.bannedapianalyzers.4.14.0.nupkg.sha512",
+        "microsoft.codeanalysis.bannedapianalyzers.nuspec",
+        "rulesets/AllRulesDefault.ruleset",
+        "rulesets/AllRulesDisabled.ruleset",
+        "rulesets/AllRulesEnabled.ruleset",
+        "rulesets/ApiDesignRulesDefault.ruleset",
+        "rulesets/ApiDesignRulesEnabled.ruleset",
+        "rulesets/DataflowRulesDefault.ruleset",
+        "rulesets/DataflowRulesEnabled.ruleset",
+        "rulesets/PortedFromFxCopRulesDefault.ruleset",
+        "rulesets/PortedFromFxCopRulesEnabled.ruleset",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "Microsoft.DotNet.ILCompiler/10.0.1": {
+      "sha512": "339VHcUMA2iDrkLGaqjSwn25S9lmus/+Iqg5Hz2LDPhsX5a5GbdQZ2f/f6HMz/uGGWtUGpsusqUvW5L3fx36VA==",
+      "type": "package",
+      "path": "microsoft.dotnet.ilcompiler/10.0.1",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "THIRD-PARTY-NOTICES.TXT",
+        "build/BuildFrameworkNativeObjects.proj",
+        "build/Microsoft.DotNet.ILCompiler.SingleEntry.targets",
+        "build/Microsoft.DotNet.ILCompiler.props",
+        "build/Microsoft.NETCore.Native.Publish.targets",
+        "build/Microsoft.NETCore.Native.Unix.targets",
+        "build/Microsoft.NETCore.Native.Windows.targets",
+        "build/Microsoft.NETCore.Native.targets",
+        "build/NativeAOT.natstepfilter",
+        "build/NativeAOT.natvis",
+        "build/WindowsAPIs.txt",
+        "build/findvcvarsall.bat",
+        "microsoft.dotnet.ilcompiler.10.0.1.nupkg.sha512",
+        "microsoft.dotnet.ilcompiler.nuspec",
+        "runtime.json",
+        "tools/netstandard/ILCompiler.Build.Tasks.deps.json",
+        "tools/netstandard/ILCompiler.Build.Tasks.dll"
+      ]
+    },
+    "Microsoft.NET.ILLink.Tasks/10.0.1": {
+      "sha512": "ISahzLHsHY7vrwqr2p1YWZ+gsxoBRtH7gWRDK8fDUst9pp2He0GiesaqEfeX0V8QMCJM3eNEHGGpnIcPjFo2NQ==",
+      "type": "package",
+      "path": "microsoft.net.illink.tasks/10.0.1",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "Sdk/Sdk.props",
+        "THIRD-PARTY-NOTICES.TXT",
+        "analyzers/dotnet/cs/ILLink.CodeFixProvider.dll",
+        "analyzers/dotnet/cs/ILLink.RoslynAnalyzer.dll",
+        "build/Microsoft.NET.ILLink.Analyzers.props",
+        "build/Microsoft.NET.ILLink.Tasks.props",
+        "build/Microsoft.NET.ILLink.targets",
+        "microsoft.net.illink.tasks.10.0.1.nupkg.sha512",
+        "microsoft.net.illink.tasks.nuspec",
+        "tools/net/ILLink.Tasks.deps.json",
+        "tools/net/ILLink.Tasks.dll",
+        "tools/net/Mono.Cecil.Mdb.dll",
+        "tools/net/Mono.Cecil.Pdb.dll",
+        "tools/net/Mono.Cecil.Rocks.dll",
+        "tools/net/Mono.Cecil.dll",
+        "tools/net/Sdk/Sdk.props",
+        "tools/net/build/Microsoft.NET.ILLink.Analyzers.props",
+        "tools/net/build/Microsoft.NET.ILLink.Tasks.props",
+        "tools/net/build/Microsoft.NET.ILLink.targets",
+        "tools/net/illink.deps.json",
+        "tools/net/illink.dll",
+        "tools/net/illink.runtimeconfig.json",
+        "tools/netframework/ILLink.Tasks.dll",
+        "tools/netframework/ILLink.Tasks.dll.config",
+        "tools/netframework/Mono.Cecil.Mdb.dll",
+        "tools/netframework/Mono.Cecil.Pdb.dll",
+        "tools/netframework/Mono.Cecil.Rocks.dll",
+        "tools/netframework/Mono.Cecil.dll",
+        "tools/netframework/Sdk/Sdk.props",
+        "tools/netframework/System.Buffers.dll",
+        "tools/netframework/System.Collections.Immutable.dll",
+        "tools/netframework/System.Memory.dll",
+        "tools/netframework/System.Numerics.Vectors.dll",
+        "tools/netframework/System.Reflection.Metadata.dll",
+        "tools/netframework/System.Runtime.CompilerServices.Unsafe.dll",
+        "tools/netframework/build/Microsoft.NET.ILLink.Analyzers.props",
+        "tools/netframework/build/Microsoft.NET.ILLink.Tasks.props",
+        "tools/netframework/build/Microsoft.NET.ILLink.targets",
+        "useSharedDesignerContext.txt"
+      ]
+    },
+    "Microsoft.SourceLink.Common/8.0.0": {
+      "sha512": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw==",
+      "type": "package",
+      "path": "microsoft.sourcelink.common/8.0.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "build/InitializeSourceControlInformation.targets",
+        "build/Microsoft.SourceLink.Common.props",
+        "build/Microsoft.SourceLink.Common.targets",
+        "buildMultiTargeting/Microsoft.SourceLink.Common.props",
+        "buildMultiTargeting/Microsoft.SourceLink.Common.targets",
+        "microsoft.sourcelink.common.8.0.0.nupkg.sha512",
+        "microsoft.sourcelink.common.nuspec",
+        "tools/core/Microsoft.SourceLink.Common.dll",
+        "tools/core/cs/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/de/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/es/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/fr/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/it/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/ja/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/ko/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/pl/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/pt-BR/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/ru/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/tr/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/zh-Hans/Microsoft.SourceLink.Common.resources.dll",
+        "tools/core/zh-Hant/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/Microsoft.SourceLink.Common.dll",
+        "tools/net472/cs/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/de/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/es/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/fr/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/it/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/ja/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/ko/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/pl/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/pt-BR/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/ru/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/tr/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/zh-Hans/Microsoft.SourceLink.Common.resources.dll",
+        "tools/net472/zh-Hant/Microsoft.SourceLink.Common.resources.dll"
+      ]
+    },
+    "Microsoft.SourceLink.GitHub/8.0.0": {
+      "sha512": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+      "type": "package",
+      "path": "microsoft.sourcelink.github/8.0.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "build/Microsoft.SourceLink.GitHub.props",
+        "build/Microsoft.SourceLink.GitHub.targets",
+        "buildMultiTargeting/Microsoft.SourceLink.GitHub.props",
+        "buildMultiTargeting/Microsoft.SourceLink.GitHub.targets",
+        "microsoft.sourcelink.github.8.0.0.nupkg.sha512",
+        "microsoft.sourcelink.github.nuspec",
+        "tools/core/Microsoft.SourceLink.GitHub.dll",
+        "tools/core/cs/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/de/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/es/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/fr/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/it/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/ja/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/ko/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/pl/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/pt-BR/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/ru/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/tr/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/zh-Hans/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/core/zh-Hant/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/Microsoft.SourceLink.GitHub.dll",
+        "tools/net472/cs/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/de/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/es/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/fr/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/it/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/ja/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/ko/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/pl/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/pt-BR/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/ru/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/tr/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/zh-Hans/Microsoft.SourceLink.GitHub.resources.dll",
+        "tools/net472/zh-Hant/Microsoft.SourceLink.GitHub.resources.dll"
+      ]
+    },
+    "Microsoft.VisualStudio.Threading.Analyzers/17.14.15": {
+      "sha512": "mXQPJsbuUD2ydq4/ffd8h8tSOFCXec+2xJOVNCvXjuMOq/+5EKHq3D2m2MC2+nUaXeFMSt66VS/J4HdKBixgcw==",
+      "type": "package",
+      "path": "microsoft.visualstudio.threading.analyzers/17.14.15",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "NOTICE",
+        "PackageIcon.png",
+        "README.md",
+        "analyzers/cs/Microsoft.VisualStudio.Threading.Analyzers.CSharp.dll",
+        "analyzers/cs/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.dll",
+        "analyzers/cs/Microsoft.VisualStudio.Threading.Analyzers.dll",
+        "analyzers/cs/cs/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/de/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/es/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/fr/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/it/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/ja/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/ko/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/pl/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/pt-BR/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/ru/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/tr/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/zh-Hans/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/cs/zh-Hant/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.dll",
+        "analyzers/vb/Microsoft.VisualStudio.Threading.Analyzers.VisualBasic.dll",
+        "analyzers/vb/Microsoft.VisualStudio.Threading.Analyzers.dll",
+        "analyzers/vb/cs/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/de/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/es/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/fr/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/it/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/ja/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/ko/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/pl/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/pt-BR/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/ru/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/tr/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/zh-Hans/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "analyzers/vb/zh-Hant/Microsoft.VisualStudio.Threading.Analyzers.CodeFixes.resources.dll",
+        "buildTransitive/AdditionalFiles/vs-threading.LegacyThreadSwitchingMembers.txt",
+        "buildTransitive/AdditionalFiles/vs-threading.MainThreadAssertingMethods.txt",
+        "buildTransitive/AdditionalFiles/vs-threading.MainThreadSwitchingMethods.txt",
+        "buildTransitive/AdditionalFiles/vs-threading.MembersRequiringMainThread.txt",
+        "buildTransitive/Microsoft.VisualStudio.Threading.Analyzers.targets",
+        "microsoft.visualstudio.threading.analyzers.17.14.15.nupkg.sha512",
+        "microsoft.visualstudio.threading.analyzers.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "Roslynator.Analyzers/4.15.0": {
+      "sha512": "E8fu71Y+vzhniJKy1K13Rzwm8Vjcj7CDFBpflqncKUZfc3SzuF0kMBiyMmgXNPkjWTdE3Z+30HlGgYjHONZY/Q==",
+      "type": "package",
+      "path": "roslynator.analyzers/4.15.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator.CSharp.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator.CSharp.Analyzers.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Analyzers_Roslynator.CSharp.Workspaces.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Analyzers_Roslynator.CSharp.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Analyzers_Roslynator.Common.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Analyzers_Roslynator.Core.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Analyzers_Roslynator.Workspaces.Common.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Analyzers_Roslynator.Workspaces.Core.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator.CSharp.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator.CSharp.Analyzers.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Analyzers_Roslynator.CSharp.Workspaces.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Analyzers_Roslynator.CSharp.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Analyzers_Roslynator.Common.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Analyzers_Roslynator.Core.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Analyzers_Roslynator.Workspaces.Common.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Analyzers_Roslynator.Workspaces.Core.dll",
+        "docs/README.md",
+        "icon.png",
+        "roslynator.analyzers.4.15.0.nupkg.sha512",
+        "roslynator.analyzers.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "Roslynator.CodeAnalysis.Analyzers/4.15.0": {
+      "sha512": "XPY6vqHG8jLJ1S0SGzLDtyuDjmkcIAGuLRrsG3SlAuyAOlwnVfA1glgIy6YqXutoi7hwd1fqZC2W9zoMntuZNg==",
+      "type": "package",
+      "path": "roslynator.codeanalysis.analyzers/4.15.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator.CodeAnalysis.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator.CodeAnalysis.Analyzers.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.CSharp.Workspaces.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.CSharp.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Common.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Core.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Workspaces.Common.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Workspaces.Core.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator.CodeAnalysis.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator.CodeAnalysis.Analyzers.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.CSharp.Workspaces.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.CSharp.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Common.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Core.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Workspaces.Common.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_CodeAnalysis_Analyzers_Roslynator.Workspaces.Core.dll",
+        "docs/README.md",
+        "icon.png",
+        "roslynator.codeanalysis.analyzers.4.15.0.nupkg.sha512",
+        "roslynator.codeanalysis.analyzers.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "Roslynator.Formatting.Analyzers/4.15.0": {
+      "sha512": "/LvSJGJbrx+OYC2GePmiAA9fRTfz37R/oaHC2j8YK/j9lE8ykZESCGTMVGqXF5woc6RbzfJlpYkzeG6fAV6hFQ==",
+      "type": "package",
+      "path": "roslynator.formatting.analyzers/4.15.0",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator.Formatting.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator.Formatting.Analyzers.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Formatting_Analyzers_Roslynator.CSharp.Workspaces.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Formatting_Analyzers_Roslynator.CSharp.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Formatting_Analyzers_Roslynator.Common.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Formatting_Analyzers_Roslynator.Core.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Formatting_Analyzers_Roslynator.Workspaces.Common.dll",
+        "analyzers/dotnet/roslyn3.8/cs/Roslynator_Formatting_Analyzers_Roslynator.Workspaces.Core.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator.Formatting.Analyzers.CodeFixes.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator.Formatting.Analyzers.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Formatting_Analyzers_Roslynator.CSharp.Workspaces.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Formatting_Analyzers_Roslynator.CSharp.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Formatting_Analyzers_Roslynator.Common.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Formatting_Analyzers_Roslynator.Core.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Formatting_Analyzers_Roslynator.Workspaces.Common.dll",
+        "analyzers/dotnet/roslyn4.7/cs/Roslynator_Formatting_Analyzers_Roslynator.Workspaces.Core.dll",
+        "docs/README.md",
+        "icon.png",
+        "roslynator.formatting.analyzers.4.15.0.nupkg.sha512",
+        "roslynator.formatting.analyzers.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "SonarAnalyzer.CSharp/10.16.1.129956": {
+      "sha512": "XjMarxz00Xc+GD8JGYut1swL0RIw2iwfBhltEITsxsqC/MDLjK+8dk58fPYkS+YPwtdqzkU4VUuSqX3qrN2HYA==",
+      "type": "package",
+      "path": "sonaranalyzer.csharp/10.16.1.129956",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "analyzers/SonarAnalyzer.CSharp.dll",
+        "images/sonarsource_64.png",
+        "licenses/LICENSE.txt",
+        "licenses/THIRD_PARTY_LICENSES/Google.Protobuf-LICENSE.txt",
+        "licenses/THIRD_PARTY_LICENSES/StyleCop.Analyzers-LICENSE.txt",
+        "sonaranalyzer.csharp.10.16.1.129956.nupkg.sha512",
+        "sonaranalyzer.csharp.nuspec",
+        "tools/install.ps1",
+        "tools/uninstall.ps1"
+      ]
+    },
+    "System.CommandLine/2.0.1": {
+      "sha512": "GLc43eDFq8KbpxIb7UhTwV0vC5CzB0NspJvfFbfhoW4O057xCJXuO18KLpVn9x3JykQn2mRske6+I6JXHwqmDg==",
+      "type": "package",
+      "path": "system.commandline/2.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "README.md",
+        "lib/net8.0/System.CommandLine.dll",
+        "lib/net8.0/System.CommandLine.pdb",
+        "lib/net8.0/System.CommandLine.xml",
+        "lib/net8.0/cs/System.CommandLine.resources.dll",
+        "lib/net8.0/de/System.CommandLine.resources.dll",
+        "lib/net8.0/es/System.CommandLine.resources.dll",
+        "lib/net8.0/fr/System.CommandLine.resources.dll",
+        "lib/net8.0/it/System.CommandLine.resources.dll",
+        "lib/net8.0/ja/System.CommandLine.resources.dll",
+        "lib/net8.0/ko/System.CommandLine.resources.dll",
+        "lib/net8.0/pl/System.CommandLine.resources.dll",
+        "lib/net8.0/pt-BR/System.CommandLine.resources.dll",
+        "lib/net8.0/ru/System.CommandLine.resources.dll",
+        "lib/net8.0/tr/System.CommandLine.resources.dll",
+        "lib/net8.0/zh-Hans/System.CommandLine.resources.dll",
+        "lib/net8.0/zh-Hant/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/System.CommandLine.dll",
+        "lib/netstandard2.0/System.CommandLine.pdb",
+        "lib/netstandard2.0/System.CommandLine.xml",
+        "lib/netstandard2.0/cs/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/de/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/es/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/fr/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/it/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/ja/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/ko/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/pl/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/pt-BR/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/ru/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/tr/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/zh-Hans/System.CommandLine.resources.dll",
+        "lib/netstandard2.0/zh-Hant/System.CommandLine.resources.dll",
+        "system.commandline.2.0.1.nupkg.sha512",
+        "system.commandline.nuspec"
+      ]
+    }
+  },
   "projectFileDependencyGroups": {
-    "net10.0": []
+    "net10.0": [
+      "Bravellian.Generators >= 2025.12.15.1154",
+      "DotNet.ReproducibleBuilds.Isolated >= 1.2.39",
+      "ErrorProne.NET.CoreAnalyzers >= 0.8.2-beta.1",
+      "JsonSchema.Net >= 7.3.2",
+      "Meziantou.Analyzer >= 2.0.264",
+      "Microsoft.CodeAnalysis.BannedApiAnalyzers >= 4.14.0",
+      "Microsoft.DotNet.ILCompiler >= 10.0.1",
+      "Microsoft.NET.ILLink.Tasks >= 10.0.1",
+      "Microsoft.SourceLink.GitHub >= 8.0.0",
+      "Microsoft.VisualStudio.Threading.Analyzers >= 17.14.15",
+      "Roslynator.Analyzers >= 4.15.0",
+      "Roslynator.CodeAnalysis.Analyzers >= 4.15.0",
+      "Roslynator.Formatting.Analyzers >= 4.15.0",
+      "SonarAnalyzer.CSharp >= 10.16.1.129956",
+      "System.CommandLine >= 2.0.1"
+    ]
   },
   "packageFolders": {
     "/Users/samuel/.nuget/packages/": {}
   },
   "project": {
-    "version": "1.0.0",
+    "version": "0.1.0",
     "restore": {
       "projectUniqueName": "/Users/samuel/src/bravellian/workbench/src/Workbench/Workbench.csproj",
-      "projectName": "Workbench",
+      "projectName": "Bravellian.Workbench",
       "projectPath": "/Users/samuel/src/bravellian/workbench/src/Workbench/Workbench.csproj",
       "packagesPath": "/Users/samuel/.nuget/packages/",
       "outputPath": "/Users/samuel/src/bravellian/workbench/src/Workbench/obj/",
       "projectStyle": "PackageReference",
+      "centralPackageVersionsManagementEnabled": true,
+      "centralPackageFloatingVersionsEnabled": true,
+      "CentralPackageTransitivePinningEnabled": true,
       "configFilePaths": [
         "/Users/samuel/.nuget/NuGet/NuGet.Config"
       ],
@@ -35,6 +997,7 @@
         }
       },
       "warningProperties": {
+        "allWarningsAsErrors": true,
         "warnAsError": [
           "NU1605"
         ]
@@ -49,6 +1012,140 @@
     "frameworks": {
       "net10.0": {
         "targetAlias": "net10.0",
+        "dependencies": {
+          "Bravellian.Generators": {
+            "target": "Package",
+            "version": "[2025.12.15.1154, )",
+            "versionCentrallyManaged": true
+          },
+          "DotNet.ReproducibleBuilds.Isolated": {
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[1.2.39, )",
+            "versionCentrallyManaged": true
+          },
+          "ErrorProne.NET.CoreAnalyzers": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[0.8.2-beta.1, )",
+            "versionCentrallyManaged": true
+          },
+          "JsonSchema.Net": {
+            "target": "Package",
+            "version": "[7.3.2, )",
+            "versionCentrallyManaged": true
+          },
+          "Meziantou.Analyzer": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[2.0.264, )",
+            "versionCentrallyManaged": true
+          },
+          "Microsoft.CodeAnalysis.BannedApiAnalyzers": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[4.14.0, )",
+            "versionCentrallyManaged": true
+          },
+          "Microsoft.DotNet.ILCompiler": {
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[10.0.1, )",
+            "autoReferenced": true
+          },
+          "Microsoft.NET.ILLink.Tasks": {
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[10.0.1, )",
+            "autoReferenced": true
+          },
+          "Microsoft.SourceLink.GitHub": {
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[8.0.0, )",
+            "versionCentrallyManaged": true
+          },
+          "Microsoft.VisualStudio.Threading.Analyzers": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[17.14.15, )",
+            "versionCentrallyManaged": true
+          },
+          "Roslynator.Analyzers": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[4.15.0, )",
+            "versionCentrallyManaged": true
+          },
+          "Roslynator.CodeAnalysis.Analyzers": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[4.15.0, )",
+            "versionCentrallyManaged": true
+          },
+          "Roslynator.Formatting.Analyzers": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[4.15.0, )",
+            "versionCentrallyManaged": true
+          },
+          "SonarAnalyzer.CSharp": {
+            "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[10.16.1.129956, )",
+            "versionCentrallyManaged": true
+          },
+          "System.CommandLine": {
+            "target": "Package",
+            "version": "[2.0.1, )",
+            "versionCentrallyManaged": true
+          }
+        },
+        "centralPackageVersions": {
+          "Bogus": "35.6.5",
+          "Bravellian.Generators": "2025.12.15.1154",
+          "CommunityToolkit.Diagnostics": "8.4.0",
+          "coverlet.collector": "6.0.4",
+          "coverlet.msbuild": "6.0.4",
+          "CsvHelper": "33.1.0",
+          "DotNet.ReproducibleBuilds.Isolated": "1.2.39",
+          "ErrorProne.NET.CoreAnalyzers": "0.8.2-beta.1",
+          "FluentValidation": "12.1.1",
+          "JsonSchema.Net": "7.3.2",
+          "LibGit2Sharp": "0.31.0",
+          "Markdig": "0.44.0",
+          "Meziantou.Analyzer": "2.0.264",
+          "Microsoft.CodeAnalysis.BannedApiAnalyzers": "4.14.0",
+          "Microsoft.CodeCoverage": "18.0.1",
+          "Microsoft.NET.Test.Sdk": "18.0.1",
+          "Microsoft.SourceLink.GitHub": "8.0.0",
+          "Microsoft.VisualStudio.Threading.Analyzers": "17.14.15",
+          "Microsoft.VSSDK.BuildTools": "17.14.2120",
+          "MSTest.TestAdapter": "4.0.2",
+          "MSTest.TestFramework": "4.0.2",
+          "NSubstitute": "5.3.0",
+          "NSubstitute.Analyzers.CSharp": "1.0.17",
+          "Roslynator.Analyzers": "4.15.0",
+          "Roslynator.CodeAnalysis.Analyzers": "4.15.0",
+          "Roslynator.Core": "4.15.0",
+          "Roslynator.CSharp": "4.15.0",
+          "Roslynator.CSharp.Workspaces": "4.15.0",
+          "Roslynator.Formatting.Analyzers": "4.15.0",
+          "Roslynator.Workspaces.Core": "4.15.0",
+          "SimpleExec": "12.0.0",
+          "SonarAnalyzer.CSharp": "10.16.1.129956",
+          "StyleCop.Analyzers": "1.1.118",
+          "System.CommandLine": "2.0.1",
+          "YamlDotNet": "16.3.0"
+        },
         "imports": [
           "net461",
           "net462",
@@ -60,6 +1157,12 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "runtime.osx-arm64.Microsoft.DotNet.ILCompiler",
+            "version": "[10.0.1, 10.0.1]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
@@ -340,6 +1443,18 @@
           "System.Xml.XPath": "(,4.3.32767]",
           "System.Xml.XPath.XDocument": "(,5.0.32767]"
         }
+      }
+    }
+  },
+  "centralTransitiveDependencyGroups": {
+    "net10.0": {
+      "CommunityToolkit.Diagnostics": {
+        "include": "Runtime, Compile, Native, BuildTransitive",
+        "version": "[8.4.0, )"
+      },
+      "FluentValidation": {
+        "include": "Runtime, Compile, Native, BuildTransitive",
+        "version": "[12.1.1, )"
       }
     }
   }

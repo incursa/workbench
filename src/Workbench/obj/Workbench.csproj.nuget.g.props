@@ -12,4 +12,28 @@
   <ItemGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <SourceRoot Include="/Users/samuel/.nuget/packages/" />
   </ItemGroup>
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <Import Project="$(NuGetPackageRoot)microsoft.sourcelink.common/8.0.0/build/Microsoft.SourceLink.Common.props" Condition="Exists('$(NuGetPackageRoot)microsoft.sourcelink.common/8.0.0/build/Microsoft.SourceLink.Common.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.build.tasks.git/8.0.0/build/Microsoft.Build.Tasks.Git.props" Condition="Exists('$(NuGetPackageRoot)microsoft.build.tasks.git/8.0.0/build/Microsoft.Build.Tasks.Git.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.sourcelink.github/8.0.0/build/Microsoft.SourceLink.GitHub.props" Condition="Exists('$(NuGetPackageRoot)microsoft.sourcelink.github/8.0.0/build/Microsoft.SourceLink.GitHub.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.net.illink.tasks/10.0.1/build/Microsoft.NET.ILLink.Tasks.props" Condition="Exists('$(NuGetPackageRoot)microsoft.net.illink.tasks/10.0.1/build/Microsoft.NET.ILLink.Tasks.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.dotnet.ilcompiler/10.0.1/build/Microsoft.DotNet.ILCompiler.props" Condition="Exists('$(NuGetPackageRoot)microsoft.dotnet.ilcompiler/10.0.1/build/Microsoft.DotNet.ILCompiler.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/4.14.0/buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.props" Condition="Exists('$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/4.14.0/buildTransitive/Microsoft.CodeAnalysis.BannedApiAnalyzers.props')" />
+    <Import Project="$(NuGetPackageRoot)meziantou.analyzer/2.0.264/buildTransitive/Meziantou.Analyzer.props" Condition="Exists('$(NuGetPackageRoot)meziantou.analyzer/2.0.264/buildTransitive/Meziantou.Analyzer.props')" />
+    <Import Project="$(NuGetPackageRoot)bravellian.generators/2025.12.15.1154/buildTransitive/Bravellian.Generators.props" Condition="Exists('$(NuGetPackageRoot)bravellian.generators/2025.12.15.1154/buildTransitive/Bravellian.Generators.props')" />
+  </ImportGroup>
+  <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
+    <PkgSonarAnalyzer_CSharp Condition=" '$(PkgSonarAnalyzer_CSharp)' == '' ">/Users/samuel/.nuget/packages/sonaranalyzer.csharp/10.16.1.129956</PkgSonarAnalyzer_CSharp>
+    <PkgRoslynator_Formatting_Analyzers Condition=" '$(PkgRoslynator_Formatting_Analyzers)' == '' ">/Users/samuel/.nuget/packages/roslynator.formatting.analyzers/4.15.0</PkgRoslynator_Formatting_Analyzers>
+    <PkgRoslynator_CodeAnalysis_Analyzers Condition=" '$(PkgRoslynator_CodeAnalysis_Analyzers)' == '' ">/Users/samuel/.nuget/packages/roslynator.codeanalysis.analyzers/4.15.0</PkgRoslynator_CodeAnalysis_Analyzers>
+    <PkgRoslynator_Analyzers Condition=" '$(PkgRoslynator_Analyzers)' == '' ">/Users/samuel/.nuget/packages/roslynator.analyzers/4.15.0</PkgRoslynator_Analyzers>
+    <PkgMicrosoft_VisualStudio_Threading_Analyzers Condition=" '$(PkgMicrosoft_VisualStudio_Threading_Analyzers)' == '' ">/Users/samuel/.nuget/packages/microsoft.visualstudio.threading.analyzers/17.14.15</PkgMicrosoft_VisualStudio_Threading_Analyzers>
+    <PkgMicrosoft_SourceLink_Common Condition=" '$(PkgMicrosoft_SourceLink_Common)' == '' ">/Users/samuel/.nuget/packages/microsoft.sourcelink.common/8.0.0</PkgMicrosoft_SourceLink_Common>
+    <PkgMicrosoft_Build_Tasks_Git Condition=" '$(PkgMicrosoft_Build_Tasks_Git)' == '' ">/Users/samuel/.nuget/packages/microsoft.build.tasks.git/8.0.0</PkgMicrosoft_Build_Tasks_Git>
+    <PkgMicrosoft_SourceLink_GitHub Condition=" '$(PkgMicrosoft_SourceLink_GitHub)' == '' ">/Users/samuel/.nuget/packages/microsoft.sourcelink.github/8.0.0</PkgMicrosoft_SourceLink_GitHub>
+    <PkgMicrosoft_NET_ILLink_Tasks Condition=" '$(PkgMicrosoft_NET_ILLink_Tasks)' == '' ">/Users/samuel/.nuget/packages/microsoft.net.illink.tasks/10.0.1</PkgMicrosoft_NET_ILLink_Tasks>
+    <PkgMicrosoft_DotNet_ILCompiler Condition=" '$(PkgMicrosoft_DotNet_ILCompiler)' == '' ">/Users/samuel/.nuget/packages/microsoft.dotnet.ilcompiler/10.0.1</PkgMicrosoft_DotNet_ILCompiler>
+    <PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers Condition=" '$(PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers)' == '' ">/Users/samuel/.nuget/packages/microsoft.codeanalysis.bannedapianalyzers/4.14.0</PkgMicrosoft_CodeAnalysis_BannedApiAnalyzers>
+    <PkgErrorProne_NET_CoreAnalyzers Condition=" '$(PkgErrorProne_NET_CoreAnalyzers)' == '' ">/Users/samuel/.nuget/packages/errorprone.net.coreanalyzers/0.8.2-beta.1</PkgErrorProne_NET_CoreAnalyzers>
+  </PropertyGroup>
 </Project>

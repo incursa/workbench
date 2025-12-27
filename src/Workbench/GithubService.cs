@@ -13,7 +13,8 @@ public static class GithubService
         {
             WorkingDirectory = repoRoot,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            UseShellExecute = false,
         };
         foreach (var arg in args)
         {
@@ -49,7 +50,9 @@ public static class GithubService
         }
         catch (Exception)
         {
+#pragma warning disable ERP022
             return new AuthStatus("skip", "gh not installed or not on PATH.", null);
+#pragma warning restore ERP022
         }
     }
 
@@ -62,15 +65,15 @@ public static class GithubService
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"gh auth check failed: {ex.Message}");
+            throw new InvalidOperationException($"gh auth check failed: {ex}");
         }
 
-        if (status.Status == "skip")
+        if (string.Equals(status.Status, "skip", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("gh is not installed or not on PATH.");
         }
 
-        if (status.Status == "warn")
+        if (string.Equals(status.Status, "warn", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("gh is installed but not authenticated. Run `gh auth login`.");
         }

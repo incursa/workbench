@@ -1,37 +1,38 @@
 namespace Workbench.IntegrationTests;
 
+[TestClass]
 public class ScaffoldPromoteTests
 {
-    [Fact]
+    [TestMethod]
     public void ScaffoldAndPromote_CreateBranchAndCommit()
     {
         using var repo = TempRepo.Create();
         InitializeGitRepo(repo.Path);
 
         var scaffoldResult = WorkbenchCli.Run(repo.Path, "scaffold", "--repo", repo.Path, "--format", "json");
-        Assert.Equal(0, scaffoldResult.ExitCode);
+        Assert.AreEqual(0, scaffoldResult.ExitCode);
 
         var scaffoldJson = TestAssertions.ParseJson(scaffoldResult.StdOut);
         var configPath = scaffoldJson.GetProperty("data").GetProperty("configPath").GetString();
-        Assert.False(string.IsNullOrWhiteSpace(configPath));
-        Assert.True(File.Exists(configPath!));
-        Assert.True(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
-        Assert.True(File.Exists(Path.Combine(repo.Path, "work", "WORKBOARD.md")));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(configPath));
+        Assert.IsTrue(File.Exists(configPath!));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "WORKBOARD.md")));
 
         CommitAll(repo.Path, "Add scaffold");
 
-        const string title = "Add integration coverage";
+        const string Title = "Add integration coverage";
         var promoteResult = WorkbenchCli.Run(repo.Path,
             "promote",
             "--type",
             "task",
             "--title",
-            title,
+            Title,
             "--repo",
             repo.Path,
             "--format",
             "json");
-        Assert.Equal(0, promoteResult.ExitCode);
+        Assert.AreEqual(0, promoteResult.ExitCode);
 
         var promoteJson = TestAssertions.ParseJson(promoteResult.StdOut);
         var data = promoteJson.GetProperty("data");
@@ -44,38 +45,38 @@ public class ScaffoldPromoteTests
         var sha = data.GetProperty("commit").GetProperty("sha").GetString();
         var pushed = data.GetProperty("pushed").GetBoolean();
 
-        Assert.False(string.IsNullOrWhiteSpace(itemId));
-        Assert.False(string.IsNullOrWhiteSpace(slug));
-        Assert.False(string.IsNullOrWhiteSpace(itemPath));
-        Assert.False(string.IsNullOrWhiteSpace(branch));
-        Assert.False(string.IsNullOrWhiteSpace(commitMessage));
-        Assert.False(string.IsNullOrWhiteSpace(sha));
-        Assert.False(pushed);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(itemId));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(slug));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(itemPath));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(branch));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(commitMessage));
+        Assert.IsFalse(string.IsNullOrWhiteSpace(sha));
+        Assert.IsFalse(pushed);
 
         var expectedBranch = $"work/{itemId}-{slug}";
-        Assert.Equal(expectedBranch, branch);
-        Assert.Equal($"Promote {itemId}: {title}", commitMessage);
+        Assert.AreEqual(expectedBranch, branch);
+        Assert.AreEqual($"Promote {itemId}: {Title}", commitMessage);
 
         var expectedItemPath = Path.Combine(repo.Path, "work", "items", $"{itemId}-{slug}.md");
-        Assert.Equal(expectedItemPath, itemPath);
-        Assert.True(File.Exists(itemPath!));
+        Assert.AreEqual(expectedItemPath, itemPath);
+        Assert.IsTrue(File.Exists(itemPath!));
 
         var branchResult = ProcessRunner.Run(repo.Path, "git", "rev-parse", "--abbrev-ref", "HEAD");
-        Assert.Equal(0, branchResult.ExitCode);
-        Assert.Equal(expectedBranch, branchResult.StdOut);
+        Assert.AreEqual(0, branchResult.ExitCode);
+        Assert.AreEqual(expectedBranch, branchResult.StdOut);
 
         var messageResult = ProcessRunner.Run(repo.Path, "git", "log", "-1", "--pretty=%B");
-        Assert.Equal(0, messageResult.ExitCode);
-        Assert.Equal(commitMessage, messageResult.StdOut.Trim());
+        Assert.AreEqual(0, messageResult.ExitCode);
+        Assert.AreEqual(commitMessage, messageResult.StdOut.Trim());
     }
 
-    [Fact]
+    [TestMethod]
     public void GhCliIsAvailableWhenEnabled()
     {
         TestAssertions.RequireGhTestsEnabled();
 
         var result = ProcessRunner.Run(Environment.CurrentDirectory, "gh", "--version");
-        Assert.Equal(0, result.ExitCode);
+        Assert.AreEqual(0, result.ExitCode);
         Assert.Contains("gh version", result.StdOut, StringComparison.OrdinalIgnoreCase);
     }
 

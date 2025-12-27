@@ -4,7 +4,7 @@ namespace Workbench;
 
 public static class ScaffoldService
 {
-    public sealed record ScaffoldResult(List<string> Created, List<string> Skipped, string ConfigPath);
+    public sealed record ScaffoldResult(IList<string> Created, IList<string> Skipped, string ConfigPath);
 
     public static ScaffoldResult Scaffold(string repoRoot, bool force)
     {
@@ -73,18 +73,18 @@ public static class ScaffoldService
         WriteFile(Path.Combine(config.Paths.TemplatesDir, "README.md"),
             "# Templates\n\nWork item templates used by `workbench item new`.\n");
 
-        WriteFile(Path.Combine(config.Paths.TemplatesDir, "work-item.bug.md"), DefaultBugTemplate());
-        WriteFile(Path.Combine(config.Paths.TemplatesDir, "work-item.task.md"), DefaultTaskTemplate());
-        WriteFile(Path.Combine(config.Paths.TemplatesDir, "work-item.spike.md"), DefaultSpikeTemplate());
+        WriteFile(Path.Combine(config.Paths.TemplatesDir, "work-item.bug.md"), DefaultBugTemplate);
+        WriteFile(Path.Combine(config.Paths.TemplatesDir, "work-item.task.md"), DefaultTaskTemplate);
+        WriteFile(Path.Combine(config.Paths.TemplatesDir, "work-item.spike.md"), DefaultSpikeTemplate);
 
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
-        var configJson = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+        var configJson = JsonSerializer.Serialize(config, WorkbenchJsonContext.Default.WorkbenchConfig);
         WriteFile(Path.Combine(".workbench", "config.json"), configJson + "\n");
 
         return new ScaffoldResult(created, skipped, configPath);
     }
 
-    private static string DefaultBugTemplate() => """
+    private const string DefaultBugTemplate = """
         ---
         id: BUG-0000
         type: bug
@@ -116,7 +116,7 @@ public static class ScaffoldService
         -
         """;
 
-    private static string DefaultTaskTemplate() => """
+    private const string DefaultTaskTemplate = """
         ---
         id: TASK-0000
         type: task
@@ -142,7 +142,7 @@ public static class ScaffoldService
         -
         """;
 
-    private static string DefaultSpikeTemplate() => """
+    private const string DefaultSpikeTemplate = """
         ---
         id: SPIKE-0000
         type: spike

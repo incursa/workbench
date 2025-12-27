@@ -2,9 +2,10 @@ using Workbench;
 
 namespace Workbench.Tests;
 
+[TestClass]
 public class IdAllocationTests
 {
-    [Fact]
+    [TestMethod]
     public void CreateItem_AllocatesNextIdPerType()
     {
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -38,6 +39,6 @@ public class IdAllocationTests
         File.WriteAllText(Path.Combine(repoRoot, config.Paths.TemplatesDir, "work-item.task.md"), template);
 
         var result = WorkItemService.CreateItem(repoRoot, config, "task", "Next task", null, null, null);
-        Assert.Equal("TASK-0004", result.Id);
+        Assert.AreEqual("TASK-0004", result.Id);
     }
 }

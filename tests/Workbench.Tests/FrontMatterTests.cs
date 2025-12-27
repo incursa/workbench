@@ -2,9 +2,10 @@ using Workbench;
 
 namespace Workbench.Tests;
 
+[TestClass]
 public class FrontMatterTests
 {
-    [Fact]
+    [TestMethod]
     public void ParseAndSerialize_RoundTripsBody()
     {
         var content = """
@@ -28,9 +29,9 @@ public class FrontMatterTests
             """;
 
         var ok = FrontMatter.TryParse(content, out var frontMatter, out var error);
-        Assert.True(ok, error);
-        Assert.NotNull(frontMatter);
-        Assert.Contains("TASK-0001", frontMatter!.Serialize());
-        Assert.Contains("## Summary", frontMatter.Serialize());
+        Assert.IsTrue(ok, error);
+        Assert.IsNotNull(frontMatter);
+        Assert.Contains("TASK-0001", frontMatter!.Serialize(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("## Summary", frontMatter.Serialize(), StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -5,7 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <PublishAot>true</PublishAot>
     <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
+    <SelfContained>false</SelfContained>
+    <SelfContained Condition="'$(IsPublishing)' == 'true'">true</SelfContained>
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -15,12 +16,16 @@
     <PackageId>Bravellian.Workbench</PackageId>
     <Version>0.1.0</Version>
     <PackageVersion>0.1.0</PackageVersion>
+
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
+
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <PackageReference Include="JsonSchema.Net" Version="7.3.2" />
-    <PackageReference Include="YamlDotNet" Version="13.3.1" />
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 
 </Project>

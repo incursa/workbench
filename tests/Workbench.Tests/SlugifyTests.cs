@@ -2,12 +2,13 @@ using Workbench;
 
 namespace Workbench.Tests;
 
+[TestClass]
 public class SlugifyTests
 {
-    [Fact]
+    [TestMethod]
     public void Slugify_NormalizesTitle()
     {
         var slug = WorkItemService.Slugify("Add promotion workflow!");
-        Assert.Equal("add-promotion-workflow", slug);
+        Assert.AreEqual("add-promotion-workflow", slug);
     }
 }

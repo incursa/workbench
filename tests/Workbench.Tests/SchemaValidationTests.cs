@@ -3,9 +3,10 @@ using Workbench;
 
 namespace Workbench.Tests;
 
+[TestClass]
 public class SchemaValidationTests
 {
-    [Fact]
+    [TestMethod]
     public void ValidateFrontMatter_ReturnsSchemaErrors()
     {
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -22,12 +23,12 @@ public class SchemaValidationTests
             }
             """);
 
-        var data = new Dictionary<string, object?> { ["type"] = "task" };
+        var data = new Dictionary<string, object?>(StringComparer.InvariantCulture) { ["type"] = "task" };
         var errors = SchemaValidationService.ValidateFrontMatter(repoRoot, "work/items/TASK-0001-test.md", data);
-        Assert.NotEmpty(errors);
+        Assert.IsNotEmpty(errors);
     }
 
-    [Fact]
+    [TestMethod]
     public void ValidateConfig_ReturnsSchemaErrors()
     {
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -49,6 +50,6 @@ public class SchemaValidationTests
         File.WriteAllText(Path.Combine(configDir, "config.json"), JsonSerializer.Serialize(new { ids = new { width = 4 } }));
 
         var errors = SchemaValidationService.ValidateConfig(repoRoot);
-        Assert.NotEmpty(errors);
+        Assert.IsNotEmpty(errors);
     }
 }

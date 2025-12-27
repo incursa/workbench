@@ -2,9 +2,10 @@ using Workbench;
 
 namespace Workbench.Tests;
 
+[TestClass]
 public class ValidationTests
 {
-    [Fact]
+    [TestMethod]
     public void ValidateRepo_FindsBrokenMarkdownLinks()
     {
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -16,6 +17,6 @@ public class ValidationTests
         File.WriteAllText(Path.Combine(docPath, "README.md"), "See [missing](missing.md).");
 
         var result = ValidationService.ValidateRepo(repoRoot, WorkbenchConfig.Default);
-        Assert.True(result.Errors.Count > 0);
+        Assert.IsNotEmpty(result.Errors);
     }
 }

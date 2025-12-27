@@ -2,12 +2,12 @@ namespace Workbench;
 
 public static class WorkboardService
 {
-    public sealed record WorkboardResult(string Path, Dictionary<string, int> Counts);
+    public sealed record WorkboardResult(string Path, IDictionary<string, int> Counts);
 
     public static WorkboardResult Regenerate(string repoRoot, WorkbenchConfig config)
     {
         var list = WorkItemService.ListItems(repoRoot, config, includeDone: false);
-        var sections = new Dictionary<string, List<WorkItem>>
+        var sections = new Dictionary<string, List<WorkItem>>(StringComparer.OrdinalIgnoreCase)
         {
             ["in-progress"] = new(),
             ["ready"] = new(),
@@ -55,7 +55,7 @@ public static class WorkboardService
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? repoRoot);
         File.WriteAllText(path, content);
 
-        var counts = sections.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Count);
+        var counts = sections.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Count,  StringComparer.OrdinalIgnoreCase);
         return new WorkboardResult(path, counts);
     }
 

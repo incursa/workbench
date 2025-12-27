@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using YamlDotNet.Serialization;
+using System.Linq;
 
 namespace Workbench;
 
@@ -7,7 +7,7 @@ public static class WorkItemService
 {
     public sealed record WorkItemResult(string Id, string Slug, string Path);
 
-    public sealed record WorkItemListResult(List<WorkItem> Items);
+    public sealed record WorkItemListResult(IList<WorkItem> Items);
 
     public static WorkItemResult CreateItem(
         string repoRoot,
@@ -33,7 +33,7 @@ public static class WorkItemService
 
         var id = AllocateId(repoRoot, config, type);
         var slug = Slugify(title);
-        var created = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var created = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         frontMatter!.Data["id"] = id;
         frontMatter.Data["type"] = type;
@@ -56,12 +56,10 @@ public static class WorkItemService
             frontMatter.Data["owner"] = owner;
         }
 
-        if (frontMatter.Data.TryGetValue("related", out var relatedObj) && relatedObj is Dictionary<object, object> related)
+        var related = GetRelatedMap(frontMatter.Data);
+        if (related is not null)
         {
-            if (!related.ContainsKey("files"))
-            {
-                related["files"] = new List<string>();
-            }
+            EnsureList(related, "files");
         }
 
         frontMatter = NormalizeFrontMatter(frontMatter);
@@ -142,7 +140,7 @@ public static class WorkItemService
         }
 
         frontMatter!.Data["status"] = status;
-        frontMatter.Data["updated"] = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        frontMatter.Data["updated"] = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var body = frontMatter.Body;
         if (!string.IsNullOrWhiteSpace(note))
         {
@@ -209,22 +207,74 @@ public static class WorkItemService
             throw new InvalidOperationException($"Front matter error: {error}");
         }
 
-        if (!frontMatter!.Data.TryGetValue("related", out var relatedObj) || relatedObj is not Dictionary<object, object> related)
+        var related = GetRelatedMap(frontMatter!.Data);
+        if (related is null)
         {
             throw new InvalidOperationException("Missing related section.");
         }
 
-        if (!related.TryGetValue("prs", out var prsObj) || prsObj is not IList<object> prs)
-        {
-            prs = new List<object>();
-            related["prs"] = prs;
-        }
+        var prs = EnsureList(related, "prs");
         if (!prs.OfType<string>().Any(link => link.Equals(prUrl, StringComparison.OrdinalIgnoreCase)))
         {
             prs.Add(prUrl);
         }
 
         File.WriteAllText(path, frontMatter.Serialize());
+    }
+
+    public static bool AddRelatedLink(string path, string key, string link, bool apply = true)
+    {
+        var content = File.ReadAllText(path);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            throw new InvalidOperationException($"Front matter error: {error}");
+        }
+
+        var related = GetRelatedMap(frontMatter!.Data);
+        if (related is null)
+        {
+            throw new InvalidOperationException("Missing related section.");
+        }
+
+        var list = EnsureList(related, key);
+        if (!list.OfType<string>().Any(entry => entry.Equals(link, StringComparison.OrdinalIgnoreCase)))
+        {
+            list.Add(link);
+            if (apply)
+            {
+                File.WriteAllText(path, frontMatter.Serialize());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static bool RemoveRelatedLink(string path, string key, string link, bool apply = true)
+    {
+        var content = File.ReadAllText(path);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            throw new InvalidOperationException($"Front matter error: {error}");
+        }
+
+        var related = GetRelatedMap(frontMatter!.Data);
+        if (related is null)
+        {
+            throw new InvalidOperationException("Missing related section.");
+        }
+
+        var list = EnsureList(related, key);
+        var before = list.Count;
+        list.RemoveAll(entry => entry is string s && s.Equals(link, StringComparison.OrdinalIgnoreCase));
+        if (list.Count != before)
+        {
+            if (apply)
+            {
+                File.WriteAllText(path, frontMatter.Serialize());
+            }
+            return true;
+        }
+        return false;
     }
 
     public static string GetItemPathById(string repoRoot, WorkbenchConfig config, string id)
@@ -247,10 +297,7 @@ public static class WorkItemService
 
     private static FrontMatter NormalizeFrontMatter(FrontMatter frontMatter)
     {
-        var serializer = new SerializerBuilder().Build();
-        var yaml = serializer.Serialize(frontMatter.Data).TrimEnd('\n');
-        var body = frontMatter.Body;
-        var normalized = $"---\n{yaml}\n---\n\n{body}".TrimEnd() + "\n";
+        var normalized = frontMatter.Serialize();
         if (!FrontMatter.TryParse(normalized, out var updated, out _))
         {
             return frontMatter;
@@ -262,7 +309,7 @@ public static class WorkItemService
     {
         var prefix = config.GetPrefix(type);
         var width = config.Ids.Width;
-        var pattern = new Regex($"^{Regex.Escape(prefix)}-(\\d+)", RegexOptions.Compiled);
+        var pattern = new Regex($"^{Regex.Escape(prefix)}-(\\d+)", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
         var max = 0;
 
         foreach (var dir in new[] { config.Paths.ItemsDir, config.Paths.DoneDir })
@@ -280,7 +327,7 @@ public static class WorkItemService
                 {
                     continue;
                 }
-                if (int.TryParse(match.Groups[1].Value, out var value))
+                if (int.TryParse(match.Groups[1].Value, CultureInfo.InvariantCulture, out var value))
                 {
                     max = Math.Max(max, value);
                 }
@@ -288,15 +335,15 @@ public static class WorkItemService
         }
 
         var next = max + 1;
-        return $"{prefix}-{next.ToString($"D{width}")}";
+        return $"{prefix}-{next.ToString($"D{width}", CultureInfo.InvariantCulture)}";
     }
 
     public static string Slugify(string title)
     {
         var lowered = title.ToLowerInvariant();
-        var cleaned = Regex.Replace(lowered, @"[^a-z0-9-\s]", "");
-        var dashed = Regex.Replace(cleaned, @"\s+", "-");
-        var collapsed = Regex.Replace(dashed, @"-+", "-");
+        var cleaned = Regex.Replace(lowered, @"[^a-z0-9-\s]", "", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+        var dashed = Regex.Replace(cleaned, @"\s+", "-", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
+        var collapsed = Regex.Replace(dashed, @"-+", "-", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
         return collapsed.Trim('-');
     }
 
@@ -370,7 +417,7 @@ public static class WorkItemService
         return string.Join("\n", lines);
     }
 
-    private static string? GetString(Dictionary<string, object?> data, string key)
+    private static string? GetString(IDictionary<string, object?> data, string key)
     {
         if (!data.TryGetValue(key, out var value) || value is null)
         {
@@ -379,7 +426,7 @@ public static class WorkItemService
         return value.ToString();
     }
 
-    private static List<string> GetStringList(Dictionary<string, object?> data, string key)
+    private static List<string> GetStringList(IDictionary<string, object?> data, string key)
     {
         if (!data.TryGetValue(key, out var value) || value is null)
         {
@@ -392,11 +439,55 @@ public static class WorkItemService
         return new List<string>();
     }
 
-    private static RelatedLinks GetRelated(Dictionary<string, object?> data)
+    private static Dictionary<string, object?>? GetRelatedMap(IDictionary<string, object?> data)
     {
-        if (!data.TryGetValue("related", out var relatedObj) || relatedObj is not Dictionary<object, object> related)
+        if (!data.TryGetValue("related", out var relatedObj) || relatedObj is null)
         {
-            return new RelatedLinks(new(), new(), new(), new(), new());
+            return null;
+        }
+        if (relatedObj is Dictionary<string, object?> typed)
+        {
+            return typed;
+        }
+        if (relatedObj is Dictionary<object, object> legacy)
+        {
+            return legacy.ToDictionary(
+                kvp => kvp.Key.ToString() ?? string.Empty,
+                kvp => (object?)kvp.Value,
+                StringComparer.OrdinalIgnoreCase);
+        }
+        return null;
+    }
+
+    private static List<object?> EnsureList(Dictionary<string, object?> data, string key)
+    {
+        if (!data.TryGetValue(key, out var value) || value is null)
+        {
+            var empty = new List<object?>();
+            data[key] = empty;
+            return empty;
+        }
+        if (value is List<object?> list)
+        {
+            return list;
+        }
+        if (value is IEnumerable<object> legacyList)
+        {
+            var converted = legacyList.Select(item => (object?)item).ToList();
+            data[key] = converted;
+            return converted;
+        }
+        var reset = new List<object?>();
+        data[key] = reset;
+        return reset;
+    }
+
+    private static RelatedLinks GetRelated(IDictionary<string, object?> data)
+    {
+        var related = GetRelatedMap(data);
+        if (related is null)
+        {
+            return new RelatedLinks(new List<string>(), new List<string>(), new List<string>(), new List<string>(), new List<string>());
         }
 
         List<string> Extract(string key)
@@ -408,6 +499,10 @@ public static class WorkItemService
             if (value is IEnumerable<object> list)
             {
                 return list.Select(item => item?.ToString() ?? string.Empty).Where(item => item.Length > 0).ToList();
+            }
+            if (value is IEnumerable<object?> nullableList)
+            {
+                return nullableList.Select(item => item?.ToString() ?? string.Empty).Where(item => item.Length > 0).ToList();
             }
             return new List<string>();
         }

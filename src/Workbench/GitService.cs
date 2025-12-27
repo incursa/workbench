@@ -12,7 +12,8 @@ public static class GitService
         {
             WorkingDirectory = repoRoot,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            UseShellExecute = false,
         };
         foreach (var arg in args)
         {

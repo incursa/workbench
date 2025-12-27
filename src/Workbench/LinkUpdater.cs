@@ -19,7 +19,7 @@ public static class LinkUpdater
         {
             var content = File.ReadAllText(file);
             var updatedContent = ReplaceLinks(content, repoRoot, file, oldRepoRelative, newRepoRelative, oldAbsolute, newAbsolute);
-            if (!ReferenceEquals(content, updatedContent) && content != updatedContent)
+            if (!ReferenceEquals(content, updatedContent) && !string.Equals(content, updatedContent, StringComparison.OrdinalIgnoreCase))
             {
                 File.WriteAllText(file, updatedContent);
                 updated++;
@@ -38,7 +38,7 @@ public static class LinkUpdater
         string oldAbsolute,
         string newAbsolute)
     {
-        var matches = Regex.Matches(content, @"\[[^\]]*\]\(([^)]+)\)");
+        var matches = Regex.Matches(content, @"\[[^\]]*\]\(([^)]+)\)", RegexOptions.Compiled | RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
         if (matches.Count == 0)
         {
             return content;
@@ -51,7 +51,7 @@ public static class LinkUpdater
             var group = match.Groups[1];
             var target = group.Value;
             var updatedTarget = UpdateTarget(repoRoot, currentFile, target, oldRepoRelative, newRepoRelative, oldAbsolute, newAbsolute);
-            if (updatedTarget == target)
+            if (string.Equals(updatedTarget, target, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -75,7 +75,8 @@ public static class LinkUpdater
         string newAbsolute)
     {
         var trimmed = target.Trim();
-        if (trimmed.StartsWith("#") || trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+        if (trimmed.StartsWith("#", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
             trimmed.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
         {
@@ -109,7 +110,7 @@ public static class LinkUpdater
     {
         var full = Path.IsPathRooted(path) ? path : Path.Combine(repoRoot, path);
         var relative = Path.GetRelativePath(repoRoot, full).Replace('\\', '/');
-        return relative == "." ? string.Empty : relative;
+        return string.Equals(relative, ".", StringComparison.OrdinalIgnoreCase) ? string.Empty : relative;
     }
 
     private static string MakeRelative(string fromRepoRelativeDir, string toRepoRelativePath)

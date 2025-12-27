@@ -5,7 +5,7 @@ namespace Workbench;
 
 public static class SchemaValidationService
 {
-    public static List<string> ValidateConfig(string repoRoot)
+    public static IList<string> ValidateConfig(string repoRoot)
     {
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
         if (!File.Exists(configPath))
@@ -16,11 +16,18 @@ public static class SchemaValidationService
         return ValidateJsonAgainstSchema(configPath, schemaPath, "config");
     }
 
-    public static List<string> ValidateFrontMatter(string repoRoot, string itemPath, Dictionary<string, object?> data)
+    public static IList<string> ValidateFrontMatter(string repoRoot, string itemPath, IDictionary<string, object?> data)
     {
         var schemaPath = Path.Combine(repoRoot, "docs", "30-contracts", "work-item.schema.json");
-        var json = JsonSerializer.Serialize(data);
+        var json = JsonWriter.Serialize(data, indented: false);
         return ValidateJsonAgainstSchema(json, schemaPath, itemPath, jsonIsContent: true);
+    }
+
+    public static IList<string> ValidateDocFrontMatter(string repoRoot, string docPath, IDictionary<string, object?> data)
+    {
+        var schemaPath = Path.Combine(repoRoot, "docs", "30-contracts", "doc.schema.json");
+        var json = JsonWriter.Serialize(data, indented: false);
+        return ValidateJsonAgainstSchema(json, schemaPath, docPath, jsonIsContent: true);
     }
 
     private static List<string> ValidateJsonAgainstSchema(
@@ -54,7 +61,7 @@ public static class SchemaValidationService
         }
         catch (Exception ex)
         {
-            errors.Add($"{context}: schema validation error: {ex.Message}");
+            errors.Add($"{context}: schema validation error: {ex}");
         }
 
         return errors;

@@ -5,14 +5,17 @@
   },
   "projects": {
     "/Users/samuel/src/bravellian/workbench/src/Workbench/Workbench.csproj": {
-      "version": "1.0.0",
+      "version": "0.1.0",
       "restore": {
         "projectUniqueName": "/Users/samuel/src/bravellian/workbench/src/Workbench/Workbench.csproj",
-        "projectName": "Workbench",
+        "projectName": "Bravellian.Workbench",
         "projectPath": "/Users/samuel/src/bravellian/workbench/src/Workbench/Workbench.csproj",
         "packagesPath": "/Users/samuel/.nuget/packages/",
         "outputPath": "/Users/samuel/src/bravellian/workbench/src/Workbench/obj/",
         "projectStyle": "PackageReference",
+        "centralPackageVersionsManagementEnabled": true,
+        "centralPackageFloatingVersionsEnabled": true,
+        "CentralPackageTransitivePinningEnabled": true,
         "configFilePaths": [
           "/Users/samuel/.nuget/NuGet/NuGet.Config"
         ],
@@ -29,6 +32,7 @@
           }
         },
         "warningProperties": {
+          "allWarningsAsErrors": true,
           "warnAsError": [
             "NU1605"
           ]
@@ -43,6 +47,140 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
+          "dependencies": {
+            "Bravellian.Generators": {
+              "target": "Package",
+              "version": "[2025.12.15.1154, )",
+              "versionCentrallyManaged": true
+            },
+            "DotNet.ReproducibleBuilds.Isolated": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.2.39, )",
+              "versionCentrallyManaged": true
+            },
+            "ErrorProne.NET.CoreAnalyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[0.8.2-beta.1, )",
+              "versionCentrallyManaged": true
+            },
+            "JsonSchema.Net": {
+              "target": "Package",
+              "version": "[7.3.2, )",
+              "versionCentrallyManaged": true
+            },
+            "Meziantou.Analyzer": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.0.264, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.CodeAnalysis.BannedApiAnalyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[4.14.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.DotNet.ILCompiler": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.1, )",
+              "autoReferenced": true
+            },
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.1, )",
+              "autoReferenced": true
+            },
+            "Microsoft.SourceLink.GitHub": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.VisualStudio.Threading.Analyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[17.14.15, )",
+              "versionCentrallyManaged": true
+            },
+            "Roslynator.Analyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[4.15.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Roslynator.CodeAnalysis.Analyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[4.15.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Roslynator.Formatting.Analyzers": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[4.15.0, )",
+              "versionCentrallyManaged": true
+            },
+            "SonarAnalyzer.CSharp": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.16.1.129956, )",
+              "versionCentrallyManaged": true
+            },
+            "System.CommandLine": {
+              "target": "Package",
+              "version": "[2.0.1, )",
+              "versionCentrallyManaged": true
+            }
+          },
+          "centralPackageVersions": {
+            "Bogus": "35.6.5",
+            "Bravellian.Generators": "2025.12.15.1154",
+            "CommunityToolkit.Diagnostics": "8.4.0",
+            "coverlet.collector": "6.0.4",
+            "coverlet.msbuild": "6.0.4",
+            "CsvHelper": "33.1.0",
+            "DotNet.ReproducibleBuilds.Isolated": "1.2.39",
+            "ErrorProne.NET.CoreAnalyzers": "0.8.2-beta.1",
+            "FluentValidation": "12.1.1",
+            "JsonSchema.Net": "7.3.2",
+            "LibGit2Sharp": "0.31.0",
+            "Markdig": "0.44.0",
+            "Meziantou.Analyzer": "2.0.264",
+            "Microsoft.CodeAnalysis.BannedApiAnalyzers": "4.14.0",
+            "Microsoft.CodeCoverage": "18.0.1",
+            "Microsoft.NET.Test.Sdk": "18.0.1",
+            "Microsoft.SourceLink.GitHub": "8.0.0",
+            "Microsoft.VisualStudio.Threading.Analyzers": "17.14.15",
+            "Microsoft.VSSDK.BuildTools": "17.14.2120",
+            "MSTest.TestAdapter": "4.0.2",
+            "MSTest.TestFramework": "4.0.2",
+            "NSubstitute": "5.3.0",
+            "NSubstitute.Analyzers.CSharp": "1.0.17",
+            "Roslynator.Analyzers": "4.15.0",
+            "Roslynator.CodeAnalysis.Analyzers": "4.15.0",
+            "Roslynator.Core": "4.15.0",
+            "Roslynator.CSharp": "4.15.0",
+            "Roslynator.CSharp.Workspaces": "4.15.0",
+            "Roslynator.Formatting.Analyzers": "4.15.0",
+            "Roslynator.Workspaces.Core": "4.15.0",
+            "SimpleExec": "12.0.0",
+            "SonarAnalyzer.CSharp": "10.16.1.129956",
+            "StyleCop.Analyzers": "1.1.118",
+            "System.CommandLine": "2.0.1",
+            "YamlDotNet": "16.3.0"
+          },
           "imports": [
             "net461",
             "net462",
@@ -54,6 +192,12 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "runtime.osx-arm64.Microsoft.DotNet.ILCompiler",
+              "version": "[10.0.1, 10.0.1]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"

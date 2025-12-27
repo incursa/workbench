@@ -26,10 +26,7 @@ public sealed record WorkbenchConfig(
         try
         {
             var json = File.ReadAllText(configPath);
-            var config = JsonSerializer.Deserialize<WorkbenchConfig>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var config = JsonSerializer.Deserialize(json, WorkbenchJsonContext.Default.WorkbenchConfig);
             if (config is null)
             {
                 error = "Failed to parse config.";
@@ -39,7 +36,7 @@ public sealed record WorkbenchConfig(
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = ex.ToString();
             return Default;
         }
     }
@@ -59,41 +56,4 @@ public sealed record WorkbenchConfig(
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
     }
-}
-
-public sealed record PathsConfig
-{
-    public string DocsRoot { get; init; } = "docs";
-    public string WorkRoot { get; init; } = "work";
-    public string ItemsDir { get; init; } = "work/items";
-    public string DoneDir { get; init; } = "work/done";
-    public string TemplatesDir { get; init; } = "work/templates";
-    public string WorkboardFile { get; init; } = "work/WORKBOARD.md";
-}
-
-public sealed record IdsConfig
-{
-    public int Width { get; init; } = 4;
-    public PrefixesConfig Prefixes { get; init; } = new();
-}
-
-public sealed record PrefixesConfig
-{
-    public string Bug { get; init; } = "BUG";
-    public string Task { get; init; } = "TASK";
-    public string Spike { get; init; } = "SPIKE";
-}
-
-public sealed record GitConfig
-{
-    public string BranchPattern { get; init; } = "work/{id}-{slug}";
-    public string CommitMessagePattern { get; init; } = "Promote {id}: {title}";
-    public string DefaultBaseBranch { get; init; } = "main";
-    public bool RequireCleanWorkingTree { get; init; } = true;
-}
-
-public sealed record GithubConfig
-{
-    public string Provider { get; init; } = "gh";
-    public bool DefaultDraft { get; init; } = false;
 }

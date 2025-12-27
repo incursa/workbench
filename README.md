@@ -77,6 +77,19 @@ dotnet publish src/Workbench/Workbench.csproj -c Release -r osx-arm64
 
 Replace the runtime identifier with your target (e.g., `win-x64`, `linux-x64`).
 
+Verification steps:
+
+```bash
+# Build output
+ls src/Workbench/bin/Release/net10.0/osx-arm64/publish
+
+# Run the published binary
+./src/Workbench/bin/Release/net10.0/osx-arm64/publish/workbench --help
+```
+
+Expected warnings:
+- None. Treat any trimming/AOT warnings (IL2026/IL3050) as regressions and address them.
+
 ## Command reference
 
 See the full CLI command list and options in `docs/30-contracts/cli-help.md`.
