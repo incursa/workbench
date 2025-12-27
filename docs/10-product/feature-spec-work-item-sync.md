@@ -13,13 +13,13 @@ updated: 2025-12-27
 ## Summary
 
 Add a two-way, non-destructive sync command that keeps local work items and
-GitHub issues aligned and can create missing branches.
+GitHub issues aligned and can create missing branches when a branch is listed.
 
 ## Goals
 
 - Create missing GitHub issues from local work items.
 - Create missing local work items from GitHub issues.
-- Create missing branches for items that need one.
+- Create missing branches for items that list a branch in `related.branches`.
 - Keep metadata aligned without deleting content.
 
 ## Non-goals
@@ -31,7 +31,7 @@ GitHub issues aligned and can create missing branches.
 ## User stories / scenarios
 
 - As a user, I can run sync and see missing items created on either side.
-- As a user, I can sync and get a branch created for any work item that needs it.
+- As a user, I can sync and get a branch created for any work item that lists it in `related.branches`.
 - As a user, I can sync without fear of losing data.
 
 ## Requirements
@@ -39,7 +39,7 @@ GitHub issues aligned and can create missing branches.
 - Sync is bidirectional and never deletes local work items or GitHub issues.
 - If a local work item is missing a GitHub issue, sync creates it.
 - If a GitHub issue is missing a local work item, sync creates it.
-- Sync can create a branch (default: `<ID>-<slug>`).
+- Sync can create a branch when one is listed in `related.branches`.
 - Record the GitHub issue ref and branch name in work item metadata.
 - Support a dry-run mode that reports changes without writing.
 - Always import GitHub issues into local work items, even if the issue is closed.

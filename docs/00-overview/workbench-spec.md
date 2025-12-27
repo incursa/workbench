@@ -297,9 +297,14 @@ Checks prerequisites and workspace:
 - git installed and repo detected
 - config detected (warn if missing, error if invalid)
 - paths exist (warn if not scaffolded)
+Use `--json` for machine-readable output.
 
-#### workbench init [--force]
-Alias for `workbench scaffold`.
+#### workbench init [--force] [--skip-wizard] [--non-interactive] [--front-matter] [--configure-openai] [...]
+Guided setup for scaffolding, front matter guidance, and OpenAI configuration.
+Runs the `run` wizard afterward unless `--skip-wizard` is set.
+
+#### workbench run
+Launches the interactive wizard for common document/work item actions.
 
 #### workbench scaffold [--force]
 Creates the default folder structure, templates, and config.
@@ -370,7 +375,6 @@ Validates:
   Exit code reflects errors/warnings.
 
 Aliases:
-- `workbench init` -> `workbench scaffold`
 - `workbench add task` -> `workbench item new --type task`
 - `workbench add bug` -> `workbench item new --type bug`
 - `workbench add spike` -> `workbench item new --type spike`

@@ -54,11 +54,17 @@ Commands:
 - `workbench doctor`
   - Check git, config, and expected paths.
   - Includes `gh` availability/auth checks; unauthenticated `gh` reports a warning.
+  - Use `--json` for machine-readable output.
   - Example: `workbench doctor`
 
-- `workbench init [--force]`
-  - Alias for `workbench scaffold`.
-  - Example: `workbench init --force`
+- `workbench init [--force] [--skip-wizard] [--non-interactive] [--front-matter] [--configure-openai] [--credential-store <local|external|skip>] [--credential-path <path>] [--openai-provider <openai|none>] [--openai-key <key>] [--openai-model <model>]`
+  - Guided setup for scaffolding, front matter guidance, and OpenAI configuration.
+  - Runs the `run` wizard afterward unless `--skip-wizard` is set.
+  - Example: `workbench init --skip-wizard`
+
+- `workbench run`
+  - Launch the interactive wizard for common document and work item actions.
+  - Example: `workbench run`
 
 - `workbench scaffold [--force]`
   - Create the default folder structure, templates, and config.
@@ -78,7 +84,7 @@ Commands:
 - Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 
 - `workbench item sync [--id <ID...>] [--issue <id|url...>] [--prefer <local|github>] [--dry-run]`
-  - Sync work items with GitHub issues and branches (two-way, no deletes). Defaults to pushing local content to GitHub unless `--prefer github` is set for ID-scoped sync.
+  - Sync work items with GitHub issues and branches (two-way, no deletes). Branches are only created when listed in `related.branches`. Defaults to pushing local content to GitHub unless `--prefer github` is set for ID-scoped sync.
   - Example: `workbench item sync --dry-run`
 
 - `workbench add task --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
@@ -189,7 +195,6 @@ Commands:
   - Alias for `workbench validate`.
 
 Aliases and intent:
-- "init" maps to scaffolding the repo.
 - "add task/bug/spike" is shorthand for item creation.
 - "verify all work" maps to `workbench validate` (use `--strict` for CI).
 - "create pr" maps to `workbench pr create <ID>`.

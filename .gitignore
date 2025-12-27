@@ -429,3 +429,5 @@ FodyWeavers.xsd
 .bak
 
 .DS_Store
+
+.workbench/credentials.env
