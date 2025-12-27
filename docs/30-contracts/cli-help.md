@@ -139,9 +139,9 @@ Commands:
   - Sync doc/work item backlinks. `--all` adds Workbench front matter to all docs; `--issues` syncs GitHub issue links; `--include-done` includes done/dropped items; `--dry-run` reports changes without writing.
   - Example: `workbench doc sync --all --issues --dry-run`
 
-- `workbench nav sync [--issues <true|false>] [--include-done] [--dry-run]`
-  - Sync doc/work item backlinks and update navigation indexes. Defaults to syncing issue links; set `--issues false` to skip GitHub lookups.
-  - Example: `workbench nav sync --include-done --issues false`
+- `workbench nav sync [--issues <true|false>] [--include-done] [--force] [--dry-run]`
+  - Sync doc/work item backlinks and update navigation indexes. Defaults to syncing issue links; set `--issues false` to skip GitHub lookups. `--force` rewrites index sections even if they are unchanged.
+  - Example: `workbench nav sync --include-done --issues false --force`
 
 - `workbench doc summarize [--staged] [--path <path...>] [--dry-run] [--update-index]`
   - Summarize markdown diffs using AI and append `workbench.changeNotes` entries.

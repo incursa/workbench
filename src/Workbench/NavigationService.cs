@@ -32,6 +32,7 @@ public static class NavigationService
         WorkbenchConfig config,
         bool includeDone,
         bool syncIssues,
+        bool force,
         bool dryRun)
     {
         var docSync = DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun);
@@ -45,8 +46,8 @@ public static class NavigationService
         var workIndex = BuildWorkIndex(repoRoot, config, workReadmePath, docEntries, includeDone);
 
         var indexUpdated = 0;
-        indexUpdated += UpdateIndexSection(docReadmePath, "workbench:docs-index", docIndex, dryRun);
-        indexUpdated += UpdateIndexSection(workReadmePath, "workbench:work-index", workIndex, dryRun);
+        indexUpdated += UpdateIndexSection(docReadmePath, "workbench:docs-index", docIndex, force, dryRun);
+        indexUpdated += UpdateIndexSection(workReadmePath, "workbench:work-index", workIndex, force, dryRun);
 
         return new NavigationSyncResult(
             docSync.DocsUpdated,
@@ -384,7 +385,7 @@ public static class NavigationService
         return NormalizePath(relative);
     }
 
-    private static int UpdateIndexSection(string filePath, string markerName, string content, bool dryRun)
+    private static int UpdateIndexSection(string filePath, string markerName, string content, bool force, bool dryRun)
     {
         if (!File.Exists(filePath))
         {
@@ -395,14 +396,14 @@ public static class NavigationService
         var endMarker = $"<!-- {markerName}:end -->";
         var fileContent = File.ReadAllText(filePath);
         var updated = ReplaceSection(fileContent, startMarker, endMarker, content, out var newContent);
-        if (!updated)
+        if (!updated && !force)
         {
             return 0;
         }
 
         if (!dryRun)
         {
-            File.WriteAllText(filePath, newContent);
+            File.WriteAllText(filePath, updated ? newContent : fileContent);
         }
         return 1;
     }

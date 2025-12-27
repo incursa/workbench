@@ -2389,6 +2389,10 @@ var navSyncIssuesOption = new Option<bool>("--issues")
     Description = "Sync GitHub issue links for work items.",
     DefaultValueFactory = _ => true
 };
+var navSyncForceOption = new Option<bool>("--force")
+{
+    Description = "Rewrite index sections even if content is unchanged."
+};
 var navSyncIncludeDoneOption = new Option<bool>("--include-done")
 {
     Description = "Include done/dropped work items in indexes."
@@ -2398,6 +2402,7 @@ var navSyncDryRunOption = new Option<bool>("--dry-run")
     Description = "Report changes without writing files."
 };
 navSyncCommand.Options.Add(navSyncIssuesOption);
+navSyncCommand.Options.Add(navSyncForceOption);
 navSyncCommand.Options.Add(navSyncIncludeDoneOption);
 navSyncCommand.Options.Add(navSyncDryRunOption);
 navSyncCommand.SetAction(parseResult =>
@@ -2408,6 +2413,7 @@ navSyncCommand.SetAction(parseResult =>
         var format = parseResult.GetValue(formatOption) ?? "table";
         var includeDone = parseResult.GetValue(navSyncIncludeDoneOption);
         var syncIssues = parseResult.GetValue(navSyncIssuesOption);
+        var force = parseResult.GetValue(navSyncForceOption);
         var dryRun = parseResult.GetValue(navSyncDryRunOption);
         var repoRoot = ResolveRepo(repo);
         var resolvedFormat = ResolveFormat(format);
@@ -2419,7 +2425,7 @@ navSyncCommand.SetAction(parseResult =>
             return;
         }
 
-        var result = NavigationService.SyncNavigation(repoRoot, config, includeDone, syncIssues, dryRun);
+        var result = NavigationService.SyncNavigation(repoRoot, config, includeDone, syncIssues, force, dryRun);
         if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
         {
             var payload = new NavSyncOutput(
