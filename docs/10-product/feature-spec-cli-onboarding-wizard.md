@@ -1,8 +1,9 @@
 ---
 workbench:
   type: spec
-  workItems: []
-  codeRefs: []
+  workItems:
+    - TASK-0001
+  codeRefs: null
 owner: platform
 status: draft
 updated: 2025-12-27
@@ -106,7 +107,7 @@ command that walks users through common actions.
 
 ## Related ADRs
 
-- </docs/40-decisions/ADR-0000-short-title.md>
+- </docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md>
 
 ## Decisions
 

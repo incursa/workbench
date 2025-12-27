@@ -10,7 +10,8 @@ updated: 2025-12-27
 
 # Decisions
 
-Architecture Decision Records (ADRs) and tradeoff history.
+Architecture Decision Records (ADRs) and tradeoff history. An ADR captures a
+significant technical or product decision, why it was made, and its impact.
 
 Templates:
 - `docs/templates/adr.md`

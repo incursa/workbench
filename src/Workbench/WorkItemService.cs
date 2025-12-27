@@ -126,6 +126,53 @@ public static class WorkItemService
         return LoadItem(created.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
     }
 
+    public static WorkItem UpdateItemFromGithubIssue(string path, GithubIssue issue, bool apply)
+    {
+        var content = File.ReadAllText(path);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            throw new InvalidOperationException($"Front matter error: {error}");
+        }
+
+        var data = frontMatter!.Data;
+        data["title"] = issue.Title;
+        if (issue.Labels.Count > 0)
+        {
+            data["tags"] = issue.Labels.ToList();
+        }
+
+        var related = GetRelatedMap(data);
+        if (related is null)
+        {
+            related = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            data["related"] = related;
+        }
+
+        var issues = EnsureList(related, "issues");
+        AddUniqueLink(issues, issue.Url);
+
+        var prs = EnsureList(related, "prs");
+        foreach (var pr in issue.PullRequests)
+        {
+            AddUniqueLink(prs, pr);
+        }
+
+        EnsureList(related, "branches");
+
+        var summary = BuildIssueSummary(issue);
+        var body = frontMatter.Body;
+        body = ReplaceTitleHeading(body, GetString(data, "id") ?? string.Empty, issue.Title);
+        body = ReplaceSection(body, "Summary", summary);
+        frontMatter = new FrontMatter(data, body);
+
+        if (apply)
+        {
+            File.WriteAllText(path, frontMatter.Serialize());
+        }
+
+        return LoadItem(path) ?? throw new InvalidOperationException("Failed to reload work item.");
+    }
+
     public static WorkItemListResult ListItems(string repoRoot, WorkbenchConfig config, bool includeDone)
     {
         var items = new List<WorkItem>();
@@ -207,6 +254,46 @@ public static class WorkItemService
         }
 
         return updatedCount;
+    }
+
+    public static int NormalizeRelatedLinks(string repoRoot, WorkbenchConfig config, bool includeDone, bool dryRun)
+    {
+        var updated = 0;
+        var items = ListItems(repoRoot, config, includeDone).Items;
+        foreach (var item in items)
+        {
+            var content = File.ReadAllText(item.Path);
+            if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+            {
+                throw new InvalidOperationException($"Front matter error: {error}");
+            }
+
+            var data = frontMatter!.Data;
+            var related = GetRelatedMap(data);
+            if (related is null)
+            {
+                continue;
+            }
+
+            var changed = false;
+            changed |= NormalizeList(related, "specs");
+            changed |= NormalizeList(related, "adrs");
+            changed |= NormalizeList(related, "files");
+            changed |= NormalizeList(related, "prs");
+            changed |= NormalizeList(related, "issues");
+            changed |= NormalizeList(related, "branches");
+
+            if (changed)
+            {
+                if (!dryRun)
+                {
+                    File.WriteAllText(item.Path, frontMatter.Serialize());
+                }
+                updated++;
+            }
+        }
+
+        return updated;
     }
 
     public static WorkItem? LoadItem(string path)
@@ -352,16 +439,37 @@ public static class WorkItemService
         }
 
         var list = EnsureList(related, key);
-        if (!list.OfType<string>().Any(entry => entry.Equals(link, StringComparison.OrdinalIgnoreCase)))
+        var normalizedLink = NormalizeRelatedLink(link);
+        for (var index = 0; index < list.Count; index++)
         {
-            list.Add(link);
-            if (apply)
+            var entry = list[index]?.ToString();
+            if (entry is null)
             {
-                File.WriteAllText(path, frontMatter.Serialize());
+                continue;
             }
-            return true;
+
+            var normalizedEntry = NormalizeRelatedLink(entry);
+            if (normalizedEntry.Equals(normalizedLink, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!entry.Equals(normalizedLink, StringComparison.OrdinalIgnoreCase))
+                {
+                    list[index] = normalizedLink;
+                    if (apply)
+                    {
+                        File.WriteAllText(path, frontMatter.Serialize());
+                    }
+                    return true;
+                }
+                return false;
+            }
         }
-        return false;
+
+        list.Add(normalizedLink);
+        if (apply)
+        {
+            File.WriteAllText(path, frontMatter.Serialize());
+        }
+        return true;
     }
 
     public static bool RemoveRelatedLink(string path, string key, string link, bool apply = true)
@@ -576,6 +684,26 @@ public static class WorkItemService
         return string.Join("\n", updated);
     }
 
+    private static string ReplaceTitleHeading(string body, string id, string title)
+    {
+        var lines = body.Replace("\r\n", "\n").Split('\n').ToList();
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var line = lines[i];
+            if (!line.StartsWith("# ", StringComparison.Ordinal))
+            {
+                continue;
+            }
+            if (!string.IsNullOrWhiteSpace(id) && !line.Contains(id, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            lines[i] = string.IsNullOrWhiteSpace(id) ? $"# {title}" : $"# {id} - {title}";
+            return string.Join("\n", lines);
+        }
+        return string.Join("\n", lines);
+    }
+
     private static string BuildIssueSummary(GithubIssue issue)
     {
         var lines = new List<string>();
@@ -711,5 +839,44 @@ public static class WorkItemService
             Extract("prs"),
             Extract("issues"),
             Extract("branches"));
+    }
+
+    private static string NormalizeRelatedLink(string link)
+    {
+        var trimmed = link.Trim();
+        if (trimmed.StartsWith("<", StringComparison.Ordinal) && trimmed.EndsWith(">", StringComparison.Ordinal))
+        {
+            trimmed = trimmed[1..^1];
+        }
+        return trimmed;
+    }
+
+    private static bool NormalizeList(Dictionary<string, object?> related, string key)
+    {
+        if (!related.TryGetValue(key, out var value) || value is null)
+        {
+            return false;
+        }
+
+        if (value is not IEnumerable<object> list)
+        {
+            return false;
+        }
+
+        var normalized = list
+            .Select(entry => entry?.ToString() ?? string.Empty)
+            .Select(NormalizeRelatedLink)
+            .Where(entry => entry.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var current = list.Select(entry => entry?.ToString() ?? string.Empty).ToList();
+        if (normalized.SequenceEqual(current, StringComparer.Ordinal))
+        {
+            return false;
+        }
+
+        related[key] = normalized.Cast<object?>().ToList();
+        return true;
     }
 }

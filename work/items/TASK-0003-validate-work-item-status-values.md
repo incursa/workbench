@@ -1,0 +1,32 @@
+---
+id: TASK-0003
+type: task
+status: draft
+priority: medium
+owner: platform
+created: 2025-12-27
+updated: null
+tags: null
+related:
+  specs: null
+  adrs: null
+  files: null
+  prs: null
+  issues:
+    - "https://github.com/bravellian/workbench/issues/14"
+  branches:
+    - TASK-0003-validate-work-item-status-values
+title: Validate work item status values
+---
+
+# TASK-0003 - Validate work item status values
+
+## Summary
+
+Prevent setting work item statuses that are not in the allowed set. Add a
+future-friendly path for configurable statuses.
+
+## Acceptance criteria
+- `workbench item status` rejects invalid status values with a clear error.
+- `workbench item new` and `workbench item import` validate status overrides.
+- Validation logic is centralized so future configuration can override defaults.

@@ -31,7 +31,10 @@ jobs:
         run: |
           $now = [System.DateTime]::UtcNow
           $revision = $now.Hour * 60 + $now.Minute
-          $baseVersion = "$($now.Year).$($now.Month).$($now.Day).$revision"
+          $revisionText = "{0:D4}" -f $revision
+          $monthText = "{0:D2}" -f $now.Month
+          $dayText = "{0:D2}" -f $now.Day
+          $baseVersion = "$($now.Year).$monthText.$dayText.$revisionText"
           $version = $baseVersion
 
           try {
@@ -152,10 +155,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: [version, publish-aot]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download AOT artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts/aot-binaries
+
+      - name: Package skills
+        run: scripts/package-skills.sh
+        env:
+          VERSION: ${{ needs.version.outputs.semver }}
 
       - name: Create release and upload AOT binaries
         uses: softprops/action-gh-release@v2
@@ -164,4 +175,6 @@ jobs:
           name: Workbench v${{ needs.version.outputs.semver }}
           generate_release_notes: true
           draft: true
-          files: ./artifacts/aot-binaries/**/*
+          files: |
+            ./artifacts/aot-binaries/**/*
+            ./artifacts/skills/*.skill

@@ -383,6 +383,26 @@ public static class GithubService
         return result.StdOut.Trim();
     }
 
+    public static void UpdateIssue(string repoRoot, GithubIssueRef issueRef, string title, string body)
+    {
+        EnsureAuthenticated(repoRoot, issueRef.Repo.Host);
+
+        var args = new List<string> { "issue", "edit", issueRef.Number.ToString(CultureInfo.InvariantCulture), "--title", title, "--body", body };
+        if (!string.IsNullOrWhiteSpace(issueRef.Repo.Host) && !string.Equals(issueRef.Repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            args.Add("--hostname");
+            args.Add(issueRef.Repo.Host);
+        }
+        args.Add("--repo");
+        args.Add($"{issueRef.Repo.Owner}/{issueRef.Repo.Repo}");
+
+        var result = Run(repoRoot, args.ToArray());
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh issue edit failed.");
+        }
+    }
+
     public static string CreatePullRequest(string repoRoot, string title, string body, string? baseBranch, bool draft)
     {
         EnsureAuthenticated(repoRoot);

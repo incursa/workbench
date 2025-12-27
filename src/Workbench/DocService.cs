@@ -68,7 +68,7 @@ public static class DocService
         return new DocCreateResult(docPath, type, workItems);
     }
 
-    public static DocSyncResult SyncLinks(string repoRoot, WorkbenchConfig config, bool includeAllDocs, bool syncIssues, bool dryRun)
+    public static DocSyncResult SyncLinks(string repoRoot, WorkbenchConfig config, bool includeAllDocs, bool syncIssues, bool includeDone, bool dryRun)
     {
         var itemsUpdated = 0;
         var docsUpdated = 0;
@@ -126,6 +126,10 @@ public static class DocService
 
         foreach (var item in itemsById.Values)
         {
+            if (!includeDone && IsTerminalStatus(item.Status))
+            {
+                continue;
+            }
             docsUpdated += SyncDocLinksForItem(repoRoot, item, missingDocs, dryRun);
         }
 
@@ -209,6 +213,12 @@ public static class DocService
         updates += SyncDocList(repoRoot, item, item.Related.Specs, "spec", missingDocs, dryRun);
         updates += SyncDocList(repoRoot, item, item.Related.Adrs, "adr", missingDocs, dryRun);
         return updates;
+    }
+
+    private static bool IsTerminalStatus(string status)
+    {
+        return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int SyncDocList(
@@ -385,7 +395,7 @@ public static class DocService
         if (!data.TryGetValue(key, out var value) || value is null)
         {
             var list = new List<string>();
-            data[key] = list.Cast<object?>().ToList();
+            data[key] = list;
             changed = true;
             return list;
         }
@@ -395,11 +405,11 @@ public static class DocService
                 .Select(item => item?.ToString() ?? string.Empty)
                 .Where(item => item.Length > 0)
                 .ToList();
-            data[key] = list.Cast<object?>().ToList();
+            data[key] = list;
             return list;
         }
         var reset = new List<string>();
-        data[key] = reset.Cast<object?>().ToList();
+        data[key] = reset;
         changed = true;
         return reset;
     }
@@ -450,11 +460,16 @@ public static class DocService
 
     private static string ResolveDocPath(string repoRoot, string link)
     {
-        if (link.StartsWith("/", StringComparison.Ordinal))
+        var trimmed = link.Trim();
+        if (trimmed.StartsWith("<", StringComparison.Ordinal) && trimmed.EndsWith(">", StringComparison.Ordinal))
         {
-            return Path.Combine(repoRoot, link.TrimStart('/'));
+            trimmed = trimmed[1..^1];
         }
-        return Path.Combine(repoRoot, link);
+        if (trimmed.StartsWith("/", StringComparison.Ordinal))
+        {
+            return Path.Combine(repoRoot, trimmed.TrimStart('/'));
+        }
+        return Path.Combine(repoRoot, trimmed);
     }
 
     private static HashSet<string> BuildReferencedDocSet(string repoRoot, IEnumerable<WorkItem> items)

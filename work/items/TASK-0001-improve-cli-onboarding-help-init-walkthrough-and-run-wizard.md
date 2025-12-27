@@ -9,12 +9,15 @@ updated: null
 tags: null
 related:
   specs:
-    - </docs/10-product/feature-spec-cli-onboarding-wizard.md>
-  adrs: null
+    - /docs/10-product/feature-spec-cli-onboarding-wizard.md
+  adrs:
+    - /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md
   files: null
   prs: null
-  issues: null
-  branches: []
+  issues:
+    - "https://github.com/bravellian/workbench/issues/15"
+  branches:
+    - TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard
 title: "Improve CLI onboarding help, init walkthrough, and run wizard"
 ---
 

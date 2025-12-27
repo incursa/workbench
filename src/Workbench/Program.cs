@@ -35,6 +35,55 @@ static bool IsTerminalStatus(string status)
         || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
 }
 
+static bool StringsEqual(string? left, string? right)
+{
+    return string.Equals(left?.Trim(), right?.Trim(), StringComparison.Ordinal);
+}
+
+static string ExtractSection(string body, string heading)
+{
+    var lines = body.Replace("\r\n", "\n").Split('\n');
+    var start = -1;
+    for (var i = 0; i < lines.Length; i++)
+    {
+        if (lines[i].Trim().Equals($"## {heading}", StringComparison.OrdinalIgnoreCase))
+        {
+            start = i + 1;
+            break;
+        }
+    }
+    if (start == -1)
+    {
+        return string.Empty;
+    }
+
+    var collected = new List<string>();
+    for (var i = start; i < lines.Length; i++)
+    {
+        var line = lines[i];
+        if (line.TrimStart().StartsWith("## ", StringComparison.Ordinal))
+        {
+            break;
+        }
+        collected.Add(line);
+    }
+    return string.Join("\n", collected).Trim();
+}
+
+static void PrintRelatedLinks(string label, IEnumerable<string> links)
+{
+    var entries = links.Where(link => !string.IsNullOrWhiteSpace(link)).ToList();
+    if (entries.Count == 0)
+    {
+        return;
+    }
+    Console.WriteLine($"{label}:");
+    foreach (var entry in entries)
+    {
+        Console.WriteLine($"- {entry}");
+    }
+}
+
 static WorkItemPayload ItemToPayload(WorkItem item, bool includeBody = false)
 {
     return new WorkItemPayload(
@@ -630,7 +679,7 @@ static Option<string?> CreateStatusOption()
 {
     var option = new Option<string?>("--status")
     {
-        Description = "Work item status"
+        Description = "Work item status: draft, ready, in-progress, blocked, done, dropped"
     };
     option.CompletionSources.Add("draft", "ready", "in-progress", "blocked", "done", "dropped");
     return option;
@@ -807,12 +856,18 @@ var syncIssueOption = new Option<string[]>("--issue")
 {
     Description = "Issue numbers or URLs to import (limits GitHub-to-local)."
 };
+var syncPreferOption = new Option<string?>("--prefer")
+{
+    Description = "When descriptions differ, prefer 'local' or 'github'."
+};
+syncPreferOption.CompletionSources.Add("local", "github");
 var syncDryRunOption = new Option<bool>("--dry-run")
 {
     Description = "Report changes without writing."
 };
 itemSyncCommand.Options.Add(syncIdOption);
 itemSyncCommand.Options.Add(syncIssueOption);
+itemSyncCommand.Options.Add(syncPreferOption);
 itemSyncCommand.Options.Add(syncDryRunOption);
 itemSyncCommand.SetAction(parseResult =>
 {
@@ -822,6 +877,7 @@ itemSyncCommand.SetAction(parseResult =>
         var format = parseResult.GetValue(formatOption) ?? "table";
         var ids = parseResult.GetValue(syncIdOption) ?? Array.Empty<string>();
         var issueInputs = parseResult.GetValue(syncIssueOption) ?? Array.Empty<string>();
+        var prefer = parseResult.GetValue(syncPreferOption);
         var dryRun = parseResult.GetValue(syncDryRunOption);
         var repoRoot = ResolveRepo(repo);
         var resolvedFormat = ResolveFormat(format);
@@ -834,6 +890,7 @@ itemSyncCommand.SetAction(parseResult =>
         }
 
         var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
+        var preferGithub = string.Equals(prefer, "github", StringComparison.OrdinalIgnoreCase);
         var items = new List<WorkItem>();
         if (ids.Length > 0)
         {
@@ -867,6 +924,19 @@ itemSyncCommand.SetAction(parseResult =>
             }
         }
 
+        var issueCache = new Dictionary<string, GithubIssue>(StringComparer.OrdinalIgnoreCase);
+        GithubIssue FetchIssue(string issueLink, out GithubIssueRef issueRef)
+        {
+            issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo);
+            var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
+            if (!issueCache.TryGetValue(key, out var issue))
+            {
+                issue = GithubService.FetchIssue(repoRoot, issueRef);
+                issueCache[key] = issue;
+            }
+            return issue;
+        }
+
         var imported = new List<ItemSyncImportEntry>();
         IList<GithubIssue> issuesToImport;
         if (issueInputs.Length > 0)
@@ -878,6 +948,10 @@ itemSyncCommand.SetAction(parseResult =>
                 selected.Add(GithubService.FetchIssue(repoRoot, issueRef));
             }
             issuesToImport = selected;
+        }
+        else if (ids.Length > 0)
+        {
+            issuesToImport = Array.Empty<GithubIssue>();
         }
         else
         {
@@ -915,6 +989,58 @@ itemSyncCommand.SetAction(parseResult =>
             issueMap[key] = item;
         }
 
+        var issuesUpdated = new List<ItemSyncIssueUpdateEntry>();
+        var itemsUpdated = new List<ItemSyncItemUpdateEntry>();
+        foreach (var item in items)
+        {
+            var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
+            if (string.IsNullOrWhiteSpace(issueLink))
+            {
+                continue;
+            }
+
+            var issue = FetchIssue(issueLink, out var issueRef);
+            if (preferGithub)
+            {
+                var summary = ExtractSection(item.Body, "Summary");
+                var needsUpdate = !StringsEqual(item.Title, issue.Title);
+                if (!needsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
+                {
+                    needsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
+                }
+                if (!needsUpdate)
+                {
+                    continue;
+                }
+
+                if (!dryRun)
+                {
+                    WorkItemService.UpdateItemFromGithubIssue(item.Path, issue, apply: true);
+                }
+                itemsUpdated.Add(new ItemSyncItemUpdateEntry(item.Id, issue.Url));
+            }
+            else
+            {
+                if (IsTerminalStatus(item.Status))
+                {
+                    continue;
+                }
+
+                var desiredTitle = item.Title;
+                var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
+                if (StringsEqual(issue.Title, desiredTitle) && StringsEqual(issue.Body, desiredBody))
+                {
+                    continue;
+                }
+
+                if (!dryRun)
+                {
+                    GithubService.UpdateIssue(repoRoot, issueRef, desiredTitle, desiredBody);
+                }
+                issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
+            }
+        }
+
         var issuesCreated = new List<ItemSyncIssueEntry>();
         foreach (var item in items)
         {
@@ -927,7 +1053,7 @@ itemSyncCommand.SetAction(parseResult =>
                 continue;
             }
 
-            var body = PullRequestBuilder.BuildBody(item);
+            var body = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
             if (dryRun)
             {
                 issuesCreated.Add(new ItemSyncIssueEntry(item.Id, string.Empty));
@@ -969,7 +1095,7 @@ itemSyncCommand.SetAction(parseResult =>
         {
             var payload = new ItemSyncOutput(
                 true,
-                new ItemSyncData(imported, issuesCreated, branchesCreated, dryRun));
+                new ItemSyncData(imported, issuesCreated, issuesUpdated, itemsUpdated, branchesCreated, dryRun));
             WriteJson(payload, WorkbenchJsonContext.Default.ItemSyncOutput);
         }
         else
@@ -990,6 +1116,18 @@ itemSyncCommand.SetAction(parseResult =>
             {
                 var suffix = string.IsNullOrWhiteSpace(issue.IssueUrl) ? "Would create issue" : issue.IssueUrl;
                 Console.WriteLine($"{suffix} for {issue.ItemId}.");
+            }
+
+            foreach (var issue in issuesUpdated)
+            {
+                var suffix = string.IsNullOrWhiteSpace(issue.IssueUrl) ? "Would update issue" : issue.IssueUrl;
+                Console.WriteLine($"{suffix} for {issue.ItemId}.");
+            }
+
+            foreach (var item in itemsUpdated)
+            {
+                var suffix = string.IsNullOrWhiteSpace(item.IssueUrl) ? "Would update item" : item.IssueUrl;
+                Console.WriteLine($"{suffix} for {item.ItemId}.");
             }
 
             foreach (var branch in branchesCreated)
@@ -1017,7 +1155,7 @@ var listTypeOption = new Option<string>("--type")
 listTypeOption.CompletionSources.Add("bug", "task", "spike");
 var listStatusOption = new Option<string>("--status")
 {
-    Description = "Filter by status"
+    Description = "Filter by status: draft, ready, in-progress, blocked, done, dropped"
 };
 listStatusOption.CompletionSources.Add("draft", "ready", "in-progress", "blocked", "done", "dropped");
 var includeDoneOption = new Option<bool>("--include-done")
@@ -1120,6 +1258,12 @@ itemShowCommand.SetAction(parseResult =>
             Console.WriteLine($"Type: {item.Type}");
             Console.WriteLine($"Status: {item.Status}");
             Console.WriteLine($"Path: {item.Path}");
+            PrintRelatedLinks("Specs", item.Related.Specs);
+            PrintRelatedLinks("ADRs", item.Related.Adrs);
+            PrintRelatedLinks("Files", item.Related.Files);
+            PrintRelatedLinks("PRs", item.Related.Prs);
+            PrintRelatedLinks("Issues", item.Related.Issues);
+            PrintRelatedLinks("Branches", item.Related.Branches);
         }
         SetExitCode(0);
     }
@@ -1138,7 +1282,7 @@ var statusIdArg = new Argument<string>("id")
 };
 var statusValueArg = new Argument<string>("status")
 {
-    Description = "New status."
+    Description = "New status: draft, ready, in-progress, blocked, done, dropped."
 };
 var noteOption = new Option<string?>("--note")
 {
@@ -2052,12 +2196,17 @@ var docSyncIssuesOption = new Option<bool>("--issues")
 {
     Description = "Sync GitHub issue links for work items."
 };
+var docSyncIncludeDoneOption = new Option<bool>("--include-done")
+{
+    Description = "Include done/dropped work items."
+};
 var docSyncDryRunOption = new Option<bool>("--dry-run")
 {
     Description = "Report changes without writing files."
 };
 docSyncCommand.Options.Add(docSyncAllOption);
 docSyncCommand.Options.Add(docSyncIssuesOption);
+docSyncCommand.Options.Add(docSyncIncludeDoneOption);
 docSyncCommand.Options.Add(docSyncDryRunOption);
 docSyncCommand.SetAction(parseResult =>
 {
@@ -2067,6 +2216,7 @@ docSyncCommand.SetAction(parseResult =>
         var format = parseResult.GetValue(formatOption) ?? "table";
         var all = parseResult.GetValue(docSyncAllOption);
         var syncIssues = parseResult.GetValue(docSyncIssuesOption);
+        var includeDone = parseResult.GetValue(docSyncIncludeDoneOption);
         var dryRun = parseResult.GetValue(docSyncDryRunOption);
         var repoRoot = ResolveRepo(repo);
         var resolvedFormat = ResolveFormat(format);
@@ -2078,7 +2228,7 @@ docSyncCommand.SetAction(parseResult =>
             return;
         }
 
-        var result = DocService.SyncLinks(repoRoot, config, all, syncIssues, dryRun);
+        var result = DocService.SyncLinks(repoRoot, config, all, syncIssues, includeDone, dryRun);
         if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
         {
             var payload = new DocSyncOutput(
@@ -2231,6 +2381,98 @@ docCommand.Subcommands.Add(docNewCommand);
 docCommand.Subcommands.Add(docSyncCommand);
 docCommand.Subcommands.Add(docSummaryCommand);
 root.Subcommands.Add(docCommand);
+
+var navCommand = new Command("nav", "Navigation/index commands.");
+var navSyncCommand = new Command("sync", "Sync links and navigation indexes.");
+var navSyncIssuesOption = new Option<bool>("--issues")
+{
+    Description = "Sync GitHub issue links for work items.",
+    DefaultValueFactory = _ => true
+};
+var navSyncIncludeDoneOption = new Option<bool>("--include-done")
+{
+    Description = "Include done/dropped work items in indexes."
+};
+var navSyncDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+navSyncCommand.Options.Add(navSyncIssuesOption);
+navSyncCommand.Options.Add(navSyncIncludeDoneOption);
+navSyncCommand.Options.Add(navSyncDryRunOption);
+navSyncCommand.SetAction(parseResult =>
+{
+    try
+    {
+        var repo = parseResult.GetValue(repoOption);
+        var format = parseResult.GetValue(formatOption) ?? "table";
+        var includeDone = parseResult.GetValue(navSyncIncludeDoneOption);
+        var syncIssues = parseResult.GetValue(navSyncIssuesOption);
+        var dryRun = parseResult.GetValue(navSyncDryRunOption);
+        var repoRoot = ResolveRepo(repo);
+        var resolvedFormat = ResolveFormat(format);
+        var config = WorkbenchConfig.Load(repoRoot, out var configError);
+        if (configError is not null)
+        {
+            Console.WriteLine($"Config error: {configError}");
+            SetExitCode(2);
+            return;
+        }
+
+        var result = NavigationService.SyncNavigation(repoRoot, config, includeDone, syncIssues, dryRun);
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new NavSyncOutput(
+                true,
+                new NavSyncData(
+                    result.DocsUpdated,
+                    result.ItemsUpdated,
+                    result.IndexFilesUpdated,
+                    result.MissingDocs,
+                    result.MissingItems,
+                    result.Warnings));
+            WriteJson(payload, WorkbenchJsonContext.Default.NavSyncOutput);
+        }
+        else
+        {
+            Console.WriteLine($"Docs updated: {result.DocsUpdated}");
+            Console.WriteLine($"Work items updated: {result.ItemsUpdated}");
+            Console.WriteLine($"Index files updated: {result.IndexFilesUpdated}");
+            if (result.Warnings.Count > 0)
+            {
+                Console.WriteLine("Warnings:");
+                foreach (var warning in result.Warnings)
+                {
+                    Console.WriteLine($"- {warning}");
+                }
+            }
+            if (result.MissingDocs.Count > 0)
+            {
+                Console.WriteLine("Missing docs:");
+                foreach (var entry in result.MissingDocs)
+                {
+                    Console.WriteLine($"- {entry}");
+                }
+            }
+            if (result.MissingItems.Count > 0)
+            {
+                Console.WriteLine("Missing work items:");
+                foreach (var entry in result.MissingItems)
+                {
+                    Console.WriteLine($"- {entry}");
+                }
+            }
+        }
+        SetExitCode(0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+        SetExitCode(2);
+    }
+});
+navCommand.Subcommands.Add(navSyncCommand);
+root.Subcommands.Add(navCommand);
 
 var specCommand = new Command("spec", "Spec documentation commands.");
 var specNewCommand = new Command("new", "Create a spec document and auto-link work items.");

@@ -178,6 +178,12 @@ Data:
   "issuesCreated": [
     { "itemId": "TASK-0042", "issueUrl": "https://github.com/org/repo/issues/99" }
   ],
+  "issuesUpdated": [
+    { "itemId": "TASK-0042", "issueUrl": "https://github.com/org/repo/issues/42" }
+  ],
+  "itemsUpdated": [
+    { "itemId": "TASK-0042", "issueUrl": "https://github.com/org/repo/issues/42" }
+  ],
   "branchesCreated": [
     { "itemId": "TASK-0042", "branch": "TASK-0042-add-docs" }
   ],
@@ -271,5 +277,19 @@ Data:
   "errors": [ { /* ValidationMessage */ } ],
   "warnings": [ { /* ValidationMessage */ } ],
   "counts": { "errors": 1, "warnings": 0 }
+}
+```
+
+## workbench nav sync
+
+Data:
+```json
+{
+  "docsUpdated": 1,
+  "itemsUpdated": 1,
+  "indexFilesUpdated": 2,
+  "missingDocs": [],
+  "missingItems": [],
+  "warnings": []
 }
 ```

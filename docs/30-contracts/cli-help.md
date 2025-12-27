@@ -71,12 +71,14 @@ Commands:
 - `workbench item new --type <bug|task|spike> --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
   - Create a new work item in `work/items` using templates and ID allocation.
   - Example: `workbench item new --type task --title "Add promote command"`
+- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 - `workbench item import --issue <id|url...> [--type <bug|task|spike>] [--status <...>] [--priority <...>] [--owner <...>]`
   - Import GitHub issues into work items, linking related PRs when available.
   - Example: `workbench item import --issue 42 --issue https://github.com/org/repo/issues/18`
+- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 
-- `workbench item sync [--id <ID...>] [--issue <id|url...>] [--dry-run]`
-  - Sync work items with GitHub issues and branches (two-way, no deletes).
+- `workbench item sync [--id <ID...>] [--issue <id|url...>] [--prefer <local|github>] [--dry-run]`
+  - Sync work items with GitHub issues and branches (two-way, no deletes). Defaults to pushing local content to GitHub unless `--prefer github` is set for ID-scoped sync.
   - Example: `workbench item sync --dry-run`
 
 - `workbench add task --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
@@ -94,6 +96,7 @@ Commands:
 - `workbench item list [--type <...>] [--status <...>] [--include-done]`
   - List work items. Use `--include-done` to include `work/done`.
   - Example: `workbench item list --status ready`
+- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 
 - `workbench item show <ID>`
   - Show metadata and resolved path for an item.
@@ -102,6 +105,7 @@ Commands:
 - `workbench item status <ID> <status> [--note "<...>"]`
   - Update status and updated date. Optionally append a note.
   - Example: `workbench item status TASK-0042 in-progress --note "started implementation"`
+- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 
 - `workbench item close <ID> [--move]`
   - Set status to `done`; optionally move the file to `work/done`.
@@ -131,9 +135,13 @@ Commands:
   - Create a documentation file with Workbench front matter and optional backlinks.
   - Example: `workbench doc new --type spec --title "Payment flow" --work-item TASK-0042`
 
-- `workbench doc sync [--all] [--issues] [--dry-run]`
-  - Sync doc/work item backlinks. `--all` adds Workbench front matter to all docs; `--issues` syncs GitHub issue links; `--dry-run` reports changes without writing.
+- `workbench doc sync [--all] [--issues] [--include-done] [--dry-run]`
+  - Sync doc/work item backlinks. `--all` adds Workbench front matter to all docs; `--issues` syncs GitHub issue links; `--include-done` includes done/dropped items; `--dry-run` reports changes without writing.
   - Example: `workbench doc sync --all --issues --dry-run`
+
+- `workbench nav sync [--issues <true|false>] [--include-done] [--dry-run]`
+  - Sync doc/work item backlinks and update navigation indexes. Defaults to syncing issue links; set `--issues false` to skip GitHub lookups.
+  - Example: `workbench nav sync --include-done --issues false`
 
 - `workbench doc summarize [--staged] [--path <path...>] [--dry-run] [--update-index]`
   - Summarize markdown diffs using AI and append `workbench.changeNotes` entries.

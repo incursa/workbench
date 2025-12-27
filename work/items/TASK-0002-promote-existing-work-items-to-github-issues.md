@@ -1,20 +1,20 @@
 ---
 id: TASK-0002
 type: task
-status: draft
+status: done
 priority: medium
 owner: platform
 created: 2025-12-27
-updated: null
+updated: 2025-12-27
 tags: null
 related:
   specs:
-    - </docs/10-product/feature-spec-work-item-sync.md>
+    - /docs/10-product/feature-spec-work-item-sync.md
   adrs: null
   files: null
   prs: null
   issues: null
-  branches: []
+  branches: null
 title: Sync work items with GitHub issues and branches
 ---
 
@@ -34,6 +34,8 @@ optionally create branches for items that need them.
 - Work item metadata records the GitHub issue reference and branch name.
 - Closed or dropped local items do not create GitHub issues or branches.
 - GitHub issues always import into local work items, regardless of issue state.
+- ID-scoped sync supports a `--prefer` flag to pick local or GitHub as the source of truth.
+- Bulk sync defaults to pushing local content to GitHub when descriptions differ.
 
 ## Proposed metadata layout
 

@@ -20,7 +20,7 @@
     "related": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["specs", "adrs", "files", "prs", "issues", "branches"],
+      "required": ["specs", "adrs", "files", "prs", "issues"],
       "properties": {
         "specs": { "type": "array", "items": { "type": "string" } },
         "adrs": { "type": "array", "items": { "type": "string" } },

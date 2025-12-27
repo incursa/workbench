@@ -44,6 +44,8 @@ GitHub issues aligned and can create missing branches.
 - Support a dry-run mode that reports changes without writing.
 - Always import GitHub issues into local work items, even if the issue is closed.
 - Skip creating GitHub issues or branches for local items in terminal states.
+- For bulk sync, prefer local content when updating existing GitHub issues.
+- For ID-scoped sync, allow `--prefer` to choose local or GitHub as source of truth.
 
 ## UX notes
 
