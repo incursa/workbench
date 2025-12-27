@@ -39,7 +39,7 @@ jobs:
         run: dotnet build Workbench.slnx --no-restore --configuration Release -warnaserror -p:ContinuousIntegrationBuild=true
 
       - name: Test
-        run: dotnet test --solution Workbench.slnx --no-build --configuration Release
+        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release
 
       - name: Pack (repro 1)
         shell: bash
