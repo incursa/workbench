@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 
 namespace Workbench;
@@ -288,6 +289,98 @@ public static class GithubService
             state,
             labels,
             pullRequests.ToList());
+    }
+
+    public static IList<GithubIssue> ListIssues(string repoRoot, GithubRepoRef repo, int limit = 1000)
+    {
+        EnsureAuthenticated(repoRoot, repo.Host);
+
+        var args = new List<string> { "issue", "list", "--state", "all", "--limit", limit.ToString(CultureInfo.InvariantCulture) };
+        if (!string.IsNullOrWhiteSpace(repo.Host) && !string.Equals(repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            args.Add("--hostname");
+            args.Add(repo.Host);
+        }
+        args.Add("--repo");
+        args.Add($"{repo.Owner}/{repo.Repo}");
+        args.Add("--json");
+        args.Add("number,title,body,state,url,labels");
+
+        var result = Run(repoRoot, args.ToArray());
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh issue list failed.");
+        }
+
+        var issues = new List<GithubIssue>();
+        using var document = JsonDocument.Parse(result.StdOut);
+        if (document.RootElement.ValueKind != JsonValueKind.Array)
+        {
+            return issues;
+        }
+
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            if (!element.TryGetProperty("number", out var numberElement)
+                || numberElement.ValueKind != JsonValueKind.Number
+                || !numberElement.TryGetInt32(out var number))
+            {
+                continue;
+            }
+
+            var title = element.TryGetProperty("title", out var titleElement) ? titleElement.GetString() ?? string.Empty : string.Empty;
+            var body = element.TryGetProperty("body", out var bodyElement) ? bodyElement.GetString() ?? string.Empty : string.Empty;
+            var url = element.TryGetProperty("url", out var urlElement) ? urlElement.GetString() ?? string.Empty : string.Empty;
+            var state = element.TryGetProperty("state", out var stateElement) ? stateElement.GetString() ?? string.Empty : string.Empty;
+
+            var labels = new List<string>();
+            if (element.TryGetProperty("labels", out var labelsElement) && labelsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var label in labelsElement.EnumerateArray())
+                {
+                    if (label.TryGetProperty("name", out var nameElement))
+                    {
+                        var value = nameElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            labels.Add(value);
+                        }
+                    }
+                }
+            }
+
+            issues.Add(new GithubIssue(repo, number, title, body, url, state, labels, Array.Empty<string>()));
+        }
+
+        return issues;
+    }
+
+    public static string CreateIssue(string repoRoot, GithubRepoRef repo, string title, string body, IEnumerable<string> labels)
+    {
+        EnsureAuthenticated(repoRoot, repo.Host);
+
+        var args = new List<string> { "issue", "create", "--title", title, "--body", body };
+        if (!string.IsNullOrWhiteSpace(repo.Host) && !string.Equals(repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            args.Add("--hostname");
+            args.Add(repo.Host);
+        }
+        args.Add("--repo");
+        args.Add($"{repo.Owner}/{repo.Repo}");
+
+        foreach (var label in labels.Where(label => !string.IsNullOrWhiteSpace(label)))
+        {
+            args.Add("--label");
+            args.Add(label);
+        }
+
+        var result = Run(repoRoot, args.ToArray());
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh issue create failed.");
+        }
+
+        return result.StdOut.Trim();
     }
 
     public static string CreatePullRequest(string repoRoot, string title, string body, string? baseBranch, bool draft)

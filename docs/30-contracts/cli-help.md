@@ -75,6 +75,10 @@ Commands:
   - Import GitHub issues into work items, linking related PRs when available.
   - Example: `workbench item import --issue 42 --issue https://github.com/org/repo/issues/18`
 
+- `workbench item sync [--id <ID...>] [--issue <id|url...>] [--dry-run]`
+  - Sync work items with GitHub issues and branches (two-way, no deletes).
+  - Example: `workbench item sync --dry-run`
+
 - `workbench add task --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
   - Alias for `workbench item new --type task`.
   - Example: `workbench add task --title "Define link validation"`

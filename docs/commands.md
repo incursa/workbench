@@ -58,7 +58,8 @@ WorkItem:
     "adrs": [],
     "files": [],
     "prs": [],
-    "issues": []
+    "issues": [],
+    "branches": []
   },
   "slug": "add-promotion-workflow",
   "path": "work/items/TASK-0042-add-promotion-workflow.md"
@@ -152,6 +153,35 @@ Data:
       "item": { /* WorkItem */ }
     }
   ]
+}
+```
+
+## workbench item sync
+
+Data:
+```json
+{
+  "imported": [
+    {
+      "issue": {
+        "repo": "org/repo",
+        "number": 42,
+        "url": "https://github.com/org/repo/issues/42",
+        "title": "Add docs",
+        "state": "OPEN",
+        "labels": ["docs"],
+        "pullRequests": []
+      },
+      "item": { /* WorkItem */ }
+    }
+  ],
+  "issuesCreated": [
+    { "itemId": "TASK-0042", "issueUrl": "https://github.com/org/repo/issues/99" }
+  ],
+  "branchesCreated": [
+    { "itemId": "TASK-0042", "branch": "TASK-0042-add-docs" }
+  ],
+  "dryRun": false
 }
 ```
 

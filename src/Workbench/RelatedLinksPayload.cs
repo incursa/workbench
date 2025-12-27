@@ -5,5 +5,6 @@ namespace Workbench
         [property: JsonPropertyName("adrs")] IList<string> Adrs,
         [property: JsonPropertyName("files")] IList<string> Files,
         [property: JsonPropertyName("prs")] IList<string> Prs,
-        [property: JsonPropertyName("issues")] IList<string> Issues);
+        [property: JsonPropertyName("issues")] IList<string> Issues,
+        [property: JsonPropertyName("branches")] IList<string> Branches);
 }

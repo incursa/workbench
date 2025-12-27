@@ -60,6 +60,7 @@ public static class WorkItemService
         if (related is not null)
         {
             EnsureList(related, "files");
+            EnsureList(related, "branches");
         }
 
         frontMatter = NormalizeFrontMatter(frontMatter);
@@ -113,6 +114,8 @@ public static class WorkItemService
             {
                 AddUniqueLink(prs, pr);
             }
+
+            EnsureList(related, "branches");
         }
 
         var summary = BuildIssueSummary(issue);
@@ -675,7 +678,13 @@ public static class WorkItemService
         var related = GetRelatedMap(data);
         if (related is null)
         {
-            return new RelatedLinks(new List<string>(), new List<string>(), new List<string>(), new List<string>(), new List<string>());
+            return new RelatedLinks(
+                new List<string>(),
+                new List<string>(),
+                new List<string>(),
+                new List<string>(),
+                new List<string>(),
+                new List<string>());
         }
 
         List<string> Extract(string key)
@@ -700,6 +709,7 @@ public static class WorkItemService
             Extract("adrs"),
             Extract("files"),
             Extract("prs"),
-            Extract("issues"));
+            Extract("issues"),
+            Extract("branches"));
     }
 }

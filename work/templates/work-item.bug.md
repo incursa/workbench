@@ -13,6 +13,7 @@ related:
   files: []
   prs: []
   issues: []
+  branches: []
 ---
 
 # BUG-0000 - <title>

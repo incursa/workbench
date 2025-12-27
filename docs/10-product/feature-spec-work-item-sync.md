@@ -42,6 +42,8 @@ GitHub issues aligned and can create missing branches.
 - Sync can create a branch (default: `<ID>-<slug>`).
 - Record the GitHub issue ref and branch name in work item metadata.
 - Support a dry-run mode that reports changes without writing.
+- Always import GitHub issues into local work items, even if the issue is closed.
+- Skip creating GitHub issues or branches for local items in terminal states.
 
 ## UX notes
 

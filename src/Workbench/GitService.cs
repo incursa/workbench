@@ -47,6 +47,21 @@ public static class GitService
         }
     }
 
+    public static bool BranchExists(string repoRoot, string branchName)
+    {
+        var result = Run(repoRoot, "show-ref", "--verify", "--quiet", $"refs/heads/{branchName}");
+        return result.ExitCode == 0;
+    }
+
+    public static void CreateBranch(string repoRoot, string branchName)
+    {
+        var result = Run(repoRoot, "branch", branchName);
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git branch failed.");
+        }
+    }
+
     public static void Add(string repoRoot, string path)
     {
         var result = Run(repoRoot, "add", path);

@@ -20,13 +20,14 @@
     "related": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["specs", "adrs", "files", "prs", "issues"],
+      "required": ["specs", "adrs", "files", "prs", "issues", "branches"],
       "properties": {
         "specs": { "type": "array", "items": { "type": "string" } },
         "adrs": { "type": "array", "items": { "type": "string" } },
         "files": { "type": "array", "items": { "type": "string" } },
         "prs": { "type": "array", "items": { "type": "string" } },
-        "issues": { "type": "array", "items": { "type": "string" } }
+        "issues": { "type": "array", "items": { "type": "string" } },
+        "branches": { "type": "array", "items": { "type": "string" } }
       }
     }
   }

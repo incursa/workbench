@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -28,6 +29,12 @@ static void WriteJson<T>(T payload, JsonTypeInfo<T> typeInfo)
     Console.WriteLine(JsonSerializer.Serialize(payload, typeInfo));
 }
 
+static bool IsTerminalStatus(string status)
+{
+    return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
+}
+
 static WorkItemPayload ItemToPayload(WorkItem item, bool includeBody = false)
 {
     return new WorkItemPayload(
@@ -45,7 +52,8 @@ static WorkItemPayload ItemToPayload(WorkItem item, bool includeBody = false)
             item.Related.Adrs,
             item.Related.Files,
             item.Related.Prs,
-            item.Related.Issues),
+            item.Related.Issues,
+            item.Related.Branches),
         item.Slug,
         item.Path,
         includeBody ? item.Body : null);
@@ -789,6 +797,217 @@ itemImportCommand.SetAction(parseResult =>
     }
 });
 itemCommand.Subcommands.Add(itemImportCommand);
+
+var itemSyncCommand = new Command("sync", "Sync work items with GitHub issues and branches.");
+var syncIdOption = new Option<string[]>("--id")
+{
+    Description = "Work item IDs to sync (limits local-to-GitHub and branch creation)."
+};
+var syncIssueOption = new Option<string[]>("--issue")
+{
+    Description = "Issue numbers or URLs to import (limits GitHub-to-local)."
+};
+var syncDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing."
+};
+itemSyncCommand.Options.Add(syncIdOption);
+itemSyncCommand.Options.Add(syncIssueOption);
+itemSyncCommand.Options.Add(syncDryRunOption);
+itemSyncCommand.SetAction(parseResult =>
+{
+    try
+    {
+        var repo = parseResult.GetValue(repoOption);
+        var format = parseResult.GetValue(formatOption) ?? "table";
+        var ids = parseResult.GetValue(syncIdOption) ?? Array.Empty<string>();
+        var issueInputs = parseResult.GetValue(syncIssueOption) ?? Array.Empty<string>();
+        var dryRun = parseResult.GetValue(syncDryRunOption);
+        var repoRoot = ResolveRepo(repo);
+        var resolvedFormat = ResolveFormat(format);
+        var config = WorkbenchConfig.Load(repoRoot, out var configError);
+        if (configError is not null)
+        {
+            Console.WriteLine($"Config error: {configError}");
+            SetExitCode(2);
+            return;
+        }
+
+        var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
+        var items = new List<WorkItem>();
+        if (ids.Length > 0)
+        {
+            foreach (var id in ids)
+            {
+                var path = WorkItemService.GetItemPathById(repoRoot, config, id);
+                var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
+                items.Add(item);
+            }
+        }
+        else
+        {
+            items.AddRange(WorkItemService.ListItems(repoRoot, config, includeDone: true).Items);
+        }
+
+        var issueMap = new Dictionary<string, WorkItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            foreach (var entry in item.Related.Issues)
+            {
+                if (string.IsNullOrWhiteSpace(entry))
+                {
+                    continue;
+                }
+                var issueRef = GithubService.ParseIssueReference(entry, defaultRepo);
+                var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
+                if (!issueMap.ContainsKey(key))
+                {
+                    issueMap[key] = item;
+                }
+            }
+        }
+
+        var imported = new List<ItemSyncImportEntry>();
+        IList<GithubIssue> issuesToImport;
+        if (issueInputs.Length > 0)
+        {
+            var selected = new List<GithubIssue>();
+            foreach (var input in issueInputs)
+            {
+                var issueRef = GithubService.ParseIssueReference(input, defaultRepo);
+                selected.Add(GithubService.FetchIssue(repoRoot, issueRef));
+            }
+            issuesToImport = selected;
+        }
+        else
+        {
+            issuesToImport = GithubService.ListIssues(repoRoot, defaultRepo);
+        }
+
+        foreach (var issue in issuesToImport)
+        {
+            var key = $"{issue.Repo.Display}#{issue.Number.ToString(CultureInfo.InvariantCulture)}";
+            if (issueMap.ContainsKey(key))
+            {
+                continue;
+            }
+
+            var issuePayload = new GithubIssuePayload(
+                issue.Repo.Display,
+                issue.Number,
+                issue.Url,
+                issue.Title,
+                issue.State,
+                issue.Labels,
+                issue.PullRequests);
+
+            if (dryRun)
+            {
+                imported.Add(new ItemSyncImportEntry(issuePayload, null));
+                continue;
+            }
+
+            var type = ResolveIssueType(issue, null);
+            var status = ResolveIssueStatus(issue, null);
+            var item = WorkItemService.CreateItemFromGithubIssue(repoRoot, config, issue, type, status, null, null);
+            imported.Add(new ItemSyncImportEntry(issuePayload, ItemToPayload(item)));
+            items.Add(item);
+            issueMap[key] = item;
+        }
+
+        var issuesCreated = new List<ItemSyncIssueEntry>();
+        foreach (var item in items)
+        {
+            if (IsTerminalStatus(item.Status))
+            {
+                continue;
+            }
+            if (item.Related.Issues.Count > 0)
+            {
+                continue;
+            }
+
+            var body = PullRequestBuilder.BuildBody(item);
+            if (dryRun)
+            {
+                issuesCreated.Add(new ItemSyncIssueEntry(item.Id, string.Empty));
+                continue;
+            }
+
+            var issueUrl = GithubService.CreateIssue(repoRoot, defaultRepo, item.Title, body, item.Tags);
+            WorkItemService.AddRelatedLink(item.Path, "issues", issueUrl);
+            issuesCreated.Add(new ItemSyncIssueEntry(item.Id, issueUrl));
+        }
+
+        var branchesCreated = new List<ItemSyncBranchEntry>();
+        foreach (var item in items)
+        {
+            if (IsTerminalStatus(item.Status))
+            {
+                continue;
+            }
+
+            var listedBranch = item.Related.Branches.FirstOrDefault(branch => !string.IsNullOrWhiteSpace(branch));
+            var branchName = string.IsNullOrWhiteSpace(listedBranch) ? $"{item.Id}-{item.Slug}" : listedBranch;
+            var branchExists = GitService.BranchExists(repoRoot, branchName);
+            if (!branchExists)
+            {
+                if (!dryRun)
+                {
+                    GitService.CreateBranch(repoRoot, branchName);
+                }
+                branchesCreated.Add(new ItemSyncBranchEntry(item.Id, branchName));
+            }
+
+            if (string.IsNullOrWhiteSpace(listedBranch))
+            {
+                WorkItemService.AddRelatedLink(item.Path, "branches", branchName, apply: !dryRun);
+            }
+        }
+
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new ItemSyncOutput(
+                true,
+                new ItemSyncData(imported, issuesCreated, branchesCreated, dryRun));
+            WriteJson(payload, WorkbenchJsonContext.Default.ItemSyncOutput);
+        }
+        else
+        {
+            foreach (var entry in imported)
+            {
+                if (entry.Item is null)
+                {
+                    Console.WriteLine($"Would import {entry.Issue.Repo}#{entry.Issue.Number}: {entry.Issue.Title}");
+                }
+                else
+                {
+                    Console.WriteLine($"Imported {entry.Issue.Repo}#{entry.Issue.Number}: {entry.Item.Id} - {entry.Item.Title}");
+                }
+            }
+
+            foreach (var issue in issuesCreated)
+            {
+                var suffix = string.IsNullOrWhiteSpace(issue.IssueUrl) ? "Would create issue" : issue.IssueUrl;
+                Console.WriteLine($"{suffix} for {issue.ItemId}.");
+            }
+
+            foreach (var branch in branchesCreated)
+            {
+                var suffix = dryRun ? "Would create branch" : "Created branch";
+                Console.WriteLine($"{suffix} {branch.Branch} for {branch.ItemId}.");
+            }
+        }
+
+        SetExitCode(0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+        SetExitCode(2);
+    }
+});
+itemCommand.Subcommands.Add(itemSyncCommand);
 
 var itemListCommand = new Command("list", "List work items.");
 var listTypeOption = new Option<string>("--type")

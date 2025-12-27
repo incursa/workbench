@@ -20,6 +20,7 @@ public class FrontMatterTests
               files: []
               prs: []
               issues: []
+              branches: []
             ---
 
             # TASK-0001 - Sample

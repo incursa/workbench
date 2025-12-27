@@ -13,6 +13,7 @@ related:
   files: []
   prs: []
   issues: []
+  branches: []
 ---
 
 # SPIKE-0000 - <title>

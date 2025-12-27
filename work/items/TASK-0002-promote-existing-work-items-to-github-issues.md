@@ -14,6 +14,7 @@ related:
   files: null
   prs: null
   issues: null
+  branches: []
 title: Sync work items with GitHub issues and branches
 ---
 
@@ -31,6 +32,8 @@ optionally create branches for items that need them.
 - If a GitHub issue is missing a local work item, sync creates it.
 - Sync can create a branch for an item when one is missing.
 - Work item metadata records the GitHub issue reference and branch name.
+- Closed or dropped local items do not create GitHub issues or branches.
+- GitHub issues always import into local work items, regardless of issue state.
 
 ## Proposed metadata layout
 

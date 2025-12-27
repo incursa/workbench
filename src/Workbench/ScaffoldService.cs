@@ -100,6 +100,7 @@ public static class ScaffoldService
           files: []
           prs: []
           issues: []
+          branches: []
         ---
 
         # BUG-0000 - <title>
@@ -132,6 +133,7 @@ public static class ScaffoldService
           files: []
           prs: []
           issues: []
+          branches: []
         ---
 
         # TASK-0000 - <title>
@@ -158,6 +160,7 @@ public static class ScaffoldService
           files: []
           prs: []
           issues: []
+          branches: []
         ---
 
         # SPIKE-0000 - <title>

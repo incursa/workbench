@@ -5,4 +5,5 @@ public sealed record RelatedLinks(
     IList<string> Adrs,
     IList<string> Files,
     IList<string> Prs,
-    IList<string> Issues);
+    IList<string> Issues,
+    IList<string> Branches);

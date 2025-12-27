@@ -178,6 +178,7 @@ Front matter must conform to the JSON Schema at:
   - files (string array): repo-relative paths described by this work item
   - prs (string array): URLs
   - issues (string array): URLs or external IDs
+  - branches (string array): local branch names
 
 Two-way links:
 - Any file listed in related.files must include a backlink to the work item ID.
@@ -200,6 +201,7 @@ related:
   files: []
   prs: []
   issues: []
+  branches: []
 ---
 
 # TASK-0042 - Add promotion workflow
