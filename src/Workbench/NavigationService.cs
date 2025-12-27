@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 using System.Text;
 
 namespace Workbench;
@@ -41,13 +42,16 @@ public static class NavigationService
         var docEntries = LoadDocEntries(repoRoot, config, warnings);
         var docReadmePath = Path.Combine(repoRoot, config.Paths.DocsRoot, "README.md");
         var workReadmePath = Path.Combine(repoRoot, config.Paths.WorkRoot, "README.md");
+        var rootReadmePath = Path.Combine(repoRoot, "README.md");
 
         var docIndex = BuildDocsIndex(repoRoot, config, docReadmePath, docEntries);
         var workIndex = BuildWorkIndex(repoRoot, config, workReadmePath, docEntries, includeDone);
+        var rootIndex = BuildRootIndex(repoRoot, config);
 
         var indexUpdated = 0;
         indexUpdated += UpdateIndexSection(docReadmePath, "workbench:docs-index", docIndex, force, dryRun);
         indexUpdated += UpdateIndexSection(workReadmePath, "workbench:work-index", workIndex, force, dryRun);
+        indexUpdated += UpdateIndexSection(rootReadmePath, "workbench:root-index", rootIndex, force, dryRun);
 
         return new NavigationSyncResult(
             docSync.DocsUpdated,
@@ -145,7 +149,9 @@ public static class NavigationService
                 var githubLink = entry.GithubLink is null ? "-" : BuildMarkdownLink("view", entry.GithubLink);
                 var workItems = FormatWorkItemLinks(entry.WorkItems, itemsById, readmeDir);
 
-                builder.AppendLine($"| {docLink} | {EscapeTableCell(entry.Type)} | {EscapeTableCell(entry.Status)} | {githubLink} | {workItems} |");
+                var typeLabel = FormatDocType(entry.Type);
+                var statusLabel = FormatDocStatus(entry.Status);
+                builder.AppendLine($"| {docLink} | {typeLabel} | {statusLabel} | {githubLink} | {workItems} |");
             }
 
             builder.AppendLine();
@@ -208,9 +214,49 @@ public static class NavigationService
             var githubLink = entry.GithubLink is null ? "-" : BuildMarkdownLink("view", entry.GithubLink);
             var issueLinks = FormatIssueLinks(entry.Item.Related.Issues, defaultRepo);
             var relatedLinks = FormatRelatedLinks(entry.Item, docsByPath, readmeDir, repoRoot);
+            var statusLabel = FormatWorkItemStatus(entry.Item.Status);
 
-            builder.AppendLine($"| {itemLink} | {EscapeTableCell(entry.Item.Status)} | {githubLink} | {issueLinks} | {relatedLinks} |");
+            builder.AppendLine($"| {itemLink} | {statusLabel} | {githubLink} | {issueLinks} | {relatedLinks} |");
         }
+    }
+
+    private static string BuildRootIndex(string repoRoot, WorkbenchConfig config)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("### Quick links");
+        builder.AppendLine("- [Docs index](docs/README.md)");
+        builder.AppendLine("- [Work index](work/README.md)");
+        builder.AppendLine();
+        builder.AppendLine("### Work item stats");
+
+        var items = WorkItemService.ListItems(repoRoot, config, includeDone: true).Items;
+        var total = items.Count;
+        var closed = items.Count(item => IsTerminalStatus(item.Status));
+        var open = total - closed;
+
+        builder.AppendLine("| Metric | Count |");
+        builder.AppendLine("| --- | --- |");
+        builder.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| Open | {open} |"));
+        builder.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| Closed | {closed} |"));
+        builder.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| Total | {total} |"));
+        builder.AppendLine();
+
+        if (total > 0)
+        {
+            var counts = items
+                .GroupBy(item => item.Status ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+
+            builder.AppendLine("| Status | Count |");
+            builder.AppendLine("| --- | --- |");
+            foreach (var status in new[] { "draft", "ready", "in-progress", "blocked", "done", "dropped" })
+            {
+                counts.TryGetValue(status, out var count);
+                builder.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| {FormatWorkItemStatus(status)} | {count} |"));
+            }
+        }
+
+        return builder.ToString().TrimEnd();
     }
 
     private static List<WorkItemEntry> LoadWorkItemEntries(string repoRoot, string dir, WorkbenchConfig config)
@@ -595,6 +641,65 @@ public static class NavigationService
             "dropped" => 5,
             _ => 6
         };
+    }
+
+    private static string FormatDocType(string docType)
+    {
+        return docType.ToLowerInvariant() switch
+        {
+            "spec" => "🧭 spec",
+            "adr" => "📘 adr",
+            "runbook" => "🛠 runbook",
+            "guide" => "🧩 guide",
+            "doc" => "📄 doc",
+            _ => EscapeTableCell(docType)
+        };
+    }
+
+    private static string FormatDocStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return "❔ unknown";
+        }
+
+        return status.ToLowerInvariant() switch
+        {
+            "draft" => "🟡 draft",
+            "ready" => "🟢 ready",
+            "active" => "🟢 active",
+            "accepted" => "✅ accepted",
+            "blocked" => "🟥 blocked",
+            "done" => "✅ done",
+            "dropped" => "🚫 dropped",
+            "template" => "🧱 template",
+            _ => EscapeTableCell(status)
+        };
+    }
+
+    private static string FormatWorkItemStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return "❔ unknown";
+        }
+
+        return status.ToLowerInvariant() switch
+        {
+            "draft" => "🟡 draft",
+            "ready" => "🟢 ready",
+            "in-progress" => "🔵 in-progress",
+            "blocked" => "🟥 blocked",
+            "done" => "✅ done",
+            "dropped" => "🚫 dropped",
+            _ => EscapeTableCell(status)
+        };
+    }
+
+    private static bool IsTerminalStatus(string status)
+    {
+        return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
     }
 
     private static GithubRepoRef? TryResolveRepo(string repoRoot, WorkbenchConfig config)
