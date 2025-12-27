@@ -18,12 +18,12 @@ bash .codex/skills/dotnet-test-triage/scripts/run-test-triage.sh
 
 Optional: pass arguments through to `dotnet test`:
 ```bash
-bash .codex/skills/dotnet-test-triage/scripts/run-test-triage.sh ./src/Incursa.slnx --no-restore
+bash .codex/skills/dotnet-test-triage/scripts/run-test-triage.sh ./Workbench.slnx --no-restore
 ```
 
 Optional: override the default command (useful for repo-specific defaults):
 ```bash
-DOTNET_TEST_CMD="dotnet test ./src/Incursa.slnx --no-restore" \
+DOTNET_TEST_CMD="dotnet test ./Workbench.slnx --no-restore" \
   bash .codex/skills/dotnet-test-triage/scripts/run-test-triage.sh
 ```
 

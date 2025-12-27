@@ -15,22 +15,22 @@ updated: 0000-00-00
 ## Scope
 
 ## Preconditions
-- 
+-
 
 ## Required access/tools
-- 
+-
 
 ## Procedure
-1. 
+1.
 
 ## Validation
-- 
+-
 
 ## Rollback / recovery
-- 
+-
 
 ## Escalation / contacts
-- 
+-
 
 ## Related docs
-- 
+-

@@ -22,4 +22,4 @@ related:
 ## Research notes
 
 ## Acceptance criteria
-- 
+-

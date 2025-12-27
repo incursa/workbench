@@ -5,7 +5,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path (Join-Path $scriptDir '..\..\..\..')).Path
 $artifactsDir = Join-Path $repoRoot 'artifacts\codex'
 $report = Join-Path $artifactsDir 'format-report.txt'
-$target = if ($env:DOTNET_FORMAT_TARGET) { $env:DOTNET_FORMAT_TARGET } else { 'src/Incursa.slnx' }
+$target = if ($env:DOTNET_FORMAT_TARGET) { $env:DOTNET_FORMAT_TARGET } else { 'Workbench.slnx' }
 $extraArgs = $args
 
 New-Item -ItemType Directory -Force -Path $artifactsDir | Out-Null

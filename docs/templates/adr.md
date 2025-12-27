@@ -19,10 +19,10 @@ updated: 0000-00-00
 ## Decision
 
 ## Alternatives considered
-- 
+-
 
 ## Consequences
-- 
+-
 
 ## Related specs
 - </docs/10-product/feature-short-title.md>

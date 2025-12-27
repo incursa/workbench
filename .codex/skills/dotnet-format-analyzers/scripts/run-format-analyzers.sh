@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)
 ARTIFACTS_DIR="$REPO_ROOT/artifacts/codex"
 REPORT="$ARTIFACTS_DIR/format-report.txt"
-TARGET=${DOTNET_FORMAT_TARGET:-src/Incursa.slnx}
+TARGET=${DOTNET_FORMAT_TARGET:-Workbench.slnx}
 EXTRA_ARGS=("$@")
 
 mkdir -p "$ARTIFACTS_DIR"

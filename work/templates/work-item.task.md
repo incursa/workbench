@@ -20,4 +20,4 @@ related:
 ## Summary
 
 ## Acceptance criteria
-- 
+-

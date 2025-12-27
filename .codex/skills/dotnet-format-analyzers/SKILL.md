@@ -10,12 +10,12 @@ Provide canonical format/analyzer commands and a report-generating script that s
 ## Canonical commands
 Format verification:
 ```bash
-dotnet format src/Incursa.slnx --verify-no-changes
+dotnet format Workbench.slnx --verify-no-changes
 ```
 
 Analyzer verification:
 ```bash
-dotnet format analyzers src/Incursa.slnx --verify-no-changes
+dotnet format analyzers Workbench.slnx --verify-no-changes
 ```
 
 ## Report script
@@ -40,7 +40,7 @@ Never reformat the world unless explicitly asked. Prefer targeted scopes:
 Examples:
 ```bash
 bash .codex/skills/dotnet-format-analyzers/scripts/run-format-analyzers.sh src/app/Incursa.Web/Incursa.Web.csproj
-bash .codex/skills/dotnet-format-analyzers/scripts/run-format-analyzers.sh src/Incursa.slnx --include src/app/Incursa.Web/Pages/Error.cshtml.cs
+bash .codex/skills/dotnet-format-analyzers/scripts/run-format-analyzers.sh Workbench.slnx --include src/app/Incursa.Web/Pages/Error.cshtml.cs
 ```
 
 ## Notes

@@ -26,4 +26,4 @@ related:
 ## Actual behavior
 
 ## Acceptance criteria
-- 
+-

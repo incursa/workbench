@@ -18,10 +18,10 @@ updated: 0000-00-00
 - draft | active | deprecated
 
 ## Consumers
-- 
+-
 
 ## Interface / schema
-- 
+-
 
 ## Examples
 ```
