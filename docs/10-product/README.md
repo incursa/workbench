@@ -14,3 +14,9 @@ Product requirements, feature specs, and user-facing behavior.
 
 Templates:
 - `docs/templates/feature-spec.md`
+
+## Include
+
+- User stories and acceptance criteria.
+- UX notes or copy guidance that define behavior.
+- Release-impacting changes for PM and design review.

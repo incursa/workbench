@@ -1,25 +1,47 @@
 # Workbench
 
-Workbench is a .NET-based CLI for interacting with the Workbench tooling.
+Workbench is a .NET CLI for managing Workbench documentation, work items, and
+contracts in this repo.
 
-## Quickstart
+## Repository map
 
-### Prerequisites
+- `src/Workbench`: CLI source code.
+- `tests/`: automated tests.
+- `docs/`: product, architecture, contracts, decisions, and runbooks.
+- `work/`: active and completed work items plus templates.
+- `assets/`: static assets used by docs or tooling.
+- `artifacts/`: build outputs and local artifacts.
+- `testdata/`: fixtures for parsing and validation tests.
 
-- .NET SDK (latest stable recommended)
+## Requirements
 
-### Build
+- .NET SDK `10.0.100` (see `global.json`).
+- Optional: GitHub CLI for the GH-dependent integration tests.
+
+## Common commands
+
+Build the solution:
 
 ```bash
 dotnet build Workbench.slnx
 ```
 
-## Pack (NuGet tool)
-
-Build the .NET tool package:
+Run the CLI:
 
 ```bash
-dotnet pack src/Workbench/Workbench.csproj -c Release
+dotnet run --project src/Workbench/Workbench.csproj -- --help
+```
+
+Run tests:
+
+```bash
+dotnet test Workbench.slnx
+```
+
+Run unit tests only:
+
+```bash
+dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
 ```
 
 Run integration tests:
@@ -34,42 +56,13 @@ Run GitHub CLI-dependent integration tests:
 WORKBENCH_RUN_GH_TESTS=1 dotnet test tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
 ```
 
-## Run (CLI)
-
-Run the automated tests:
+Pack the .NET tool:
 
 ```bash
-dotnet run --project src/Workbench/Workbench.csproj -- --help
+dotnet pack src/Workbench/Workbench.csproj -c Release
 ```
 
-### Test
-
-```bash
-dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
-```
-
-## Verification
-
-Run the full test suite (matches CI expectations):
-
-```bash
-dotnet test Workbench.slnx
-```
-
-## CI
-
-GitHub Actions runs build and test jobs for each OS/.NET SDK pair in the matrix
-(`ubuntu-latest`, `windows-latest`, `macos-latest` with .NET `10.0.x`). The
-workflow runs:
-
-```bash
-dotnet build Workbench.slnx
-dotnet test Workbench.slnx
-```
-
-## Build (AOT)
-
-Publish a single native binary:
+Publish a native binary (AOT):
 
 ```bash
 dotnet publish src/Workbench/Workbench.csproj -c Release -r osx-arm64
@@ -80,19 +73,29 @@ Replace the runtime identifier with your target (e.g., `win-x64`, `linux-x64`).
 Verification steps:
 
 ```bash
-# Build output
 ls src/Workbench/bin/Release/net10.0/osx-arm64/publish
-
-# Run the published binary
 ./src/Workbench/bin/Release/net10.0/osx-arm64/publish/workbench --help
 ```
 
 Expected warnings:
-- None. Treat any trimming/AOT warnings (IL2026/IL3050) as regressions and address them.
+- None. Treat any trimming/AOT warnings (IL2026/IL3050) as regressions.
 
-## Command reference
+## Documentation and contracts
 
-See the full CLI command list and options in `docs/30-contracts/cli-help.md`.
+- Docs overview: `docs/README.md`
+- Work items: `work/README.md`
+- CLI help: `docs/30-contracts/cli-help.md`
+- Schemas: `docs/30-contracts/`
+
+## CI
+
+GitHub Actions builds and tests on `ubuntu-latest`, `windows-latest`, and
+`macos-latest` with .NET `10.0.x`:
+
+```bash
+dotnet build Workbench.slnx
+dotnet test Workbench.slnx
+```
 
 ## Contributing
 

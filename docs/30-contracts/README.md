@@ -22,3 +22,8 @@ Current schemas:
 
 Other contract docs:
 - `docs/30-contracts/cli-help.md`
+
+## Guidance
+
+- Keep schemas in sync with CLI behavior.
+- Update contract docs when inputs, outputs, or defaults change.
