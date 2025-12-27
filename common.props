@@ -17,7 +17,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <Nullable>disable</Nullable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <!-- <NoWarn>$(NoWarn),CS8618,CS8601,CS8602,CS8603,CS8604,CS0108,CS8767,CS8669,CS8632,CS1998,CS0168,CS8629,CS8619,CS8765</NoWarn> -->
+    <NoWarn>$(NoWarn),MA0051</NoWarn>
 
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>

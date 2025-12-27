@@ -5,7 +5,6 @@ This file tracks missing features, gaps, and decisions to revisit.
 ## AOT and Trimming
 
 ## Work Items
-- Add commands to link/unlink specs, ADRs, files, PRs, and issues without manual edits.
 - Enforce optional PR description backlink to work item ID (configurable).
 - Decide whether to allow additional work item types beyond bug/task/spike.
 - Add hooks installer (pre-commit/pre-push) or CI helper for validation.

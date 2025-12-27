@@ -132,6 +132,72 @@ public static class DocService
         return new DocSyncResult(docsUpdated, itemsUpdated, missingDocs, missingItems);
     }
 
+    public static bool TryUpdateDocWorkItemLink(
+        string repoRoot,
+        WorkbenchConfig config,
+        string link,
+        string workItemId,
+        bool add,
+        bool apply = true)
+    {
+        var docPath = ResolveDocPath(repoRoot, link);
+        if (!File.Exists(docPath) || !docPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var docsRoot = Path.GetFullPath(Path.Combine(repoRoot, config.Paths.DocsRoot));
+        var fullDocPath = Path.GetFullPath(docPath);
+        if (!fullDocPath.StartsWith(docsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fullDocPath, docsRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!TryLoadOrCreateFrontMatter(
+                docPath,
+                includeAllDocs: true,
+                referencedDocs: null,
+                out var frontMatter,
+                out var createdFrontMatter))
+        {
+            return false;
+        }
+
+        var workbench = EnsureWorkbench(frontMatter!, InferDocType(docPath), out var docChanged);
+        var workItems = EnsureStringList(workbench, "workItems", out var listChanged);
+        var updated = false;
+
+        if (add)
+        {
+            if (!workItems.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
+            {
+                workItems.Add(workItemId);
+                listChanged = true;
+            }
+        }
+        else
+        {
+            var before = workItems.Count;
+            workItems.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
+            if (workItems.Count != before)
+            {
+                listChanged = true;
+            }
+        }
+
+        if (createdFrontMatter || docChanged || listChanged)
+        {
+            if (apply)
+            {
+                File.WriteAllText(docPath, frontMatter!.Serialize());
+            }
+            updated = true;
+        }
+
+        return updated;
+    }
+
     private static int SyncDocLinksForItem(string repoRoot, WorkItem item, List<string> missingDocs, bool dryRun)
     {
         var updates = 0;

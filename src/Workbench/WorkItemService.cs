@@ -249,6 +249,34 @@ public static class WorkItemService
         return false;
     }
 
+    public static bool RemoveRelatedLink(string path, string key, string link, bool apply = true)
+    {
+        var content = File.ReadAllText(path);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            throw new InvalidOperationException($"Front matter error: {error}");
+        }
+
+        var related = GetRelatedMap(frontMatter!.Data);
+        if (related is null)
+        {
+            throw new InvalidOperationException("Missing related section.");
+        }
+
+        var list = EnsureList(related, key);
+        var before = list.Count;
+        list.RemoveAll(entry => entry is string s && s.Equals(link, StringComparison.OrdinalIgnoreCase));
+        if (list.Count != before)
+        {
+            if (apply)
+            {
+                File.WriteAllText(path, frontMatter.Serialize());
+            }
+            return true;
+        }
+        return false;
+    }
+
     public static string GetItemPathById(string repoRoot, WorkbenchConfig config, string id)
     {
         foreach (var dir in new[] { config.Paths.ItemsDir, config.Paths.DoneDir })

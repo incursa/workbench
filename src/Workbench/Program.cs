@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using System.Linq;
 using Workbench;
 
 static string ResolveRepo(string? repoArg)
@@ -51,6 +52,28 @@ static WorkItemPayload ItemToPayload(WorkItem item, bool includeBody = false)
 
 static void SetExitCode(int code) => Environment.ExitCode = code;
 
+static string NormalizeRepoLink(string repoRoot, string link)
+{
+    var trimmed = link.Trim();
+    if (trimmed.Length == 0)
+    {
+        return trimmed;
+    }
+    var normalized = trimmed.Replace('\\', '/');
+    if (Path.IsPathRooted(trimmed))
+    {
+        var full = Path.GetFullPath(trimmed);
+        var repoFull = Path.GetFullPath(repoRoot);
+        if (full.StartsWith(repoFull, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = Path.GetRelativePath(repoRoot, full).Replace('\\', '/');
+            return "/" + relative;
+        }
+        return full.Replace('\\', '/');
+    }
+    return normalized.StartsWith("./", StringComparison.Ordinal) ? normalized[2..] : normalized;
+}
+
 static void HandleDocCreate(
     string? repo,
     string format,
@@ -99,6 +122,89 @@ static void HandleDocCreate(
     catch (Exception ex)
     {
         Console.WriteLine(ex.ToString());
+        SetExitCode(2);
+    }
+}
+
+static void HandleDocLink(
+    string? repo,
+    string format,
+    string docType,
+    string docPath,
+    string[] workItems,
+    bool add,
+    bool dryRun)
+{
+    try
+    {
+        if (workItems.Length == 0)
+        {
+            Console.WriteLine("No work items provided.");
+            SetExitCode(2);
+            return;
+        }
+
+        var repoRoot = ResolveRepo(repo);
+        var resolvedFormat = ResolveFormat(format);
+        var config = WorkbenchConfig.Load(repoRoot, out var configError);
+        if (configError is not null)
+        {
+            Console.WriteLine($"Config error: {configError}");
+            SetExitCode(2);
+            return;
+        }
+
+        var normalizedDoc = NormalizeRepoLink(repoRoot, docPath);
+        var itemsUpdated = 0;
+        var docUpdated = false;
+
+        foreach (var workItemId in workItems)
+        {
+            var itemPath = WorkItemService.GetItemPathById(repoRoot, config, workItemId);
+            var key = docType.Equals("adr", StringComparison.OrdinalIgnoreCase) ? "adrs" : "specs";
+            var updated = add
+                ? WorkItemService.AddRelatedLink(itemPath, key, normalizedDoc, apply: !dryRun)
+                : WorkItemService.RemoveRelatedLink(itemPath, key, normalizedDoc, apply: !dryRun);
+            if (updated)
+            {
+                itemsUpdated++;
+            }
+
+            if (DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalizedDoc, workItemId, add, apply: !dryRun))
+            {
+                docUpdated = true;
+            }
+        }
+
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new DocLinkOutput(
+                true,
+                new DocLinkData(
+                    normalizedDoc,
+                    docType,
+                    workItems.ToList(),
+                    itemsUpdated,
+                    docUpdated));
+            WriteJson(payload, WorkbenchJsonContext.Default.DocLinkOutput);
+        }
+        else
+        {
+            var action = add ? "linked" : "unlinked";
+            Console.WriteLine($"{docType.ToUpperInvariant()} {action}: {normalizedDoc}");
+            Console.WriteLine($"Work items updated: {itemsUpdated}");
+            Console.WriteLine($"Doc updated: {(docUpdated ? "yes" : "no")}");
+            if (dryRun)
+            {
+                Console.WriteLine("Dry run: no files were modified.");
+            }
+        }
+
+        SetExitCode(0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
         SetExitCode(2);
     }
 }
@@ -895,6 +1001,296 @@ itemRenameCommand.SetAction(parseResult =>
 });
 itemCommand.Subcommands.Add(itemRenameCommand);
 
+var itemLinkCommand = new Command("link", "Link specs, ADRs, files, PRs, or issues to a work item.");
+var linkIdArg = new Argument<string>("id")
+{
+    Description = "Work item ID."
+};
+var linkSpecOption = new Option<string[]>("--spec")
+{
+    Description = "Spec path(s) to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+var linkAdrOption = new Option<string[]>("--adr")
+{
+    Description = "ADR path(s) to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+var linkFileOption = new Option<string[]>("--file")
+{
+    Description = "File path(s) to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+var linkPrOption = new Option<string[]>("--pr")
+{
+    Description = "PR URL(s) to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+var linkIssueOption = new Option<string[]>("--issue")
+{
+    Description = "Issue URL(s) or IDs to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+itemLinkCommand.Arguments.Add(linkIdArg);
+itemLinkCommand.Options.Add(linkSpecOption);
+itemLinkCommand.Options.Add(linkAdrOption);
+itemLinkCommand.Options.Add(linkFileOption);
+itemLinkCommand.Options.Add(linkPrOption);
+itemLinkCommand.Options.Add(linkIssueOption);
+var linkDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+itemLinkCommand.Options.Add(linkDryRunOption);
+itemLinkCommand.SetAction(parseResult =>
+{
+    try
+    {
+        var repo = parseResult.GetValue(repoOption);
+        var format = parseResult.GetValue(formatOption) ?? "table";
+        var id = parseResult.GetValue(linkIdArg) ?? string.Empty;
+        var specs = parseResult.GetValue(linkSpecOption) ?? Array.Empty<string>();
+        var adrs = parseResult.GetValue(linkAdrOption) ?? Array.Empty<string>();
+        var files = parseResult.GetValue(linkFileOption) ?? Array.Empty<string>();
+        var prs = parseResult.GetValue(linkPrOption) ?? Array.Empty<string>();
+        var issues = parseResult.GetValue(linkIssueOption) ?? Array.Empty<string>();
+        var dryRun = parseResult.GetValue(linkDryRunOption);
+
+        if (specs.Length + adrs.Length + files.Length + prs.Length + issues.Length == 0)
+        {
+            Console.WriteLine("No links provided.");
+            SetExitCode(2);
+            return;
+        }
+
+        var repoRoot = ResolveRepo(repo);
+        var resolvedFormat = ResolveFormat(format);
+        var config = WorkbenchConfig.Load(repoRoot, out var configError);
+        if (configError is not null)
+        {
+            Console.WriteLine($"Config error: {configError}");
+            SetExitCode(2);
+            return;
+        }
+
+        var itemPath = WorkItemService.GetItemPathById(repoRoot, config, id);
+        var updated = false;
+
+        foreach (var spec in specs)
+        {
+            var normalized = NormalizeRepoLink(repoRoot, spec);
+            if (WorkItemService.AddRelatedLink(itemPath, "specs", normalized, apply: !dryRun))
+            {
+                updated = true;
+            }
+            DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: true, apply: !dryRun);
+        }
+
+        foreach (var adr in adrs)
+        {
+            var normalized = NormalizeRepoLink(repoRoot, adr);
+            if (WorkItemService.AddRelatedLink(itemPath, "adrs", normalized, apply: !dryRun))
+            {
+                updated = true;
+            }
+            DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: true, apply: !dryRun);
+        }
+
+        foreach (var file in files)
+        {
+            var normalized = NormalizeRepoLink(repoRoot, file);
+            if (WorkItemService.AddRelatedLink(itemPath, "files", normalized, apply: !dryRun))
+            {
+                updated = true;
+            }
+            DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: true, apply: !dryRun);
+        }
+
+        if (prs.Any(pr => WorkItemService.AddRelatedLink(itemPath, "prs", pr, apply: !dryRun)))
+        {
+            updated = true;
+        }
+
+        if (issues.Any(issue => WorkItemService.AddRelatedLink(itemPath, "issues", issue, apply: !dryRun)))
+        {
+            updated = true;
+        }
+
+        var item = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Invalid work item.");
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new ItemShowOutput(
+                true,
+                new ItemShowData(ItemToPayload(item)));
+            WriteJson(payload, WorkbenchJsonContext.Default.ItemShowOutput);
+        }
+        else if (updated)
+        {
+            Console.WriteLine($"{item.Id} links updated.");
+            if (dryRun)
+            {
+                Console.WriteLine("Dry run: no files were modified.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"{item.Id} already had the requested links.");
+        }
+        SetExitCode(0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+        SetExitCode(2);
+    }
+});
+itemCommand.Subcommands.Add(itemLinkCommand);
+
+var itemUnlinkCommand = new Command("unlink", "Remove specs, ADRs, files, PRs, or issues from a work item.");
+var unlinkIdArg = new Argument<string>("id")
+{
+    Description = "Work item ID."
+};
+var unlinkSpecOption = new Option<string[]>("--spec")
+{
+    Description = "Spec path(s) to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+var unlinkAdrOption = new Option<string[]>("--adr")
+{
+    Description = "ADR path(s) to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+var unlinkFileOption = new Option<string[]>("--file")
+{
+    Description = "File path(s) to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+var unlinkPrOption = new Option<string[]>("--pr")
+{
+    Description = "PR URL(s) to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+var unlinkIssueOption = new Option<string[]>("--issue")
+{
+    Description = "Issue URL(s) or IDs to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+itemUnlinkCommand.Arguments.Add(unlinkIdArg);
+itemUnlinkCommand.Options.Add(unlinkSpecOption);
+itemUnlinkCommand.Options.Add(unlinkAdrOption);
+itemUnlinkCommand.Options.Add(unlinkFileOption);
+itemUnlinkCommand.Options.Add(unlinkPrOption);
+itemUnlinkCommand.Options.Add(unlinkIssueOption);
+var unlinkDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+itemUnlinkCommand.Options.Add(unlinkDryRunOption);
+itemUnlinkCommand.SetAction(parseResult =>
+{
+    try
+    {
+        var repo = parseResult.GetValue(repoOption);
+        var format = parseResult.GetValue(formatOption) ?? "table";
+        var id = parseResult.GetValue(unlinkIdArg) ?? string.Empty;
+        var specs = parseResult.GetValue(unlinkSpecOption) ?? Array.Empty<string>();
+        var adrs = parseResult.GetValue(unlinkAdrOption) ?? Array.Empty<string>();
+        var files = parseResult.GetValue(unlinkFileOption) ?? Array.Empty<string>();
+        var prs = parseResult.GetValue(unlinkPrOption) ?? Array.Empty<string>();
+        var issues = parseResult.GetValue(unlinkIssueOption) ?? Array.Empty<string>();
+        var dryRun = parseResult.GetValue(unlinkDryRunOption);
+
+        if (specs.Length + adrs.Length + files.Length + prs.Length + issues.Length == 0)
+        {
+            Console.WriteLine("No links provided.");
+            SetExitCode(2);
+            return;
+        }
+
+        var repoRoot = ResolveRepo(repo);
+        var resolvedFormat = ResolveFormat(format);
+        var config = WorkbenchConfig.Load(repoRoot, out var configError);
+        if (configError is not null)
+        {
+            Console.WriteLine($"Config error: {configError}");
+            SetExitCode(2);
+            return;
+        }
+
+        var itemPath = WorkItemService.GetItemPathById(repoRoot, config, id);
+        var updated = false;
+
+        foreach (var spec in specs)
+        {
+            var normalized = NormalizeRepoLink(repoRoot, spec);
+            if (WorkItemService.RemoveRelatedLink(itemPath, "specs", normalized, apply: !dryRun))
+            {
+                updated = true;
+            }
+            DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: false, apply: !dryRun);
+        }
+
+        foreach (var adr in adrs)
+        {
+            var normalized = NormalizeRepoLink(repoRoot, adr);
+            if (WorkItemService.RemoveRelatedLink(itemPath, "adrs", normalized, apply: !dryRun))
+            {
+                updated = true;
+            }
+            DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: false, apply: !dryRun);
+        }
+
+        foreach (var file in files)
+        {
+            var normalized = NormalizeRepoLink(repoRoot, file);
+            if (WorkItemService.RemoveRelatedLink(itemPath, "files", normalized, apply: !dryRun))
+            {
+                updated = true;
+            }
+            DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: false, apply: !dryRun);
+        }
+
+        if (prs.Any(pr => WorkItemService.RemoveRelatedLink(itemPath, "prs", pr, apply: !dryRun)))
+        {
+            updated = true;
+        }
+
+        if (issues.Any(issue => WorkItemService.RemoveRelatedLink(itemPath, "issues", issue, apply: !dryRun)))
+        {
+            updated = true;
+        }
+
+        var item = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Invalid work item.");
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new ItemShowOutput(
+                true,
+                new ItemShowData(ItemToPayload(item)));
+            WriteJson(payload, WorkbenchJsonContext.Default.ItemShowOutput);
+        }
+        else if (updated)
+        {
+            Console.WriteLine($"{item.Id} links updated.");
+            if (dryRun)
+            {
+                Console.WriteLine("Dry run: no files were modified.");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"{item.Id} already lacked the requested links.");
+        }
+        SetExitCode(0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+        SetExitCode(2);
+    }
+});
+itemCommand.Subcommands.Add(itemUnlinkCommand);
+
 root.Subcommands.Add(itemCommand);
 
 var addCommand = new Command("add", "Shorthand for item creation.");
@@ -1388,6 +1784,63 @@ specNewCommand.SetAction(parseResult =>
     HandleDocCreate(repo, format, "spec", title, path, workItems, codeRefs, force);
 });
 specCommand.Subcommands.Add(specNewCommand);
+var specLinkCommand = new Command("link", "Link a spec document to work items.");
+var specLinkPathOption = new Option<string>("--path")
+{
+    Description = "Spec path.",
+    Required = true
+};
+var specLinkWorkItemOption = new Option<string[]>("--work-item")
+{
+    Description = "Work item ID(s) to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+var specLinkDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+specLinkCommand.Options.Add(specLinkPathOption);
+specLinkCommand.Options.Add(specLinkWorkItemOption);
+specLinkCommand.Options.Add(specLinkDryRunOption);
+specLinkCommand.SetAction(parseResult =>
+{
+    var repo = parseResult.GetValue(repoOption);
+    var format = parseResult.GetValue(formatOption) ?? "table";
+    var path = parseResult.GetValue(specLinkPathOption) ?? string.Empty;
+    var workItems = parseResult.GetValue(specLinkWorkItemOption) ?? Array.Empty<string>();
+    var dryRun = parseResult.GetValue(specLinkDryRunOption);
+    HandleDocLink(repo, format, "spec", path, workItems, add: true, dryRun: dryRun);
+});
+specCommand.Subcommands.Add(specLinkCommand);
+
+var specUnlinkCommand = new Command("unlink", "Unlink a spec document from work items.");
+var specUnlinkPathOption = new Option<string>("--path")
+{
+    Description = "Spec path.",
+    Required = true
+};
+var specUnlinkWorkItemOption = new Option<string[]>("--work-item")
+{
+    Description = "Work item ID(s) to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+var specUnlinkDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+specUnlinkCommand.Options.Add(specUnlinkPathOption);
+specUnlinkCommand.Options.Add(specUnlinkWorkItemOption);
+specUnlinkCommand.Options.Add(specUnlinkDryRunOption);
+specUnlinkCommand.SetAction(parseResult =>
+{
+    var repo = parseResult.GetValue(repoOption);
+    var format = parseResult.GetValue(formatOption) ?? "table";
+    var path = parseResult.GetValue(specUnlinkPathOption) ?? string.Empty;
+    var workItems = parseResult.GetValue(specUnlinkWorkItemOption) ?? Array.Empty<string>();
+    var dryRun = parseResult.GetValue(specUnlinkDryRunOption);
+    HandleDocLink(repo, format, "spec", path, workItems, add: false, dryRun: dryRun);
+});
+specCommand.Subcommands.Add(specUnlinkCommand);
 root.Subcommands.Add(specCommand);
 
 var adrCommand = new Command("adr", "ADR documentation commands.");
@@ -1409,6 +1862,63 @@ adrNewCommand.SetAction(parseResult =>
     HandleDocCreate(repo, format, "adr", title, path, workItems, codeRefs, force);
 });
 adrCommand.Subcommands.Add(adrNewCommand);
+var adrLinkCommand = new Command("link", "Link an ADR document to work items.");
+var adrLinkPathOption = new Option<string>("--path")
+{
+    Description = "ADR path.",
+    Required = true
+};
+var adrLinkWorkItemOption = new Option<string[]>("--work-item")
+{
+    Description = "Work item ID(s) to link.",
+    AllowMultipleArgumentsPerToken = true
+};
+var adrLinkDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+adrLinkCommand.Options.Add(adrLinkPathOption);
+adrLinkCommand.Options.Add(adrLinkWorkItemOption);
+adrLinkCommand.Options.Add(adrLinkDryRunOption);
+adrLinkCommand.SetAction(parseResult =>
+{
+    var repo = parseResult.GetValue(repoOption);
+    var format = parseResult.GetValue(formatOption) ?? "table";
+    var path = parseResult.GetValue(adrLinkPathOption) ?? string.Empty;
+    var workItems = parseResult.GetValue(adrLinkWorkItemOption) ?? Array.Empty<string>();
+    var dryRun = parseResult.GetValue(adrLinkDryRunOption);
+    HandleDocLink(repo, format, "adr", path, workItems, add: true, dryRun: dryRun);
+});
+adrCommand.Subcommands.Add(adrLinkCommand);
+
+var adrUnlinkCommand = new Command("unlink", "Unlink an ADR document from work items.");
+var adrUnlinkPathOption = new Option<string>("--path")
+{
+    Description = "ADR path.",
+    Required = true
+};
+var adrUnlinkWorkItemOption = new Option<string[]>("--work-item")
+{
+    Description = "Work item ID(s) to unlink.",
+    AllowMultipleArgumentsPerToken = true
+};
+var adrUnlinkDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+adrUnlinkCommand.Options.Add(adrUnlinkPathOption);
+adrUnlinkCommand.Options.Add(adrUnlinkWorkItemOption);
+adrUnlinkCommand.Options.Add(adrUnlinkDryRunOption);
+adrUnlinkCommand.SetAction(parseResult =>
+{
+    var repo = parseResult.GetValue(repoOption);
+    var format = parseResult.GetValue(formatOption) ?? "table";
+    var path = parseResult.GetValue(adrUnlinkPathOption) ?? string.Empty;
+    var workItems = parseResult.GetValue(adrUnlinkWorkItemOption) ?? Array.Empty<string>();
+    var dryRun = parseResult.GetValue(adrUnlinkDryRunOption);
+    HandleDocLink(repo, format, "adr", path, workItems, add: false, dryRun: dryRun);
+});
+adrCommand.Subcommands.Add(adrUnlinkCommand);
 root.Subcommands.Add(adrCommand);
 
 var validateCommand = new Command("validate", "Validate work items, links, and schemas.");
