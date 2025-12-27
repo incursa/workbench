@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Linq;
+using System.Reflection;
 using Workbench;
 
 static string ResolveRepo(string? repoArg)
@@ -299,7 +300,13 @@ root.Options.Add(quietOption);
 var versionCommand = new Command("version", "Print CLI version.");
 versionCommand.SetAction(parseResult =>
 {
-    var version = typeof(Program).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+    var assembly = typeof(Program).Assembly;
+    var informationalVersion = assembly
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+        ?.InformationalVersion;
+    var version = informationalVersion
+        ?? assembly.GetName().Version?.ToString()
+        ?? "0.0.0";
     Console.WriteLine(version);
     SetExitCode(0);
 });

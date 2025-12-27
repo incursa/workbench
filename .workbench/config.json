@@ -23,6 +23,8 @@
   },
   "github": {
     "provider": "gh",
-    "defaultDraft": false
+    "defaultDraft": true,
+    "owner": "bravellian",
+    "repository": "workbench"
   }
 }

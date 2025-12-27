@@ -7,6 +7,7 @@
     <Company>Bravellian</Company>
     <Authors>Bravellian</Authors>
     <Copyright>© Bravellian. All rights reserved.</Copyright>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
