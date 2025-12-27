@@ -23,6 +23,7 @@ namespace Workbench;
 [JsonSerializable(typeof(DocCreateOutput))]
 [JsonSerializable(typeof(DocSyncOutput))]
 [JsonSerializable(typeof(DocLinkOutput))]
+[JsonSerializable(typeof(DocSummaryOutput))]
 internal partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 
 namespace Workbench;
 
@@ -78,5 +79,39 @@ public static class GitService
         {
             throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git push failed.");
         }
+    }
+
+    public static IList<string> GetStagedFiles(string repoRoot)
+    {
+        var result = Run(repoRoot, "diff", "--cached", "--name-only", "--diff-filter=ACMRT");
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git diff --cached failed.");
+        }
+        return result.StdOut
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToList();
+    }
+
+    public static string GetStagedDiff(string repoRoot, string path)
+    {
+        var result = Run(repoRoot, "diff", "--cached", "--no-color", "--unified=0", "--", path);
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git diff --cached failed.");
+        }
+        return result.StdOut;
+    }
+
+    public static string GetWorkingDiff(string repoRoot, string path)
+    {
+        var result = Run(repoRoot, "diff", "--no-color", "--unified=0", "--", path);
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git diff failed.");
+        }
+        return result.StdOut;
     }
 }

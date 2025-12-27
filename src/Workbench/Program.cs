@@ -1761,8 +1761,118 @@ docSyncCommand.SetAction(parseResult =>
     }
 });
 
+var docSummaryCommand = new Command("summarize", "Summarize doc changes with AI and append change notes.");
+var docSummaryStagedOption = new Option<bool>("--staged")
+{
+    Description = "Use staged diff (default when no --path is provided)."
+};
+var docSummaryPathOption = new Option<string[]>("--path")
+{
+    Description = "File path(s) to summarize (defaults to staged markdown files).",
+    AllowMultipleArgumentsPerToken = true
+};
+var docSummaryDryRunOption = new Option<bool>("--dry-run")
+{
+    Description = "Report changes without writing files."
+};
+var docSummaryUpdateIndexOption = new Option<bool>("--update-index")
+{
+    Description = "Run git add on updated files."
+};
+docSummaryCommand.Options.Add(docSummaryStagedOption);
+docSummaryCommand.Options.Add(docSummaryPathOption);
+docSummaryCommand.Options.Add(docSummaryDryRunOption);
+docSummaryCommand.Options.Add(docSummaryUpdateIndexOption);
+docSummaryCommand.SetAction(parseResult =>
+{
+    try
+    {
+        var repo = parseResult.GetValue(repoOption);
+        var format = parseResult.GetValue(formatOption) ?? "table";
+        var staged = parseResult.GetValue(docSummaryStagedOption);
+        var dryRun = parseResult.GetValue(docSummaryDryRunOption);
+        var updateIndex = parseResult.GetValue(docSummaryUpdateIndexOption);
+        var paths = parseResult.GetValue(docSummaryPathOption) ?? Array.Empty<string>();
+
+        var repoRoot = ResolveRepo(repo);
+        var resolvedFormat = ResolveFormat(format);
+        var useStaged = staged;
+        if (paths.Length == 0)
+        {
+            useStaged = true;
+            paths = GitService.GetStagedFiles(repoRoot).ToArray();
+        }
+
+        if (paths.Length == 0)
+        {
+            Console.WriteLine("No markdown files to summarize.");
+            SetExitCode(0);
+            return;
+        }
+
+        var result = DocSummaryService.SummarizeDocsAsync(
+                repoRoot,
+                paths,
+                useStaged,
+                dryRun,
+                updateIndex)
+            .GetAwaiter()
+            .GetResult();
+
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new DocSummaryOutput(
+                true,
+                new DocSummaryData(
+                    result.FilesUpdated,
+                    result.NotesAdded,
+                    result.UpdatedFiles,
+                    result.SkippedFiles,
+                    result.Errors,
+                    result.Warnings));
+            WriteJson(payload, WorkbenchJsonContext.Default.DocSummaryOutput);
+        }
+        else
+        {
+            Console.WriteLine($"Files updated: {result.FilesUpdated}");
+            Console.WriteLine($"Notes added: {result.NotesAdded}");
+            if (result.Warnings.Count > 0)
+            {
+                Console.WriteLine("Warnings:");
+                foreach (var warning in result.Warnings)
+                {
+                    Console.WriteLine($"- {warning}");
+                }
+            }
+            if (result.Errors.Count > 0)
+            {
+                Console.WriteLine("Errors:");
+                foreach (var error in result.Errors)
+                {
+                    Console.WriteLine($"- {error}");
+                }
+            }
+            if (result.SkippedFiles.Count > 0)
+            {
+                Console.WriteLine("Skipped:");
+                foreach (var skipped in result.SkippedFiles)
+                {
+                    Console.WriteLine($"- {skipped}");
+                }
+            }
+        }
+        SetExitCode(result.Errors.Count > 0 ? 2 : 0);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(ex);
+        SetExitCode(2);
+    }
+});
+
 docCommand.Subcommands.Add(docNewCommand);
 docCommand.Subcommands.Add(docSyncCommand);
+docCommand.Subcommands.Add(docSummaryCommand);
 root.Subcommands.Add(docCommand);
 
 var specCommand = new Command("spec", "Spec documentation commands.");

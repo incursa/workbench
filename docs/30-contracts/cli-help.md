@@ -128,6 +128,10 @@ Commands:
   - Sync doc/work item backlinks. `--all` adds Workbench front matter to all docs; `--dry-run` reports changes without writing.
   - Example: `workbench doc sync --all --dry-run`
 
+- `workbench doc summarize [--staged] [--path <path...>] [--dry-run] [--update-index]`
+  - Summarize markdown diffs using AI and append `workbench.changeNotes` entries.
+  - Example: `workbench doc summarize --staged --update-index`
+
 - `workbench spec new --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]`
   - Create a spec document and auto-link work items.
   - Example: `workbench spec new --title "Access model" --work-item TASK-0100`
