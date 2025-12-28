@@ -51,9 +51,7 @@ public static class WorkboardService
         lines.Add(string.Empty);
         lines.AddRange(FormatSection(sections["blocked"], repoRoot, workboardDir, defaultRepo));
         lines.Add(string.Empty);
-        lines.Add("## Draft");
-        lines.Add(string.Empty);
-        lines.AddRange(FormatSection(sections["draft"], repoRoot, workboardDir, defaultRepo));
+        lines.AddRange(FormatCollapsibleSection("Draft (backlog)", sections["draft"], repoRoot, workboardDir, defaultRepo));
         lines.Add(string.Empty);
 
         var content = string.Join("\n", lines);
@@ -76,20 +74,42 @@ public static class WorkboardService
             yield break;
         }
 
-        yield return "| Item | Status | Owner | Issues | Related |";
-        yield return "| --- | --- | --- | --- | --- |";
-        foreach (var item in items)
+        yield return "| Item | Priority | Type | Status | Owner | Issues | Related |";
+        yield return "| --- | --- | --- | --- | --- | --- | --- |";
+        foreach (var item in items.OrderBy(entry => GetPriorityRank(entry.Priority)).ThenBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase))
         {
             var relative = Path.GetRelativePath(workboardDir, item.Path).Replace('\\', '/');
             var itemTitle = $"{item.Id} - {item.Title}";
             var itemLink = BuildMarkdownLink(itemTitle, relative);
             var status = FormatWorkItemStatus(item.Status);
             var owner = string.IsNullOrWhiteSpace(item.Owner) ? "-" : EscapeTableCell(item.Owner);
+            var priority = FormatPriority(item.Priority);
+            var type = FormatWorkItemType(item.Type);
             var issues = FormatIssueLinks(item.Related.Issues, defaultRepo);
             var related = FormatRelatedLinks(item, repoRoot, workboardDir);
 
-            yield return string.Create(CultureInfo.InvariantCulture, $"| {itemLink} | {status} | {owner} | {issues} | {related} |");
+            yield return string.Create(
+                CultureInfo.InvariantCulture,
+                $"| {itemLink} | {priority} | {type} | {status} | {owner} | {issues} | {related} |");
         }
+    }
+
+    private static IEnumerable<string> FormatCollapsibleSection(
+        string title,
+        List<WorkItem> items,
+        string repoRoot,
+        string workboardDir,
+        GithubRepoRef? defaultRepo)
+    {
+        yield return "<details>";
+        yield return $"<summary>{EscapeInlineText(title)} ({items.Count})</summary>";
+        yield return string.Empty;
+        foreach (var line in FormatSection(items, repoRoot, workboardDir, defaultRepo))
+        {
+            yield return line;
+        }
+        yield return string.Empty;
+        yield return "</details>";
     }
 
     private static string FormatIssueLinks(IList<string> issues, GithubRepoRef? defaultRepo)
@@ -197,6 +217,12 @@ public static class WorkboardService
         return $"[{EscapeTableCell(text)}]({href})";
     }
 
+    private static string EscapeInlineText(string value)
+    {
+        return value.Replace("<", "&lt;", StringComparison.Ordinal)
+            .Replace(">", "&gt;", StringComparison.Ordinal);
+    }
+
     private static string EscapeTableCell(string value)
     {
         return value.Replace("|", "\\|", StringComparison.Ordinal)
@@ -218,6 +244,51 @@ public static class WorkboardService
             "in-progress" => "🔵 in-progress",
             "blocked" => "🟥 blocked",
             _ => EscapeTableCell(status)
+        };
+    }
+
+    private static string FormatPriority(string? priority)
+    {
+        if (string.IsNullOrWhiteSpace(priority))
+        {
+            return "-";
+        }
+
+        return priority.ToLowerInvariant() switch
+        {
+            "critical" => "🔴 critical",
+            "high" => "🟠 high",
+            "medium" => "🟡 medium",
+            "low" => "🟢 low",
+            _ => EscapeTableCell(priority)
+        };
+    }
+
+    private static string FormatWorkItemType(string type)
+    {
+        if (string.IsNullOrWhiteSpace(type))
+        {
+            return "❔ unknown";
+        }
+
+        return type.ToLowerInvariant() switch
+        {
+            "task" => "🧩 task",
+            "bug" => "🐛 bug",
+            "spike" => "🧪 spike",
+            _ => EscapeTableCell(type)
+        };
+    }
+
+    private static int GetPriorityRank(string? priority)
+    {
+        return priority?.ToLowerInvariant() switch
+        {
+            "critical" => 0,
+            "high" => 1,
+            "medium" => 2,
+            "low" => 3,
+            _ => 4
         };
     }
 
