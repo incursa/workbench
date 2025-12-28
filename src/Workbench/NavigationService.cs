@@ -34,9 +34,12 @@ public static class NavigationService
         bool includeDone,
         bool syncIssues,
         bool force,
-        bool dryRun)
+        bool dryRun,
+        bool syncDocs = true)
     {
-        var docSync = DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun);
+        var docSync = syncDocs
+            ? DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun)
+            : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
         var normalizedItems = WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun);
         var warnings = new List<string>();
         var docEntries = LoadDocEntries(repoRoot, config, warnings);

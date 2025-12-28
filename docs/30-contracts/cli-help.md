@@ -66,6 +66,10 @@ Commands:
   - Launch the interactive wizard for common document and work item actions.
   - Example: `workbench run`
 
+- `workbench sync [--items] [--docs] [--nav] [--issues <true|false>] [--include-done] [--force] [--dry-run] [--prefer <local|github>]`
+  - Run the full repo sync (work items, docs/front matter, and navigation) in order. When no step flags are provided, runs all.
+  - Example: `workbench sync --dry-run`
+
 - `workbench scaffold [--force]`
   - Create the default folder structure, templates, and config.
   - Example: `workbench scaffold`
