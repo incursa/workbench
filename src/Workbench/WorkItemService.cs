@@ -5,6 +5,8 @@ namespace Workbench;
 
 public static class WorkItemService
 {
+    private const int MaxSlugLength = 80;
+
     public sealed record WorkItemResult(string Id, string Slug, string Path);
 
     public sealed record WorkItemListResult(IList<WorkItem> Items);
@@ -567,7 +569,14 @@ public static class WorkItemService
         var cleaned = Regex.Replace(lowered, @"[^a-z0-9-\s]", "", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
         var dashed = Regex.Replace(cleaned, @"\s+", "-", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
         var collapsed = Regex.Replace(dashed, @"-+", "-", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
-        return collapsed.Trim('-');
+        var trimmed = collapsed.Trim('-');
+        if (trimmed.Length <= MaxSlugLength)
+        {
+            return trimmed;
+        }
+
+        var shortened = trimmed[..MaxSlugLength].Trim('-');
+        return shortened;
     }
 
     private static IEnumerable<string> EnumerateItems(string repoRoot, WorkbenchConfig config, bool includeDone)
