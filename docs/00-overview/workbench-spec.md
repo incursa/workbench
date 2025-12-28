@@ -306,6 +306,9 @@ Runs the `run` wizard afterward unless `--skip-wizard` is set.
 #### workbench run
 Launches the interactive wizard for common document/work item actions.
 
+#### workbench sync [--items] [--docs] [--nav] [--issues <true|false>] [--include-done] [--force] [--dry-run] [--prefer <local|github>]
+Runs the full repository sync in order: work items ↔ GitHub issues, doc backlinks/front matter, then navigation indexes. When no step flags are provided, runs all.
+
 #### workbench scaffold [--force]
 Creates the default folder structure, templates, and config.
 
