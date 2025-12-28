@@ -293,3 +293,15 @@ Data:
   "warnings": []
 }
 ```
+
+## workbench sync
+
+Data:
+```json
+{
+  "items": { /* ItemSyncData */ },
+  "docs": { /* DocSyncData */ },
+  "nav": { /* NavSyncData */ },
+  "dryRun": false
+}
+```

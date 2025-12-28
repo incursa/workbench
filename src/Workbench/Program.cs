@@ -74,6 +74,220 @@ public class Program
         return string.Join("\n", collected).Trim();
     }
 
+    static ItemSyncData RunItemSync(
+        string repoRoot,
+        WorkbenchConfig config,
+        string[] ids,
+        string[] issueInputs,
+        string? prefer,
+        bool dryRun)
+    {
+        var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
+        var preferGithub = string.Equals(prefer, "github", StringComparison.OrdinalIgnoreCase);
+        var items = new List<WorkItem>();
+        if (ids.Length > 0)
+        {
+            foreach (var id in ids)
+            {
+                var path = WorkItemService.GetItemPathById(repoRoot, config, id);
+                var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
+                items.Add(item);
+            }
+        }
+        else
+        {
+            items.AddRange(WorkItemService.ListItems(repoRoot, config, includeDone: true).Items);
+        }
+
+        var issueMap = new Dictionary<string, WorkItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            foreach (var entry in item.Related.Issues)
+            {
+                if (string.IsNullOrWhiteSpace(entry))
+                {
+                    continue;
+                }
+                var issueRef = GithubService.ParseIssueReference(entry, defaultRepo);
+                var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
+                if (!issueMap.ContainsKey(key))
+                {
+                    issueMap[key] = item;
+                }
+            }
+        }
+
+        var issueCache = new Dictionary<string, GithubIssue>(StringComparer.OrdinalIgnoreCase);
+        GithubIssue FetchIssue(string issueLink, out GithubIssueRef issueRef)
+        {
+            issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo);
+            var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
+            if (!issueCache.TryGetValue(key, out var issue))
+            {
+                issue = GithubService.FetchIssue(repoRoot, issueRef);
+                issueCache[key] = issue;
+            }
+            return issue;
+        }
+
+        var imported = new List<ItemSyncImportEntry>();
+        IList<GithubIssue> issuesToImport;
+        if (issueInputs.Length > 0)
+        {
+            var selected = new List<GithubIssue>();
+            foreach (var input in issueInputs)
+            {
+                var issueRef = GithubService.ParseIssueReference(input, defaultRepo);
+                selected.Add(GithubService.FetchIssue(repoRoot, issueRef));
+            }
+            issuesToImport = selected;
+        }
+        else if (ids.Length > 0)
+        {
+            issuesToImport = Array.Empty<GithubIssue>();
+        }
+        else
+        {
+            issuesToImport = GithubService.ListIssues(repoRoot, defaultRepo);
+        }
+
+        foreach (var issue in issuesToImport)
+        {
+            var key = $"{issue.Repo.Display}#{issue.Number.ToString(CultureInfo.InvariantCulture)}";
+            if (issueMap.ContainsKey(key))
+            {
+                continue;
+            }
+
+            var issuePayload = new GithubIssuePayload(
+                issue.Repo.Display,
+                issue.Number,
+                issue.Url,
+                issue.Title,
+                issue.State,
+                issue.Labels,
+                issue.PullRequests);
+
+            if (dryRun)
+            {
+                imported.Add(new ItemSyncImportEntry(issuePayload, null));
+                continue;
+            }
+
+            var type = ResolveIssueType(issue, null);
+            var status = ResolveIssueStatus(issue, null);
+            var item = WorkItemService.CreateItemFromGithubIssue(repoRoot, config, issue, type, status, null, null);
+            imported.Add(new ItemSyncImportEntry(issuePayload, ItemToPayload(item)));
+            items.Add(item);
+            issueMap[key] = item;
+        }
+
+        var issuesUpdated = new List<ItemSyncIssueUpdateEntry>();
+        var itemsUpdated = new List<ItemSyncItemUpdateEntry>();
+        foreach (var item in items)
+        {
+            var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
+            if (string.IsNullOrWhiteSpace(issueLink))
+            {
+                continue;
+            }
+
+            var issue = FetchIssue(issueLink, out var issueRef);
+            if (preferGithub)
+            {
+                var summary = ExtractSection(item.Body, "Summary");
+                var needsUpdate = !StringsEqual(item.Title, issue.Title);
+                if (!needsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
+                {
+                    needsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
+                }
+                if (!needsUpdate)
+                {
+                    continue;
+                }
+
+                if (!dryRun)
+                {
+                    WorkItemService.UpdateItemFromGithubIssue(item.Path, issue, apply: true);
+                }
+                itemsUpdated.Add(new ItemSyncItemUpdateEntry(item.Id, issue.Url));
+            }
+            else
+            {
+                if (IsTerminalStatus(item.Status))
+                {
+                    continue;
+                }
+
+                var desiredTitle = item.Title;
+                var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
+                if (StringsEqual(issue.Title, desiredTitle) && StringsEqual(issue.Body, desiredBody))
+                {
+                    continue;
+                }
+
+                if (!dryRun)
+                {
+                    GithubService.UpdateIssue(repoRoot, issueRef, desiredTitle, desiredBody);
+                }
+                issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
+            }
+        }
+
+        var issuesCreated = new List<ItemSyncIssueEntry>();
+        foreach (var item in items)
+        {
+            if (IsTerminalStatus(item.Status))
+            {
+                continue;
+            }
+            if (item.Related.Issues.Count > 0)
+            {
+                continue;
+            }
+
+            var body = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
+            if (dryRun)
+            {
+                issuesCreated.Add(new ItemSyncIssueEntry(item.Id, string.Empty));
+                continue;
+            }
+
+            var issueUrl = GithubService.CreateIssue(repoRoot, defaultRepo, item.Title, body, item.Tags);
+            WorkItemService.AddRelatedLink(item.Path, "issues", issueUrl);
+            issuesCreated.Add(new ItemSyncIssueEntry(item.Id, issueUrl));
+        }
+
+        var branchesCreated = new List<ItemSyncBranchEntry>();
+        foreach (var item in items)
+        {
+            if (IsTerminalStatus(item.Status))
+            {
+                continue;
+            }
+
+            var listedBranch = item.Related.Branches.FirstOrDefault(branch => !string.IsNullOrWhiteSpace(branch));
+            if (string.IsNullOrWhiteSpace(listedBranch))
+            {
+                continue;
+            }
+
+            var branchName = listedBranch;
+            var branchExists = GitService.BranchExists(repoRoot, branchName);
+            if (!branchExists)
+            {
+                if (!dryRun)
+                {
+                    GitService.CreateBranch(repoRoot, branchName);
+                    GitService.Push(repoRoot, branchName);
+                }
+                branchesCreated.Add(new ItemSyncBranchEntry(item.Id, branchName));
+            }
+        }
+
+        return new ItemSyncData(imported, issuesCreated, issuesUpdated, itemsUpdated, branchesCreated, dryRun);
+    }
+
     static void PrintRelatedLinks(string label, IEnumerable<string> links)
     {
         var entries = links.Where(link => !string.IsNullOrWhiteSpace(link)).ToList();
@@ -1526,219 +1740,18 @@ public class Program
                     return;
                 }
 
-                var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
-                var preferGithub = string.Equals(prefer, "github", StringComparison.OrdinalIgnoreCase);
-                var items = new List<WorkItem>();
-                if (ids.Length > 0)
-                {
-                    foreach (var id in ids)
-                    {
-                        var path = WorkItemService.GetItemPathById(repoRoot, config, id);
-                        var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
-                        items.Add(item);
-                    }
-                }
-                else
-                {
-                    items.AddRange(WorkItemService.ListItems(repoRoot, config, includeDone: true).Items);
-                }
-
-                var issueMap = new Dictionary<string, WorkItem>(StringComparer.OrdinalIgnoreCase);
-                foreach (var item in items)
-                {
-                    foreach (var entry in item.Related.Issues)
-                    {
-                        if (string.IsNullOrWhiteSpace(entry))
-                        {
-                            continue;
-                        }
-                        var issueRef = GithubService.ParseIssueReference(entry, defaultRepo);
-                        var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
-                        if (!issueMap.ContainsKey(key))
-                        {
-                            issueMap[key] = item;
-                        }
-                    }
-                }
-
-                var issueCache = new Dictionary<string, GithubIssue>(StringComparer.OrdinalIgnoreCase);
-                GithubIssue FetchIssue(string issueLink, out GithubIssueRef issueRef)
-                {
-                    issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo);
-                    var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
-                    if (!issueCache.TryGetValue(key, out var issue))
-                    {
-                        issue = GithubService.FetchIssue(repoRoot, issueRef);
-                        issueCache[key] = issue;
-                    }
-                    return issue;
-                }
-
-                var imported = new List<ItemSyncImportEntry>();
-                IList<GithubIssue> issuesToImport;
-                if (issueInputs.Length > 0)
-                {
-                    var selected = new List<GithubIssue>();
-                    foreach (var input in issueInputs)
-                    {
-                        var issueRef = GithubService.ParseIssueReference(input, defaultRepo);
-                        selected.Add(GithubService.FetchIssue(repoRoot, issueRef));
-                    }
-                    issuesToImport = selected;
-                }
-                else if (ids.Length > 0)
-                {
-                    issuesToImport = Array.Empty<GithubIssue>();
-                }
-                else
-                {
-                    issuesToImport = GithubService.ListIssues(repoRoot, defaultRepo);
-                }
-
-                foreach (var issue in issuesToImport)
-                {
-                    var key = $"{issue.Repo.Display}#{issue.Number.ToString(CultureInfo.InvariantCulture)}";
-                    if (issueMap.ContainsKey(key))
-                    {
-                        continue;
-                    }
-
-                    var issuePayload = new GithubIssuePayload(
-                        issue.Repo.Display,
-                        issue.Number,
-                        issue.Url,
-                        issue.Title,
-                        issue.State,
-                        issue.Labels,
-                        issue.PullRequests);
-
-                    if (dryRun)
-                    {
-                        imported.Add(new ItemSyncImportEntry(issuePayload, null));
-                        continue;
-                    }
-
-                    var type = ResolveIssueType(issue, null);
-                    var status = ResolveIssueStatus(issue, null);
-                    var item = WorkItemService.CreateItemFromGithubIssue(repoRoot, config, issue, type, status, null, null);
-                    imported.Add(new ItemSyncImportEntry(issuePayload, ItemToPayload(item)));
-                    items.Add(item);
-                    issueMap[key] = item;
-                }
-
-                var issuesUpdated = new List<ItemSyncIssueUpdateEntry>();
-                var itemsUpdated = new List<ItemSyncItemUpdateEntry>();
-                foreach (var item in items)
-                {
-                    var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
-                    if (string.IsNullOrWhiteSpace(issueLink))
-                    {
-                        continue;
-                    }
-
-                    var issue = FetchIssue(issueLink, out var issueRef);
-                    if (preferGithub)
-                    {
-                        var summary = ExtractSection(item.Body, "Summary");
-                        var needsUpdate = !StringsEqual(item.Title, issue.Title);
-                        if (!needsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
-                        {
-                            needsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
-                        }
-                        if (!needsUpdate)
-                        {
-                            continue;
-                        }
-
-                        if (!dryRun)
-                        {
-                            WorkItemService.UpdateItemFromGithubIssue(item.Path, issue, apply: true);
-                        }
-                        itemsUpdated.Add(new ItemSyncItemUpdateEntry(item.Id, issue.Url));
-                    }
-                    else
-                    {
-                        if (IsTerminalStatus(item.Status))
-                        {
-                            continue;
-                        }
-
-                        var desiredTitle = item.Title;
-                        var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
-                        if (StringsEqual(issue.Title, desiredTitle) && StringsEqual(issue.Body, desiredBody))
-                        {
-                            continue;
-                        }
-
-                        if (!dryRun)
-                        {
-                            GithubService.UpdateIssue(repoRoot, issueRef, desiredTitle, desiredBody);
-                        }
-                        issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
-                    }
-                }
-
-                var issuesCreated = new List<ItemSyncIssueEntry>();
-                foreach (var item in items)
-                {
-                    if (IsTerminalStatus(item.Status))
-                    {
-                        continue;
-                    }
-                    if (item.Related.Issues.Count > 0)
-                    {
-                        continue;
-                    }
-
-                    var body = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
-                    if (dryRun)
-                    {
-                        issuesCreated.Add(new ItemSyncIssueEntry(item.Id, string.Empty));
-                        continue;
-                    }
-
-                    var issueUrl = GithubService.CreateIssue(repoRoot, defaultRepo, item.Title, body, item.Tags);
-                    WorkItemService.AddRelatedLink(item.Path, "issues", issueUrl);
-                    issuesCreated.Add(new ItemSyncIssueEntry(item.Id, issueUrl));
-                }
-
-                var branchesCreated = new List<ItemSyncBranchEntry>();
-                foreach (var item in items)
-                {
-                    if (IsTerminalStatus(item.Status))
-                    {
-                        continue;
-                    }
-
-                    var listedBranch = item.Related.Branches.FirstOrDefault(branch => !string.IsNullOrWhiteSpace(branch));
-                    if (string.IsNullOrWhiteSpace(listedBranch))
-                    {
-                        continue;
-                    }
-
-                    var branchName = listedBranch;
-                    var branchExists = GitService.BranchExists(repoRoot, branchName);
-                    if (!branchExists)
-                    {
-                        if (!dryRun)
-                        {
-                            GitService.CreateBranch(repoRoot, branchName);
-                            GitService.Push(repoRoot, branchName);
-                        }
-                        branchesCreated.Add(new ItemSyncBranchEntry(item.Id, branchName));
-                    }
-                }
+                var data = RunItemSync(repoRoot, config, ids, issueInputs, prefer, dryRun);
 
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
                     var payload = new ItemSyncOutput(
                         true,
-                        new ItemSyncData(imported, issuesCreated, issuesUpdated, itemsUpdated, branchesCreated, dryRun));
+                        data);
                     WriteJson(payload, WorkbenchJsonContext.Default.ItemSyncOutput);
                 }
                 else
                 {
-                    foreach (var entry in imported)
+                    foreach (var entry in data.Imported)
                     {
                         if (entry.Item is null)
                         {
@@ -1750,27 +1763,27 @@ public class Program
                         }
                     }
 
-                    foreach (var issue in issuesCreated)
+                    foreach (var issue in data.IssuesCreated)
                     {
                         var suffix = string.IsNullOrWhiteSpace(issue.IssueUrl) ? "Would create issue" : issue.IssueUrl;
                         Console.WriteLine($"{suffix} for {issue.ItemId}.");
                     }
 
-                    foreach (var issue in issuesUpdated)
+                    foreach (var issue in data.IssuesUpdated)
                     {
                         var suffix = string.IsNullOrWhiteSpace(issue.IssueUrl) ? "Would update issue" : issue.IssueUrl;
                         Console.WriteLine($"{suffix} for {issue.ItemId}.");
                     }
 
-                    foreach (var item in itemsUpdated)
+                    foreach (var item in data.ItemsUpdated)
                     {
                         var suffix = string.IsNullOrWhiteSpace(item.IssueUrl) ? "Would update item" : item.IssueUrl;
                         Console.WriteLine($"{suffix} for {item.ItemId}.");
                     }
 
-                    foreach (var branch in branchesCreated)
+                    foreach (var branch in data.BranchesCreated)
                     {
-                        var suffix = dryRun ? "Would create branch" : "Created and pushed branch";
+                        var suffix = data.DryRun ? "Would create branch" : "Created and pushed branch";
                         Console.WriteLine($"{suffix} {branch.Branch} for {branch.ItemId}.");
                     }
                 }
@@ -3117,6 +3130,199 @@ public class Program
         });
         navCommand.Subcommands.Add(navSyncCommand);
         root.Subcommands.Add(navCommand);
+
+        var syncCommand = new Command("sync", "Sync work items, docs, and navigation.");
+        var syncItemsOption = new Option<bool>("--items")
+        {
+            Description = "Run work item sync with GitHub issues and branches."
+        };
+        var syncDocsOption = new Option<bool>("--docs")
+        {
+            Description = "Sync doc/work item backlinks and front matter."
+        };
+        var syncNavOption = new Option<bool>("--nav")
+        {
+            Description = "Sync navigation indexes."
+        };
+        var syncIssuesOption = new Option<bool>("--issues")
+        {
+            Description = "Sync GitHub issue links for docs and navigation.",
+            DefaultValueFactory = _ => true
+        };
+        var syncIncludeDoneOption = new Option<bool>("--include-done")
+        {
+            Description = "Include done/dropped work items in docs and navigation."
+        };
+        var syncForceOption = new Option<bool>("--force")
+        {
+            Description = "Rewrite index sections even if content is unchanged."
+        };
+        var syncDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Report changes without writing files."
+        };
+        var syncPreferOption = new Option<string?>("--prefer")
+        {
+            Description = "When syncing work items, prefer 'local' or 'github'."
+        };
+        syncPreferOption.CompletionSources.Add("local", "github");
+        syncCommand.Options.Add(syncItemsOption);
+        syncCommand.Options.Add(syncDocsOption);
+        syncCommand.Options.Add(syncNavOption);
+        syncCommand.Options.Add(syncIssuesOption);
+        syncCommand.Options.Add(syncIncludeDoneOption);
+        syncCommand.Options.Add(syncForceOption);
+        syncCommand.Options.Add(syncDryRunOption);
+        syncCommand.Options.Add(syncPreferOption);
+        syncCommand.SetAction(parseResult =>
+        {
+            try
+            {
+                var repo = parseResult.GetValue(repoOption);
+                var format = parseResult.GetValue(formatOption) ?? "table";
+                var runItems = parseResult.GetValue(syncItemsOption);
+                var runDocs = parseResult.GetValue(syncDocsOption);
+                var runNav = parseResult.GetValue(syncNavOption);
+                var syncIssues = parseResult.GetValue(syncIssuesOption);
+                var includeDone = parseResult.GetValue(syncIncludeDoneOption);
+                var force = parseResult.GetValue(syncForceOption);
+                var dryRun = parseResult.GetValue(syncDryRunOption);
+                var prefer = parseResult.GetValue(syncPreferOption);
+
+                if (!runItems && !runDocs && !runNav)
+                {
+                    runItems = true;
+                    runDocs = true;
+                    runNav = true;
+                }
+
+                var repoRoot = ResolveRepo(repo);
+                var resolvedFormat = ResolveFormat(format);
+                var config = WorkbenchConfig.Load(repoRoot, out var configError);
+                if (configError is not null)
+                {
+                    Console.WriteLine($"Config error: {configError}");
+                    SetExitCode(2);
+                    return;
+                }
+
+                ItemSyncData? itemData = null;
+                DocSyncData? docData = null;
+                NavSyncData? navData = null;
+
+                if (runItems)
+                {
+                    itemData = RunItemSync(repoRoot, config, Array.Empty<string>(), Array.Empty<string>(), prefer, dryRun);
+                }
+
+                if (runDocs)
+                {
+                    var result = DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun);
+                    docData = new DocSyncData(
+                        result.DocsUpdated,
+                        result.ItemsUpdated,
+                        result.MissingDocs,
+                        result.MissingItems);
+                }
+
+                if (runNav)
+                {
+                    var result = NavigationService.SyncNavigation(repoRoot, config, includeDone, syncIssues, force, dryRun);
+                    navData = new NavSyncData(
+                        result.DocsUpdated,
+                        result.ItemsUpdated,
+                        result.IndexFilesUpdated,
+                        result.MissingDocs,
+                        result.MissingItems,
+                        result.Warnings);
+                }
+
+                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payload = new RepoSyncOutput(
+                        true,
+                        new RepoSyncData(itemData, docData, navData, dryRun));
+                    WriteJson(payload, WorkbenchJsonContext.Default.RepoSyncOutput);
+                }
+                else
+                {
+                    if (runItems && itemData is not null)
+                    {
+                        Console.WriteLine("Item sync:");
+                        Console.WriteLine($"Imported: {itemData.Imported.Count}");
+                        Console.WriteLine($"Issues created: {itemData.IssuesCreated.Count}");
+                        Console.WriteLine($"Issues updated: {itemData.IssuesUpdated.Count}");
+                        Console.WriteLine($"Items updated: {itemData.ItemsUpdated.Count}");
+                        Console.WriteLine($"Branches created: {itemData.BranchesCreated.Count}");
+                        Console.WriteLine();
+                    }
+
+                    if (runDocs && docData is not null)
+                    {
+                        Console.WriteLine("Doc sync:");
+                        Console.WriteLine($"Docs updated: {docData.DocsUpdated}");
+                        Console.WriteLine($"Work items updated: {docData.ItemsUpdated}");
+                        if (docData.MissingDocs.Count > 0)
+                        {
+                            Console.WriteLine("Missing docs:");
+                            foreach (var entry in docData.MissingDocs)
+                            {
+                                Console.WriteLine($"- {entry}");
+                            }
+                        }
+                        if (docData.MissingItems.Count > 0)
+                        {
+                            Console.WriteLine("Missing work items:");
+                            foreach (var entry in docData.MissingItems)
+                            {
+                                Console.WriteLine($"- {entry}");
+                            }
+                        }
+                        Console.WriteLine();
+                    }
+
+                    if (runNav && navData is not null)
+                    {
+                        Console.WriteLine("Nav sync:");
+                        Console.WriteLine($"Docs updated: {navData.DocsUpdated}");
+                        Console.WriteLine($"Work items updated: {navData.ItemsUpdated}");
+                        Console.WriteLine($"Index files updated: {navData.IndexFilesUpdated}");
+                        if (navData.Warnings.Count > 0)
+                        {
+                            Console.WriteLine("Warnings:");
+                            foreach (var warning in navData.Warnings)
+                            {
+                                Console.WriteLine($"- {warning}");
+                            }
+                        }
+                        if (navData.MissingDocs.Count > 0)
+                        {
+                            Console.WriteLine("Missing docs:");
+                            foreach (var entry in navData.MissingDocs)
+                            {
+                                Console.WriteLine($"- {entry}");
+                            }
+                        }
+                        if (navData.MissingItems.Count > 0)
+                        {
+                            Console.WriteLine("Missing work items:");
+                            foreach (var entry in navData.MissingItems)
+                            {
+                                Console.WriteLine($"- {entry}");
+                            }
+                        }
+                    }
+                }
+
+                SetExitCode(0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                SetExitCode(2);
+            }
+        });
+        root.Subcommands.Add(syncCommand);
 
         var specCommand = new Command("spec", "Group: spec documentation commands.");
         var specNewCommand = new Command("new", "Create a spec document and auto-link work items.");
