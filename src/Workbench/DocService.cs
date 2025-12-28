@@ -114,13 +114,10 @@ public static class DocService
                 }
             }
 
-            if (createdFrontMatter || docChanged || listChanged)
+            if ((createdFrontMatter || docChanged || listChanged) && !dryRun)
             {
-                if (!dryRun)
-                {
-                    File.WriteAllText(docPath, frontMatter!.Serialize());
-                    docsUpdated++;
-                }
+                File.WriteAllText(docPath, frontMatter!.Serialize());
+                docsUpdated++;
             }
         }
 
@@ -263,13 +260,10 @@ public static class DocService
                 listChanged = true;
             }
 
-            if (createdFrontMatter || docChanged || listChanged)
+            if ((createdFrontMatter || docChanged || listChanged) && !dryRun)
             {
-                if (!dryRun)
-                {
-                    File.WriteAllText(docPath, frontMatter!.Serialize());
-                    updated++;
-                }
+                File.WriteAllText(docPath, frontMatter!.Serialize());
+                updated++;
             }
         }
 
