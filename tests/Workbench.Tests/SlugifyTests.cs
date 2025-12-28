@@ -102,4 +102,12 @@ public class SlugifyTests
         var slug = WorkItemService.Slugify("    ");
         Assert.AreEqual("", slug);
     }
+
+    [TestMethod]
+    public void Slugify_TruncatesLongTitles()
+    {
+        var slug = WorkItemService.Slugify(new string('A', 120) + " trailing");
+        Assert.IsLessThanOrEqualTo(80, slug.Length);
+        Assert.IsFalse(slug.EndsWith("-", StringComparison.Ordinal));
+    }
 }
