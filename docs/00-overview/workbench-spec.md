@@ -16,7 +16,7 @@ Workbench is a standalone .NET CLI that standardizes a Markdown-first engineerin
 - repo scaffolding for /work and /docs
 - validation of links/metadata/conventions
 - promotion workflow: create branch + commit a new work item
-- GitHub PR creation (via gh CLI by default) and backlinking PR URLs into the work item
+- GitHub PR creation (via provider, Octokit by default) and backlinking PR URLs into the work item
 
 Workbench is designed to be repo-agnostic and operate on the current directory or a provided path.
 
@@ -60,7 +60,7 @@ while still allowing external systems as intake.
    - deterministic validation rules
 
 5) Keep dependencies light:
-   - use git and gh CLIs by default
+   - use git CLI by default and a GitHub provider (Octokit default)
    - no server required
 
 ---
@@ -259,7 +259,7 @@ Workbench works without config (defaults applied), but writes config on scaffold
     "requireCleanWorkingTree": true
   },
   "github": {
-    "provider": "gh",
+    "provider": "octokit",
     "defaultDraft": false
   }
 }
@@ -359,7 +359,7 @@ Promotion workflow:
 --draft and --no-draft override the default draft behavior.
 
 #### workbench pr create <ID> [--base <branch>] [--draft] [--fill]
-Creates a GitHub PR using gh:
+Creates a GitHub PR using the configured provider:
 - PR title: <ID>: <title>
 - PR body: summary + acceptance criteria + related links
 - On success: add PR URL to related.prs in front matter
@@ -381,11 +381,7 @@ Validates:
   Exit code reflects errors/warnings.
 
 Aliases:
-- `workbench add task` -> `workbench item new --type task`
-- `workbench add bug` -> `workbench item new --type bug`
-- `workbench add spike` -> `workbench item new --type spike`
 - `workbench verify` -> `workbench validate`
-- `workbench create pr` -> `workbench pr create`
 
 ---
 
@@ -406,16 +402,18 @@ Failure behavior:
 ---
 
 ## GitHub integration rules
-Default provider: gh CLI.
+Default provider: Octokit.
 
 Required actions:
-- check gh --version
-- gh auth status (doctor only)
-- gh pr create and capture output URL
+- verify token presence (Octokit) or gh auth (gh provider)
+- create PR and capture output URL
+
+Octokit auth:
+- use WORKBENCH_GITHUB_TOKEN (preferred) or GITHUB_TOKEN
 
 No interactive auth flows inside Workbench.
 
-Future option (not v0.1): API integration via Octokit as fallback.
+Fallback option: gh CLI provider.
 
 ---
 
@@ -511,13 +509,14 @@ Prefix: WB
 - WB030: Front matter schema invalid
 - WB040: Validation error (broken link, duplicate ID, etc.)
 - WB050: Git command failed
-- WB060: GitHub (gh) command failed
+- WB060: GitHub provider failed
 
 ---
 
 ## Security considerations
 - Workbench does not store secrets.
-- No credentials are collected; GitHub auth handled by gh.
+- No credentials are collected; GitHub auth handled via environment tokens or gh.
+- Octokit tokens are read from WORKBENCH_GITHUB_TOKEN (preferred) or GITHUB_TOKEN.
 - Workbench should avoid printing token-related environment variables.
 - When executing external tools, arguments must be safely escaped.
 
@@ -563,7 +562,7 @@ How to run:
 - promote (branch + commit)
 - validate
 - board regen
-- PR create via gh with backlink
+- PR create via GitHub provider with backlink
 
 ### v0.2
 - richer query/filter syntax for listing

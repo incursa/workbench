@@ -91,7 +91,7 @@ public class Program
         };
     }
 
-    static ItemSyncData RunItemSync(
+    static async Task<ItemSyncData> RunItemSyncAsync(
         string repoRoot,
         WorkbenchConfig config,
         string[] ids,
@@ -136,16 +136,16 @@ public class Program
         }
 
         var issueCache = new Dictionary<string, GithubIssue>(StringComparer.OrdinalIgnoreCase);
-        GithubIssue FetchIssue(string issueLink, out GithubIssueRef issueRef)
+        async Task<(GithubIssue, GithubIssueRef)> FetchIssueAsync(string issueLink)
         {
-            issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo);
+            GithubIssueRef issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo);
             var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
             if (!issueCache.TryGetValue(key, out var issue))
             {
-                issue = GithubService.FetchIssue(repoRoot, issueRef);
+                issue = await GithubService.FetchIssueAsync(repoRoot, config, issueRef).ConfigureAwait(false);
                 issueCache[key] = issue;
             }
-            return issue;
+            return (issue, issueRef);
         }
 
         var imported = new List<ItemSyncImportEntry>();
@@ -156,7 +156,7 @@ public class Program
             foreach (var input in issueInputs)
             {
                 var issueRef = GithubService.ParseIssueReference(input, defaultRepo);
-                selected.Add(GithubService.FetchIssue(repoRoot, issueRef));
+                selected.Add(await GithubService.FetchIssueAsync(repoRoot, config, issueRef).ConfigureAwait(false));
             }
             issuesToImport = selected;
         }
@@ -167,8 +167,8 @@ public class Program
         else
         {
             issuesToImport = importIssues
-                ? GithubService.ListIssues(repoRoot, defaultRepo)
-                : Array.Empty<GithubIssue>();
+                ? await GithubService.ListIssuesAsync(repoRoot, config, defaultRepo)
+.ConfigureAwait(false) : Array.Empty<GithubIssue>();
         }
 
         foreach (var issue in issuesToImport)
@@ -212,7 +212,7 @@ public class Program
                 continue;
             }
 
-            var issue = FetchIssue(issueLink, out var issueRef);
+            var (issue, issueRef) = await FetchIssueAsync(issueLink).ConfigureAwait(false);
             if (preferGithub)
             {
                 var summary = ExtractSection(item.Body, "Summary");
@@ -248,7 +248,7 @@ public class Program
 
                 if (!dryRun)
                 {
-                    GithubService.UpdateIssue(repoRoot, issueRef, desiredTitle, desiredBody);
+                    await GithubService.UpdateIssueAsync(repoRoot, config, issueRef, desiredTitle, desiredBody).ConfigureAwait(false);
                     WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
                 }
                 issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
@@ -274,7 +274,7 @@ public class Program
                 continue;
             }
 
-            var issueUrl = GithubService.CreateIssue(repoRoot, defaultRepo, item.Title, body, item.Tags);
+            var issueUrl = await GithubService.CreateIssueAsync(repoRoot, config, defaultRepo, item.Title, body, item.Tags).ConfigureAwait(false);
             WorkItemService.AddRelatedLink(item.Path, "issues", issueUrl);
             WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
             issuesCreated.Add(new ItemSyncIssueEntry(item.Id, issueUrl));
@@ -612,7 +612,7 @@ public class Program
 
     sealed record InitWorkflowResult(int ExitCode, bool ShouldRunWizard, IList<string> Summary);
 
-    static InitWorkflowResult RunInitWorkflow(string repoRoot, InitWorkflowOptions options)
+    static async Task<InitWorkflowResult> RunInitWorkflowAsync(string repoRoot, InitWorkflowOptions options)
     {
         var summary = new List<string>();
         var config = WorkbenchConfig.Load(repoRoot, out var configError);
@@ -690,7 +690,7 @@ public class Program
         var invalidFrontMatter = 0;
         foreach (var file in docFiles)
         {
-            var content = File.ReadAllText(file);
+            var content = await File.ReadAllTextAsync(file).ConfigureAwait(false);
             if (FrontMatter.TryParse(content, out _, out string? _))
             {
                 continue;
@@ -732,7 +732,7 @@ public class Program
         {
             try
             {
-                var syncResult = DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues: false, includeDone: false, dryRun: false);
+                var syncResult = await DocService.SyncLinksAsync(repoRoot, config, includeAllDocs: true, syncIssues: false, includeDone: false, dryRun: false).ConfigureAwait(false);
                 summary.Add($"Updated front matter in {syncResult.DocsUpdated} docs.");
             }
             catch (Exception ex)
@@ -831,7 +831,7 @@ public class Program
                         $"WORKBENCH_AI_OPENAI_KEY={key}",
                         $"WORKBENCH_AI_MODEL={model}"
                     };
-                        File.WriteAllLines(credentialPath, lines);
+                        await File.WriteAllLinesAsync(credentialPath, lines).ConfigureAwait(false);
                         if (IsPathInsideRepo(repoRoot, credentialPath))
                         {
                             EnsureGitignoreEntry(repoRoot, NormalizeRepoPath(repoRoot, credentialPath));
@@ -1024,7 +1024,7 @@ public class Program
             .Replace("{title}", item.Title);
     }
 
-    static string CreatePr(
+    static async Task<string> CreatePrAsync(
         string repoRoot,
         WorkbenchConfig config,
         WorkItem item,
@@ -1035,7 +1035,8 @@ public class Program
         var prTitle = $"{item.Id}: {item.Title}";
         var prBody = fill ? PullRequestBuilder.BuildBody(item) : $"Work item: /{Path.GetRelativePath(repoRoot, item.Path).Replace('\\', '/')}";
         var isDraft = draft || config.Github.DefaultDraft;
-        var prUrl = GithubService.CreatePullRequest(repoRoot, prTitle, prBody, baseBranch ?? config.Git.DefaultBaseBranch, isDraft);
+        var prRepo = GithubService.ResolveRepo(repoRoot, config);
+        var prUrl = await GithubService.CreatePullRequestAsync(repoRoot, config, prRepo, prTitle, prBody, baseBranch ?? config.Git.DefaultBaseBranch, isDraft).ConfigureAwait(false);
         WorkItemService.AddPrLink(item.Path, prUrl);
         return prUrl;
     }
@@ -1127,7 +1128,7 @@ public class Program
             Description = "Output machine-readable JSON."
         };
         doctorCommand.Options.Add(doctorJsonOption);
-        doctorCommand.SetAction(parseResult =>
+        doctorCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -1151,7 +1152,7 @@ public class Program
                 var gitIssue = false;
                 var configIssue = false;
                 var pathIssue = false;
-                var ghIssue = false;
+                var githubIssue = false;
 
                 try
                 {
@@ -1266,14 +1267,15 @@ public class Program
                     pathIssue = true;
                 }
 
-                var ghStatus = GithubService.CheckAuthStatus(repoRoot);
-                if (string.Equals(ghStatus.Status, "ok", StringComparison.OrdinalIgnoreCase))
+                var githubProvider = string.IsNullOrWhiteSpace(config.Github.Provider) ? "octokit" : config.Github.Provider;
+                var githubStatus = await GithubService.CheckAuthStatusAsync(repoRoot, config).ConfigureAwait(false);
+                if (string.Equals(githubStatus.Status, "ok", StringComparison.OrdinalIgnoreCase))
                 {
                     checks.Add(new DoctorCheck(
-                        "gh",
+                        "github",
                         "ok",
                         new DoctorCheckDetails(
-                            Version: ghStatus.Version,
+                            Version: githubStatus.Version,
                             Error: null,
                             Reason: null,
                             Path: null,
@@ -1283,17 +1285,17 @@ public class Program
                 else
                 {
                     checks.Add(new DoctorCheck(
-                        "gh",
-                        ghStatus.Status,
+                        "github",
+                        githubStatus.Status,
                         new DoctorCheckDetails(
                             Version: null,
                             Error: null,
-                            Reason: ghStatus.Reason,
+                            Reason: githubStatus.Reason,
                             Path: null,
                             Missing: null,
                             SchemaErrors: null)));
                     hasWarnings = true;
-                    ghIssue = true;
+                    githubIssue = true;
                 }
 
                 if (jsonOutput)
@@ -1326,9 +1328,16 @@ public class Program
                         {
                             Console.WriteLine("- Run `workbench init` to scaffold missing paths.");
                         }
-                        if (ghIssue)
+                        if (githubIssue)
                         {
-                            Console.WriteLine("- Run `gh auth login` and ensure GitHub CLI is installed.");
+                            if (string.Equals(githubProvider, "gh", StringComparison.OrdinalIgnoreCase))
+                            {
+                                Console.WriteLine("- Run `gh auth login` and ensure GitHub CLI is installed.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("- Set WORKBENCH_GITHUB_TOKEN or GITHUB_TOKEN for Octokit.");
+                            }
                         }
                     }
                 }
@@ -1402,7 +1411,7 @@ public class Program
         initCommand.Options.Add(initOpenAiProviderOption);
         initCommand.Options.Add(initOpenAiKeyOption);
         initCommand.Options.Add(initOpenAiModelOption);
-        initCommand.SetAction(parseResult =>
+        initCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -1419,7 +1428,7 @@ public class Program
                     OpenAiProvider: parseResult.GetValue(initOpenAiProviderOption),
                     OpenAiKey: parseResult.GetValue(initOpenAiKeyOption),
                     OpenAiModel: parseResult.GetValue(initOpenAiModelOption));
-                var result = RunInitWorkflow(repoRoot, options);
+                var result = await RunInitWorkflowAsync(repoRoot, options).ConfigureAwait(false);
                 if (result.ExitCode != 0)
                 {
                     SetExitCode(result.ExitCode);
@@ -1737,7 +1746,7 @@ public class Program
         itemImportCommand.Options.Add(importStatusOption);
         itemImportCommand.Options.Add(importPriorityOption);
         itemImportCommand.Options.Add(importOwnerOption);
-        itemImportCommand.SetAction(parseResult =>
+        itemImportCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -1771,7 +1780,7 @@ public class Program
                 foreach (var input in issueInputs)
                 {
                     var issueRef = GithubService.ParseIssueReference(input, defaultRepo);
-                    var issue = GithubService.FetchIssue(repoRoot, issueRef);
+                    var issue = await GithubService.FetchIssueAsync(repoRoot, config, issueRef).ConfigureAwait(false);
                     var type = ResolveIssueType(issue, typeOverride);
                     var status = ResolveIssueStatus(issue, statusOverride);
                     var item = WorkItemService.CreateItemFromGithubIssue(repoRoot, config, issue, type, status, priority, owner);
@@ -1837,7 +1846,7 @@ public class Program
         itemSyncCommand.Options.Add(syncPreferOption);
         itemSyncCommand.Options.Add(itemSyncDryRunOption);
         itemSyncCommand.Options.Add(itemSyncImportIssuesOption);
-        itemSyncCommand.SetAction(parseResult =>
+        itemSyncCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -1858,7 +1867,7 @@ public class Program
                     return;
                 }
 
-                var data = RunItemSync(repoRoot, config, ids, issueInputs, importIssues, prefer, dryRun);
+                var data = await RunItemSyncAsync(repoRoot, config, ids, issueInputs, importIssues, prefer, dryRun).ConfigureAwait(false);
 
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -2559,64 +2568,6 @@ public class Program
 
         root.Subcommands.Add(itemCommand);
 
-        var addCommand = new Command("add", "Group: shorthand item creation.");
-        Command BuildAddCommand(string typeName)
-        {
-            var cmd = new Command(typeName, $"Alias for workbench item new --type {typeName}.");
-            var titleOption = CreateTitleOption();
-            var statusOption = CreateStatusOption();
-            var priorityOption = CreatePriorityOption();
-            var ownerOption = CreateOwnerOption();
-            cmd.Options.Add(titleOption);
-            cmd.Options.Add(statusOption);
-            cmd.Options.Add(priorityOption);
-            cmd.Options.Add(ownerOption);
-            cmd.SetAction(parseResult =>
-            {
-                try
-                {
-                    var repo = parseResult.GetValue(repoOption);
-                    var format = parseResult.GetValue(formatOption) ?? "table";
-                    var title = parseResult.GetValue(titleOption) ?? string.Empty;
-                    var status = parseResult.GetValue(statusOption);
-                    var priority = parseResult.GetValue(priorityOption);
-                    var owner = parseResult.GetValue(ownerOption);
-                    var repoRoot = ResolveRepo(repo);
-                    var resolvedFormat = ResolveFormat(format);
-                    var config = WorkbenchConfig.Load(repoRoot, out var configError);
-                    if (configError is not null)
-                    {
-                        Console.WriteLine($"Config error: {configError}");
-                        SetExitCode(2);
-                        return;
-                    }
-                    var result = WorkItemService.CreateItem(repoRoot, config, typeName, title, status, priority, owner);
-                    if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var payload = new ItemCreateOutput(
-                            true,
-                            new ItemCreateData(result.Id, result.Slug, result.Path));
-                        WriteJson(payload, WorkbenchJsonContext.Default.ItemCreateOutput);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{result.Id} created at {result.Path}");
-                    }
-                    SetExitCode(0);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                    SetExitCode(2);
-                }
-            });
-            return cmd;
-        }
-        addCommand.Subcommands.Add(BuildAddCommand("task"));
-        addCommand.Subcommands.Add(BuildAddCommand("bug"));
-        addCommand.Subcommands.Add(BuildAddCommand("spike"));
-        root.Subcommands.Add(addCommand);
-
         var boardCommand = new Command("board", "Group: workboard commands.");
         var boardRegenCommand = new Command("regen", "Regenerate work/WORKBOARD.md.");
         boardRegenCommand.SetAction(parseResult =>
@@ -2701,7 +2652,7 @@ public class Program
         promoteCommand.Options.Add(promoteBaseOption);
         promoteCommand.Options.Add(promoteDraftOption);
         promoteCommand.Options.Add(promoteNoDraftOption);
-        promoteCommand.SetAction(parseResult =>
+        promoteCommand.SetAction(async parseResult =>
         {
             var repo = parseResult.GetValue(repoOption);
             var format = parseResult.GetValue(formatOption) ?? "table";
@@ -2753,7 +2704,7 @@ public class Program
                 if (pr)
                 {
                     var useDraft = draft || (!noDraft && config.Github.DefaultDraft);
-                    prUrl = CreatePr(repoRoot, config, item, baseBranch, useDraft, fill: true);
+                    prUrl = await CreatePrAsync(repoRoot, config, item, baseBranch, useDraft, fill: true).ConfigureAwait(false);
                 }
 
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
@@ -2787,7 +2738,7 @@ public class Program
         root.Subcommands.Add(promoteCommand);
 
         var prCommand = new Command("pr", "Group: pull request commands.");
-        var prCreateCommand = new Command("create", "Create a GitHub PR via gh and backlink the PR URL.");
+        var prCreateCommand = new Command("create", "Create a GitHub PR via the configured provider and backlink the PR URL.");
         var prIdArg = new Argument<string>("id")
         {
             Description = "Work item ID."
@@ -2808,7 +2759,7 @@ public class Program
         prCreateCommand.Options.Add(prBaseOption);
         prCreateCommand.Options.Add(prDraftOption);
         prCreateCommand.Options.Add(prFillOption);
-        prCreateCommand.SetAction(parseResult =>
+        prCreateCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -2829,7 +2780,7 @@ public class Program
                 }
                 var path = WorkItemService.GetItemPathById(repoRoot, config, id);
                 var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
-                var prUrl = CreatePr(repoRoot, config, item, baseBranch, draft, fill);
+                var prUrl = await CreatePrAsync(repoRoot, config, item, baseBranch, draft, fill).ConfigureAwait(false);
 
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -2852,57 +2803,6 @@ public class Program
         });
         prCommand.Subcommands.Add(prCreateCommand);
         root.Subcommands.Add(prCommand);
-
-        var createCommand = new Command("create", "Group: create resources.");
-        var createPrCommand = new Command("pr", "Alias for workbench pr create.");
-        createPrCommand.Arguments.Add(prIdArg);
-        createPrCommand.Options.Add(prBaseOption);
-        createPrCommand.Options.Add(prDraftOption);
-        createPrCommand.Options.Add(prFillOption);
-        createPrCommand.SetAction(parseResult =>
-        {
-            try
-            {
-                var repo = parseResult.GetValue(repoOption);
-                var format = parseResult.GetValue(formatOption) ?? "table";
-                var id = parseResult.GetValue(prIdArg) ?? string.Empty;
-                var baseBranch = parseResult.GetValue(prBaseOption);
-                var draft = parseResult.GetValue(prDraftOption);
-                var fill = parseResult.GetValue(prFillOption);
-                var repoRoot = ResolveRepo(repo);
-                var resolvedFormat = ResolveFormat(format);
-                var config = WorkbenchConfig.Load(repoRoot, out var configError);
-                if (configError is not null)
-                {
-                    Console.WriteLine($"Config error: {configError}");
-                    SetExitCode(2);
-                    return;
-                }
-                var path = WorkItemService.GetItemPathById(repoRoot, config, id);
-                var item = WorkItemService.LoadItem(path) ?? throw new InvalidOperationException("Invalid work item.");
-                var prUrl = CreatePr(repoRoot, config, item, baseBranch, draft, fill);
-
-                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
-                {
-                    var payload = new PrOutput(
-                        true,
-                        new PrData(prUrl, item.Id));
-                    WriteJson(payload, WorkbenchJsonContext.Default.PrOutput);
-                }
-                else
-                {
-                    Console.WriteLine(prUrl);
-                }
-                SetExitCode(0);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                SetExitCode(2);
-            }
-        });
-        createCommand.Subcommands.Add(createPrCommand);
-        root.Subcommands.Add(createCommand);
 
         var docCommand = new Command("doc", "Group: documentation commands.");
 
@@ -2977,7 +2877,7 @@ public class Program
         docSyncCommand.Options.Add(docSyncIssuesOption);
         docSyncCommand.Options.Add(docSyncIncludeDoneOption);
         docSyncCommand.Options.Add(docSyncDryRunOption);
-        docSyncCommand.SetAction(parseResult =>
+        docSyncCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -2997,7 +2897,7 @@ public class Program
                     return;
                 }
 
-                var result = DocService.SyncLinks(repoRoot, config, all, syncIssues, includeDone, dryRun);
+                var result = await DocService.SyncLinksAsync(repoRoot, config, all, syncIssues, includeDone, dryRun).ConfigureAwait(false);
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
                     var payload = new DocSyncOutput(
@@ -3180,7 +3080,7 @@ public class Program
         navSyncCommand.Options.Add(navSyncWorkboardOption);
         navSyncCommand.Options.Add(navSyncIncludeDoneOption);
         navSyncCommand.Options.Add(navSyncDryRunOption);
-        navSyncCommand.SetAction(parseResult =>
+        navSyncCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -3201,7 +3101,7 @@ public class Program
                     return;
                 }
 
-                var result = NavigationService.SyncNavigation(repoRoot, config, includeDone, syncIssues, force, syncWorkboard, dryRun);
+                var result = await NavigationService.SyncNavigationAsync(repoRoot, config, includeDone, syncIssues, force, syncWorkboard, dryRun).ConfigureAwait(false);
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
                     var payload = new NavSyncOutput(
@@ -3312,7 +3212,7 @@ public class Program
         syncCommand.Options.Add(syncWorkboardOption);
         syncCommand.Options.Add(repoSyncDryRunOption);
         syncCommand.Options.Add(repoSyncPreferOption);
-        syncCommand.SetAction(parseResult =>
+        syncCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -3352,12 +3252,12 @@ public class Program
 
                 if (runItems)
                 {
-                    itemData = RunItemSync(repoRoot, config, Array.Empty<string>(), Array.Empty<string>(), importIssues, prefer, dryRun);
+                    itemData = await RunItemSyncAsync(repoRoot, config, Array.Empty<string>(), Array.Empty<string>(), importIssues, prefer, dryRun).ConfigureAwait(false);
                 }
 
                 if (runDocs)
                 {
-                    var result = DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun);
+                    var result = await DocService.SyncLinksAsync(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun).ConfigureAwait(false);
                     docData = new DocSyncData(
                         result.DocsUpdated,
                         result.ItemsUpdated,
@@ -3367,7 +3267,7 @@ public class Program
 
                 if (runNav)
                 {
-                    var result = NavigationService.SyncNavigation(
+                    var result = await NavigationService.SyncNavigationAsync(
                         repoRoot,
                         config,
                         includeDone,
@@ -3375,7 +3275,7 @@ public class Program
                         force,
                         syncWorkboard,
                         dryRun,
-                        syncDocs: !runDocs);
+                        syncDocs: !runDocs).ConfigureAwait(false);
                     navData = new NavSyncData(
                         result.DocsUpdated,
                         result.ItemsUpdated,
@@ -3631,7 +3531,7 @@ public class Program
         root.Subcommands.Add(adrCommand);
 
         var runCommand = new Command("run", "Run the interactive wizard for common tasks.");
-        runCommand.SetAction(parseResult =>
+        runCommand.SetAction(async parseResult =>
         {
             try
             {
@@ -3761,7 +3661,7 @@ public class Program
                 var repoRoot = ResolveRepo(null);
                 if (IsFirstRun(repoRoot))
                 {
-                    var result = RunInitWorkflow(repoRoot, new InitWorkflowOptions(
+                    var result = await RunInitWorkflowAsync(repoRoot, new InitWorkflowOptions(
                         Force: false,
                         NonInteractive: false,
                         SkipWizard: false,
@@ -3771,7 +3671,7 @@ public class Program
                         CredentialPath: null,
                         OpenAiProvider: null,
                         OpenAiKey: null,
-                        OpenAiModel: null));
+                        OpenAiModel: null)).ConfigureAwait(false);
                     if (result.ExitCode != 0)
                     {
                         return result.ExitCode;

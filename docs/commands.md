@@ -94,13 +94,13 @@ Data:
     { "name": "repo", "status": "ok" },
     { "name": "config", "status": "warn", "details": { "path": ".workbench/config.json" } },
     { "name": "paths", "status": "warn", "details": { "missing": ["work/items"] } },
-    { "name": "gh", "status": "skip", "details": { "reason": "not installed" } }
+    { "name": "github", "status": "warn", "details": { "reason": "missing token" } }
   ]
 }
 ```
 
 Notes:
-- `gh` is `warn` when installed but not authenticated; run `gh auth login` to fix.
+- GitHub is `warn` when tokens are missing (Octokit) or `gh` is unauthenticated.
 
 ## workbench scaffold
 

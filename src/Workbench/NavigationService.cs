@@ -29,7 +29,7 @@ public static class NavigationService
         string RepoRelativePath,
         string? GithubLink);
 
-    public static NavigationSyncResult SyncNavigation(
+    public static async Task<NavigationSyncResult> SyncNavigationAsync(
         string repoRoot,
         WorkbenchConfig config,
         bool includeDone,
@@ -40,8 +40,8 @@ public static class NavigationService
         bool syncDocs = true)
     {
         var docSync = syncDocs
-            ? DocService.SyncLinks(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun)
-            : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
+            ? await DocService.SyncLinksAsync(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun)
+.ConfigureAwait(false) : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
         var normalizedItems = WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun);
         var warnings = new List<string>();
         var docEntries = LoadDocEntries(repoRoot, config, warnings);

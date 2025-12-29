@@ -96,6 +96,16 @@ public static class GitService
         }
     }
 
+    public static string GetCurrentBranch(string repoRoot)
+    {
+        var result = Run(repoRoot, "rev-parse", "--abbrev-ref", "HEAD");
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git rev-parse failed.");
+        }
+        return result.StdOut.Trim();
+    }
+
     public static IList<string> GetStagedFiles(string repoRoot)
     {
         var result = Run(repoRoot, "diff", "--cached", "--name-only", "--diff-filter=ACMRT");

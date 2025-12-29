@@ -52,7 +52,7 @@
       "additionalProperties": false,
       "required": ["provider", "defaultDraft"],
       "properties": {
-        "provider": { "type": "string", "enum": ["gh"] },
+        "provider": { "type": "string", "enum": ["octokit", "gh"] },
         "defaultDraft": { "type": "boolean" },
         "host": { "type": "string", "minLength": 1 },
         "owner": { "type": "string", "minLength": 1 },

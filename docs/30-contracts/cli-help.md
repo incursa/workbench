@@ -43,7 +43,7 @@ Common error codes:
 - `WB030`: front matter schema invalid
 - `WB040`: validation error (broken link, duplicate ID, etc.)
 - `WB050`: git command failed
-- `WB060`: GitHub (gh) command failed
+- `WB060`: GitHub provider failed
 
 Commands:
 
@@ -53,7 +53,7 @@ Commands:
 
 - `workbench doctor`
   - Check git, config, and expected paths.
-  - Includes `gh` availability/auth checks; unauthenticated `gh` reports a warning.
+  - Includes GitHub provider checks; missing tokens or unauthenticated gh report a warning.
   - Use `--json` for machine-readable output.
   - Example: `workbench doctor`
 
@@ -93,18 +93,6 @@ Commands:
 - `workbench item sync [--id <ID...>] [--issue <id|url...>] [--import-issues] [--prefer <local|github>] [--dry-run]`
   - Sync work items with GitHub issues and branches (two-way, no deletes). Branches are only created when listed in `related.branches`. Defaults to pushing local content to GitHub unless `--prefer github` is set for ID-scoped sync. Use `--import-issues` to scan GitHub for unlinked issues (slower).
   - Example: `workbench item sync --dry-run`
-
-- `workbench add task --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
-  - Alias for `workbench item new --type task`.
-  - Example: `workbench add task --title "Define link validation"`
-
-- `workbench add bug --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
-  - Alias for `workbench item new --type bug`.
-  - Example: `workbench add bug --title "Fix ID allocation"`
-
-- `workbench add spike --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
-  - Alias for `workbench item new --type spike`.
-  - Example: `workbench add spike --title "Evaluate PR workflow"`
 
 - `workbench item list [--type <...>] [--status <...>] [--include-done]`
   - List work items. Use `--include-done` to include `work/done`.
@@ -188,11 +176,8 @@ Commands:
   - Example: `workbench promote --type task --title "Add validate command" --start --pr --draft`
 
 - `workbench pr create <ID> [--base <branch>] [--draft] [--fill]`
-  - Create a GitHub PR via `gh` and backlink the PR URL.
+  - Create a GitHub PR via the configured provider and backlink the PR URL.
   - Example: `workbench pr create TASK-0042 --draft --fill`
-
-- `workbench create pr <ID> [--base <branch>] [--draft] [--fill]`
-  - Alias for `workbench pr create`.
 
 - `workbench validate [--strict]`
   - Validate work items, links, and schemas. `--strict` treats warnings as errors.
@@ -202,11 +187,9 @@ Commands:
   - Alias for `workbench validate`.
 
 Aliases and intent:
-- "add task/bug/spike" is shorthand for item creation.
 - "verify all work" maps to `workbench validate` (use `--strict` for CI).
-- "create pr" maps to `workbench pr create <ID>`.
 
 Dependencies:
 - Commands that read or write work items require a git repo.
 - `promote` requires git.
-- `pr create` and `promote --pr` require `gh` to be installed and authenticated.
+- `pr create` and `promote --pr` require a configured GitHub provider (Octokit token or authenticated gh).

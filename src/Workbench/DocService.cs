@@ -68,7 +68,7 @@ public static class DocService
         return new DocCreateResult(docPath, type, workItems);
     }
 
-    public static DocSyncResult SyncLinks(string repoRoot, WorkbenchConfig config, bool includeAllDocs, bool syncIssues, bool includeDone, bool dryRun)
+    public static async Task<DocSyncResult> SyncLinksAsync(string repoRoot, WorkbenchConfig config, bool includeAllDocs, bool syncIssues, bool includeDone, bool dryRun)
     {
         var itemsUpdated = 0;
         var docsUpdated = 0;
@@ -116,7 +116,7 @@ public static class DocService
 
             if ((createdFrontMatter || docChanged || listChanged) && !dryRun)
             {
-                File.WriteAllText(docPath, frontMatter!.Serialize());
+                await File.WriteAllTextAsync(docPath, frontMatter!.Serialize()).ConfigureAwait(false);
                 docsUpdated++;
             }
         }
@@ -132,7 +132,7 @@ public static class DocService
 
         if (syncIssues)
         {
-            itemsUpdated += WorkItemService.SyncIssueLinks(repoRoot, config, itemsById.Values, dryRun);
+            itemsUpdated += await WorkItemService.SyncIssueLinksAsync(repoRoot, config, itemsById.Values, dryRun).ConfigureAwait(false);
         }
 
         return new DocSyncResult(docsUpdated, itemsUpdated, missingDocs, missingItems);

@@ -1,92 +1,13 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
-using System.Text.Json;
 
 namespace Workbench;
 
 public static class GithubService
 {
-    public sealed record CommandResult(int ExitCode, string StdOut, string StdErr);
     public sealed record AuthStatus(string Status, string? Reason, string? Version);
 
-    public static CommandResult Run(string repoRoot, params string[] args)
-    {
-        var psi = new ProcessStartInfo("gh")
-        {
-            WorkingDirectory = repoRoot,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        foreach (var arg in args)
-        {
-            psi.ArgumentList.Add(arg);
-        }
-
-        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start gh.");
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-        return new CommandResult(process.ExitCode, stdout.Trim(), stderr.Trim());
-    }
-
-    public static AuthStatus CheckAuthStatus(string repoRoot, string? host = null)
-    {
-        try
-        {
-            var versionResult = Run(repoRoot, "--version");
-            var version = versionResult.ExitCode == 0 ? versionResult.StdOut : null;
-            if (versionResult.ExitCode != 0)
-            {
-                return new AuthStatus("warn", versionResult.StdErr.Length > 0 ? versionResult.StdErr : "gh --version failed.", version);
-            }
-
-            var authArgs = new List<string> { "auth", "status" };
-            if (!string.IsNullOrWhiteSpace(host) && !string.Equals(host, "github.com", StringComparison.OrdinalIgnoreCase))
-            {
-                authArgs.Add("--hostname");
-                authArgs.Add(host);
-            }
-            var authResult = Run(repoRoot, authArgs.ToArray());
-            if (authResult.ExitCode != 0)
-            {
-                var reason = authResult.StdErr.Length > 0 ? authResult.StdErr : "gh auth status failed.";
-                return new AuthStatus("warn", reason, version);
-            }
-
-            return new AuthStatus("ok", null, version);
-        }
-        catch (Exception)
-        {
-#pragma warning disable ERP022
-            return new AuthStatus("skip", "gh not installed or not on PATH.", null);
-#pragma warning restore ERP022
-        }
-    }
-
-    public static void EnsureAuthenticated(string repoRoot, string? host = null)
-    {
-        AuthStatus status;
-        try
-        {
-            status = CheckAuthStatus(repoRoot, host);
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"gh auth check failed: {ex}");
-        }
-
-        if (string.Equals(status.Status, "skip", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("gh is not installed or not on PATH.");
-        }
-
-        if (string.Equals(status.Status, "warn", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("gh is installed but not authenticated. Run `gh auth login`.");
-        }
-    }
+    private static readonly Dictionary<string, IGithubProvider> providers = new(StringComparer.OrdinalIgnoreCase);
 
     public static GithubRepoRef ResolveRepo(string repoRoot, WorkbenchConfig config)
     {
@@ -103,6 +24,16 @@ public static class GithubService
         }
 
         throw new InvalidOperationException("Unable to resolve GitHub repository. Configure github.owner and github.repository in .workbench/config.json or set remote.origin.url.");
+    }
+
+    public static Task<AuthStatus> CheckAuthStatusAsync(string repoRoot, WorkbenchConfig config, string? host = null)
+    {
+        return GetProvider(config).CheckAuthStatusAsync(repoRoot, host);
+    }
+
+    public static Task EnsureAuthenticatedAsync(string repoRoot, WorkbenchConfig config, string? host = null)
+    {
+        return GetProvider(config).EnsureAuthenticatedAsync(repoRoot, host);
     }
 
     public static GithubIssueRef ParseIssueReference(string input, GithubRepoRef defaultRepo)
@@ -149,281 +80,29 @@ public static class GithubService
         throw new InvalidOperationException($"Invalid issue reference: {input}");
     }
 
-    public static GithubIssue FetchIssue(string repoRoot, GithubIssueRef issueRef)
+    public static Task<GithubIssue> FetchIssueAsync(string repoRoot, WorkbenchConfig config, GithubIssueRef issueRef)
     {
-        EnsureAuthenticated(repoRoot, issueRef.Repo.Host);
-
-        const string Query = """
-            query($owner: String!, $name: String!, $number: Int!) {
-              repository(owner: $owner, name: $name) {
-                issue(number: $number) {
-                  number
-                  title
-                  body
-                  url
-                  state
-                  labels(first: 100) { nodes { name } }
-                  timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT, CLOSED_EVENT]) {
-                    nodes {
-                      __typename
-                      ... on CrossReferencedEvent {
-                        source {
-                          __typename
-                          ... on PullRequest { url }
-                        }
-                      }
-                      ... on ConnectedEvent {
-                        subject {
-                          __typename
-                          ... on PullRequest { url }
-                        }
-                      }
-                      ... on ClosedEvent {
-                        closer {
-                          __typename
-                          ... on PullRequest { url }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            """;
-
-        var args = new List<string> { "api" };
-        if (!string.IsNullOrWhiteSpace(issueRef.Repo.Host) && !string.Equals(issueRef.Repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
-        {
-            args.Add("--hostname");
-            args.Add(issueRef.Repo.Host);
-        }
-        args.AddRange(new[]
-        {
-            "graphql",
-            "-f", $"query={Query}",
-            "-f", $"owner={issueRef.Repo.Owner}",
-            "-f", $"name={issueRef.Repo.Repo}",
-            "-F", $"number={issueRef.Number.ToString(CultureInfo.InvariantCulture)}",
-        });
-
-        var result = Run(repoRoot, args.ToArray());
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh api graphql failed.");
-        }
-
-        using var document = JsonDocument.Parse(result.StdOut);
-        if (!document.RootElement.TryGetProperty("data", out var data)
-            || !data.TryGetProperty("repository", out var repoElement)
-            || !repoElement.TryGetProperty("issue", out var issueElement)
-            || issueElement.ValueKind == JsonValueKind.Null)
-        {
-            throw new InvalidOperationException($"Issue not found: {issueRef.Repo.Owner}/{issueRef.Repo.Repo}#{issueRef.Number}");
-        }
-
-        var title = issueElement.GetProperty("title").GetString() ?? string.Empty;
-        var body = issueElement.GetProperty("body").GetString() ?? string.Empty;
-        var url = issueElement.GetProperty("url").GetString() ?? string.Empty;
-        var state = issueElement.GetProperty("state").GetString() ?? string.Empty;
-
-        var labels = new List<string>();
-        if (issueElement.TryGetProperty("labels", out var labelsElement)
-            && labelsElement.TryGetProperty("nodes", out var labelNodes)
-            && labelNodes.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var label in labelNodes.EnumerateArray())
-            {
-                if (label.TryGetProperty("name", out var labelName))
-                {
-                    var value = labelName.GetString();
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        labels.Add(value);
-                    }
-                }
-            }
-        }
-
-        var pullRequests = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (issueElement.TryGetProperty("timelineItems", out var timeline)
-            && timeline.TryGetProperty("nodes", out var timelineNodes)
-            && timelineNodes.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var node in timelineNodes.EnumerateArray())
-            {
-                if (!node.TryGetProperty("__typename", out var typeElement))
-                {
-                    continue;
-                }
-                var type = typeElement.GetString();
-                if (string.IsNullOrWhiteSpace(type))
-                {
-                    continue;
-                }
-
-                JsonElement? prElement = type switch
-                {
-                    "CrossReferencedEvent" => TryGetPullRequestElement(node, "source"),
-                    "ConnectedEvent" => TryGetPullRequestElement(node, "subject"),
-                    "ClosedEvent" => TryGetPullRequestElement(node, "closer"),
-                    _ => null,
-                };
-
-                if (prElement is { ValueKind: JsonValueKind.Object } && prElement.Value.TryGetProperty("url", out var prUrl))
-                {
-                    var value = prUrl.GetString();
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        pullRequests.Add(value);
-                    }
-                }
-            }
-        }
-
-        return new GithubIssue(
-            issueRef.Repo,
-            issueRef.Number,
-            title,
-            body,
-            url,
-            state,
-            labels,
-            pullRequests.ToList());
+        return GetProvider(config).FetchIssueAsync(repoRoot, issueRef);
     }
 
-    public static IList<GithubIssue> ListIssues(string repoRoot, GithubRepoRef repo, int limit = 1000)
+    public static Task<IList<GithubIssue>> ListIssuesAsync(string repoRoot, WorkbenchConfig config, GithubRepoRef repo, int limit = 1000)
     {
-        EnsureAuthenticated(repoRoot, repo.Host);
-
-        var args = new List<string> { "issue", "list", "--state", "all", "--limit", limit.ToString(CultureInfo.InvariantCulture) };
-        if (!string.IsNullOrWhiteSpace(repo.Host) && !string.Equals(repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
-        {
-            args.Add("--hostname");
-            args.Add(repo.Host);
-        }
-        args.Add("--repo");
-        args.Add($"{repo.Owner}/{repo.Repo}");
-        args.Add("--json");
-        args.Add("number,title,body,state,url,labels");
-
-        var result = Run(repoRoot, args.ToArray());
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh issue list failed.");
-        }
-
-        var issues = new List<GithubIssue>();
-        using var document = JsonDocument.Parse(result.StdOut);
-        if (document.RootElement.ValueKind != JsonValueKind.Array)
-        {
-            return issues;
-        }
-
-        foreach (var element in document.RootElement.EnumerateArray())
-        {
-            if (!element.TryGetProperty("number", out var numberElement)
-                || numberElement.ValueKind != JsonValueKind.Number
-                || !numberElement.TryGetInt32(out var number))
-            {
-                continue;
-            }
-
-            var title = element.TryGetProperty("title", out var titleElement) ? titleElement.GetString() ?? string.Empty : string.Empty;
-            var body = element.TryGetProperty("body", out var bodyElement) ? bodyElement.GetString() ?? string.Empty : string.Empty;
-            var url = element.TryGetProperty("url", out var urlElement) ? urlElement.GetString() ?? string.Empty : string.Empty;
-            var state = element.TryGetProperty("state", out var stateElement) ? stateElement.GetString() ?? string.Empty : string.Empty;
-
-            var labels = new List<string>();
-            if (element.TryGetProperty("labels", out var labelsElement) && labelsElement.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var label in labelsElement.EnumerateArray())
-                {
-                    if (label.TryGetProperty("name", out var nameElement))
-                    {
-                        var value = nameElement.GetString();
-                        if (!string.IsNullOrWhiteSpace(value))
-                        {
-                            labels.Add(value);
-                        }
-                    }
-                }
-            }
-
-            issues.Add(new GithubIssue(repo, number, title, body, url, state, labels, Array.Empty<string>()));
-        }
-
-        return issues;
+        return GetProvider(config).ListIssuesAsync(repoRoot, repo, limit);
     }
 
-    public static string CreateIssue(string repoRoot, GithubRepoRef repo, string title, string body, IEnumerable<string> labels)
+    public static Task<string> CreateIssueAsync(string repoRoot, WorkbenchConfig config, GithubRepoRef repo, string title, string body, IEnumerable<string> labels)
     {
-        EnsureAuthenticated(repoRoot, repo.Host);
-
-        var args = new List<string> { "issue", "create", "--title", title, "--body", body };
-        if (!string.IsNullOrWhiteSpace(repo.Host) && !string.Equals(repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
-        {
-            args.Add("--hostname");
-            args.Add(repo.Host);
-        }
-        args.Add("--repo");
-        args.Add($"{repo.Owner}/{repo.Repo}");
-
-        foreach (var label in labels.Where(label => !string.IsNullOrWhiteSpace(label)))
-        {
-            args.Add("--label");
-            args.Add(label);
-        }
-
-        var result = Run(repoRoot, args.ToArray());
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh issue create failed.");
-        }
-
-        return result.StdOut.Trim();
+        return GetProvider(config).CreateIssueAsync(repoRoot, repo, title, body, labels);
     }
 
-    public static void UpdateIssue(string repoRoot, GithubIssueRef issueRef, string title, string body)
+    public static Task UpdateIssueAsync(string repoRoot, WorkbenchConfig config, GithubIssueRef issueRef, string title, string body)
     {
-        EnsureAuthenticated(repoRoot, issueRef.Repo.Host);
-
-        var args = new List<string> { "issue", "edit", issueRef.Number.ToString(CultureInfo.InvariantCulture), "--title", title, "--body", body };
-        if (!string.IsNullOrWhiteSpace(issueRef.Repo.Host) && !string.Equals(issueRef.Repo.Host, "github.com", StringComparison.OrdinalIgnoreCase))
-        {
-            args.Add("--hostname");
-            args.Add(issueRef.Repo.Host);
-        }
-        args.Add("--repo");
-        args.Add($"{issueRef.Repo.Owner}/{issueRef.Repo.Repo}");
-
-        var result = Run(repoRoot, args.ToArray());
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh issue edit failed.");
-        }
+        return GetProvider(config).UpdateIssueAsync(repoRoot, issueRef, title, body);
     }
 
-    public static string CreatePullRequest(string repoRoot, string title, string body, string? baseBranch, bool draft)
+    public static Task<string> CreatePullRequestAsync(string repoRoot, WorkbenchConfig config, GithubRepoRef repo, string title, string body, string? baseBranch, bool draft)
     {
-        EnsureAuthenticated(repoRoot);
-
-        var args = new List<string> { "pr", "create", "--title", title, "--body", body };
-        if (!string.IsNullOrWhiteSpace(baseBranch))
-        {
-            args.Add("--base");
-            args.Add(baseBranch);
-        }
-        if (draft)
-        {
-            args.Add("--draft");
-        }
-
-        var result = Run(repoRoot, args.ToArray());
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "gh pr create failed.");
-        }
-        return result.StdOut.Trim();
+        return GetProvider(config).CreatePullRequestAsync(repoRoot, repo, title, body, baseBranch, draft);
     }
 
     private static GithubRepoRef? TryResolveRepoFromGit(string repoRoot)
@@ -473,15 +152,24 @@ public static class GithubService
         return new GithubRepoRef(host, parts[0], parts[1]);
     }
 
-    private static JsonElement? TryGetPullRequestElement(JsonElement node, string property)
+    private static IGithubProvider GetProvider(WorkbenchConfig config)
     {
-        if (node.TryGetProperty(property, out var element)
-            && element.ValueKind == JsonValueKind.Object
-            && element.TryGetProperty("__typename", out var typeElement)
-            && string.Equals(typeElement.GetString(), "PullRequest", StringComparison.OrdinalIgnoreCase))
+        var providerName = string.IsNullOrWhiteSpace(config.Github.Provider)
+            ? "octokit"
+            : config.Github.Provider.Trim();
+        lock (providers)
         {
-            return element;
+            if (!providers.TryGetValue(providerName, out var provider))
+            {
+                provider = providerName.ToLowerInvariant() switch
+                {
+                    "octokit" => new OctokitGithubProvider(),
+                    "gh" => new GhCliGithubProvider(),
+                    _ => throw new InvalidOperationException($"Unsupported GitHub provider '{providerName}'."),
+                };
+                providers[providerName] = provider;
+            }
+            return provider;
         }
-        return null;
     }
 }

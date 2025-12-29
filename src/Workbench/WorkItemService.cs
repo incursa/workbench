@@ -1,5 +1,8 @@
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Workbench;
 
@@ -225,7 +228,7 @@ public static class WorkItemService
         return new WorkItemListResult(items);
     }
 
-    public static int SyncIssueLinks(string repoRoot, WorkbenchConfig config, IEnumerable<WorkItem> items, bool dryRun)
+    public static async Task<int> SyncIssueLinksAsync(string repoRoot, WorkbenchConfig config, IEnumerable<WorkItem> items, bool dryRun)
     {
         var itemsWithIssues = items.Where(item => item.Related.Issues.Count > 0).ToList();
         if (itemsWithIssues.Count == 0)
@@ -234,12 +237,44 @@ public static class WorkItemService
         }
 
         var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
-        var issueCache = new Dictionary<string, GithubIssue>(StringComparer.OrdinalIgnoreCase);
+        var issueRefs = new Dictionary<string, GithubIssueRef>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in itemsWithIssues)
+        {
+            foreach (var entry in item.Related.Issues.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var issueRef = GithubService.ParseIssueReference(entry, defaultRepo);
+                var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
+                if (!issueRefs.ContainsKey(key))
+                {
+                    issueRefs[key] = issueRef;
+                }
+            }
+        }
+
+        var issueCache = new ConcurrentDictionary<string, GithubIssue>(StringComparer.OrdinalIgnoreCase);
+        if (issueRefs.Count > 0)
+        {
+            var semaphore = new SemaphoreSlim(Math.Clamp(Environment.ProcessorCount, 2, 8));
+            var tasks = issueRefs.Select(async entry =>
+            {
+                await semaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    var issue = await GithubService.FetchIssueAsync(repoRoot, config, entry.Value).ConfigureAwait(false);
+                    issueCache[entry.Key] = issue;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
         var updatedCount = 0;
 
         foreach (var item in itemsWithIssues)
         {
-            var content = File.ReadAllText(item.Path);
+            var content = await File.ReadAllTextAsync(item.Path).ConfigureAwait(false);
             if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
             {
                 throw new InvalidOperationException($"Front matter error: {error}");
@@ -263,7 +298,7 @@ public static class WorkItemService
                 var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
                 if (!issueCache.TryGetValue(key, out var issue))
                 {
-                    issue = GithubService.FetchIssue(repoRoot, issueRef);
+                    issue = await GithubService.FetchIssueAsync(repoRoot, config, issueRef).ConfigureAwait(false);
                     issueCache[key] = issue;
                 }
 
@@ -284,7 +319,7 @@ public static class WorkItemService
             if (changed && !dryRun)
             {
                 data["githubSynced"] = FormatGithubSynced(DateTime.UtcNow);
-                File.WriteAllText(item.Path, frontMatter.Serialize());
+                await File.WriteAllTextAsync(item.Path, frontMatter.Serialize()).ConfigureAwait(false);
                 updatedCount++;
             }
         }
