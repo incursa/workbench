@@ -3,4 +3,4 @@ param(
     [string[]]$Args
 )
 
-dotnet run --project src/Workbench/Workbench.csproj -- @Args
+dotnet run --project $PSScriptRoot/src/Workbench/Workbench.csproj -- @Args

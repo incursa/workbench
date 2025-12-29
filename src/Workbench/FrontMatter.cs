@@ -262,8 +262,16 @@ public sealed class FrontMatter
                     lines.Add(SerializeMap(converted, indent + 2).TrimEnd('\n'));
                     break;
                 case IEnumerable list when value is not string:
-                    lines.Add($"{indentText}{key}:");
-                    lines.Add(SerializeList(list, indent + 2).TrimEnd('\n'));
+                    var items = list.Cast<object?>().ToList();
+                    if (items.Count == 0)
+                    {
+                        lines.Add($"{indentText}{key}: []");
+                    }
+                    else
+                    {
+                        lines.Add($"{indentText}{key}:");
+                        lines.Add(SerializeList(items, indent + 2).TrimEnd('\n'));
+                    }
                     break;
                 default:
                     lines.Add($"{indentText}{key}: {SerializeScalar(value)}");

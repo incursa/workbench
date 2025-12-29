@@ -97,7 +97,8 @@ public static class DocService
 
             var workbench = EnsureWorkbench(frontMatter!, InferDocType(docPath), out var docChanged);
             var docType = GetString(workbench, "type") ?? InferDocType(docPath);
-            var workItems = EnsureStringList(workbench, "workItems", out var listChanged);
+            var workItems = EnsureStringList(workbench, "workItems", out var workItemsChanged);
+            _ = EnsureStringList(workbench, "codeRefs", out var codeRefsChanged);
             var relative = "/" + Path.GetRelativePath(repoRoot, docPath).Replace('\\', '/');
 
             foreach (var workItemId in workItems)
@@ -114,7 +115,7 @@ public static class DocService
                 }
             }
 
-            if ((createdFrontMatter || docChanged || listChanged) && !dryRun)
+            if ((createdFrontMatter || docChanged || workItemsChanged || codeRefsChanged) && !dryRun)
             {
                 await File.WriteAllTextAsync(docPath, frontMatter!.Serialize()).ConfigureAwait(false);
                 docsUpdated++;
@@ -199,6 +200,41 @@ public static class DocService
                 File.WriteAllText(docPath, frontMatter!.Serialize());
             }
             updated = true;
+        }
+
+        return updated;
+    }
+
+    public static int NormalizeDocs(string repoRoot, WorkbenchConfig config, bool includeAllDocs, bool dryRun)
+    {
+        var updated = 0;
+        var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
+        if (!Directory.Exists(docsRoot))
+        {
+            return updated;
+        }
+
+        foreach (var docPath in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
+        {
+            if (!TryLoadOrCreateFrontMatter(
+                    docPath,
+                    includeAllDocs,
+                    referencedDocs: null,
+                    out var frontMatter,
+                    out var createdFrontMatter))
+            {
+                continue;
+            }
+
+            var workbench = EnsureWorkbench(frontMatter!, InferDocType(docPath), out var docChanged);
+            _ = EnsureStringList(workbench, "workItems", out var workItemsChanged);
+            _ = EnsureStringList(workbench, "codeRefs", out var codeRefsChanged);
+
+            if ((createdFrontMatter || docChanged || workItemsChanged || codeRefsChanged) && !dryRun)
+            {
+                File.WriteAllText(docPath, frontMatter!.Serialize());
+                updated++;
+            }
         }
 
         return updated;

@@ -20,7 +20,7 @@ public static class ValidationService
         ValidateItems(repoRoot, items, config, result);
         var itemIndex = LoadItemIndex(items);
         ValidateDocs(repoRoot, config, itemIndex, result, options);
-        result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, result, options);
+        result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, config, result, options);
         return result;
     }
 
@@ -149,6 +149,7 @@ public static class ValidationService
         ValidationResult result,
         ValidationOptions options)
     {
+        var docExcludePrefixes = NormalizePrefixes(config.Validation?.DocExclude);
         var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
         if (!Directory.Exists(docsRoot))
         {
@@ -164,6 +165,13 @@ public static class ValidationService
 
         foreach (var file in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
         {
+            var repoRelative = NormalizeRepoRelative(repoRoot, file);
+            if (docExcludePrefixes.Count > 0 &&
+                docExcludePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
             var content = File.ReadAllText(file);
             if (!LooksLikeFrontMatter(content))
             {
@@ -194,7 +202,9 @@ public static class ValidationService
             var workItems = GetStringList(workbench, "workItems");
             var codeRefs = GetStringList(workbench, "codeRefs");
 
-            var repoRelative = "/" + Path.GetRelativePath(repoRoot, file).Replace('\\', '/');
+            var repoRelativePath = string.Concat(
+                Path.AltDirectorySeparatorChar,
+                Path.GetRelativePath(repoRoot, file).Replace('\\', '/'));
 
             foreach (var workItemId in workItems)
             {
@@ -204,9 +214,9 @@ public static class ValidationService
                     continue;
                 }
 
-                if (!HasDocBacklink(item, repoRelative, docType))
+                if (!HasDocBacklink(item, repoRelativePath, docType))
                 {
-                    result.Errors.Add($"{file}: work item '{workItemId}' missing backlink to '{repoRelative}'.");
+                    result.Errors.Add($"{file}: work item '{workItemId}' missing backlink to '{repoRelativePath}'.");
                 }
             }
 
@@ -316,10 +326,18 @@ public static class ValidationService
         return Path.GetFullPath(Path.Combine(baseDir, link));
     }
 
-    private static int ValidateMarkdownLinks(string repoRoot, ValidationResult result, ValidationOptions options)
+    private static int ValidateMarkdownLinks(string repoRoot, WorkbenchConfig config, ValidationResult result, ValidationOptions options)
     {
         var includePrefixes = NormalizePrefixes(options.LinkInclude);
         var excludePrefixes = NormalizePrefixes(options.LinkExclude);
+        var configExcludes = NormalizePrefixes(config.Validation?.LinkExclude);
+        if (configExcludes.Count > 0)
+        {
+            excludePrefixes = excludePrefixes
+                .Concat(configExcludes)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
         var count = 0;
         foreach (var file in EnumerateMarkdownFiles(repoRoot))
         {

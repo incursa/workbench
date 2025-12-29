@@ -379,6 +379,16 @@ public static class WorkItemService
             var data = frontMatter!.Data;
             var changed = NormalizeTags(data);
             changed |= EnsureRelatedLists(data);
+            var related = GetRelatedMap(data);
+            if (related is not null)
+            {
+                changed |= NormalizeList(related, "specs");
+                changed |= NormalizeList(related, "adrs");
+                changed |= NormalizeList(related, "files");
+                changed |= NormalizeList(related, "prs");
+                changed |= NormalizeList(related, "issues");
+                changed |= NormalizeList(related, "branches");
+            }
 
             if (changed && !dryRun)
             {
@@ -926,10 +936,12 @@ public static class WorkItemService
         }
         if (relatedObj is Dictionary<object, object> legacy)
         {
-            return legacy.ToDictionary(
+            var converted = legacy.ToDictionary(
                 kvp => kvp.Key.ToString() ?? string.Empty,
                 kvp => (object?)kvp.Value,
                 StringComparer.OrdinalIgnoreCase);
+            data["related"] = converted;
+            return converted;
         }
         return null;
     }

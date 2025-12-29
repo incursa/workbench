@@ -2540,24 +2540,24 @@ public class Program
         itemCommand.Subcommands.Add(itemRenameCommand);
 
         var itemNormalizeCommand = new Command("normalize", "Normalize work item front matter lists.");
-        var normalizeIncludeDoneOption = new Option<bool>("--include-done")
+        var normalizeItemsIncludeDoneOption = new Option<bool>("--include-done")
         {
             Description = "Include work/done items."
         };
-        var normalizeDryRunOption = new Option<bool>("--dry-run")
+        var normalizeAllDryRunOption = new Option<bool>("--dry-run")
         {
             Description = "Report changes without writing files."
         };
-        itemNormalizeCommand.Options.Add(normalizeIncludeDoneOption);
-        itemNormalizeCommand.Options.Add(normalizeDryRunOption);
+        itemNormalizeCommand.Options.Add(normalizeItemsIncludeDoneOption);
+        itemNormalizeCommand.Options.Add(normalizeAllDryRunOption);
         itemNormalizeCommand.SetAction(parseResult =>
         {
             try
             {
                 var repo = parseResult.GetValue(repoOption);
                 var format = parseResult.GetValue(formatOption) ?? "table";
-                var includeDone = parseResult.GetValue(normalizeIncludeDoneOption);
-                var dryRun = parseResult.GetValue(normalizeDryRunOption);
+                var includeDone = parseResult.GetValue(normalizeItemsIncludeDoneOption);
+                var dryRun = parseResult.GetValue(normalizeAllDryRunOption);
                 var repoRoot = ResolveRepo(repo);
                 var resolvedFormat = ResolveFormat(format);
                 var config = WorkbenchConfig.Load(repoRoot, out var configError);
@@ -2955,6 +2955,87 @@ public class Program
         itemCommand.Subcommands.Add(itemUnlinkCommand);
 
         root.Subcommands.Add(itemCommand);
+
+        var normalizeCommand = new Command("normalize", "Normalize work item and doc front matter.");
+        var normalizeItemsOption = new Option<bool>("--items")
+        {
+            Description = "Normalize work item front matter."
+        };
+        var normalizeDocsOption = new Option<bool>("--docs")
+        {
+            Description = "Normalize doc front matter."
+        };
+        var normalizeAllDocsOption = new Option<bool>("--all-docs")
+        {
+            Description = "Add Workbench front matter to all docs."
+        };
+        normalizeCommand.Options.Add(normalizeItemsOption);
+        normalizeCommand.Options.Add(normalizeDocsOption);
+        normalizeCommand.Options.Add(normalizeItemsIncludeDoneOption);
+        normalizeCommand.Options.Add(normalizeAllDocsOption);
+        normalizeCommand.Options.Add(normalizeAllDryRunOption);
+        normalizeCommand.SetAction(parseResult =>
+        {
+            try
+            {
+                var repo = parseResult.GetValue(repoOption);
+                var format = parseResult.GetValue(formatOption) ?? "table";
+                var includeDone = parseResult.GetValue(normalizeItemsIncludeDoneOption);
+                var includeAllDocs = parseResult.GetValue(normalizeAllDocsOption);
+                var dryRun = parseResult.GetValue(normalizeAllDryRunOption);
+                var normalizeItems = parseResult.GetValue(normalizeItemsOption);
+                var normalizeDocs = parseResult.GetValue(normalizeDocsOption);
+                if (!normalizeItems && !normalizeDocs)
+                {
+                    normalizeItems = true;
+                    normalizeDocs = true;
+                }
+
+                var repoRoot = ResolveRepo(repo);
+                var resolvedFormat = ResolveFormat(format);
+                var config = WorkbenchConfig.Load(repoRoot, out var configError);
+                if (configError is not null)
+                {
+                    Console.WriteLine($"Config error: {configError}");
+                    SetExitCode(2);
+                    return;
+                }
+
+                var itemsUpdated = normalizeItems
+                    ? WorkItemService.NormalizeItems(repoRoot, config, includeDone, dryRun)
+                    : 0;
+                var docsUpdated = normalizeDocs
+                    ? DocService.NormalizeDocs(repoRoot, config, includeAllDocs, dryRun)
+                    : 0;
+
+                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payload = new NormalizeOutput(
+                        true,
+                        new NormalizeData(itemsUpdated, docsUpdated, dryRun, normalizeItems, normalizeDocs));
+                    WriteJson(payload, WorkbenchJsonContext.Default.NormalizeOutput);
+                }
+                else
+                {
+                    var mode = dryRun ? "would update" : "updated";
+                    if (normalizeItems)
+                    {
+                        Console.WriteLine($"Work items {mode}: {itemsUpdated}");
+                    }
+                    if (normalizeDocs)
+                    {
+                        Console.WriteLine($"Docs {mode}: {docsUpdated}");
+                    }
+                }
+                SetExitCode(0);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                SetExitCode(2);
+            }
+        });
+        root.Subcommands.Add(normalizeCommand);
 
         var boardCommand = new Command("board", "Group: workboard commands.");
         var boardRegenCommand = new Command("regen", "Regenerate work/WORKBOARD.md.");

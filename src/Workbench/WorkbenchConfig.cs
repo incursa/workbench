@@ -6,13 +6,15 @@ public sealed record WorkbenchConfig(
     PathsConfig Paths,
     IdsConfig Ids,
     GitConfig Git,
-    GithubConfig Github)
+    GithubConfig Github,
+    ValidationConfig Validation)
 {
     public static WorkbenchConfig Default => new(
         new PathsConfig(),
         new IdsConfig(),
         new GitConfig(),
-        new GithubConfig());
+        new GithubConfig(),
+        new ValidationConfig());
 
     public static WorkbenchConfig Load(string repoRoot, out string? error)
     {
@@ -31,6 +33,10 @@ public sealed record WorkbenchConfig(
             {
                 error = "Failed to parse config.";
                 return Default;
+            }
+            if (config.Validation is null)
+            {
+                config = config with { Validation = new ValidationConfig() };
             }
             return config;
         }
