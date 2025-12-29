@@ -222,31 +222,64 @@ public sealed class OctokitGithubProvider : IGithubProvider
               repository(owner: $owner, name: $name) {
                 issueOrPullRequest(number: $number) {
                   __typename
-                  number
-                  title
-                  body
-                  url
-                  state
-                  labels(first: 100) { nodes { name } }
-                  timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT, CLOSED_EVENT]) {
-                    nodes {
-                      __typename
-                      ... on CrossReferencedEvent {
-                        source {
-                          __typename
-                          ... on PullRequest { url }
+                  ... on Issue {
+                    number
+                    title
+                    body
+                    url
+                    state
+                    labels(first: 100) { nodes { name } }
+                    timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT, CLOSED_EVENT]) {
+                      nodes {
+                        __typename
+                        ... on CrossReferencedEvent {
+                          source {
+                            __typename
+                            ... on PullRequest { url }
+                          }
+                        }
+                        ... on ConnectedEvent {
+                          subject {
+                            __typename
+                            ... on PullRequest { url }
+                          }
+                        }
+                        ... on ClosedEvent {
+                          closer {
+                            __typename
+                            ... on PullRequest { url }
+                          }
                         }
                       }
-                      ... on ConnectedEvent {
-                        subject {
-                          __typename
-                          ... on PullRequest { url }
+                    }
+                  }
+                  ... on PullRequest {
+                    number
+                    title
+                    body
+                    url
+                    state
+                    labels(first: 100) { nodes { name } }
+                    timelineItems(first: 100, itemTypes: [CROSS_REFERENCED_EVENT, CONNECTED_EVENT, CLOSED_EVENT]) {
+                      nodes {
+                        __typename
+                        ... on CrossReferencedEvent {
+                          source {
+                            __typename
+                            ... on PullRequest { url }
+                          }
                         }
-                      }
-                      ... on ClosedEvent {
-                        closer {
-                          __typename
-                          ... on PullRequest { url }
+                        ... on ConnectedEvent {
+                          subject {
+                            __typename
+                            ... on PullRequest { url }
+                          }
+                        }
+                        ... on ClosedEvent {
+                          closer {
+                            __typename
+                            ... on PullRequest { url }
+                          }
                         }
                       }
                     }
