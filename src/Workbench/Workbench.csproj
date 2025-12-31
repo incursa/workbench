@@ -17,10 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="JsonSchema.Net" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
-    <PackageReference Include="Octokit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Workbench.Cli\Workbench.Cli.csproj" />
+    <ProjectReference Include="..\Workbench.Tui\Workbench.Tui.csproj" />
   </ItemGroup>
 
   <ItemGroup>

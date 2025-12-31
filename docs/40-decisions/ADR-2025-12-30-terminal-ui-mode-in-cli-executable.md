@@ -6,12 +6,16 @@ workbench:
     - TASK-0006
     - TASK-0007
   codeRefs: []
+owner: platform
+status: accepted
+updated: 2025-12-30
 ---
 
-# Terminal UI mode in CLI executable
+# ADR-2025-12-30: Terminal UI mode in CLI executable
 
-## Status
-Accepted
+- Status: accepted
+- Date: 2025-12-30
+- Owner: platform
 
 ## Context
 Workbench uses Markdown as its primary data model with a CLI for manipulation. Users
@@ -26,6 +30,17 @@ validation, and command execution paths. Publish as a single-file executable tha
 contains CLI and TUI projects. The TUI must surface the last command invoked and
 provide a global dry-run toggle that labels outputs accordingly.
 
+## Alternatives considered
+- Separate GUI or web app: rejected due to deployment complexity and duplication.
+- Standalone TUI binary: rejected to keep a single executable and shared release flow.
+- Directly shelling out to CLI for every action: rejected due to poorer UX and error handling.
+
 ## Consequences
 - Pros: improved discoverability; single executable; shared logic avoids drift.
 - Cons: added dependency and build complexity; larger binary; UI testing effort.
+
+## Related specs
+- </docs/10-product/feature-spec-terminal-ui.md>
+
+## Related work items
+- [TASK-0005](/docs/70-work/items/TASK-0005-plan-terminal-ui-mode.md)

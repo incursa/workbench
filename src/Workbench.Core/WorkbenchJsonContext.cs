@@ -35,6 +35,6 @@ namespace Workbench;
 [JsonSerializable(typeof(NavSyncOutput))]
 [JsonSerializable(typeof(RepoSyncOutput))]
 [JsonSerializable(typeof(NormalizeOutput))]
-internal partial class WorkbenchJsonContext : JsonSerializerContext
+public partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

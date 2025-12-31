@@ -1,7 +1,7 @@
 ﻿<Project Sdk="MSTest.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Workbench\Workbench.csproj" />
+    <ProjectReference Include="..\..\src\Workbench.Core\Workbench.Core.csproj" />
   </ItemGroup>
 
 </Project>

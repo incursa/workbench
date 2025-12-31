@@ -1,12 +1,12 @@
 ---
 id: TASK-0006
 type: task
-status: draft
+status: in-progress
 priority: medium
 owner: platform
 created: 2025-12-30
-updated: null
-githubSynced: null
+updated: 2025-12-30
+githubSynced: "2025-12-30T22:16:24Z"
 tags: []
 related:
   specs:
@@ -15,8 +15,10 @@ related:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files: []
   prs: []
-  issues: []
-  branches: []
+  issues:
+    - "https://github.com/bravellian/workbench/issues/22"
+  branches:
+    - "work/TASK-0006-implement-shared-core-and-clitui-split"
 title: Implement shared core and CLI/TUI split
 ---
 
@@ -31,3 +33,7 @@ executable and shared command logic.
 - CLI entrypoint dispatches to CLI or TUI modes without duplicating handlers.
 - Publish output remains a single-file executable.
 - Spec and ADR links are up to date.
+
+## Notes
+
+- started implementation

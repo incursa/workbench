@@ -22,7 +22,7 @@
     "requireCleanWorkingTree": true
   },
   "github": {
-    "provider": "octokit",
+    "provider": "gh",
     "defaultDraft": true,
     "owner": "bravellian",
     "repository": "workbench"

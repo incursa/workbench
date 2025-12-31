@@ -6,7 +6,7 @@ workbench:
     - TASK-0006
     - TASK-0007
   codeRefs: []
-owner: "<owner>"
+owner: platform
 status: draft
 updated: 2025-12-30
 ---
@@ -50,12 +50,51 @@ Add an interactive terminal UI mode to the Workbench CLI, exposed as a subcomman
 - Error handling surfaces CLI validation messages in UI-friendly dialogs.
 - TUI exit must restore terminal state cleanly.
 
-## UX notes
+## Scope
+- Read and write work items and docs in the current repo using existing services.
+- Surface a bounded set of actions; unsupported commands fall back to the CLI.
+- Provide a consistent command preview for all mutations and external calls.
+- Keep dry-run behavior aligned with existing CLI flags.
+
+## Workflows
+### Browse and inspect work items
+1. Enter TUI and load items from `docs/70-work/items`.
+2. Filter by status or prefix; list updates without leaving the view.
+3. Select an item to view metadata, related links, and latest notes.
+
+### Create a work item
+1. Select type and template.
+2. Enter title, owner, priority, and initial status.
+3. Preview the CLI command and resulting file path.
+4. Execute and show confirmation; open the created item if requested.
+
+### Update status/title
+1. Select item.
+2. Edit status/title fields.
+3. Preview the CLI command and the front matter change.
+4. Execute and show any validation warnings.
+
+### Sync/validate
+1. Choose sync or validate.
+2. Preview the command with flags (including dry-run).
+3. Execute and show a streaming log with a final summary.
+
+## UX requirements
 - Layout: left navigation list, right detail pane, bottom action hints.
 - Keyboard-first navigation (arrows, Enter, Esc, common shortcuts).
-- Use a status bar for current repo, paths, and last action.
+- Status bar shows repo, current filter, and last action.
+- Dialogs are minimal and consistent with CLI terminology.
+- Use consistent copy for statuses and types (match CLI enum values).
+
+## Command preview and dry-run
+- Preview line is always visible for actions that would mutate state.
+- Preview includes the exact CLI subcommand and flags that will run.
+- Dry-run toggle is global and persists across TUI views.
+- Dry-run state is shown in the status bar and prepended to preview.
+- Dry-run results are labeled and do not change files.
+
+## UX notes
 - Keep dialogs minimal; use standard form prompts with validation.
-- Include a bottom-line command preview for the last action.
 - Provide a visible dry-run indicator when enabled.
 
 ## Dependencies
