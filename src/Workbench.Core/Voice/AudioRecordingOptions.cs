@@ -1,4 +1,4 @@
-using Workbench.Core.VoiceViz;
+using Workbench.VoiceViz;
 
 namespace Workbench.Core.Voice;
 

@@ -108,6 +108,7 @@ Smoke test:
 ## Recording visualization
 
 Workbench shows a small level meter/equalizer in the recording dialog.
+In the TUI, open it with `F12` or `Ctrl+R` from the Work Items tab.
 
 Optional knobs (env vars):
 - `WORKBENCH_VOICE_VIZ_BANDS` (default: `12`)

@@ -1,5 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Workbench.Core.VoiceViz;
+using Workbench.VoiceViz;
 
 namespace Workbench.Tests;
 

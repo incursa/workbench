@@ -1,4 +1,4 @@
-namespace Workbench.Core.VoiceViz;
+namespace Workbench.VoiceViz;
 
 public sealed class SpectrumAnalyzer : IAsyncDisposable
 {

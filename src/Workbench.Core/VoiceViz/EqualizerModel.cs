@@ -1,10 +1,11 @@
-namespace Workbench.Core.VoiceViz;
+namespace Workbench.VoiceViz;
 
 public sealed class EqualizerModel
 {
     private float level01;
     private float[] frontBands;
     private float[] backBands;
+    private long samplesSeen;
 
     public EqualizerModel(int bandCount)
     {
@@ -22,6 +23,16 @@ public sealed class EqualizerModel
     {
         this.level01 = Clamp01(value);
     }
+
+    public void AddSamples(int count)
+    {
+        if (count > 0)
+        {
+            Interlocked.Add(ref this.samplesSeen, count);
+        }
+    }
+
+    public long SampleCount => Interlocked.Read(ref this.samplesSeen);
 
     public void UpdateBands(ReadOnlySpan<float> bands)
     {

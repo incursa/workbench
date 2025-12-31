@@ -1,4 +1,4 @@
-namespace Workbench.Core.VoiceViz;
+namespace Workbench.VoiceViz;
 
 public sealed class AudioTap : IAudioTap
 {
@@ -23,6 +23,8 @@ public sealed class AudioTap : IAudioTap
             this.model.UpdateLevel(0f);
             return;
         }
+
+        this.model.AddSamples(samples.Length);
 
         double sumSquares = 0;
         for (var i = 0; i < samples.Length; i++)

@@ -1,4 +1,4 @@
-namespace Workbench.Core.VoiceViz;
+namespace Workbench.VoiceViz;
 
 public interface IAudioTap
 {

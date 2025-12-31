@@ -1,6 +1,6 @@
 using Workbench.Core;
 using Workbench.Core.Voice;
-using Workbench.Core.VoiceViz;
+using Workbench.VoiceViz;
 
 namespace Workbench.Tui;
 
@@ -25,6 +25,9 @@ public static class TuiEntrypoint
         var config = WorkbenchConfig.Load(repoRoot, out _);
         var allItems = LoadItems(repoRoot, config);
         var filteredItems = new List<WorkItem>(allItems);
+        var workItemStatusOptions = new[] { "all", "draft", "ready", "in-progress", "blocked", "done", "dropped" };
+        var workItemTypeOptions = new[] { "task", "bug", "spike" };
+        var docTypeOptions = new[] { "spec", "adr", "doc", "runbook", "guide" };
 
         Application.Init();
         try
@@ -55,7 +58,7 @@ public static class TuiEntrypoint
             {
                 X = 0,
                 Y = 0,
-                Width = 36,
+                Width = 44,
                 Height = Dim.Fill()
             };
 
@@ -98,8 +101,12 @@ public static class TuiEntrypoint
             {
                 X = Pos.Right(statusLabel) + 1,
                 Y = 1,
-                Width = Dim.Fill(1)
+                Width = Dim.Fill(7)
             };
+
+            var statusPickButton = CreatePickerButton(statusField, workItemStatusOptions, "Status filter");
+            statusPickButton.X = Pos.Right(statusField) + 1;
+            statusPickButton.Y = 1;
 
             var listView = new ListView(filteredItems.Select(item => $"{item.Id} {item.Title}").ToList())
             {
@@ -173,6 +180,179 @@ public static class TuiEntrypoint
             void ShowInfo(string message)
             {
                 MessageBox.Query("Info", message, "Ok");
+            }
+
+            void ShowDocPreviewDialog(string path, string resolvedPath, string content)
+            {
+                var dialog = new Dialog($"Preview: {path}", 0, 0)
+                {
+                    Width = Dim.Fill(2),
+                    Height = Dim.Fill(2)
+                };
+                var preview = new TextView
+                {
+                    X = 1,
+                    Y = 1,
+                    Width = Dim.Fill(2),
+                    Height = Dim.Fill(3),
+                    ReadOnly = true,
+                    WordWrap = true,
+                    Text = content
+                };
+                dialog.Add(preview);
+
+                void OpenExternal()
+                {
+                    SetCommandPreview($"open \"{resolvedPath}\"");
+                    try
+                    {
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = resolvedPath,
+                            UseShellExecute = true
+                        };
+                        Process.Start(psi);
+                    }
+                    catch (Exception ex)
+                    {
+                        ShowError(ex);
+                    }
+                }
+
+                var openButton = new Button("Open External");
+                openButton.Clicked += OpenExternal;
+
+                var closeButton = new Button("Close");
+                closeButton.Clicked += () => Application.RequestStop();
+                dialog.AddButton(openButton);
+                dialog.AddButton(closeButton);
+
+                dialog.KeyDown += args =>
+                {
+                    if (args.KeyEvent.Key == Key.O || args.KeyEvent.Key == (Key.O | Key.CtrlMask))
+                    {
+                        OpenExternal();
+                        args.Handled = true;
+                    }
+                };
+
+                Application.Run(dialog);
+            }
+
+            bool TryShowPreviewForLink(string link)
+            {
+                if (Uri.TryCreate(link, UriKind.Absolute, out _))
+                {
+                    return false;
+                }
+
+                var trimmedLink = link;
+                var anchorIndex = trimmedLink.IndexOf('#', StringComparison.Ordinal);
+                if (anchorIndex >= 0)
+                {
+                    trimmedLink = trimmedLink[..anchorIndex];
+                }
+                var queryIndex = trimmedLink.IndexOf('?', StringComparison.Ordinal);
+                if (queryIndex >= 0)
+                {
+                    trimmedLink = trimmedLink[..queryIndex];
+                }
+
+                if (!trimmedLink.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                var resolved = ResolveLink(repoRoot, trimmedLink);
+                if (!File.Exists(resolved))
+                {
+                    ShowInfo("Doc not found.");
+                    return true;
+                }
+
+                try
+                {
+                    var content = File.ReadAllText(resolved);
+                    SetCommandPreview($"preview \"{resolved}\"");
+                    ShowDocPreviewDialog(trimmedLink, resolved, content);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex);
+                    return true;
+                }
+            }
+
+            int FindOptionIndex(IReadOnlyList<string> options, string? current)
+            {
+                if (string.IsNullOrWhiteSpace(current))
+                {
+                    return -1;
+                }
+
+                for (var i = 0; i < options.Count; i++)
+                {
+                    if (string.Equals(options[i], current, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+
+            string? ShowPickDialog(string title, IReadOnlyList<string> options, string? current)
+            {
+                var optionList = options.ToList();
+                var dialog = new Dialog(title, 40, 14);
+                var list = new ListView(optionList)
+                {
+                    X = 1,
+                    Y = 1,
+                    Width = Dim.Fill(2),
+                    Height = Dim.Fill(3)
+                };
+                var selectedIndex = FindOptionIndex(optionList, current);
+                if (selectedIndex >= 0)
+                {
+                    list.SelectedItem = selectedIndex;
+                }
+                dialog.Add(list);
+
+                var confirmed = false;
+                var cancelButton = new Button("Cancel");
+                var selectButton = new Button("Select");
+                cancelButton.Clicked += () => Application.RequestStop();
+                selectButton.Clicked += () =>
+                {
+                    confirmed = true;
+                    Application.RequestStop();
+                };
+                dialog.AddButton(cancelButton);
+                dialog.AddButton(selectButton);
+
+                Application.Run(dialog);
+                if (!confirmed || list.SelectedItem < 0 || list.SelectedItem >= optionList.Count)
+                {
+                    return null;
+                }
+
+                return optionList[list.SelectedItem];
+            }
+
+            Button CreatePickerButton(TextField field, IReadOnlyList<string> options, string title)
+            {
+                var button = new Button("Pick");
+                button.Clicked += () =>
+                {
+                    var selection = ShowPickDialog(title, options, field.Text?.ToString());
+                    if (!string.IsNullOrWhiteSpace(selection))
+                    {
+                        field.Text = selection;
+                    }
+                };
+                return button;
             }
 
             void UpdateDetails(int index)
@@ -259,14 +439,6 @@ public static class TuiEntrypoint
                 Height = Dim.Fill(),
                 ReadOnly = true,
                 WordWrap = true
-            };
-            docsPreview.ColorScheme = new ColorScheme
-            {
-                Normal = Application.Driver.MakeAttribute(Color.Black, Color.Gray),
-                Focus = Application.Driver.MakeAttribute(Color.Black, Color.Gray),
-                HotNormal = Application.Driver.MakeAttribute(Color.Black, Color.Gray),
-                HotFocus = Application.Driver.MakeAttribute(Color.Black, Color.Gray),
-                Disabled = Application.Driver.MakeAttribute(Color.Black, Color.Gray)
             };
 
             var docsPreviewHeader = new Label("Preview")
@@ -669,7 +841,75 @@ public static class TuiEntrypoint
                 UpdateDetails(listView.SelectedItem);
             }
 
-            void ShowRecordingDialog()
+            void ShowVoiceWorkItemDialog()
+            {
+                var typeField = new TextField(string.Empty);
+                var typePickButton = CreatePickerButton(typeField, workItemTypeOptions, "Work item type");
+                var instructions = "Say: title and details.\nIf you didn't pick a type, say: type (task/bug/spike).\nPress Stop to finish or Cancel to discard.";
+
+                var recording = CaptureRecordingDialog(
+                    "Voice work item",
+                    instructions,
+                    startRow =>
+                    {
+                        var typeLabel = new Label("Type (optional):") { X = 1, Y = startRow };
+                        typeField.X = Pos.Right(typeLabel) + 1;
+                        typeField.Y = startRow;
+                        typeField.Width = 12;
+                        typePickButton.X = Pos.Right(typeField) + 1;
+                        typePickButton.Y = startRow;
+                        return new View[] { typeLabel, typeField, typePickButton };
+                    });
+
+                if (recording is null || recording.WasCanceled)
+                {
+                    return;
+                }
+
+                var typeOverride = typeField.Text?.ToString();
+                RunVoiceWorkItemFromRecording(recording, string.IsNullOrWhiteSpace(typeOverride) ? null : typeOverride);
+            }
+
+            void ShowVoiceDocDialog()
+            {
+                var typeField = new TextField("spec");
+                var typePickButton = CreatePickerButton(typeField, docTypeOptions, "Doc type");
+                var instructions = "Say: title, summary, and key sections.\nExample: scope, decisions, and next steps.\nPress Stop to finish or Cancel to discard.";
+
+                var recording = CaptureRecordingDialog(
+                    "Voice doc",
+                    instructions,
+                    startRow =>
+                    {
+                        var typeLabel = new Label("Doc type:") { X = 1, Y = startRow };
+                        typeField.X = Pos.Right(typeLabel) + 1;
+                        typeField.Y = startRow;
+                        typeField.Width = 12;
+                        typePickButton.X = Pos.Right(typeField) + 1;
+                        typePickButton.Y = startRow;
+                        return new View[] { typeLabel, typeField, typePickButton };
+                    });
+
+                if (recording is null || recording.WasCanceled)
+                {
+                    return;
+                }
+
+                var type = typeField.Text?.ToString();
+                if (string.IsNullOrWhiteSpace(type))
+                {
+                    ShowInfo("Doc type is required.");
+                    CleanupTempFiles(recording.WavPaths);
+                    return;
+                }
+
+                RunVoiceDocFromRecording(recording, type.Trim().ToLowerInvariant());
+            }
+
+            AudioRecordingResult? CaptureRecordingDialog(
+                string title,
+                string instructions,
+                Func<int, View[]>? addInputs)
             {
                 var voiceConfig = VoiceConfig.Load();
                 var options = EqualizerOptions.Load();
@@ -678,37 +918,61 @@ public static class TuiEntrypoint
                 var tap = new AudioTap(model, options, ringSize);
                 SpectrumAnalyzer? analyzer = null;
 
+                var instructionLines = Math.Max(1, instructions.Split('\n').Length);
+                var extraRows = addInputs is null ? 0 : 1;
+                var dialogHeight = 16 + instructionLines + extraRows;
+                var dialog = new Dialog(title, 60, dialogHeight)
+                {
+                    ColorScheme = Colors.Dialog
+                };
+                var statusLabel = new Label("Starting recorder...")
+                {
+                    X = 1,
+                    Y = 1,
+                    Width = Dim.Fill(2)
+                };
+                var instructionsLabel = new Label(instructions)
+                {
+                    X = 1,
+                    Y = 2,
+                    Width = Dim.Fill(2),
+                    Height = instructionLines
+                };
+                var inputsRow = 2 + instructionLines;
+                if (addInputs is not null)
+                {
+                    var inputs = addInputs(inputsRow);
+                    foreach (var view in inputs)
+                    {
+                        dialog.Add(view);
+                    }
+                    inputsRow += 1;
+                }
+
+                var equalizerView = new EqualizerView(model)
+                {
+                    X = 1,
+                    Y = inputsRow + 1,
+                    Width = Dim.Fill(2),
+                    Height = 7,
+                    ColorScheme = Colors.Dialog
+                };
+
+                dialog.Add(statusLabel, instructionsLabel, equalizerView);
+
+                var stopButton = new Button("Stop") { Enabled = false };
+                var cancelButton = new Button("Cancel");
+
+                IAudioRecordingSession? session = null;
+                var startCts = new CancellationTokenSource();
+
                 if (options.EnableSpectrum && tap.RingBuffer is not null)
                 {
                     analyzer = new SpectrumAnalyzer(model, tap.RingBuffer, options, voiceConfig.Format.SampleRateHz);
                     analyzer.Start();
                 }
 
-                var dialog = new Dialog("Recording", 60, 16)
-                {
-                    ColorScheme = Colors.Dialog
-                };
-                var instructions = new Label("Press Stop to finish or Cancel to discard.")
-                {
-                    X = 1,
-                    Y = 1,
-                    Width = Dim.Fill(2)
-                };
-                var equalizerView = new EqualizerView(model)
-                {
-                    X = 1,
-                    Y = 3,
-                    Width = Dim.Fill(2),
-                    Height = 7
-                };
-
-                dialog.Add(instructions, equalizerView);
-
-                var stopButton = new Button("Stop");
-                var cancelButton = new Button("Cancel");
-
-                IAudioRecordingSession? session = null;
-                try
+                var startTask = Task.Run(async () =>
                 {
                     var limits = AudioLimiter.Calculate(
                         voiceConfig.Format,
@@ -723,18 +987,8 @@ public static class TuiEntrypoint
                         FramesPerBuffer: 512,
                         Tap: tap);
                     var recorder = new PortAudioRecorder();
-#pragma warning disable RS0030
-                    session = recorder.StartAsync(recordingOptions, CancellationToken.None).GetAwaiter().GetResult();
-#pragma warning restore RS0030
-                }
-                catch (Exception ex)
-                {
-#pragma warning disable RS0030
-                    analyzer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
-#pragma warning restore RS0030
-                    ShowError(ex);
-                    return;
-                }
+                    return await recorder.StartAsync(recordingOptions, startCts.Token).ConfigureAwait(false);
+                });
 
                 var refreshToken = Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(50), _ =>
                 {
@@ -746,25 +1000,55 @@ public static class TuiEntrypoint
                 {
                     if (args.KeyEvent.Key == Key.Esc)
                     {
-                        _ = StopRecordingAsync(dialog, session, cancel: true);
+                        _ = StopRecordingAsync(dialog, session, startCts, cancel: true);
                         args.Handled = true;
                     }
                     else if (args.KeyEvent.Key == Key.Enter)
                     {
-                        _ = StopRecordingAsync(dialog, session, cancel: false);
+                        _ = StopRecordingAsync(dialog, session, startCts, cancel: false);
                         args.Handled = true;
                     }
                 };
 
-                stopButton.Clicked += () => _ = StopRecordingAsync(dialog, session, cancel: false);
-                cancelButton.Clicked += () => _ = StopRecordingAsync(dialog, session, cancel: true);
+                stopButton.Clicked += () => _ = StopRecordingAsync(dialog, session, startCts, cancel: false);
+                cancelButton.Clicked += () => _ = StopRecordingAsync(dialog, session, startCts, cancel: true);
                 dialog.AddButton(stopButton);
                 dialog.AddButton(cancelButton);
+
+                _ = startTask.ContinueWith((task, _) =>
+                {
+                    Application.MainLoop.Invoke(() =>
+                    {
+                        if (task.IsCanceled)
+                        {
+                            statusLabel.Text = "Recorder start canceled.";
+                            stopButton.Enabled = false;
+                            return;
+                        }
+                        if (task.IsFaulted)
+                        {
+                            var ex = task.Exception?.GetBaseException()
+                                ?? new InvalidOperationException("Recorder start failed.");
+                            Application.RequestStop(dialog);
+                            ShowError(ex);
+                            return;
+                        }
+
+#pragma warning disable RS0030
+                        session = task.Result;
+#pragma warning restore RS0030
+                        statusLabel.Text = "Recording...";
+                        stopButton.Enabled = true;
+                    });
+                }, null, TaskScheduler.Default);
 
                 Application.Run(dialog);
 
                 Application.MainLoop.RemoveTimeout(refreshToken);
+                startCts.Cancel();
+                startCts.Dispose();
 
+                AudioRecordingResult? result = null;
                 if (session is not null)
                 {
                     if (!session.Completion.IsCompleted)
@@ -774,31 +1058,9 @@ public static class TuiEntrypoint
 #pragma warning restore RS0030
                     }
 
-                    if (session.Completion != null)
-                    {
 #pragma warning disable RS0030
-                        var result = session.Completion.GetAwaiter().GetResult();
+                    result = session.Completion.GetAwaiter().GetResult();
 #pragma warning restore RS0030
-                        if (!result.WasCanceled)
-                        {
-                            foreach (var path in result.WavPaths)
-                            {
-                                try
-                                {
-                                    if (File.Exists(path))
-                                    {
-                                        File.Delete(path);
-                                    }
-                                }
-                                catch
-                                {
-                                    // ignored
-#pragma warning disable ERP022
-                                }
-#pragma warning restore ERP022
-                            }
-                        }
-                    }
 
 #pragma warning disable RS0030
                     session.DisposeAsync().AsTask().GetAwaiter().GetResult();
@@ -808,12 +1070,24 @@ public static class TuiEntrypoint
 #pragma warning disable RS0030
                 analyzer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
 #pragma warning restore RS0030
+
+                return result;
             }
 
-            static async Task StopRecordingAsync(Dialog dialog, IAudioRecordingSession session, bool cancel)
+            static async Task StopRecordingAsync(Dialog dialog, IAudioRecordingSession? session, CancellationTokenSource? startCts, bool cancel)
             {
                 try
                 {
+                    if (session is null)
+                    {
+                        if (startCts != null)
+                        {
+                            await startCts.CancelAsync().ConfigureAwait(false);
+                        }
+
+                        Application.MainLoop.Invoke(() => Application.RequestStop(dialog));
+                        return;
+                    }
                     if (cancel)
                     {
                         await session.CancelAsync(CancellationToken.None).ConfigureAwait(false);
@@ -831,6 +1105,261 @@ public static class TuiEntrypoint
 #pragma warning restore ERP022
 
                 Application.MainLoop.Invoke(() => Application.RequestStop(dialog));
+            }
+
+            void RunVoiceWorkItemFromRecording(AudioRecordingResult recording, string? typeOverride)
+            {
+                var voiceConfig = VoiceConfig.Load();
+                if (!OpenAiTranscriptionClient.TryCreate(out var transcriptionClient, out var reason))
+                {
+                    ShowInfo($"Transcription disabled: {reason}");
+                    CleanupTempFiles(recording.WavPaths);
+                    return;
+                }
+
+                string? transcript = null;
+                try
+                {
+                    transcript = RunWithBusyDialog(
+                        "Transcribing",
+                        "Transcribing audio...",
+                        () => TranscribeRecordingAsync(recording, voiceConfig, transcriptionClient!));
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex);
+                }
+
+                if (string.IsNullOrWhiteSpace(transcript))
+                {
+                    CleanupTempFiles(recording.WavPaths);
+                    return;
+                }
+
+                try
+                {
+                    if (!AiWorkItemClient.TryCreate(out var client, out var failedReason))
+                    {
+                        ShowInfo($"AI work item generation disabled: {failedReason}");
+                        CleanupTempFiles(recording.WavPaths);
+                        return;
+                    }
+
+                    var draft = RunWithBusyDialog<WorkItemDraft?>(
+                        "Generating",
+                        "Generating work item...",
+                        () => client!.GenerateDraftAsync(transcript));
+                    if (draft == null || string.IsNullOrWhiteSpace(draft.Title))
+                    {
+                        ShowInfo("AI did not return a valid work item draft.");
+                        CleanupTempFiles(recording.WavPaths);
+                        return;
+                    }
+
+                    var type = ResolveWorkItemType(typeOverride, draft.Type);
+                    var created = WorkItemService.CreateItem(repoRoot, config, type, draft.Title, status: null, priority: null, owner: null);
+                    WorkItemService.ApplyDraft(created.Path, draft);
+
+                    allItems = LoadItems(repoRoot, config);
+                    filteredItems.Clear();
+                    filteredItems.AddRange(allItems);
+                    ApplyFilters();
+                    ShowInfo($"{created.Id} created at {created.Path}");
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex);
+                }
+                finally
+                {
+                    CleanupTempFiles(recording.WavPaths);
+                }
+            }
+
+            void RunVoiceDocFromRecording(AudioRecordingResult recording, string docType)
+            {
+                var voiceConfig = VoiceConfig.Load();
+                if (!OpenAiTranscriptionClient.TryCreate(out var transcriptionClient, out var failReason))
+                {
+                    ShowInfo($"Transcription disabled: {failReason}");
+                    CleanupTempFiles(recording.WavPaths);
+                    return;
+                }
+
+                string? transcript = null;
+                try
+                {
+                    transcript = RunWithBusyDialog(
+                        "Transcribing",
+                        "Transcribing audio...",
+                        () => TranscribeRecordingAsync(recording, voiceConfig, transcriptionClient!));
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex);
+                }
+
+                if (string.IsNullOrWhiteSpace(transcript))
+                {
+                    CleanupTempFiles(recording.WavPaths);
+                    return;
+                }
+
+                try
+                {
+                    if (!AiDocClient.TryCreate(out var client, out var reason))
+                    {
+                        ShowInfo($"AI doc generation disabled: {reason}");
+                        CleanupTempFiles(recording.WavPaths);
+                        return;
+                    }
+
+                    DocDraft? draft = RunWithBusyDialog<DocDraft?>(
+                        "Generating",
+                        "Generating document...",
+                        () => client!.GenerateDraftAsync(docType, transcript, titleOverride: null));
+                    if (draft == null)
+                    {
+                        ShowInfo("AI did not return a valid doc draft.");
+                        CleanupTempFiles(recording.WavPaths);
+                        return;
+                    }
+
+                    var title = !string.IsNullOrWhiteSpace(draft.Title)
+                        ? draft.Title
+                        : DocTitleHelper.FromTranscript(transcript);
+
+                    var body = !string.IsNullOrWhiteSpace(draft.Body)
+                        ? draft.Body
+                        : DocBodyBuilder.BuildSkeleton(docType, title);
+
+                    var excerpt = DocFrontMatterBuilder.BuildTranscriptExcerpt(transcript, voiceConfig.TranscriptExcerptMaxChars);
+                    var source = new DocSourceInfo(
+                        "voice",
+                        string.IsNullOrWhiteSpace(excerpt) ? null : excerpt,
+                        new DocAudioInfo(voiceConfig.Format.SampleRateHz, voiceConfig.Format.Channels, "wav"));
+
+                    var created = DocService.CreateGeneratedDoc(
+                        repoRoot,
+                        config,
+                        docType,
+                        title,
+                        body,
+                        path: null,
+                        new List<string>(),
+                        new List<string>(),
+                        new List<string>(),
+                        new List<string>(),
+                        "draft",
+                        source,
+                        force: false);
+
+                    docsAll = LoadDocs(repoRoot, config);
+                    ApplyDocsFilter();
+                    ShowInfo($"Doc created at {created.Path}");
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex);
+                }
+                finally
+                {
+                    CleanupTempFiles(recording.WavPaths);
+                }
+            }
+
+            static string ResolveWorkItemType(string? overrideType, string? generatedType)
+            {
+                var candidate = overrideType ?? generatedType;
+                if (string.IsNullOrWhiteSpace(candidate))
+                {
+                    return "task";
+                }
+                return candidate.Trim().ToLowerInvariant() switch
+                {
+                    "bug" => "bug",
+                    "task" => "task",
+                    "spike" => "spike",
+                    _ => "task"
+                };
+            }
+
+            static T? RunWithBusyDialog<T>(string title, string message, Func<Task<T>> work)
+            {
+                T? result = default;
+                Exception? error = null;
+
+                var dialog = new Dialog(title, 50, 6)
+                {
+                    ColorScheme = Colors.Dialog
+                };
+                dialog.Add(new Label(message) { X = 1, Y = 1, Width = Dim.Fill(2) });
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        result = await work().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                    }
+                    finally
+                    {
+                        Application.MainLoop.Invoke(() => Application.RequestStop(dialog));
+                    }
+                });
+
+                Application.Run(dialog);
+                if (error is not null)
+                {
+                    throw error;
+                }
+
+                return result;
+            }
+
+            static async Task<string?> TranscribeRecordingAsync(
+                AudioRecordingResult recording,
+                VoiceConfig config,
+                ITranscriptionClient transcriptionClient)
+            {
+                var transcript = string.Empty;
+                var tempFiles = new List<string>();
+                try
+                {
+                    var transcriber = new VoiceTranscriptionService(transcriptionClient, config);
+                    var result = await transcriber.TranscribeAsync(recording, CancellationToken.None).ConfigureAwait(false);
+                    transcript = result.Transcript.Trim();
+                    tempFiles.AddRange(result.TempFiles);
+                }
+                finally
+                {
+                    CleanupTempFiles(tempFiles);
+                }
+
+                return string.IsNullOrWhiteSpace(transcript) ? null : transcript;
+            }
+
+            static void CleanupTempFiles(IEnumerable<string> paths)
+            {
+                foreach (var path in paths)
+                {
+                    try
+                    {
+                        if (File.Exists(path))
+                        {
+                            File.Delete(path);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore cleanup failures.
+#pragma warning disable ERP022
+                    }
+#pragma warning restore ERP022
+                }
             }
 
             void ShowCreateDialog()
@@ -852,6 +1381,7 @@ public static class TuiEntrypoint
                 {
                     ColorScheme = Colors.Dialog
                 };
+                var typePickButton = CreatePickerButton(typeField, workItemTypeOptions, "Work item type");
                 typeField.ColorScheme = inputScheme;
                 titleField.ColorScheme = inputScheme;
                 statusFieldInput.ColorScheme = inputScheme;
@@ -863,10 +1393,11 @@ public static class TuiEntrypoint
                     new Label("Status:") { X = 1, Y = 5 },
                     new Label("Owner:") { X = 1, Y = 7 },
                     new Label("Priority:") { X = 1, Y = 9 },
-                    typeField, titleField, statusFieldInput, ownerField, priorityField, previewLabel);
+                    typeField, titleField, statusFieldInput, ownerField, priorityField, previewLabel, typePickButton);
 
                 typeField.X = 26;
                 typeField.Y = 1;
+                typeField.Width = 12;
                 titleField.X = 26;
                 titleField.Y = 3;
                 titleField.Width = Dim.Fill(2);
@@ -876,6 +1407,8 @@ public static class TuiEntrypoint
                 ownerField.Y = 7;
                 priorityField.X = 26;
                 priorityField.Y = 9;
+                typePickButton.X = Pos.Right(typeField) + 1;
+                typePickButton.Y = 1;
 
                 var confirmed = false;
                 var cancelButton = new Button("Cancel");
@@ -1090,6 +1623,7 @@ public static class TuiEntrypoint
                 {
                     ColorScheme = Colors.Dialog
                 };
+                var typePickButton = CreatePickerButton(typeField, docTypeOptions, "Doc type");
                 typeField.ColorScheme = inputScheme;
                 titleField.ColorScheme = inputScheme;
                 pathField.ColorScheme = inputScheme;
@@ -1097,16 +1631,19 @@ public static class TuiEntrypoint
                     new Label("Type (spec/adr/doc/runbook/guide):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Path (optional):") { X = 1, Y = 5 },
-                    typeField, titleField, pathField, previewLabel);
+                    typeField, titleField, pathField, previewLabel, typePickButton);
 
                 typeField.X = 34;
                 typeField.Y = 1;
+                typeField.Width = 12;
                 titleField.X = 34;
                 titleField.Y = 3;
                 titleField.Width = Dim.Fill(2);
                 pathField.X = 34;
                 pathField.Y = 5;
                 pathField.Width = Dim.Fill(2);
+                typePickButton.X = Pos.Right(typeField) + 1;
+                typePickButton.Y = 1;
 
                 void UpdatePreview()
                 {
@@ -1193,6 +1730,7 @@ public static class TuiEntrypoint
                 {
                     ColorScheme = Colors.Dialog
                 };
+                var typePickButton = CreatePickerButton(typeField, docTypeOptions, "Doc type");
                 typeField.ColorScheme = inputScheme;
                 titleField.ColorScheme = inputScheme;
                 pathField.ColorScheme = inputScheme;
@@ -1201,16 +1739,19 @@ public static class TuiEntrypoint
                     new Label("Type (spec/adr/doc/runbook/guide):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Path (optional):") { X = 1, Y = 5 },
-                    typeField, titleField, pathField, previewLabel);
+                    typeField, titleField, pathField, previewLabel, typePickButton);
 
                 typeField.X = 34;
                 typeField.Y = 1;
+                typeField.Width = 12;
                 titleField.X = 34;
                 titleField.Y = 3;
                 titleField.Width = Dim.Fill(2);
                 pathField.X = 34;
                 pathField.Y = 5;
                 pathField.Width = Dim.Fill(2);
+                typePickButton.X = Pos.Right(typeField) + 1;
+                typePickButton.Y = 1;
 
                 void UpdatePreview()
                 {
@@ -1283,7 +1824,7 @@ public static class TuiEntrypoint
             filterField.TextChanged += _ => ApplyFilters();
             statusField.TextChanged += _ => ApplyFilters();
 
-            navFrame.Add(filterLabel, filterField, statusLabel, statusField, listView);
+            navFrame.Add(filterLabel, filterField, statusLabel, statusField, statusPickButton, listView);
             detailsFrame.Add(detailsHeader);
             detailsFrame.Add(linkTypeLabel);
             detailsFrame.Add(linkTypeField);
@@ -1326,12 +1867,14 @@ public static class TuiEntrypoint
                     items.Add(new StatusItem(Key.F9, "~F9~ Sync Nav", ShowSyncDialog));
                     items.Add(new StatusItem(Key.F10, "~F10~ Validate Repo", ShowValidateDialog));
                     items.Add(new StatusItem(Key.F11, "~F11~ Dry-run", ToggleDryRun));
-                    items.Add(new StatusItem(Key.F12, "~F12~ Record", ShowRecordingDialog));
+                    items.Add(new StatusItem(Key.F12, "~F12~ Voice Item", ShowVoiceWorkItemDialog));
+                    items.Add(new StatusItem(Key.CtrlMask | Key.R, "~^R~ Voice Item", ShowVoiceWorkItemDialog));
                 }
                 else
                 {
                     items.Add(new StatusItem(Key.F5, "~F5~ Open", ActivateSelectedDoc));
                     items.Add(new StatusItem(Key.F8, "~F8~ New Doc Here", ShowDocsTabCreateDialog));
+                    items.Add(new StatusItem(Key.F9, "~F9~ Voice Doc", ShowVoiceDocDialog));
                     items.Add(new StatusItem(Key.Enter, "~Enter~ Open", ActivateSelectedDoc));
                 }
 
@@ -1423,6 +1966,10 @@ public static class TuiEntrypoint
                 }
 
                 var target = linkTargets[args.Item];
+                if (TryShowPreviewForLink(target))
+                {
+                    return;
+                }
                 var resolved = ResolveLink(repoRoot, target);
                 SetCommandPreview($"open \"{resolved}\"");
                 try

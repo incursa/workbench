@@ -1,12 +1,14 @@
 using System.Runtime.InteropServices;
 using PortAudioSharp;
-using Workbench.Core.VoiceViz;
+using Workbench.VoiceViz;
 using Stream = PortAudioSharp.Stream;
 
 namespace Workbench.Core.Voice;
 
 public sealed class PortAudioRecorder : IAudioRecorder
 {
+    private static int activeSessions;
+
     public async Task<IAudioRecordingSession> StartAsync(AudioRecordingOptions options, CancellationToken ct)
     {
         if (options.Format.Channels != 1)
@@ -14,58 +16,91 @@ public sealed class PortAudioRecorder : IAudioRecorder
             throw new InvalidOperationException("Only mono recording is supported.");
         }
 
-        PortAudio.Initialize();
+        EnsureInitialized();
 
-        var deviceIndex = PortAudio.DefaultInputDevice;
-        if (deviceIndex == PortAudio.NoDevice)
+        try
         {
-            throw new InvalidOperationException("No default input device found.");
+            var deviceIndex = PortAudio.DefaultInputDevice;
+            if (deviceIndex == PortAudio.NoDevice)
+            {
+                throw new InvalidOperationException("No default input device found.");
+            }
+
+            var deviceInfo = PortAudio.GetDeviceInfo(deviceIndex);
+            var param = new StreamParameters
+            {
+                device = deviceIndex,
+                channelCount = options.Format.Channels,
+                sampleFormat = SampleFormat.Int16,
+                suggestedLatency = deviceInfo.defaultLowInputLatency,
+                hostApiSpecificStreamInfo = IntPtr.Zero
+            };
+
+            var limit = AudioLimiter.Calculate(options.Format, options.MaxDuration, options.MaxBytes);
+            var maxFrames = limit.MaxFrames;
+
+            var outputDir = options.OutputDirectory;
+            Directory.CreateDirectory(outputDir);
+            var fileName = $"{options.FilePrefix}-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}.wav";
+            var outputPath = Path.Combine(outputDir, fileName);
+
+            var session = new RecordingSession(options.Format, outputPath, maxFrames, options.Tap);
+
+            Stream.Callback callback = (IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo,
+                StreamCallbackFlags statusFlags, IntPtr userData) =>
+            {
+                return session.OnAudio(input, frameCount);
+            };
+
+            session.AttachStream(new Stream(
+                inParams: param,
+                outParams: null,
+                sampleRate: options.Format.SampleRateHz,
+                framesPerBuffer: options.FramesPerBuffer,
+                streamFlags: StreamFlags.ClipOff,
+                callback: callback,
+                userData: IntPtr.Zero));
+
+            session.Start();
+
+            if (ct.CanBeCanceled)
+            {
+                ct.Register(() => _ = session.CancelAsync(CancellationToken.None));
+            }
+
+            await Task.Yield();
+            return session;
         }
-
-        var deviceInfo = PortAudio.GetDeviceInfo(deviceIndex);
-        var param = new StreamParameters
+        catch
         {
-            device = deviceIndex,
-            channelCount = options.Format.Channels,
-            sampleFormat = SampleFormat.Int16,
-            suggestedLatency = deviceInfo.defaultLowInputLatency,
-            hostApiSpecificStreamInfo = IntPtr.Zero
-        };
-
-        var limit = AudioLimiter.Calculate(options.Format, options.MaxDuration, options.MaxBytes);
-        var maxFrames = limit.MaxFrames;
-
-        var outputDir = options.OutputDirectory;
-        Directory.CreateDirectory(outputDir);
-        var fileName = $"{options.FilePrefix}-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}.wav";
-        var outputPath = Path.Combine(outputDir, fileName);
-
-        var session = new RecordingSession(options.Format, outputPath, maxFrames, options.Tap);
-
-        Stream.Callback callback = (IntPtr input, IntPtr output, uint frameCount, ref StreamCallbackTimeInfo timeInfo,
-            StreamCallbackFlags statusFlags, IntPtr userData) =>
-        {
-            return session.OnAudio(input, frameCount);
-        };
-
-        session.AttachStream(new Stream(
-            inParams: param,
-            outParams: null,
-            sampleRate: options.Format.SampleRateHz,
-            framesPerBuffer: options.FramesPerBuffer,
-            streamFlags: StreamFlags.ClipOff,
-            callback: callback,
-            userData: IntPtr.Zero));
-
-        session.Start();
-
-        if (ct.CanBeCanceled)
-        {
-            ct.Register(() => _ = session.CancelAsync(CancellationToken.None));
+            ReleaseInitialization();
+            throw;
         }
+    }
 
-        await Task.Yield();
-        return session;
+    private static void EnsureInitialized()
+    {
+        if (Interlocked.Increment(ref activeSessions) == 1)
+        {
+            PortAudio.Initialize();
+        }
+    }
+
+    private static void ReleaseInitialization()
+    {
+        if (Interlocked.Decrement(ref activeSessions) == 0)
+        {
+            try
+            {
+                PortAudio.Terminate();
+            }
+            catch
+            {
+                // Ignore termination failures during teardown.
+#pragma warning disable ERP022
+            }
+#pragma warning restore ERP022
+        }
     }
 
     private sealed class RecordingSession : IAudioRecordingSession
@@ -83,6 +118,7 @@ public sealed class PortAudioRecorder : IAudioRecorder
         private bool stopRequested;
         private bool cancelRequested;
         private bool finalized;
+        private int stopped;
 
         public RecordingSession(AudioFormat format, string outputPath, long maxFrames, IAudioTap? tap)
         {
@@ -185,15 +221,26 @@ public sealed class PortAudioRecorder : IAudioRecorder
 
         private void StopStream()
         {
+            if (Interlocked.Exchange(ref this.stopped, 1) == 1)
+            {
+                return;
+            }
+
             try
             {
                 this.stream?.Stop();
             }
+            catch
+            {
+                // Ignore stream stop failures during teardown.
+#pragma warning disable ERP022
+            }
+#pragma warning restore ERP022
             finally
             {
                 this.stream?.Dispose();
                 this.stream = null;
-                PortAudio.Terminate();
+                ReleaseInitialization();
             }
         }
 

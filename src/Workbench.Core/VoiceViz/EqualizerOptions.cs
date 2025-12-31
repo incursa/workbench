@@ -1,4 +1,4 @@
-namespace Workbench.Core.VoiceViz;
+namespace Workbench.VoiceViz;
 
 public sealed record EqualizerOptions(
     int BandCount,
@@ -13,7 +13,7 @@ public sealed record EqualizerOptions(
         BandCount: 12,
         UpdateHz: 20,
         FftSize: 1024,
-        LevelBoost: 1.6f,
+        LevelBoost: 4.0f,
         Attack: 0.6f,
         Release: 0.9f,
         EnableSpectrum: true);
