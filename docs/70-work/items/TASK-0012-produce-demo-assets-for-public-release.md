@@ -1,5 +1,5 @@
 ---
-id: TASK-0007
+id: TASK-0012
 type: task
 status: draft
 priority: medium
@@ -19,7 +19,7 @@ related:
   branches: []
 ---
 
-# TASK-0007 - Produce demo assets for public release
+# TASK-0012 - Produce demo assets for public release
 
 ## Summary
 
