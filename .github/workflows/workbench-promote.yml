@@ -58,15 +58,15 @@ jobs:
 
       - name: Configure GitHub provider
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKBENCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           workbench config set --path github.provider --value octokit
 
       - name: Promote work item
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKBENCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           item_json=$(workbench --format json item show "${{ inputs.id }}")
           config_json=$(workbench --format json config show)
@@ -79,8 +79,14 @@ jobs:
           item_title=$(echo "$item_json" | jq -r '.data.item.title')
           item_slug=$(echo "$item_json" | jq -r '.data.item.slug')
           item_path=$(echo "$item_json" | jq -r '.data.item.path')
-          branch_pattern=$(echo "$config_json" | jq -r '.data.config.git.branchPattern')
-          commit_pattern=$(echo "$config_json" | jq -r '.data.config.git.commitMessagePattern')
+          branch_pattern=$(echo "$config_json" | jq -r '.data.config.git.branchPattern // empty')
+          commit_pattern=$(echo "$config_json" | jq -r '.data.config.git.commitMessagePattern // empty')
+          if [[ -z "$branch_pattern" || "$branch_pattern" == "null" ]]; then
+            branch_pattern="work/{id}-{slug}"
+          fi
+          if [[ -z "$commit_pattern" || "$commit_pattern" == "null" ]]; then
+            commit_pattern="Promote {id}: {title}"
+          fi
 
           branch_name="${branch_pattern//\{id\}/$item_id}"
           branch_name="${branch_name//\{slug\}/$item_slug}"
@@ -118,4 +124,3 @@ jobs:
           fi
 
           workbench item sync --id "$item_id"
-          fi
