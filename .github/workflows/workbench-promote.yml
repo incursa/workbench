@@ -67,60 +67,77 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        shell: pwsh
         run: |
-          item_json=$(workbench --format json item show "${{ inputs.id }}")
-          config_json=$(workbench --format json config show)
+          $ErrorActionPreference = "Stop"
+          function Invoke-Logged {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string]$FilePath,
+              [string[]]$Arguments = @()
+            )
+            $joinedArgs = ($Arguments | ForEach-Object { if ($_ -match "\s") { '"' + $_ + '"' } else { $_ } }) -join " "
+            Write-Host ">> $FilePath $joinedArgs"
+            $output = & $FilePath @Arguments 2>&1 | Tee-Object -Variable commandOutput
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -ne 0) {
+              Write-Host $commandOutput
+              throw "Command failed with exit code $exitCode: $FilePath $joinedArgs"
+            }
+            return $output
+          }
 
-          if [[ -n "${{ inputs.base }}" ]]; then
-            git checkout "${{ inputs.base }}"
-          fi
+          $itemId = "${{ inputs.id }}"
+          $baseBranch = "${{ inputs.base }}"
+          $startItem = "${{ inputs.start }}"
+          $pushBranch = "${{ inputs.push }}"
+          $createPr = "${{ inputs.create_pr }}"
 
-          item_id=$(echo "$item_json" | jq -r '.data.item.id')
-          item_title=$(echo "$item_json" | jq -r '.data.item.title')
-          item_slug=$(echo "$item_json" | jq -r '.data.item.slug')
-          item_path=$(echo "$item_json" | jq -r '.data.item.path')
-          branch_pattern=$(echo "$config_json" | jq -r '.data.config.git.branchPattern // empty')
-          commit_pattern=$(echo "$config_json" | jq -r '.data.config.git.commitMessagePattern // empty')
-          if [[ -z "$branch_pattern" || "$branch_pattern" == "null" ]]; then
-            branch_pattern="work/{id}-{slug}"
-          fi
-          if [[ -z "$commit_pattern" || "$commit_pattern" == "null" ]]; then
-            commit_pattern="Promote {id}: {title}"
-          fi
+          $itemJson = (Invoke-Logged -FilePath "workbench" -Arguments @("--format", "json", "item", "show", $itemId) | Out-String) | ConvertFrom-Json
+          $configJson = (Invoke-Logged -FilePath "workbench" -Arguments @("--format", "json", "config", "show") | Out-String) | ConvertFrom-Json
 
-          branch_name="${branch_pattern//\{id\}/$item_id}"
-          branch_name="${branch_name//\{slug\}/$item_slug}"
-          branch_name="${branch_name//\{title\}/$item_title}"
+          if (-not [string]::IsNullOrWhiteSpace($baseBranch)) {
+            Invoke-Logged -FilePath "git" -Arguments @("checkout", $baseBranch)
+          }
 
-          commit_message="${commit_pattern//\{id\}/$item_id}"
-          commit_message="${commit_message//\{slug\}/$item_slug}"
-          commit_message="${commit_message//\{title\}/$item_title}"
+          $item = $itemJson.data.item
+          $branchPattern = $configJson.data.config.git.branchPattern
+          $commitPattern = $configJson.data.config.git.commitMessagePattern
+          if ([string]::IsNullOrWhiteSpace($branchPattern)) {
+            $branchPattern = "work/{id}-{slug}"
+          }
+          if ([string]::IsNullOrWhiteSpace($commitPattern)) {
+            $commitPattern = "Promote {id}: {title}"
+          }
 
-          git checkout -b "$branch_name"
+          $branchName = $branchPattern.Replace("{id}", $item.id).Replace("{slug}", $item.slug).Replace("{title}", $item.title)
+          $commitMessage = $commitPattern.Replace("{id}", $item.id).Replace("{slug}", $item.slug).Replace("{title}", $item.title)
 
-          if [[ "${{ inputs.start }}" == "true" ]]; then
-            workbench item status "$item_id" in-progress
-            git add "$item_path"
-          fi
+          Invoke-Logged -FilePath "git" -Arguments @("checkout", "-b", $branchName)
 
-          if git diff --cached --quiet; then
-            if [[ "${{ inputs.create_pr }}" == "true" ]]; then
-              git commit --allow-empty -m "$commit_message"
-            fi
-          else
-            git commit -m "$commit_message"
-          fi
+          if ($startItem -eq "true") {
+            Invoke-Logged -FilePath "workbench" -Arguments @("item", "status", $item.id, "in-progress")
+            Invoke-Logged -FilePath "git" -Arguments @("add", $item.path)
+          }
 
-          if [[ "${{ inputs.push }}" == "true" || "${{ inputs.create_pr }}" == "true" ]]; then
-            git push -u origin "$branch_name"
-          fi
+          & git diff --cached --quiet
+          $hasStagedChanges = ($LASTEXITCODE -ne 0)
+          if ($hasStagedChanges) {
+            Invoke-Logged -FilePath "git" -Arguments @("commit", "-m", $commitMessage)
+          } elseif ($createPr -eq "true") {
+            Invoke-Logged -FilePath "git" -Arguments @("commit", "--allow-empty", "-m", $commitMessage)
+          }
 
-          if [[ "${{ inputs.create_pr }}" == "true" ]]; then
-            pr_args=(github pr create "$item_id" --draft --fill)
-            if [[ -n "${{ inputs.base }}" ]]; then
-              pr_args+=(--base "${{ inputs.base }}")
-            fi
-            workbench "${pr_args[@]}"
-          fi
+          if ($pushBranch -eq "true" -or $createPr -eq "true") {
+            Invoke-Logged -FilePath "git" -Arguments @("push", "-u", "origin", $branchName)
+          }
 
-          workbench item sync --id "$item_id"
+          if ($createPr -eq "true") {
+            $prArgs = @("github", "pr", "create", $item.id, "--draft", "--fill")
+            if (-not [string]::IsNullOrWhiteSpace($baseBranch)) {
+              $prArgs += @("--base", $baseBranch)
+            }
+            Invoke-Logged -FilePath "workbench" -Arguments $prArgs
+          }
+
+          Invoke-Logged -FilePath "workbench" -Arguments @("item", "sync", "--id", $item.id)
