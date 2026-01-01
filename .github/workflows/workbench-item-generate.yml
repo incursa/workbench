@@ -1,0 +1,83 @@
+name: Workbench Item Generate
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "AI prompt describing the work item"
+        required: true
+        type: string
+      type:
+        description: "Work item type (bug, task, spike)"
+        required: false
+        type: string
+      status:
+        description: "Work item status (draft, ready, in-progress, blocked, done, dropped)"
+        required: false
+        type: string
+      priority:
+        description: "Work item priority (low, medium, high, critical)"
+        required: false
+        type: string
+      owner:
+        description: "Owner for the work item"
+        required: false
+        type: string
+      model:
+        description: "AI model override (optional)"
+        required: false
+        type: string
+      provider:
+        description: "AI provider (openai or none)"
+        required: false
+        default: "openai"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Workbench CLI tool
+        run: |
+          dotnet tool install --global Bravellian.Workbench
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Generate work item
+        env:
+          WORKBENCH_AI_PROVIDER: ${{ inputs.provider }}
+          WORKBENCH_AI_WORK_ITEM_MODEL: ${{ inputs.model }}
+          WORKBENCH_AI_OPENAI_KEY: ${{ secrets.WORKBENCH_AI_OPENAI_KEY || secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.WORKBENCH_AI_OPENAI_KEY }}
+        run: |
+          args=(item generate --prompt "${{ inputs.prompt }}")
+
+          if [[ -n "${{ inputs.type }}" ]]; then
+            args+=(--type "${{ inputs.type }}")
+          fi
+
+          if [[ -n "${{ inputs.status }}" ]]; then
+            args+=(--status "${{ inputs.status }}")
+          fi
+
+          if [[ -n "${{ inputs.priority }}" ]]; then
+            args+=(--priority "${{ inputs.priority }}")
+          fi
+
+          if [[ -n "${{ inputs.owner }}" ]]; then
+            args+=(--owner "${{ inputs.owner }}")
+          fi
+
+          workbench "${args[@]}"
