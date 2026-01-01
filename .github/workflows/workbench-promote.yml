@@ -3,12 +3,8 @@ name: Workbench Promote and Start
 on:
   workflow_dispatch:
     inputs:
-      type:
-        description: "Work item type (bug, task, spike)"
-        required: true
-        type: string
-      title:
-        description: "Work item title"
+      id:
+        description: "Work item ID (e.g., TASK-0042)"
         required: true
         type: string
       base:
@@ -72,27 +68,54 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          args=(promote --type "${{ inputs.type }}" --title "${{ inputs.title }}")
+          item_json=$(workbench --format json item show "${{ inputs.id }}")
+          config_json=$(workbench --format json config show)
 
           if [[ -n "${{ inputs.base }}" ]]; then
-            args+=(--base "${{ inputs.base }}")
+            git checkout "${{ inputs.base }}"
           fi
+
+          item_id=$(echo "$item_json" | jq -r '.data.item.id')
+          item_title=$(echo "$item_json" | jq -r '.data.item.title')
+          item_slug=$(echo "$item_json" | jq -r '.data.item.slug')
+          item_path=$(echo "$item_json" | jq -r '.data.item.path')
+          branch_pattern=$(echo "$config_json" | jq -r '.data.config.git.branchPattern')
+          commit_pattern=$(echo "$config_json" | jq -r '.data.config.git.commitMessagePattern')
+
+          branch_name="${branch_pattern//\{id\}/$item_id}"
+          branch_name="${branch_name//\{slug\}/$item_slug}"
+          branch_name="${branch_name//\{title\}/$item_title}"
+
+          commit_message="${commit_pattern//\{id\}/$item_id}"
+          commit_message="${commit_message//\{slug\}/$item_slug}"
+          commit_message="${commit_message//\{title\}/$item_title}"
+
+          git checkout -b "$branch_name"
 
           if [[ "${{ inputs.start }}" == "true" ]]; then
-            args+=(--start)
+            workbench item status "$item_id" in-progress
+            git add "$item_path"
           fi
 
-          if [[ "${{ inputs.push }}" == "true" ]]; then
-            args+=(--push)
+          if git diff --cached --quiet; then
+            if [[ "${{ inputs.create_pr }}" == "true" ]]; then
+              git commit --allow-empty -m "$commit_message"
+            fi
+          else
+            git commit -m "$commit_message"
+          fi
+
+          if [[ "${{ inputs.push }}" == "true" || "${{ inputs.create_pr }}" == "true" ]]; then
+            git push -u origin "$branch_name"
           fi
 
           if [[ "${{ inputs.create_pr }}" == "true" ]]; then
-            args+=(--pr --draft)
+            pr_args=(github pr create "$item_id" --draft --fill)
+            if [[ -n "${{ inputs.base }}" ]]; then
+              pr_args+=(--base "${{ inputs.base }}")
+            fi
+            workbench "${pr_args[@]}"
           fi
-          promote_output=$(workbench --format json "${args[@]}")
-          echo "$promote_output"
-          item_id=$(echo "$promote_output" | jq -r '.data.item.id // empty')
 
-          if [[ -n "$item_id" ]]; then
-            workbench item sync --id "$item_id"
+          workbench item sync --id "$item_id"
           fi
