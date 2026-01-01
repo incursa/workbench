@@ -28,16 +28,12 @@ on:
       create_pr:
         description: "Create a draft PR after promotion"
         required: false
-        default: false
-        type: boolean
-      draft:
-        description: "Create the work item as draft (unless already ready)"
-        required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
 jobs:
@@ -65,7 +61,6 @@ jobs:
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Configure GitHub provider
-        if: ${{ inputs.create_pr }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,11 +87,12 @@ jobs:
           fi
 
           if [[ "${{ inputs.create_pr }}" == "true" ]]; then
-            args+=(--pr)
+            args+=(--pr --draft)
           fi
+          promote_output=$(workbench --format json "${args[@]}")
+          echo "$promote_output"
+          item_id=$(echo "$promote_output" | jq -r '.data.item.id // empty')
 
-          if [[ "${{ inputs.draft }}" == "true" ]]; then
-            args+=(--draft)
+          if [[ -n "$item_id" ]]; then
+            workbench item sync --id "$item_id"
           fi
-
-          workbench "${args[@]}"
