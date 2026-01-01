@@ -1,0 +1,65 @@
+name: Workbench Sync and Normalize
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  sync-normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Workbench CLI tool
+        run: |
+          dotnet tool install --global Bravellian.Workbench
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Configure GitHub provider
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          workbench config set --path github.provider --value octokit
+
+      - name: Run sync and normalize
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          workbench sync
+          workbench normalize
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          commit-message: "Sync and normalize workbench data"
+          branch: "chore/workbench-sync-normalize"
+          title: "Sync and normalize workbench data"
+          body: |
+            ## Summary
+            - Run `workbench sync`
+            - Run `workbench normalize`
+
+            ## Context
+            - Automated maintenance from the Workbench Sync and Normalize workflow.

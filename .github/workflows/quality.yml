@@ -2,6 +2,13 @@ name: Quality Gate
 
 on:
   pull_request:
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "assets/**"
+      - "examples/**"
+      - "testdata/**"
+      - "**/*.md"
   push:
     branches:
       - main
@@ -11,6 +18,13 @@ on:
       - user/**
       - users/**
       - hotfix/**
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "assets/**"
+      - "examples/**"
+      - "testdata/**"
+      - "**/*.md"
 
 jobs:
   verify:

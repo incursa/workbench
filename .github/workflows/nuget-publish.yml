@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "assets/**"
+      - "examples/**"
+      - "testdata/**"
+      - "**/*.md"
   workflow_dispatch:
 
 permissions:
