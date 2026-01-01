@@ -1,11 +1,11 @@
 ---
-id: TASK-0006
+id: TASK-0011
 type: task
-status: draft
+status: in-progress
 priority: high
 owner: platform
 created: 2026-01-01
-updated: null
+updated: 2026-01-01
 githubSynced: null
 tags:
   - docs
@@ -19,7 +19,7 @@ related:
   branches: []
 ---
 
-# TASK-0006 - Add getting started tutorial and sample repo
+# TASK-0011 - Add getting started tutorial and sample repo
 
 ## Summary
 

@@ -1,5 +1,5 @@
 ---
-id: TASK-0005
+id: TASK-0010
 type: task
 status: draft
 priority: high
@@ -20,7 +20,7 @@ related:
   branches: []
 ---
 
-# TASK-0005 - Create public launch landing and messaging kit
+# TASK-0010 - Create public launch landing and messaging kit
 
 ## Summary
 

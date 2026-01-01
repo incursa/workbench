@@ -1,5 +1,5 @@
 ---
-id: TASK-0008
+id: TASK-0013
 type: task
 status: draft
 priority: medium
@@ -19,7 +19,7 @@ related:
   branches: []
 ---
 
-# TASK-0008 - Define release packaging and distribution
+# TASK-0013 - Define release packaging and distribution
 
 ## Summary
 
