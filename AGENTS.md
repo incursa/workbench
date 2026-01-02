@@ -17,6 +17,7 @@ No build or test commands are defined yet. When you introduce tooling, document 
 - `npm run dev` for local development
 - `npm test` for the test suite
 - `make build` for production builds
+ - `dotnet format Workbench.slnx` to apply .NET formatting rules across the solution
 
 ## Coding Style & Naming Conventions
 
@@ -39,3 +40,8 @@ No repository-specific conventions are recorded yet. Use concise, imperative com
 ## Agent-Specific Instructions
 
 If you add automation or agents, document them in `AGENTS.md` and keep instructions short and actionable.
+
+### Formatting (Required)
+
+- Always run `dotnet format Workbench.slnx` after making code changes.
+- Fix any formatting or analyzer issues reported by `dotnet format` before finalizing changes.
