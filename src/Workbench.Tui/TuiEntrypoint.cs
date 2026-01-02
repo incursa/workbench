@@ -431,7 +431,7 @@ public static partial class TuiEntrypoint
                 catch (Exception ex)
                 {
                     codexWorkButton.Enabled = false;
-                    codexHintLabel.Text = $"Git unavailable: {ex.Message}";
+                    codexHintLabel.Text = $"Git unavailable: {ex}";
                     return;
                 }
 

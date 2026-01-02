@@ -49,7 +49,7 @@ public static class CodexService
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = ex.ToString();
             return false;
         }
     }
@@ -152,10 +152,12 @@ public static class CodexService
                     return;
                 }
             }
-            catch (Exception)
+            catch
+#pragma warning disable ERP022 // Unobserved exception in a generic exception handler
             {
                 // Try next terminal.
             }
+#pragma warning restore ERP022 // Unobserved exception in a generic exception handler
         }
 
         throw new InvalidOperationException("Failed to launch a terminal for codex. Install a terminal emulator.");
