@@ -29,7 +29,6 @@ public static partial class TuiEntrypoint
         var config = WorkbenchConfig.Load(repoRoot, out _);
         var allItems = LoadItems(repoRoot, config);
         StatusBar? statusBar = null;
-        object? autoRefreshToken = null;
         ColorScheme? defaultScheme = null;
         var workItemStatusOptions = new[] { "all", "draft", "ready", "in-progress", "blocked", "done", "dropped" };
         var workItemTypeOptions = new[] { "task", "bug", "spike" };
@@ -42,10 +41,6 @@ public static partial class TuiEntrypoint
         context.CodexAvailable = CodexService.TryGetVersion(repoRoot, out var codexVersion, out var codexError);
         context.CodexVersion = codexVersion;
         context.CodexError = codexError;
-        var filteredItems = context.FilteredItems;
-        var listItemLookup = context.ListItemLookup;
-        var linkTargets = context.LinkTargets;
-
         Application.Init();
         try
         {
@@ -56,6 +51,7 @@ public static partial class TuiEntrypoint
                 Focus = Application.Driver.MakeAttribute(Color.Black, Color.White)
             };
             context.InputScheme = inputScheme;
+            context.Top = top;
             var window = new Window("Workbench TUI")
             {
                 X = 0,
@@ -63,6 +59,7 @@ public static partial class TuiEntrypoint
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
             };
+            context.Window = window;
 
             var tabView = new TabView
             {
@@ -71,6 +68,7 @@ public static partial class TuiEntrypoint
                 Width = Dim.Fill(),
                 Height = Dim.Fill(1)
             };
+            context.TabView = tabView;
 
             var navFrame = new FrameView("Work Items")
             {
@@ -79,6 +77,7 @@ public static partial class TuiEntrypoint
                 Width = Dim.Percent(50),
                 Height = Dim.Fill()
             };
+            context.NavFrame = navFrame;
 
             var detailsFrame = new FrameView("Details")
             {
@@ -87,6 +86,7 @@ public static partial class TuiEntrypoint
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
             };
+            context.DetailsFrame = detailsFrame;
 
             var footer = new View
             {
@@ -95,6 +95,7 @@ public static partial class TuiEntrypoint
                 Width = Dim.Fill(),
                 Height = 1
             };
+            context.Footer = footer;
 
             var filterLabel = new Label("Filter:")
             {
@@ -141,12 +142,14 @@ public static partial class TuiEntrypoint
                 Width = Dim.Fill(),
                 Height = 8
             };
+            context.DetailsHeader = detailsHeader;
             var startWorkButton = new Button("Start work")
             {
                 X = 1,
                 Y = Pos.Bottom(detailsHeader)
             };
             startWorkButton.Enabled = false;
+            context.StartWorkButton = startWorkButton;
 
             var completeWorkButton = new Button("Complete work")
             {
@@ -154,6 +157,7 @@ public static partial class TuiEntrypoint
                 Y = Pos.Bottom(detailsHeader)
             };
             completeWorkButton.Enabled = false;
+            context.CompleteWorkButton = completeWorkButton;
 
             var codexWorkButton = new Button("Start work (Codex)")
             {
@@ -161,6 +165,7 @@ public static partial class TuiEntrypoint
                 Y = Pos.Bottom(startWorkButton) + 1
             };
             codexWorkButton.Enabled = false;
+            context.CodexWorkButton = codexWorkButton;
 
             var codexHintLabel = new Label(string.Empty)
             {
@@ -168,6 +173,7 @@ public static partial class TuiEntrypoint
                 Y = Pos.Bottom(startWorkButton) + 1,
                 Width = Dim.Fill()
             };
+            context.CodexHintLabel = codexHintLabel;
 
             var linkTypeLabel = new Label("Links:")
             {
@@ -182,6 +188,7 @@ public static partial class TuiEntrypoint
                 Width = Dim.Fill(),
                 Height = 6
             };
+            context.LinksList = linksList;
 
             var linkTypeField = new TextField("all")
             {
@@ -189,6 +196,7 @@ public static partial class TuiEntrypoint
                 Y = Pos.Bottom(completeWorkButton),
                 Width = 12
             };
+            context.LinkTypeField = linkTypeField;
 
             var linkHint = new Label(string.Empty)
             {
@@ -196,6 +204,7 @@ public static partial class TuiEntrypoint
                 Y = Pos.Bottom(completeWorkButton),
                 Width = Dim.Fill()
             };
+            context.LinkHint = linkHint;
 
             var detailsDivider = new LineView(Orientation.Horizontal)
             {
@@ -215,6 +224,7 @@ public static partial class TuiEntrypoint
                 WordWrap = true
             };
             detailsBody.ColorScheme = detailsFrame.ColorScheme;
+            context.DetailsBody = detailsBody;
 
             context.DryRunEnabled = false;
             var dryRunLabel = new Label("Dry-run: OFF")
@@ -247,6 +257,9 @@ public static partial class TuiEntrypoint
             };
             context.DryRunLabel = dryRunLabel;
             context.CommandPreviewLabel = commandPreviewLabel;
+            context.GitInfoLabel = gitInfoLabel;
+            context.LastRefreshLabel = lastRefreshLabel;
+            context.RefreshButton = refreshButton;
             context.FilterField = filterField;
             context.StatusField = statusField;
             context.ListView = listView;
@@ -255,360 +268,7 @@ public static partial class TuiEntrypoint
             context.LinkTypeField = linkTypeField;
             context.LinkHint = linkHint;
 
-            void UpdateGitInfo()
-            {
-                try
-                {
-                    var branch = GitService.GetCurrentBranch(repoRoot);
-                    var clean = GitService.IsClean(repoRoot);
-                    gitInfoLabel.Text = $"Git: {branch} {(clean ? "clean" : "dirty")}";
-                }
-                catch
-                {
-                    gitInfoLabel.Text = "Git: unavailable";
-#pragma warning disable ERP022
-                }
-#pragma warning restore ERP022
-            }
-
-            void UpdateLastRefreshLabel()
-            {
-                var now = DateTimeOffset.UtcNow;
-                lastRefreshLabel.Text = $"Updated: {now:HH:mm:ss}";
-            }
-
-            void ConfigureAutoRefresh()
-            {
-                if (autoRefreshToken is not null)
-                {
-                    Application.MainLoop.RemoveTimeout(autoRefreshToken);
-                    autoRefreshToken = null;
-                }
-
-                if (config.Tui.AutoRefreshSeconds <= 0)
-                {
-                    return;
-                }
-
-                autoRefreshToken = Application.MainLoop.AddTimeout(TimeSpan.FromSeconds(config.Tui.AutoRefreshSeconds), _ =>
-                {
-                    RefreshAll(showInfo: false);
-                    return true;
-                });
-            }
-
-            void ShowDocPreviewDialog(string path, string resolvedPath, string content)
-            {
-                var dialog = new Dialog($"Preview: {path}", 0, 0)
-                {
-                    Width = Dim.Fill(2),
-                    Height = Dim.Fill(2)
-                };
-                var preview = new TextView
-                {
-                    X = 1,
-                    Y = 1,
-                    Width = Dim.Fill(2),
-                    Height = Dim.Fill(3),
-                    ReadOnly = true,
-                    WordWrap = true,
-                    Text = content
-                };
-                dialog.Add(preview);
-
-                void OpenExternal()
-                {
-                    SetCommandPreview(context, $"open \"{resolvedPath}\"");
-                    try
-                    {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = resolvedPath,
-                            UseShellExecute = true
-                        };
-                        Process.Start(psi);
-                    }
-                    catch (Exception ex)
-                    {
-                        ShowError(ex);
-                    }
-                }
-
-                var openButton = new Button("Open External");
-                openButton.Clicked += OpenExternal;
-
-                var closeButton = new Button("Close");
-                closeButton.Clicked += () => Application.RequestStop();
-                dialog.AddButton(openButton);
-                dialog.AddButton(closeButton);
-
-                dialog.KeyDown += args =>
-                {
-                    if (args.KeyEvent.Key == Key.O || args.KeyEvent.Key == (Key.O | Key.CtrlMask))
-                    {
-                        OpenExternal();
-                        args.Handled = true;
-                    }
-                };
-
-                Application.Run(dialog);
-            }
-
-            bool TryShowPreviewForLink(string link)
-            {
-                if (Uri.TryCreate(link, UriKind.Absolute, out _))
-                {
-                    return false;
-                }
-
-                var trimmedLink = link;
-                var anchorIndex = trimmedLink.IndexOf('#', StringComparison.Ordinal);
-                if (anchorIndex >= 0)
-                {
-                    trimmedLink = trimmedLink[..anchorIndex];
-                }
-                var queryIndex = trimmedLink.IndexOf('?', StringComparison.Ordinal);
-                if (queryIndex >= 0)
-                {
-                    trimmedLink = trimmedLink[..queryIndex];
-                }
-
-                if (!trimmedLink.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                {
-                    return false;
-                }
-
-                var resolved = ResolveLink(repoRoot, trimmedLink);
-                if (!File.Exists(resolved))
-                {
-                    ShowInfo("Doc not found.");
-                    return true;
-                }
-
-                try
-                {
-                    var content = File.ReadAllText(resolved);
-                    SetCommandPreview(context, $"preview \"{resolved}\"");
-                    ShowDocPreviewDialog(trimmedLink, resolved, content);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex);
-                    return true;
-                }
-            }
-
-
-            WorkItem? GetSelectedItem()
-            {
-                if (listView.SelectedItem < 0 || listView.SelectedItem >= listItemLookup.Count)
-                {
-                    return null;
-                }
-
-                return listItemLookup[listView.SelectedItem];
-            }
-
-            string ApplyPattern(string pattern, WorkItem item)
-            {
-                return pattern
-                    .Replace("{id}", item.Id, StringComparison.Ordinal)
-                    .Replace("{slug}", item.Slug, StringComparison.Ordinal)
-                    .Replace("{title}", item.Title, StringComparison.Ordinal);
-            }
-
-            int FindNextItemIndex(int startIndex)
-            {
-                for (var i = startIndex + 1; i < listItemLookup.Count; i++)
-                {
-                    if (listItemLookup[i] is not null)
-                    {
-                        return i;
-                    }
-                }
-
-                for (var i = startIndex - 1; i >= 0; i--)
-                {
-                    if (listItemLookup[i] is not null)
-                    {
-                        return i;
-                    }
-                }
-
-                return -1;
-            }
-
-            void UpdateCodexStartState(WorkItem? item)
-            {
-                if (!context.CodexAvailable)
-                {
-                    codexWorkButton.Enabled = false;
-                    codexHintLabel.Text = string.IsNullOrWhiteSpace(context.CodexError)
-                        ? "Codex CLI unavailable."
-                        : $"Codex unavailable: {context.CodexError}";
-                    return;
-                }
-
-                if (item is null)
-                {
-                    codexWorkButton.Enabled = false;
-                    codexHintLabel.Text = "Select a work item to start Codex.";
-                    return;
-                }
-
-                try
-                {
-                    if (!GitService.IsClean(repoRoot))
-                    {
-                        codexWorkButton.Enabled = false;
-                        codexHintLabel.Text = "Commit or stash changes to start Codex.";
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    codexWorkButton.Enabled = false;
-                    codexHintLabel.Text = $"Git unavailable: {ex}";
-                    return;
-                }
-
-                codexWorkButton.Enabled = true;
-                codexHintLabel.Text = string.IsNullOrWhiteSpace(context.CodexVersion)
-                    ? "Codex ready."
-                    : $"Codex {context.CodexVersion}";
-            }
-
-            void UpdateDetails(int index)
-            {
-                if (index < 0 || index >= listItemLookup.Count)
-                {
-                    detailsHeader.Text = "Select a work item to see details.";
-                    detailsBody.Text = string.Empty;
-                    linkTargets.Clear();
-                    linksList!.SetSource(new List<string>());
-                    linkHint!.Text = string.Empty;
-                    SetCommandPreview(context, "(none)");
-                    startWorkButton.Enabled = false;
-                    completeWorkButton.Enabled = false;
-                    UpdateCodexStartState(null);
-                    return;
-                }
-
-                var item = listItemLookup[index];
-                if (item is null)
-                {
-                    detailsHeader.Text = "Select a work item to see details.";
-                    detailsBody.Text = string.Empty;
-                    linkTargets.Clear();
-                    linksList!.SetSource(new List<string>());
-                    linkHint!.Text = string.Empty;
-                    SetCommandPreview(context, "(none)");
-                    startWorkButton.Enabled = false;
-                    completeWorkButton.Enabled = false;
-                    UpdateCodexStartState(null);
-                    return;
-                }
-                var specsCount = item.Related.Specs.Count;
-                var adrsCount = item.Related.Adrs.Count;
-                var filesCount = item.Related.Files.Count;
-                var issuesCount = item.Related.Issues.Count;
-                var prsCount = item.Related.Prs.Count;
-
-                detailsHeader.Text = $"[{item.Status}] {item.Id}\n{item.Title}\n\nOwner: {item.Owner ?? "?"}\nPriority: {item.Priority ?? "?"}\nUpdated: {item.Updated ?? "?"}\n\nLinked: specs {specsCount}, adrs {adrsCount}, files {filesCount}\nIssues: {issuesCount}, PRs: {prsCount}\n\nEnter: open selected link";
-                detailsBody.Text = item.Body;
-                SetCommandPreview(context, $"workbench item show {item.Id}");
-                startWorkButton.Enabled = true;
-                completeWorkButton.Enabled = !string.Equals(item.Status, "done", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(item.Status, "dropped", StringComparison.OrdinalIgnoreCase);
-                UpdateCodexStartState(item);
-
-                PopulateLinks(item, linkTypeField!, linkHint!, linksList!, linkTargets);
-            }
-
-            void ApplyFilters()
-            {
-                var filterText = filterField.Text?.ToString() ?? string.Empty;
-                var statusText = statusField.Text?.ToString() ?? string.Empty;
-                statusText = statusText.Trim();
-                filterText = filterText.Trim();
-
-                filteredItems = allItems
-                    .Where(item =>
-                        (string.IsNullOrWhiteSpace(statusText)
-                            || string.Equals(statusText, "all", StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(item.Status, statusText, StringComparison.OrdinalIgnoreCase))
-                        && (string.IsNullOrWhiteSpace(filterText)
-                            || item.Id.Contains(filterText, StringComparison.OrdinalIgnoreCase)
-                            || item.Title.Contains(filterText, StringComparison.OrdinalIgnoreCase)))
-                    .OrderBy(item => GetStatusRank(item.Status))
-                    .ThenBy(item => GetPriorityRank(item.Priority))
-                    .ThenBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                var rows = new List<string>();
-                listItemLookup.Clear();
-                var useEmoji = config.Tui.UseEmoji;
-                var grouped = filteredItems
-                    .GroupBy(item => item.Status?.ToLowerInvariant() ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(group => GetStatusRank(group.Key));
-
-                foreach (var group in grouped)
-                {
-                    var localStatusLabel = FormatStatusLabel(group.Key, useEmoji);
-                    var localStatusText = string.IsNullOrWhiteSpace(group.Key) ? "unknown" : group.Key;
-                    rows.Add(useEmoji ? $"[{localStatusLabel}]" : $"[{localStatusLabel}] {localStatusText}");
-                    listItemLookup.Add(null);
-
-                    foreach (var item in group
-                        .OrderBy(entry => GetPriorityRank(entry.Priority))
-                        .ThenBy(entry => entry.Id, StringComparer.OrdinalIgnoreCase))
-                    {
-                        var statusLabelItem = FormatStatusLabel(item.Status, useEmoji).PadRight(useEmoji ? 16 : 4);
-                        var priorityLabel = FormatPriorityLabel(item.Priority, useEmoji).PadRight(useEmoji ? 12 : 6);
-                        rows.Add($"{statusLabelItem} {priorityLabel} {item.Id} {item.Title}");
-                        listItemLookup.Add(item);
-                    }
-                }
-
-                listView.SetSource(rows);
-                if (rows.Count == 0)
-                {
-                    UpdateDetails(-1);
-                    return;
-                }
-
-                if (listView.SelectedItem < 0 || listView.SelectedItem >= listItemLookup.Count || listItemLookup[listView.SelectedItem] is null)
-                {
-                    var firstIndex = listItemLookup.FindIndex(item => item is not null);
-                    listView.SelectedItem = firstIndex;
-                }
-
-                UpdateDetails(listView.SelectedItem);
-            }
-
-            void ReloadItems()
-            {
-                allItems = LoadItems(repoRoot, config);
-                context.AllItems = allItems;
-                ApplyFilters();
-            }
-
-            void SelectItemById(string id)
-            {
-                for (var i = 0; i < listItemLookup.Count; i++)
-                {
-                    if (listItemLookup[i] is { } entry && entry.Id.Equals(id, StringComparison.OrdinalIgnoreCase))
-                    {
-                        listView.SelectedItem = i;
-                        UpdateDetails(i);
-                        return;
-                    }
-                }
-            }
-
-            var docsAll = LoadDocs(repoRoot, config);
-            context.DocsAll = docsAll;
+            context.DocsAll = LoadDocs(repoRoot, config);
             var docsFilterLabel = new Label("Filter:")
             {
                 X = 1,
@@ -760,292 +420,6 @@ public static partial class TuiEntrypoint
             context.GithubTokenField = githubTokenField;
             context.GithubTokenStatusLabel = githubTokenStatusLabel;
 
-            int AddFieldRow(ScrollView view, string label, TextField field, int y, int labelWidth, int fieldWidth)
-            {
-                view.Add(new Label(label) { X = 1, Y = y, Width = labelWidth });
-                field.X = labelWidth + 2;
-                field.Y = y;
-                field.Width = fieldWidth;
-                view.Add(field);
-                return y + 1;
-            }
-
-            int AddFieldRowWithPicker(ScrollView view, string label, TextField field, Button pickButton, int y, int labelWidth, int fieldWidth)
-            {
-                view.Add(new Label(label) { X = 1, Y = y, Width = labelWidth });
-                field.X = labelWidth + 2;
-                field.Y = y;
-                field.Width = fieldWidth;
-                pickButton.X = Pos.Right(field) + 1;
-                pickButton.Y = y;
-                view.Add(field);
-                view.Add(pickButton);
-                return y + 1;
-            }
-
-            string ResolveEnvValueFromSources(List<string> envLines, string fileKey, IReadOnlyList<string> envKeys, out string status)
-            {
-                if (TryGetEnvValue(envLines, fileKey, out var fileValue))
-                {
-                    if (string.IsNullOrWhiteSpace(fileValue))
-                    {
-                        status = $"credentials.env entry for {fileKey} is empty (overrides env).";
-                        return string.Empty;
-                    }
-
-                    status = $"Found in credentials.env ({fileKey}).";
-                    return fileValue ?? string.Empty;
-                }
-
-                foreach (var envKey in envKeys)
-                {
-                    var envValue = Environment.GetEnvironmentVariable(envKey);
-                    if (!string.IsNullOrWhiteSpace(envValue))
-                    {
-                        status = $"Found in environment ({envKey}).";
-                        return envValue;
-                    }
-                }
-
-                status = $"Missing ({fileKey}).";
-                return string.Empty;
-            }
-
-            void LoadSettingsFields()
-            {
-                var configReady = EnsureSettingsFile(configPath, "config.json", defaultConfigJson + "\n");
-                string? configError = null;
-                var loadedConfig = configReady
-                    ? WorkbenchConfig.Load(repoRoot, out configError)
-                    : WorkbenchConfig.Default;
-                if (configReady && !string.IsNullOrWhiteSpace(configError))
-                {
-                    ShowInfo($"Config load error: {configError}");
-                }
-
-                var pathsConfig = loadedConfig.Paths ?? new PathsConfig();
-                var idsConfig = loadedConfig.Ids ?? new IdsConfig();
-                var prefixesConfig = idsConfig.Prefixes ?? new PrefixesConfig();
-                var gitConfig = loadedConfig.Git ?? new GitConfig();
-                var githubConfig = loadedConfig.Github ?? new GithubConfig();
-                var validationConfig = loadedConfig.Validation ?? new ValidationConfig();
-                var tuiConfig = loadedConfig.Tui ?? new TuiConfig();
-
-                docsRootField.Text = pathsConfig.DocsRoot ?? string.Empty;
-                workRootField.Text = pathsConfig.WorkRoot ?? string.Empty;
-                itemsDirField.Text = pathsConfig.ItemsDir ?? string.Empty;
-                doneDirField.Text = pathsConfig.DoneDir ?? string.Empty;
-                templatesDirField.Text = pathsConfig.TemplatesDir ?? string.Empty;
-                workboardFileField.Text = pathsConfig.WorkboardFile ?? string.Empty;
-                themeField.Text = (tuiConfig.Theme ?? "powershell").Trim();
-                useEmojiCheck.Checked = tuiConfig.UseEmoji;
-                autoRefreshSecondsField.Text = tuiConfig.AutoRefreshSeconds.ToString(CultureInfo.InvariantCulture);
-
-                idWidthField.Text = idsConfig.Width.ToString(CultureInfo.InvariantCulture);
-                bugPrefixField.Text = prefixesConfig.Bug ?? string.Empty;
-                taskPrefixField.Text = prefixesConfig.Task ?? string.Empty;
-                spikePrefixField.Text = prefixesConfig.Spike ?? string.Empty;
-
-                gitBranchPatternField.Text = gitConfig.BranchPattern ?? string.Empty;
-                gitCommitPatternField.Text = gitConfig.CommitMessagePattern ?? string.Empty;
-                gitBaseBranchField.Text = gitConfig.DefaultBaseBranch ?? string.Empty;
-                gitRequireCleanCheck.Checked = gitConfig.RequireCleanWorkingTree;
-
-                githubProviderField.Text = githubConfig.Provider ?? string.Empty;
-                githubDefaultDraftCheck.Checked = githubConfig.DefaultDraft;
-                githubHostField.Text = githubConfig.Host ?? string.Empty;
-                githubOwnerField.Text = githubConfig.Owner ?? string.Empty;
-                githubRepoField.Text = githubConfig.Repository ?? string.Empty;
-
-                linkExcludeField.Text = string.Join(", ", validationConfig.LinkExclude ?? new List<string>());
-                docExcludeField.Text = string.Join(", ", validationConfig.DocExclude ?? new List<string>());
-
-                if (EnsureSettingsFile(credentialsPath, "credentials.env", string.Empty))
-                {
-                    var envLines = File.Exists(credentialsPath)
-                        ? File.ReadAllLines(credentialsPath).ToList()
-                        : new List<string>();
-                    var providerValue = GetEnvValue(envLines, "WORKBENCH_AI_PROVIDER")
-                        ?? Environment.GetEnvironmentVariable("WORKBENCH_AI_PROVIDER")
-                        ?? "openai";
-                    aiProviderField.Text = providerValue;
-
-                    var openAiStatus = string.Empty;
-                    var openAiKeyValue = ResolveEnvValueFromSources(
-                        envLines,
-                        "WORKBENCH_AI_OPENAI_KEY",
-                        new[] { "WORKBENCH_AI_OPENAI_KEY", "OPENAI_API_KEY" },
-                        out openAiStatus);
-                    aiOpenAiKeyField.Text = openAiKeyValue;
-                    aiOpenAiKeyStatusLabel.Text = $"Status: {openAiStatus}";
-
-                    aiModelField.Text = GetEnvValue(envLines, "WORKBENCH_AI_MODEL")
-                        ?? Environment.GetEnvironmentVariable("WORKBENCH_AI_MODEL")
-                        ?? Environment.GetEnvironmentVariable("OPENAI_MODEL")
-                        ?? string.Empty;
-
-                    var githubStatus = string.Empty;
-                    var githubTokenValue = ResolveEnvValueFromSources(
-                        envLines,
-                        "WORKBENCH_GITHUB_TOKEN",
-                        new[] { "WORKBENCH_GITHUB_TOKEN", "GITHUB_TOKEN", "GH_TOKEN" },
-                        out githubStatus);
-                    githubTokenField.Text = githubTokenValue;
-                    githubTokenStatusLabel.Text = $"Status: {githubStatus}";
-                }
-
-                context.SettingsLoaded = true;
-            }
-
-            void ApplyCredentialEnvironment()
-            {
-                void SetEnv(string key, string? value)
-                {
-                    var normalized = value?.ToString();
-                    if (string.IsNullOrWhiteSpace(normalized))
-                    {
-                        Environment.SetEnvironmentVariable(key, null);
-                    }
-                    else
-                    {
-                        Environment.SetEnvironmentVariable(key, normalized);
-                    }
-                }
-
-                SetEnv("WORKBENCH_AI_PROVIDER", aiProviderField.Text?.ToString());
-                SetEnv("WORKBENCH_AI_OPENAI_KEY", aiOpenAiKeyField.Text?.ToString());
-                SetEnv("WORKBENCH_AI_MODEL", aiModelField.Text?.ToString());
-                SetEnv("WORKBENCH_GITHUB_TOKEN", githubTokenField.Text?.ToString());
-            }
-
-            void SaveConfigFromFields()
-            {
-                if (!EnsureSettingsFile(configPath, "config.json", defaultConfigJson + "\n"))
-                {
-                    return;
-                }
-
-                if (!int.TryParse(idWidthField.Text?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var width))
-                {
-                    ShowInfo("ID width must be a number.");
-                    return;
-                }
-                if (!int.TryParse(autoRefreshSecondsField.Text?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var autoRefreshSeconds)
-                    || autoRefreshSeconds < 0)
-                {
-                    ShowInfo("Auto refresh seconds must be zero or greater.");
-                    return;
-                }
-
-                var updated = new WorkbenchConfig(
-                    new PathsConfig
-                    {
-                        DocsRoot = docsRootField.Text?.ToString() ?? string.Empty,
-                        WorkRoot = workRootField.Text?.ToString() ?? string.Empty,
-                        ItemsDir = itemsDirField.Text?.ToString() ?? string.Empty,
-                        DoneDir = doneDirField.Text?.ToString() ?? string.Empty,
-                        TemplatesDir = templatesDirField.Text?.ToString() ?? string.Empty,
-                        WorkboardFile = workboardFileField.Text?.ToString() ?? string.Empty
-                    },
-                    new IdsConfig
-                    {
-                        Width = width,
-                        Prefixes = new PrefixesConfig
-                        {
-                            Bug = bugPrefixField.Text?.ToString() ?? string.Empty,
-                            Task = taskPrefixField.Text?.ToString() ?? string.Empty,
-                            Spike = spikePrefixField.Text?.ToString() ?? string.Empty
-                        }
-                    },
-                    new GitConfig
-                    {
-                        BranchPattern = gitBranchPatternField.Text?.ToString() ?? string.Empty,
-                        CommitMessagePattern = gitCommitPatternField.Text?.ToString() ?? string.Empty,
-                        DefaultBaseBranch = gitBaseBranchField.Text?.ToString() ?? string.Empty,
-                        RequireCleanWorkingTree = gitRequireCleanCheck.Checked
-                    },
-                    new GithubConfig
-                    {
-                        Provider = githubProviderField.Text?.ToString() ?? string.Empty,
-                        DefaultDraft = githubDefaultDraftCheck.Checked,
-                        Host = githubHostField.Text?.ToString() ?? string.Empty,
-                        Owner = githubOwnerField.Text?.ToString(),
-                        Repository = githubRepoField.Text?.ToString()
-                    },
-                    new ValidationConfig(
-                        ParseList(linkExcludeField.Text?.ToString()),
-                        ParseList(docExcludeField.Text?.ToString())),
-                    new TuiConfig
-                    {
-                        Theme = themeField.Text?.ToString() ?? "powershell",
-                        UseEmoji = useEmojiCheck.Checked,
-                        AutoRefreshSeconds = autoRefreshSeconds
-                    });
-
-                try
-                {
-                    ConfigService.SaveConfig(repoRoot, updated);
-                    config = updated;
-                    context.Config = updated;
-                    ReloadItems();
-                    docsAll = LoadDocs(repoRoot, config);
-                    context.DocsAll = docsAll;
-                    context.DocsAll = docsAll;
-                    context.DocsAll = docsAll;
-                    ApplyDocsFilter();
-                    ApplyTheme(config.Tui.Theme);
-                    ConfigureAutoRefresh();
-                    ShowInfo("Config saved.");
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex);
-                }
-            }
-
-            void SaveCredentialsFromFields()
-            {
-                if (!EnsureSettingsFile(credentialsPath, "credentials.env", string.Empty))
-                {
-                    return;
-                }
-
-                var envLines = File.Exists(credentialsPath)
-                    ? File.ReadAllLines(credentialsPath).ToList()
-                    : new List<string>();
-                SetEnvValue(envLines, "WORKBENCH_AI_PROVIDER", aiProviderField.Text?.ToString());
-                SetEnvValue(envLines, "WORKBENCH_AI_OPENAI_KEY", aiOpenAiKeyField.Text?.ToString());
-                SetEnvValue(envLines, "WORKBENCH_AI_MODEL", aiModelField.Text?.ToString());
-                SetEnvValue(envLines, "WORKBENCH_GITHUB_TOKEN", githubTokenField.Text?.ToString());
-
-                try
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(credentialsPath) ?? repoRoot);
-                    File.WriteAllText(credentialsPath, string.Join("\n", envLines) + "\n");
-                    ApplyCredentialEnvironment();
-                    var openAiStatus = string.Empty;
-                    ResolveEnvValueFromSources(
-                        envLines,
-                        "WORKBENCH_AI_OPENAI_KEY",
-                        new[] { "WORKBENCH_AI_OPENAI_KEY", "OPENAI_API_KEY" },
-                        out openAiStatus);
-                    aiOpenAiKeyStatusLabel.Text = $"Status: {openAiStatus}";
-
-                    var githubStatus = string.Empty;
-                    ResolveEnvValueFromSources(
-                        envLines,
-                        "WORKBENCH_GITHUB_TOKEN",
-                        new[] { "WORKBENCH_GITHUB_TOKEN", "GITHUB_TOKEN", "GH_TOKEN" },
-                        out githubStatus);
-                    githubTokenStatusLabel.Text = $"Status: {githubStatus}";
-                    ShowInfo("Credentials saved.");
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex);
-                }
-            }
-
             var labelWidth = 22;
             var fieldWidth = 50;
             var settingsY = 0;
@@ -1103,11 +477,11 @@ public static partial class TuiEntrypoint
                 X = Pos.Right(saveConfigButton) + 2,
                 Y = settingsY
             };
-            saveConfigButton.Clicked += () => SaveConfigFromFields();
+            saveConfigButton.Clicked += () => SaveConfigFromFields(context);
             reloadConfigButton.Clicked += () =>
             {
                 context.SettingsLoaded = false;
-                LoadSettingsFields();
+                LoadSettingsFields(context);
             };
             settingsScroll.Add(saveConfigButton, reloadConfigButton);
             settingsY += 2;
@@ -1141,29 +515,16 @@ public static partial class TuiEntrypoint
                 X = Pos.Right(saveCredsButton) + 2,
                 Y = settingsY
             };
-            saveCredsButton.Clicked += () => SaveCredentialsFromFields();
+            saveCredsButton.Clicked += () => SaveCredentialsFromFields(context);
             reloadCredsButton.Clicked += () =>
             {
                 context.SettingsLoaded = false;
-                LoadSettingsFields();
+                LoadSettingsFields(context);
             };
             settingsScroll.Add(saveCredsButton, reloadCredsButton);
             settingsY += 2;
 
             settingsScroll.ContentSize = new Size(100, settingsY + 1);
-
-            void ApplyDocsFilter()
-            {
-                var filter = docsFilterField.Text?.ToString() ?? string.Empty;
-                filter = filter.Trim();
-                var filtered = docsAll
-                    .Where(path => string.IsNullOrWhiteSpace(filter)
-                        || path.Contains(filter, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-                docsTree.ClearObjects();
-                var roots = BuildDocsTree(filtered);
-                docsTree.AddObjects(roots);
-            }
 
             static string NormalizeIssueCloseTarget(string issue)
             {
@@ -1234,7 +595,7 @@ public static partial class TuiEntrypoint
 
             void StartCodexWork()
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     ShowInfo("Select a work item first.");
@@ -1292,8 +653,8 @@ public static partial class TuiEntrypoint
                     var prompt = BuildCodexPrompt(item);
                     SetCommandPreview(context, "codex --full-auto --web-search --prompt <work item>");
                     CodexService.StartFullAutoInTerminal(repoRoot, prompt);
-                    UpdateGitInfo();
-                    UpdateDetails(listView.SelectedItem);
+                    UpdateGitInfo(context);
+                    UpdateDetails(context, listView.SelectedItem);
                     ShowInfo($"{item.Id} started in Codex on {startBranch}.");
                 }
                 catch (Exception ex)
@@ -1304,7 +665,7 @@ public static partial class TuiEntrypoint
 
             void ShowStartWorkDialog()
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     ShowInfo("Select a work item first.");
@@ -1453,8 +814,8 @@ public static partial class TuiEntrypoint
                         }
                     }
 
-                    ReloadItems();
-                    SelectItemById(updated.Id);
+                    ReloadItems(context);
+                    SelectItemById(context, updated.Id);
 
                     var summary = $"{updated.Id} started on {startBranch}.";
                     if (!string.IsNullOrWhiteSpace(prUrl))
@@ -1474,7 +835,7 @@ public static partial class TuiEntrypoint
 
             void ShowCompleteWorkDialog()
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     ShowInfo("Select a work item first.");
@@ -1618,8 +979,8 @@ public static partial class TuiEntrypoint
                         }
                     }
 
-                    ReloadItems();
-                    SelectItemById(updated.Id);
+                    ReloadItems(context);
+                    SelectItemById(context, updated.Id);
 
                     var summary = $"{updated.Id} completed.";
                     if (!string.IsNullOrWhiteSpace(prUrl))
@@ -1635,11 +996,6 @@ public static partial class TuiEntrypoint
             }
 
             completeWorkButton.Clicked += ShowCompleteWorkDialog;
-
-            void ActivateSelectedDoc()
-            {
-                docsTree.ActivateSelectedObjectIfAny();
-            }
 
             void ShowSyncDialog()
             {
@@ -1854,7 +1210,7 @@ public static partial class TuiEntrypoint
             {
                 context.DryRunEnabled = !context.DryRunEnabled;
                 dryRunLabel.Text = context.DryRunEnabled ? "Dry-run: ON" : "Dry-run: OFF";
-                UpdateDetails(listView.SelectedItem);
+                UpdateDetails(context, listView.SelectedItem);
             }
 
             void ShowVoiceWorkItemDialog()
@@ -1888,7 +1244,7 @@ public static partial class TuiEntrypoint
 
             void ShowVoiceEditDialog()
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     ShowInfo("Select a work item first.");
@@ -2239,11 +1595,10 @@ public static partial class TuiEntrypoint
                     var created = WorkItemService.CreateItem(repoRoot, config, type, draft.Title, status: null, priority: null, owner: null);
                     WorkItemService.ApplyDraft(created.Path, draft);
 
-                    allItems = LoadItems(repoRoot, config);
-                    context.AllItems = allItems;
-                    filteredItems.Clear();
-                    filteredItems.AddRange(allItems);
-                    ApplyFilters();
+                    context.AllItems = LoadItems(context.RepoRoot, context.Config);
+                    context.FilteredItems.Clear();
+                    context.FilteredItems.AddRange(context.AllItems);
+                    ApplyFilters(context);
                     ShowInfo($"{created.Id} created at {created.Path}");
                 }
                 catch (Exception ex)
@@ -2305,7 +1660,7 @@ public static partial class TuiEntrypoint
                     }
 
                     WorkItemService.ApplyEditDraft(item.Path, draft);
-                    ReloadItems();
+                    ReloadItems(context);
                     ShowInfo($"{item.Id} updated.");
                 }
                 catch (Exception ex)
@@ -2396,8 +1751,8 @@ public static partial class TuiEntrypoint
                         source,
                         force: false);
 
-                    docsAll = LoadDocs(repoRoot, config);
-                    ApplyDocsFilter();
+                    context.DocsAll = LoadDocs(repoRoot, config);
+                    ApplyDocsFilter(context);
                     ShowInfo($"Doc created at {created.Path}");
                 }
                 catch (Exception ex)
@@ -2628,7 +1983,7 @@ public static partial class TuiEntrypoint
                 try
                 {
                     WorkItemService.CreateItem(repoRoot, config, type, title, status, priority, owner);
-                    ReloadItems();
+                    ReloadItems(context);
                 }
                 catch (Exception ex)
                 {
@@ -2638,7 +1993,7 @@ public static partial class TuiEntrypoint
 
             void ShowStatusDialog()
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     ShowInfo("Select a work item first.");
@@ -2733,7 +2088,7 @@ public static partial class TuiEntrypoint
                 try
                 {
                     WorkItemService.UpdateStatus(item.Path, newStatus, note);
-                    ReloadItems();
+                    ReloadItems(context);
                 }
                 catch (Exception ex)
                 {
@@ -2743,7 +2098,7 @@ public static partial class TuiEntrypoint
 
             void ShowDocCreateDialog()
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     ShowInfo("Select a work item first.");
@@ -2752,7 +2107,7 @@ public static partial class TuiEntrypoint
 
                 var typeField = new TextField("spec");
                 var titleField = new TextField(string.Empty);
-                var suggestedPath = GetDocsPathSuggestion(config);
+                var suggestedPath = GetDocsPathSuggestion(config, context.SelectedDocPath);
                 var pathField = new TextField(suggestedPath ?? string.Empty);
                 var previewLabel = new Label("Command: (none)")
                 {
@@ -2860,7 +2215,7 @@ public static partial class TuiEntrypoint
             {
                 var typeField = new TextField("doc");
                 var titleField = new TextField(string.Empty);
-                var pathField = new TextField(GetDocsPathSuggestion(config) ?? string.Empty);
+                var pathField = new TextField(GetDocsPathSuggestion(config, context.SelectedDocPath) ?? string.Empty);
                 var previewLabel = new Label("Command: (none)")
                 {
                     X = 1,
@@ -2953,8 +2308,8 @@ public static partial class TuiEntrypoint
                 try
                 {
                     DocService.CreateDoc(repoRoot, config, docType, title, path, new List<string>(), new List<string>(), force: false);
-                    docsAll = LoadDocs(repoRoot, config);
-                    ApplyDocsFilter();
+                    context.DocsAll = LoadDocs(repoRoot, config);
+                    ApplyDocsFilter(context);
                 }
                 catch (Exception ex)
                 {
@@ -2964,15 +2319,15 @@ public static partial class TuiEntrypoint
 
             listView.SelectedItemChanged += args =>
             {
-                if (args.Item < 0 || args.Item >= listItemLookup.Count)
+                if (args.Item < 0 || args.Item >= context.ListItemLookup.Count)
                 {
-                    UpdateDetails(-1);
+                    UpdateDetails(context, -1);
                     return;
                 }
 
-                if (listItemLookup[args.Item] is null)
+                if (context.ListItemLookup[args.Item] is null)
                 {
-                    var nextIndex = FindNextItemIndex(args.Item);
+                    var nextIndex = FindNextItemIndex(context, args.Item);
                     if (nextIndex >= 0)
                     {
                         listView.SelectedItem = nextIndex;
@@ -2980,10 +2335,10 @@ public static partial class TuiEntrypoint
                     }
                 }
 
-                UpdateDetails(args.Item);
+                UpdateDetails(context, args.Item);
             };
-            filterField.TextChanged += _ => ApplyFilters();
-            statusField.TextChanged += _ => ApplyFilters();
+            filterField.TextChanged += _ => ApplyFilters(context);
+            statusField.TextChanged += _ => ApplyFilters(context);
 
             navFrame.Add(filterLabel, filterField, statusLabel, statusField, statusPickButton, listView);
             detailsFrame.Add(detailsHeader);
@@ -3005,14 +2360,18 @@ public static partial class TuiEntrypoint
 
             var workTab = new TabView.Tab("Work Items", new View());
             workTab.View.Add(navFrame, detailsFrame);
+            context.WorkTab = workTab;
 
             var docsTab = new TabView.Tab("Docs", new View());
             docsTab.View.Add(docsFilterLabel, docsFilterField, docsTree, docsPreviewHeader, docsPreview);
+            context.DocsTab = docsTab;
 
             var settingsTab = new TabView.Tab("Settings", new View());
             settingsTab.View.Add(settingsScroll);
+            context.SettingsTab = settingsTab;
 
             var repoTab = new TabView.Tab("Repo", new View());
+            context.RepoTab = repoTab;
             var repoFrame = new FrameView("Repository")
             {
                 X = 0,
@@ -3041,105 +2400,17 @@ public static partial class TuiEntrypoint
                 Y = 2
             };
 
-            void ExecutePull()
-            {
-                try
-                {
-                    SetCommandPreview(context, "git pull --ff-only");
-                    var result = GitService.Run(repoRoot, "pull", "--ff-only");
-                    if (result.ExitCode != 0)
-                    {
-                        throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git pull failed.");
-                    }
-                    UpdateGitInfo();
-                    ShowInfo("Pull completed.");
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex);
-                }
-            }
-
-            void ExecuteStage()
-            {
-                try
-                {
-                    SetCommandPreview(context, "git add -A");
-                    var result = GitService.Run(repoRoot, "add", "-A");
-                    if (result.ExitCode != 0)
-                    {
-                        throw new InvalidOperationException(result.StdErr.Length > 0 ? result.StdErr : "git add failed.");
-                    }
-                    UpdateGitInfo();
-                    ShowInfo("Staged all changes.");
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex);
-                }
-            }
-
-            void ExecutePush()
-            {
-                try
-                {
-                    var branch = GitService.GetCurrentBranch(repoRoot);
-                    SetCommandPreview(context, $"git push -u origin {branch}");
-                    GitService.Push(repoRoot, branch);
-                    UpdateGitInfo();
-                    ShowInfo("Push completed.");
-                }
-                catch (Exception ex)
-                {
-                    ShowError(ex);
-                }
-            }
-
-            pullButton.Clicked += ExecutePull;
-            stageButton.Clicked += ExecuteStage;
-            pushButton.Clicked += ExecutePush;
+            pullButton.Clicked += () => ExecutePull(context);
+            stageButton.Clicked += () => ExecuteStage(context);
+            pushButton.Clicked += () => ExecutePush(context);
             repoFrame.Add(repoSummary, pullButton, stageButton, pushButton);
             repoTab.View.Add(repoFrame);
 
-            void RefreshAll(bool showInfo)
-            {
-                var selectedId = GetSelectedItem()?.Id;
-                var loadedConfig = WorkbenchConfig.Load(repoRoot, out var configError);
-                if (!string.IsNullOrWhiteSpace(configError) && showInfo)
-                {
-                    ShowInfo($"Config load error: {configError}");
-                }
-
-                config = loadedConfig;
-                context.Config = loadedConfig;
-                ReloadItems();
-                if (!string.IsNullOrWhiteSpace(selectedId))
-                {
-                    SelectItemById(selectedId);
-                }
-
-                docsAll = LoadDocs(repoRoot, config);
-                context.DocsAll = docsAll;
-                ApplyDocsFilter();
-
-                context.SettingsLoaded = false;
-                if (tabView.SelectedTab == settingsTab)
-                {
-                    LoadSettingsFields();
-                }
-
-                ApplyTheme(config.Tui.Theme);
-                UpdateGitInfo();
-                UpdateCodexStartState(GetSelectedItem());
-                ConfigureAutoRefresh();
-                UpdateLastRefreshLabel();
-            }
-
-            refreshButton.Clicked += () => RefreshAll(showInfo: true);
+            refreshButton.Clicked += () => RefreshAll(context, showInfo: true);
 
             tabView.AddTab(workTab, true);
             tabView.AddTab(docsTab, false);
-            tabView.AddTab(settingsTab, false);
+            tabView.AddTab(context.SettingsTab!, false);
             tabView.AddTab(repoTab, false);
 
             window.Add(tabView, footer);
@@ -3151,149 +2422,6 @@ public static partial class TuiEntrypoint
             context.StatusBar = statusBar;
             context.DefaultScheme = defaultScheme;
 
-            void ApplyTheme(string? themeName)
-            {
-                var normalized = (themeName ?? "powershell").Trim().ToLowerInvariant();
-                if (string.Equals(normalized, "default", StringComparison.OrdinalIgnoreCase))
-                {
-                    normalized = "dark";
-                }
-                ColorScheme scheme;
-
-                ColorScheme BuildScheme(
-                    Color normalFg,
-                    Color normalBg,
-                    Color focusFg,
-                    Color focusBg,
-                    Color hotNormalFg,
-                    Color hotNormalBg,
-                    Color hotFocusFg,
-                    Color hotFocusBg,
-                    Color disabledFg,
-                    Color disabledBg)
-                {
-                    return new ColorScheme
-                    {
-                        Normal = Application.Driver.MakeAttribute(normalFg, normalBg),
-                        Focus = Application.Driver.MakeAttribute(focusFg, focusBg),
-                        HotNormal = Application.Driver.MakeAttribute(hotNormalFg, hotNormalBg),
-                        HotFocus = Application.Driver.MakeAttribute(hotFocusFg, hotFocusBg),
-                        Disabled = Application.Driver.MakeAttribute(disabledFg, disabledBg)
-                    };
-                }
-
-                ColorScheme BuildReadOnlyScheme(ColorScheme source)
-                {
-                    return new ColorScheme
-                    {
-                        Normal = source.Normal,
-                        Focus = source.Normal,
-                        HotNormal = source.HotNormal,
-                        HotFocus = source.HotNormal,
-                        Disabled = source.Disabled
-                    };
-                }
-
-                switch (normalized)
-                {
-                    case "powershell":
-                        scheme = BuildScheme(
-                            Color.Gray, Color.Blue,
-                            Color.Blue, Color.Gray,
-                            Color.Cyan, Color.Blue,
-                            Color.BrightYellow, Color.Gray,
-                            Color.Gray, Color.Blue);
-                        break;
-                    case "dark":
-                        scheme = BuildScheme(
-                            Color.White, Color.Black,
-                            Color.Black, Color.White,
-                            Color.Cyan, Color.Black,
-                            Color.Black, Color.Cyan,
-                            Color.Gray, Color.Black);
-                        break;
-                    case "light":
-                        scheme = BuildScheme(
-                            Color.Black, Color.White,
-                            Color.White, Color.Black,
-                            Color.Blue, Color.White,
-                            Color.White, Color.Blue,
-                            Color.Gray, Color.White);
-                        break;
-                    case "solarized-dark":
-                        scheme = BuildScheme(
-                            Color.Gray, Color.Black,
-                            Color.Black, Color.Gray,
-                            Color.Blue, Color.Black,
-                            Color.BrightYellow, Color.Gray,
-                            Color.Gray, Color.Black);
-                        break;
-                    case "solarized-light":
-                        scheme = BuildScheme(
-                            Color.Gray, Color.White,
-                            Color.White, Color.Gray,
-                            Color.Blue, Color.White,
-                            Color.BrightYellow, Color.Gray,
-                            Color.Gray, Color.White);
-                        break;
-                    case "nord":
-                        scheme = BuildScheme(
-                            Color.Gray, Color.Black,
-                            Color.Black, Color.Cyan,
-                            Color.Blue, Color.Black,
-                            Color.Red, Color.Cyan,
-                            Color.Gray, Color.Black);
-                        break;
-                    case "gruvbox":
-                        scheme = BuildScheme(
-                            Color.BrightYellow, Color.Black,
-                            Color.Black, Color.BrightYellow,
-                            Color.Cyan, Color.Black,
-                            Color.Red, Color.BrightYellow,
-                            Color.Gray, Color.Black);
-                        break;
-                    case "monokai":
-                        scheme = BuildScheme(
-                            Color.White, Color.Black,
-                            Color.Black, Color.Green,
-                            Color.Cyan, Color.Black,
-                            Color.BrightYellow, Color.Green,
-                            Color.Gray, Color.Black);
-                        break;
-                    case "high-contrast":
-                        scheme = BuildScheme(
-                            Color.White, Color.Black,
-                            Color.Black, Color.BrightYellow,
-                            Color.Cyan, Color.Black,
-                            Color.Red, Color.BrightYellow,
-                            Color.Gray, Color.Black);
-                        break;
-                    default:
-                        scheme = defaultScheme ?? Colors.Base;
-                        break;
-                }
-
-                inputScheme.Normal = scheme.Normal;
-                inputScheme.Focus = scheme.Focus;
-
-                top.ColorScheme = scheme;
-                window.ColorScheme = scheme;
-                tabView.ColorScheme = scheme;
-                navFrame.ColorScheme = scheme;
-                detailsFrame.ColorScheme = scheme;
-                detailsBody.ColorScheme = BuildReadOnlyScheme(detailsFrame.ColorScheme);
-                footer.ColorScheme = scheme;
-                listView.ColorScheme = scheme;
-                docsTree.ColorScheme = scheme;
-                docsPreviewHeader.ColorScheme = detailsFrame.ColorScheme;
-                docsPreview.ColorScheme = detailsFrame.ColorScheme;
-                settingsScroll.ColorScheme = scheme;
-                if (statusBar is not null)
-                {
-                    statusBar.ColorScheme = scheme;
-                }
-            }
-
             void UpdateStatusBar()
             {
                 var items = new List<StatusItem>
@@ -3301,7 +2429,7 @@ public static partial class TuiEntrypoint
                     new StatusItem(Key.Esc, "~Esc~ Quit", () => Application.RequestStop()),
                     new StatusItem(Key.F1, "~F1~ Work", () => tabView.SelectedTab = workTab),
                     new StatusItem(Key.F2, "~F2~ Docs Tab", () => tabView.SelectedTab = docsTab),
-                    new StatusItem(Key.F3, "~F3~ Settings", () => tabView.SelectedTab = settingsTab),
+                    new StatusItem(Key.F3, "~F3~ Settings", () => tabView.SelectedTab = context.SettingsTab),
                     new StatusItem(Key.F4, "~F4~ Repo", () => tabView.SelectedTab = repoTab)
                 };
 
@@ -3318,26 +2446,26 @@ public static partial class TuiEntrypoint
                 }
                 else if (tabView.SelectedTab == docsTab)
                 {
-                    items.Add(new StatusItem(Key.F5, "~F5~ Open", ActivateSelectedDoc));
+                    items.Add(new StatusItem(Key.F5, "~F5~ Open", () => ActivateSelectedDoc(context)));
                     items.Add(new StatusItem(Key.F8, "~F8~ New Doc Here", ShowDocsTabCreateDialog));
                     items.Add(new StatusItem(Key.F9, "~F9~ Voice Doc", ShowVoiceDocDialog));
-                    items.Add(new StatusItem(Key.Enter, "~Enter~ Open", ActivateSelectedDoc));
+                    items.Add(new StatusItem(Key.Enter, "~Enter~ Open", () => ActivateSelectedDoc(context)));
                 }
-                else if (tabView.SelectedTab == settingsTab)
+                else if (tabView.SelectedTab == context.SettingsTab)
                 {
-                    items.Add(new StatusItem(Key.F5, "~F5~ Save Config", SaveConfigFromFields));
-                    items.Add(new StatusItem(Key.F6, "~F6~ Save Creds", SaveCredentialsFromFields));
+                    items.Add(new StatusItem(Key.F5, "~F5~ Save Config", () => SaveConfigFromFields(context)));
+                    items.Add(new StatusItem(Key.F6, "~F6~ Save Creds", () => SaveCredentialsFromFields(context)));
                     items.Add(new StatusItem(Key.F7, "~F7~ Reload", () =>
                     {
                         context.SettingsLoaded = false;
-                        LoadSettingsFields();
+                        LoadSettingsFields(context);
                     }));
                 }
                 else if (tabView.SelectedTab == repoTab)
                 {
-                    items.Add(new StatusItem(Key.F5, "~F5~ Pull", ExecutePull));
-                    items.Add(new StatusItem(Key.F6, "~F6~ Stage All", ExecuteStage));
-                    items.Add(new StatusItem(Key.F7, "~F7~ Push", ExecutePush));
+                    items.Add(new StatusItem(Key.F5, "~F5~ Pull", () => ExecutePull(context)));
+                    items.Add(new StatusItem(Key.F6, "~F6~ Stage All", () => ExecuteStage(context)));
+                    items.Add(new StatusItem(Key.F7, "~F7~ Push", () => ExecutePush(context)));
                 }
 
                 statusBar.Items = items.ToArray();
@@ -3346,22 +2474,22 @@ public static partial class TuiEntrypoint
 
             linkTypeField.TextChanged += _ =>
             {
-                var item = GetSelectedItem();
+                var item = GetSelectedItem(context);
                 if (item is null)
                 {
                     return;
                 }
-                PopulateLinks(item, linkTypeField!, linkHint!, linksList!, linkTargets);
+                PopulateLinks(item, linkTypeField!, linkHint!, linksList!, context.LinkTargets);
             };
 
-            docsFilterField.TextChanged += _ => ApplyDocsFilter();
+            docsFilterField.TextChanged += _ => ApplyDocsFilter(context);
             tabView.SelectedTabChanged += (_, _) =>
             {
                 UpdateStatusBar();
-                UpdateGitInfo();
-                if (tabView.SelectedTab == settingsTab && !context.SettingsLoaded)
+                UpdateGitInfo(context);
+                if (tabView.SelectedTab == context.SettingsTab && !context.SettingsLoaded)
                 {
-                    LoadSettingsFields();
+                    LoadSettingsFields(context);
                 }
             };
             docsTree.SelectionChanged += (_, args) =>
@@ -3373,13 +2501,13 @@ public static partial class TuiEntrypoint
 
                 if (node.Tag is not string path)
                 {
-                    SelectedDocPath = null;
+                    context.SelectedDocPath = null;
                     docsPreview.Text = string.Empty;
                     docsPreviewHeader.Text = "Preview";
                     return;
                 }
 
-                SelectedDocPath = path;
+                context.SelectedDocPath = path;
                 if (!path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
                 {
                     docsPreview.Text = string.Empty;
@@ -3431,13 +2559,13 @@ public static partial class TuiEntrypoint
 
             linksList.OpenSelectedItem += args =>
             {
-                if (args.Item < 0 || args.Item >= linkTargets.Count)
+                if (args.Item < 0 || args.Item >= context.LinkTargets.Count)
                 {
                     return;
                 }
 
-                var target = linkTargets[args.Item];
-                if (TryShowPreviewForLink(target))
+                var target = context.LinkTargets[args.Item];
+                if (TryShowPreviewForLink(context, target))
                 {
                     return;
                 }
@@ -3458,13 +2586,13 @@ public static partial class TuiEntrypoint
                 }
             };
 
-            ApplyFilters();
-            ApplyDocsFilter();
-            ApplyTheme(config.Tui.Theme);
+            ApplyFilters(context);
+            ApplyDocsFilter(context);
+            ApplyTheme(context, context.Config.Tui.Theme);
             UpdateStatusBar();
-            UpdateGitInfo();
-            UpdateLastRefreshLabel();
-            ConfigureAutoRefresh();
+            UpdateGitInfo(context);
+            UpdateLastRefreshLabel(context);
+            ConfigureAutoRefresh(context, () => RefreshAll(context, showInfo: false));
             Application.Run();
         }
         finally
@@ -3476,3 +2604,17 @@ public static partial class TuiEntrypoint
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

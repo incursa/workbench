@@ -197,24 +197,21 @@ public static partial class TuiEntrypoint
         return Path.GetFullPath(combined);
     }
 
-    private static string? GetDocsPathSuggestion(WorkbenchConfig config)
+    private static string? GetDocsPathSuggestion(WorkbenchConfig config, string? selectedPath)
     {
-        var selected = SelectedDocPath;
-        if (string.IsNullOrWhiteSpace(selected))
+        if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return null;
         }
 
-        if (selected.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        if (selectedPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
         {
-            var dir = Path.GetDirectoryName(selected)?.Replace('\\', '/');
+            var dir = Path.GetDirectoryName(selectedPath)?.Replace('\\', '/');
             return string.IsNullOrWhiteSpace(dir) ? null : PrefixDocsRoot(config, dir);
         }
 
-        return PrefixDocsRoot(config, selected.Replace('\\', '/'));
+        return PrefixDocsRoot(config, selectedPath.Replace('\\', '/'));
     }
-
-    private static string? SelectedDocPath { get; set; }
 
     private static string PrefixDocsRoot(WorkbenchConfig config, string path)
     {

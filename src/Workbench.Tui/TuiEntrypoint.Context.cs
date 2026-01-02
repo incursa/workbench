@@ -45,13 +45,34 @@ public static partial class TuiEntrypoint
         public StatusBar? StatusBar { get; set; }
         public ColorScheme? DefaultScheme { get; set; }
         public ColorScheme? InputScheme { get; set; }
+        public object? AutoRefreshToken { get; set; }
+        public string? SelectedDocPath { get; set; }
+
+        public Toplevel? Top { get; set; }
+        public Window? Window { get; set; }
+        public TabView? TabView { get; set; }
+        public TabView.Tab? WorkTab { get; set; }
+        public TabView.Tab? DocsTab { get; set; }
+        public TabView.Tab? SettingsTab { get; set; }
+        public TabView.Tab? RepoTab { get; set; }
+        public FrameView? NavFrame { get; set; }
+        public FrameView? DetailsFrame { get; set; }
+        public View? Footer { get; set; }
         public Label? DryRunLabel { get; set; }
         public Label? CommandPreviewLabel { get; set; }
+        public Label? GitInfoLabel { get; set; }
+        public Label? LastRefreshLabel { get; set; }
+        public Button? RefreshButton { get; set; }
 
         public TextField? FilterField { get; set; }
         public TextField? StatusField { get; set; }
         public ListView? ListView { get; set; }
         public Label? DetailsHeader { get; set; }
+        public TextView? DetailsBody { get; set; }
+        public Button? StartWorkButton { get; set; }
+        public Button? CompleteWorkButton { get; set; }
+        public Button? CodexWorkButton { get; set; }
+        public Label? CodexHintLabel { get; set; }
         public ListView? LinksList { get; set; }
         public TextField? LinkTypeField { get; set; }
         public Label? LinkHint { get; set; }
