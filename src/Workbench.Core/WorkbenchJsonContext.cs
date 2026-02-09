@@ -36,6 +36,9 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(NavSyncOutput))]
 [JsonSerializable(typeof(RepoSyncOutput))]
 [JsonSerializable(typeof(NormalizeOutput))]
+[JsonSerializable(typeof(CodexDoctorOutput))]
+[JsonSerializable(typeof(CodexRunOutput))]
+[JsonSerializable(typeof(WorktreeStartOutput))]
 public partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

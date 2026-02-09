@@ -340,6 +340,48 @@ Data:
 }
 ```
 
+## workbench codex doctor
+
+Data:
+```json
+{
+  "available": true,
+  "version": "codex 0.XX.X",
+  "error": null
+}
+```
+
+## workbench codex run
+
+Data:
+```json
+{
+  "started": true,
+  "terminal": false,
+  "exitCode": 0,
+  "stdout": "…",
+  "stderr": ""
+}
+```
+
+## workbench worktree start
+
+Data:
+```json
+{
+  "branch": "feature/ticket-113-payment-retry",
+  "worktreePath": "C:/src/repo.worktrees/feature/ticket-113-payment-retry",
+  "reused": false,
+  "codexLaunched": true
+}
+```
+
+## workbench llm help
+
+Text output:
+- Complete AI-oriented command reference in one stream
+- Includes global options, command tree, and detailed arguments/options for all commands
+
 ## workbench validate
 
 Data:

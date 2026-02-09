@@ -192,6 +192,22 @@ Recording visualization:
   - Create a GitHub PR via the configured provider and backlink the PR URL.
   - Example: `workbench github pr create TASK-0042 --draft --fill`
 
+- `workbench codex doctor`
+  - Check whether `codex` is installed and callable from the current repo context.
+  - Example: `workbench codex doctor`
+
+- `workbench codex run --prompt "<...>" [--terminal]`
+  - Run Codex in full-auto mode with web search enabled. Use `--terminal` to launch in a new terminal window.
+  - Example: `workbench codex run --prompt "Create TASK-0042 and link it to docs/10-product/..." --terminal`
+
+- `workbench worktree start --slug <slug> [--ticket <id>] [--base <branch>] [--root <path>] [--start-codex] [--prompt "<...>"] [--codex-terminal <true|false>]`
+  - Create or reuse a task worktree under `<repo>.worktrees/feature/` and optionally launch Codex in that worktree.
+  - Example: `workbench worktree start --slug payment-retry --ticket 113 --start-codex --prompt "Implement retry flow with tests"`
+
+- `workbench llm help` (alias: `workbench llms help`, `workbench llms`)
+  - Print a comprehensive, AI-oriented CLI reference in one stdout stream (command tree + arguments + options + usage guidance).
+  - Example: `workbench llm help`
+
 - `workbench validate [--strict] [--link-include <path...>] [--link-exclude <path...>] [--skip-doc-schema]`
   - Validate work items, links, and schemas. `--strict` treats warnings as errors. Use `--link-include/--link-exclude` to scope link checks, and `--skip-doc-schema` if doc schema is not available.
   - Example: `workbench validate --strict --link-exclude docs/tabler --skip-doc-schema`

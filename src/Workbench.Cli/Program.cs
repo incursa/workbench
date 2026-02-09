@@ -2148,6 +2148,94 @@ public partial class Program
         githubCommand.Subcommands.Add(githubPrCommand);
         root.Subcommands.Add(githubCommand);
 
+        var codexCommand = new Command("codex", "Group: Codex agent commands.");
+        var codexDoctorCommand = new Command("doctor", "Check whether Codex is installed and callable.");
+        codexDoctorCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            HandleCodexDoctor(repo, format);
+        });
+        codexCommand.Subcommands.Add(codexDoctorCommand);
+
+        var codexRunCommand = new Command("run", "Run Codex in full-auto mode with web search.");
+        var codexPromptOption = new Option<string>("--prompt")
+        {
+            Description = "Prompt to send to Codex.",
+            Required = true
+        };
+        var codexTerminalOption = new Option<bool>("--terminal")
+        {
+            Description = "Launch in a separate terminal window instead of waiting for output."
+        };
+        codexRunCommand.Options.Add(codexPromptOption);
+        codexRunCommand.Options.Add(codexTerminalOption);
+        codexRunCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var prompt = parseResult.GetValue(codexPromptOption) ?? string.Empty;
+            var terminal = parseResult.GetValue(codexTerminalOption);
+            HandleCodexRun(repo, format, prompt, terminal);
+        });
+        codexCommand.Subcommands.Add(codexRunCommand);
+        root.Subcommands.Add(codexCommand);
+
+        var worktreeCommand = new Command("worktree", "Group: git worktree commands.");
+        var worktreeStartCommand = new Command("start", "Create or reuse a task worktree.");
+        var worktreeSlugOption = new Option<string>("--slug")
+        {
+            Description = "Short task slug used for branch and directory naming.",
+            Required = true
+        };
+        var worktreeTicketOption = new Option<int?>("--ticket")
+        {
+            Description = "Optional numeric ticket to prefix the branch."
+        };
+        var worktreeBaseOption = new Option<string?>("--base")
+        {
+            Description = "Base branch for new branches (defaults to config git.defaultBaseBranch)."
+        };
+        var worktreeRootOption = new Option<string?>("--root")
+        {
+            Description = "Root directory for worktrees (defaults to <repo>.worktrees)."
+        };
+        var worktreePromptOption = new Option<string?>("--prompt")
+        {
+            Description = "Prompt to send when launching Codex."
+        };
+        var worktreeStartCodexOption = new Option<bool>("--start-codex")
+        {
+            Description = "Launch Codex after creating/reusing the worktree."
+        };
+        var worktreeCodexTerminalOption = new Option<bool>("--codex-terminal")
+        {
+            Description = "When launching Codex, use a separate terminal window."
+        };
+        worktreeCodexTerminalOption.DefaultValueFactory = _ => true;
+        worktreeStartCommand.Options.Add(worktreeSlugOption);
+        worktreeStartCommand.Options.Add(worktreeTicketOption);
+        worktreeStartCommand.Options.Add(worktreeBaseOption);
+        worktreeStartCommand.Options.Add(worktreeRootOption);
+        worktreeStartCommand.Options.Add(worktreePromptOption);
+        worktreeStartCommand.Options.Add(worktreeStartCodexOption);
+        worktreeStartCommand.Options.Add(worktreeCodexTerminalOption);
+        worktreeStartCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var slug = parseResult.GetValue(worktreeSlugOption) ?? string.Empty;
+            var ticket = parseResult.GetValue(worktreeTicketOption);
+            var baseBranch = parseResult.GetValue(worktreeBaseOption);
+            var rootPath = parseResult.GetValue(worktreeRootOption);
+            var prompt = parseResult.GetValue(worktreePromptOption);
+            var startCodex = parseResult.GetValue(worktreeStartCodexOption);
+            var codexTerminal = parseResult.GetValue(worktreeCodexTerminalOption);
+            HandleWorktreeStart(repo, format, slug, ticket, baseBranch, rootPath, prompt, startCodex, codexTerminal);
+        });
+        worktreeCommand.Subcommands.Add(worktreeStartCommand);
+        root.Subcommands.Add(worktreeCommand);
+
         var docCommand = new Command("doc", "Group: documentation commands.");
 
         var docNewCommand = new Command("new", "Create a documentation file with Workbench front matter.");
@@ -3421,6 +3509,22 @@ public partial class Program
             }
         });
         root.Subcommands.Add(validateCommand);
+
+        var llmCommand = new Command("llm", "Group: AI-oriented help and guidance commands.");
+        llmCommand.Aliases.Add("llms");
+        var llmHelpCommand = new Command("help", "Print a comprehensive CLI reference for AI agents.");
+        llmHelpCommand.SetAction(parseResult =>
+        {
+            WriteLlmHelp(root);
+            SetExitCode(0);
+        });
+        llmCommand.Subcommands.Add(llmHelpCommand);
+        llmCommand.SetAction(parseResult =>
+        {
+            WriteLlmHelp(root);
+            SetExitCode(0);
+        });
+        root.Subcommands.Add(llmCommand);
 
         if (args.Length == 0)
         {
