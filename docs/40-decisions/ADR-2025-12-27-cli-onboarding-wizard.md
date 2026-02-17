@@ -4,6 +4,8 @@ workbench:
   workItems:
     - TASK-0001
   codeRefs: []
+  pathHistory: []
+  path: /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md
 owner: platform
 status: accepted
 updated: 2025-12-27

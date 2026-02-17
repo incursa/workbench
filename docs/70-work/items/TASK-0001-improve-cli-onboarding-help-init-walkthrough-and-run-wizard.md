@@ -19,6 +19,12 @@ related:
   branches:
     - TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard
 title: "Improve CLI onboarding help, init walkthrough, and run wizard"
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md
 ---
 
 # TASK-0001 - Improve CLI onboarding help, init walkthrough, and run wizard

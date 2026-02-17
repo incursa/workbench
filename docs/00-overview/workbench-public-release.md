@@ -3,6 +3,8 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
+  pathHistory: []
+  path: /docs/00-overview/workbench-public-release.md
 owner: platform
 status: draft
 updated: 2026-01-01

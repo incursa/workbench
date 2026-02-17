@@ -6,7 +6,7 @@ priority: medium
 owner: platform
 created: 2026-01-01
 updated: null
-githubSynced: null
+githubSynced: "2026-02-17T04:21:52Z"
 tags:
   - launch
   - docs
@@ -15,8 +15,15 @@ related:
   adrs: []
   files: []
   prs: []
-  issues: []
+  issues:
+    - "https://github.com/bravellian/workbench/issues/566"
   branches: []
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0012-produce-demo-assets-for-public-release.md
 ---
 
 # TASK-0012 - Produce demo assets for public release

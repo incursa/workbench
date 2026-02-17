@@ -3,6 +3,8 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
+  pathHistory: []
+  path: /docs/30-contracts/README.md
 owner: platform
 status: active
 updated: 2025-12-27
