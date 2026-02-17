@@ -16,6 +16,12 @@ related:
   issues: []
   branches: []
 title: Sync work items with GitHub issues and branches
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0002-promote-existing-work-items-to-github-issues.md
 ---
 
 # TASK-0002 - Sync work items with GitHub issues and branches

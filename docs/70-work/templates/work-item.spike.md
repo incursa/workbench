@@ -15,6 +15,12 @@ related:
   prs: []
   issues: []
   branches: []
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/templates/work-item.spike.md
 ---
 
 # SPIKE-0000 - <title>

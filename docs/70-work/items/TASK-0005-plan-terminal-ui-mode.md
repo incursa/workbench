@@ -20,6 +20,12 @@ related:
   branches:
     - work/TASK-0005-plan-terminal-ui-mode
 title: Plan terminal UI mode
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0005-plan-terminal-ui-mode.md
 ---
 
 # TASK-0005 - Plan terminal UI mode

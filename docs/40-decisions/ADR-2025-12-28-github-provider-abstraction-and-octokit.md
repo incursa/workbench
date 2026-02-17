@@ -3,6 +3,8 @@ workbench:
   type: adr
   workItems: []
   codeRefs: []
+  pathHistory: []
+  path: /docs/40-decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md
 owner: platform
 status: accepted
 updated: 2025-12-28

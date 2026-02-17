@@ -17,6 +17,12 @@ related:
   branches:
     - TASK-0003-validate-work-item-status-values
 title: Validate work item status values
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0003-validate-work-item-status-values.md
 ---
 
 # TASK-0003 - Validate work item status values
