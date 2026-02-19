@@ -10,9 +10,13 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>workbench</ToolCommandName>
     <PackageId>Incursa.Workbench</PackageId>
+    <Description>Incursa Workbench is a .NET CLI tool for managing structured project documentation, work items, and repository workflows from the terminal.</Description>
+    <PackageTags>dotnet-tool;cli;documentation;work-items;developer-productivity</PackageTags>
+    <PackageProjectUrl>https://github.com/incursa/workbench</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/incursa/workbench</RepositoryUrl>
     <Version>0.1.0</Version>
     <PackageVersion>0.1.0</PackageVersion>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
     <IsPackable>true</IsPackable>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
@@ -27,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="NUGET_README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

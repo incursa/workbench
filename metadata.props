@@ -13,12 +13,12 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRelease>true</PublishRelease>
-    <PackageIcon>nuget_logo.svg</PackageIcon>
+    <PackageIcon>nuget_logo.png</PackageIcon>
     <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)assets/nuget_logo.svg" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)assets/nuget_logo.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
