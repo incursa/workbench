@@ -125,7 +125,75 @@ public class MigrationCommandTests
             Path.GetFileName(itemPath)!);
         Assert.IsTrue(File.Exists(doneFile), doneFile);
         Assert.IsFalse(File.Exists(itemPath), itemPath);
+    }
 
+    [TestMethod]
+    public void MigrateCoherentV1_MovesActiveItemsBackToItemsDirectory()
+    {
+        using var repo = TempRepo.Create();
+        InitializeGitRepo(repo.Path);
+
+        var scaffold = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "scaffold");
+        Assert.AreEqual(0, scaffold.ExitCode, $"stderr: {scaffold.StdErr}\nstdout: {scaffold.StdOut}");
+
+        var created = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--format",
+            "json",
+            "item",
+            "new",
+            "--type",
+            "task",
+            "--title",
+            "Move back target",
+            "--status",
+            "done");
+        Assert.AreEqual(0, created.ExitCode, $"stderr: {created.StdErr}\nstdout: {created.StdOut}");
+
+        var createdJson = TestAssertions.ParseJson(created.StdOut);
+        var itemPath = createdJson.GetProperty("data").GetProperty("path").GetString();
+        Assert.IsFalse(string.IsNullOrWhiteSpace(itemPath));
+        Assert.IsTrue(File.Exists(itemPath!), itemPath);
+
+        var donePath = Path.Combine(
+            repo.Path,
+            "docs",
+            "70-work",
+            "done",
+            Path.GetFileName(itemPath)!);
+        File.Move(itemPath, donePath, overwrite: false);
+
+        var doneContent = File.ReadAllText(donePath);
+        File.WriteAllText(donePath, doneContent.Replace("status: done", "status: ready", StringComparison.Ordinal));
+
+        var migrate = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--format",
+            "json",
+            "migrate",
+            "coherent-v1");
+        Assert.AreEqual(0, migrate.ExitCode, $"stderr: {migrate.StdErr}\nstdout: {migrate.StdOut}");
+
+        var migrateJson = TestAssertions.ParseJson(migrate.StdOut);
+        var movedToItems = migrateJson.GetProperty("data").GetProperty("movedToItems");
+        Assert.IsGreaterThanOrEqualTo(movedToItems.GetArrayLength(), 1, migrate.StdOut);
+
+        var expectedItemsPath = Path.Combine(
+            repo.Path,
+            "docs",
+            "70-work",
+            "items",
+            Path.GetFileName(itemPath)!);
+        Assert.IsTrue(File.Exists(expectedItemsPath), expectedItemsPath);
+        Assert.IsFalse(File.Exists(donePath), donePath);
     }
 
     private static void InitializeGitRepo(string repoRoot)
