@@ -10,10 +10,13 @@ public class ScaffoldPromoteTests
         using var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
 
-        var scaffoldResult = WorkbenchCli.Run(repo.Path, "scaffold", "--repo", repo.Path, "--format", "json");
-        Assert.AreEqual(0, scaffoldResult.ExitCode);
-
-        var scaffoldJson = TestAssertions.ParseJson(scaffoldResult.StdOut);
+        var scaffoldJson = TestAssertions.RunWorkbenchAndParseJson(
+            repo.Path,
+            "scaffold",
+            "--repo",
+            repo.Path,
+            "--format",
+            "json");
         var configPath = scaffoldJson.GetProperty("data").GetProperty("configPath").GetString();
         Assert.IsFalse(string.IsNullOrWhiteSpace(configPath));
         Assert.IsTrue(File.Exists(configPath!));
@@ -23,7 +26,8 @@ public class ScaffoldPromoteTests
         GitTestRepo.CommitAll(repo.Path, "Add scaffold");
 
         const string Title = "Add integration coverage";
-        var promoteResult = WorkbenchCli.Run(repo.Path,
+        var promoteJson = TestAssertions.RunWorkbenchAndParseJson(
+            repo.Path,
             "promote",
             "--type",
             "task",
@@ -33,9 +37,6 @@ public class ScaffoldPromoteTests
             repo.Path,
             "--format",
             "json");
-        Assert.AreEqual(0, promoteResult.ExitCode);
-
-        var promoteJson = TestAssertions.ParseJson(promoteResult.StdOut);
         var data = promoteJson.GetProperty("data");
         var item = data.GetProperty("item");
         var itemId = item.GetProperty("id").GetString();

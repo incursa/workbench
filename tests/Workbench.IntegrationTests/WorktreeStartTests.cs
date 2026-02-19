@@ -9,7 +9,7 @@ public class WorktreeStartTests
         using var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
 
-        var first = WorkbenchCli.Run(
+        var firstJson = TestAssertions.RunWorkbenchAndParseJson(
             repo.Path,
             "--repo",
             repo.Path,
@@ -19,9 +19,6 @@ public class WorktreeStartTests
             "start",
             "--slug",
             "agent-cli-check");
-        Assert.AreEqual(0, first.ExitCode, $"stderr: {first.StdErr}\nstdout: {first.StdOut}");
-
-        var firstJson = TestAssertions.ParseJson(first.StdOut);
         var firstData = firstJson.GetProperty("data");
         var branch = firstData.GetProperty("branch").GetString();
         var worktreePath = firstData.GetProperty("worktreePath").GetString();
@@ -32,7 +29,7 @@ public class WorktreeStartTests
         Assert.IsFalse(string.IsNullOrWhiteSpace(worktreePath));
         Assert.IsTrue(Directory.Exists(worktreePath!));
 
-        var second = WorkbenchCli.Run(
+        var secondJson = TestAssertions.RunWorkbenchAndParseJson(
             repo.Path,
             "--repo",
             repo.Path,
@@ -42,9 +39,6 @@ public class WorktreeStartTests
             "start",
             "--slug",
             "agent-cli-check");
-        Assert.AreEqual(0, second.ExitCode, $"stderr: {second.StdErr}\nstdout: {second.StdOut}");
-
-        var secondJson = TestAssertions.ParseJson(second.StdOut);
         var secondData = secondJson.GetProperty("data");
         Assert.IsTrue(secondData.GetProperty("reused").GetBoolean());
         Assert.AreEqual(worktreePath, secondData.GetProperty("worktreePath").GetString());
