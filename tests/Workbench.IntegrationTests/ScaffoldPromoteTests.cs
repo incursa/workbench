@@ -8,7 +8,7 @@ public class ScaffoldPromoteTests
     public void ScaffoldAndPromote_CreateBranchAndCommit()
     {
         using var repo = TempRepo.Create();
-        InitializeGitRepo(repo.Path);
+        GitTestRepo.InitializeGitRepo(repo.Path);
 
         var scaffoldResult = WorkbenchCli.Run(repo.Path, "scaffold", "--repo", repo.Path, "--format", "json");
         Assert.AreEqual(0, scaffoldResult.ExitCode);
@@ -20,7 +20,7 @@ public class ScaffoldPromoteTests
         Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
         Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "docs", "70-work", "README.md")));
 
-        CommitAll(repo.Path, "Add scaffold");
+        GitTestRepo.CommitAll(repo.Path, "Add scaffold");
 
         const string Title = "Add integration coverage";
         var promoteResult = WorkbenchCli.Run(repo.Path,
@@ -79,30 +79,5 @@ public class ScaffoldPromoteTests
         var result = ProcessRunner.Run(Environment.CurrentDirectory, "gh", "--version");
         Assert.AreEqual(0, result.ExitCode);
         Assert.Contains("gh version", result.StdOut, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static void InitializeGitRepo(string repoRoot)
-    {
-        EnsureSuccess(ProcessRunner.Run(repoRoot, "git", "init"));
-        EnsureSuccess(ProcessRunner.Run(repoRoot, "git", "checkout", "-b", "main"));
-        EnsureSuccess(ProcessRunner.Run(repoRoot, "git", "config", "user.email", "workbench@example.com"));
-        EnsureSuccess(ProcessRunner.Run(repoRoot, "git", "config", "user.name", "Workbench Tests"));
-
-        File.WriteAllText(Path.Combine(repoRoot, "README.md"), "# Temp Repo\n");
-        CommitAll(repoRoot, "Initial commit");
-    }
-
-    private static void CommitAll(string repoRoot, string message)
-    {
-        EnsureSuccess(ProcessRunner.Run(repoRoot, "git", "add", "."));
-        EnsureSuccess(ProcessRunner.Run(repoRoot, "git", "commit", "-m", message));
-    }
-
-    private static void EnsureSuccess(CommandResult result)
-    {
-        if (result.ExitCode != 0)
-        {
-            throw new InvalidOperationException($"Command failed: {result.StdErr}\n{result.StdOut}");
-        }
     }
 }
