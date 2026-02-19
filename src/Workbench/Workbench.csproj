@@ -9,7 +9,7 @@
     <Nullable>enable</Nullable>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>workbench</ToolCommandName>
-    <PackageId>Bravellian.Workbench</PackageId>
+    <PackageId>Incursa.Workbench</PackageId>
     <Version>0.1.0</Version>
     <PackageVersion>0.1.0</PackageVersion>
     <PackageReadmeFile>README.md</PackageReadmeFile>

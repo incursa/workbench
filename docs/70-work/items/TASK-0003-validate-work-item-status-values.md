@@ -13,7 +13,7 @@ related:
   files: []
   prs: []
   issues:
-    - "https://github.com/bravellian/workbench/issues/14"
+    - "https://github.com/incursa/workbench/issues/14"
   branches:
     - TASK-0003-validate-work-item-status-values
 title: Validate work item status values

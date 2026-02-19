@@ -8,7 +8,7 @@ status: active
 updated: 2025-12-27
 ---
 
-# Bravellian Workbench - Specification (v0.1)
+# Incursa Workbench - Specification (v0.1)
 
 ## Summary
 Workbench is a standalone .NET CLI that standardizes a Markdown-first engineering workflow in any git repository by managing:
@@ -592,7 +592,7 @@ How to run:
 
 ## Packaging
 - Distributed as a .NET global tool:
-  - package id: Bravellian.Workbench
+  - package id: Incursa.Workbench
   - command name: workbench
 - CI:
   - build/test on PR

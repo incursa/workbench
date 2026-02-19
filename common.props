@@ -70,7 +70,7 @@
       <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
     </AssemblyAttribute>
 
-    <PackageReference Include="Bravellian.Generators" />
+    <PackageReference Include="Incursa.Generators" />
 
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
       <PrivateAssets>all</PrivateAssets>

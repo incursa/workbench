@@ -16,7 +16,7 @@ related:
   files: []
   prs: []
   issues:
-    - "https://github.com/bravellian/workbench/issues/22"
+    - "https://github.com/incursa/workbench/issues/22"
   branches:
     - work/TASK-0006-implement-shared-core-and-clitui-split
 title: Implement shared core and CLI/TUI split

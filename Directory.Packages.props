@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Bogus" Version="35.6.5" />
-    <PackageVersion Include="Bravellian.Generators" Version="2025.12.15.1154" />
+    <PackageVersion Include="Incursa.Generators" Version="2026.2.19.38" />
     <PackageVersion Include="CommunityToolkit.Diagnostics" Version="8.4.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="coverlet.msbuild" Version="6.0.4" />

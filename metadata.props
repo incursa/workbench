@@ -4,21 +4,21 @@
     including regular projects, test projects, and analyzer projects.
   -->
   <PropertyGroup>
-    <Company>Bravellian</Company>
-    <Authors>Bravellian</Authors>
-    <Copyright>© Bravellian. All rights reserved.</Copyright>
+    <Company>Incursa</Company>
+    <Authors>Incursa</Authors>
+    <Copyright>© Incursa. All rights reserved.</Copyright>
     <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(Version)</InformationalVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRelease>true</PublishRelease>
-    <PackageIcon>nuget_logo.png</PackageIcon>
+    <PackageIcon>nuget_logo.svg</PackageIcon>
     <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)assets/nuget_logo.png" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)assets/nuget_logo.svg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>

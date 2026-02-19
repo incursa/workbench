@@ -43,7 +43,7 @@ public partial class Program
             Description = "Suppress non-error output"
         };
 
-        var root = new RootCommand("Bravellian Workbench CLI");
+        var root = new RootCommand("Incursa Workbench CLI");
         root.Options.Add(repoOption);
         root.Options.Add(formatOption);
         root.Options.Add(noColorOption);

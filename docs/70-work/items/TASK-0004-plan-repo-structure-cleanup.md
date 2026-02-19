@@ -13,7 +13,7 @@ related:
   files: []
   prs: []
   issues:
-    - "https://github.com/bravellian/workbench/issues/19"
+    - "https://github.com/incursa/workbench/issues/19"
   branches: []
 title: "Plan repo structure cleanup (reduce large files, improve navigation)"
 ---

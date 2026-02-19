@@ -15,7 +15,7 @@ related:
   files: []
   prs: []
   issues:
-    - "https://github.com/bravellian/workbench/issues/15"
+    - "https://github.com/incursa/workbench/issues/15"
   branches:
     - TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard
 title: "Improve CLI onboarding help, init walkthrough, and run wizard"

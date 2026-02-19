@@ -79,7 +79,7 @@ Commands:
   - Example: `workbench config show --format json`
 - `workbench config set --path <path> --value "<...>" [--json]`
   - Update a single config value (dot-path).
-  - Example: `workbench config set --path github.owner --value "bravellian"`
+  - Example: `workbench config set --path github.owner --value "incursa"`
 - `workbench config credentials set --key <KEY> --value "<...>" [--path <path>]`
   - Write or update a credentials.env entry (defaults to `.workbench/credentials.env`).
   - Example: `workbench config credentials set --key WORKBENCH_AI_OPENAI_KEY --value "<...>"`

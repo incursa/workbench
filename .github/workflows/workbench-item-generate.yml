@@ -52,7 +52,7 @@ jobs:
 
       - name: Install Workbench CLI tool
         run: |
-          dotnet tool install --global Bravellian.Workbench
+          dotnet tool install --global Incursa.Workbench
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Generate work item

@@ -16,7 +16,7 @@ related:
   files: []
   prs: []
   issues:
-    - "https://github.com/bravellian/workbench/issues/21"
+    - "https://github.com/incursa/workbench/issues/21"
   branches:
     - work/TASK-0005-plan-terminal-ui-mode
 title: Plan terminal UI mode
