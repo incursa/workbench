@@ -6,7 +6,7 @@ priority: high
 owner: platform
 created: 2026-01-01
 updated: null
-githubSynced: null
+githubSynced: "2026-02-19T04:59:23Z"
 tags:
   - launch
   - marketing
@@ -16,7 +16,8 @@ related:
   files:
     - /docs/00-overview/workbench-public-release.md
   prs: []
-  issues: []
+  issues:
+    - "https://github.com/incursa/workbench/issues/599"
   branches: []
 ---
 
