@@ -39,11 +39,11 @@ This checklist is the release bar before upgrading other repositories to this mo
 
 ## Remaining before broad rollout
 
-- [ ] Replace or re-enable currently skipped integration scenarios so release gates are fully enforced.
+- [x] Replace or re-enable currently skipped integration scenarios so release gates are fully enforced.
 - [ ] Run and document a two-repo external trial (one clean, one messy legacy) with zero unhandled exceptions.
 - [ ] Publish final operator runbook for cross-repo migration and rollback.
 
 ## Current recommendation
 
 - Pilot rollouts are safe.
-- Broad rollout should wait until all remaining items above are complete.
+- Broad rollout can begin with controlled onboarding if the runbook is published and the two-repo trial completes without regressions.

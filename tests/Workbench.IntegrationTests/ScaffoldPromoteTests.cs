@@ -4,7 +4,6 @@ namespace Workbench.IntegrationTests;
 public class ScaffoldPromoteTests
 {
     [TestMethod]
-    [Ignore("Temporarily skipped while scaffold CLI parsing is stabilized.")]
     public void ScaffoldAndPromote_CreateBranchAndCommit()
     {
         using var repo = TempRepo.Create();
@@ -20,7 +19,7 @@ public class ScaffoldPromoteTests
         var configPath = scaffoldJson.GetProperty("data").GetProperty("configPath").GetString();
         Assert.IsFalse(string.IsNullOrWhiteSpace(configPath));
         Assert.IsTrue(File.Exists(configPath!));
-        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "docs", "70-work", "templates", "work-item.task.md")));
         Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "docs", "70-work", "README.md")));
 
         GitTestRepo.CommitAll(repo.Path, "Add scaffold");
@@ -59,8 +58,9 @@ public class ScaffoldPromoteTests
         Assert.AreEqual(expectedBranch, branch);
         Assert.AreEqual($"Promote {itemId}: {Title}", commitMessage);
 
-        var expectedItemPath = Path.Combine(repo.Path, "work", "items", $"{itemId}-{slug}.md");
-        Assert.AreEqual(expectedItemPath, itemPath);
+        var expectedItemPath = Path.Combine(repo.Path, "docs", "70-work", "items", $"{itemId}-{slug}.md")
+            .Replace('\\', '/');
+        Assert.AreEqual(expectedItemPath, itemPath!.Replace('\\', '/'));
         Assert.IsTrue(File.Exists(itemPath!));
 
         var branchResult = ProcessRunner.Run(repo.Path, "git", "rev-parse", "--abbrev-ref", "HEAD");
@@ -73,12 +73,24 @@ public class ScaffoldPromoteTests
     }
 
     [TestMethod]
-    public void GhCliIsAvailableWhenEnabled()
+    public void Doctor_JsonIncludesGithubCheck()
     {
-        TestAssertions.RequireGhTestsEnabled();
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
 
-        var result = ProcessRunner.Run(Environment.CurrentDirectory, "gh", "--version");
-        Assert.AreEqual(0, result.ExitCode);
-        Assert.Contains("gh version", result.StdOut, StringComparison.OrdinalIgnoreCase);
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "doctor",
+            "--json");
+        Assert.AreEqual(1, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        var doctorJson = TestAssertions.ParseJson(result.StdOut);
+        var checks = doctorJson.GetProperty("data").GetProperty("checks").EnumerateArray().ToList();
+        var githubCheck = checks.FirstOrDefault(check =>
+            string.Equals(check.GetProperty("name").GetString(), "github", StringComparison.Ordinal));
+
+        Assert.AreNotEqual(default, githubCheck, doctorJson.ToString());
+        Assert.IsFalse(string.IsNullOrWhiteSpace(githubCheck.GetProperty("status").GetString()), doctorJson.ToString());
     }
 }
