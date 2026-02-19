@@ -13,11 +13,6 @@ on:
       - "assets/**"
       - "examples/**"
   workflow_dispatch:
-    inputs:
-      run_integration_tests:
-        description: "Run integration tests (requires GitHub CLI availability)"
-        required: false
-        default: "false"
 
 jobs:
   pre-commit:
