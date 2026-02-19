@@ -3,7 +3,6 @@
     <Project Path="src/Workbench.Core/Workbench.Core.csproj" />
     <Project Path="src/Workbench.Cli/Workbench.Cli.csproj" />
     <Project Path="src/Workbench/Workbench.csproj" />
-    <Project Path="src/Workbench.Tui/Workbench.Tui.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Workbench.Tests/Workbench.Tests.csproj" />
