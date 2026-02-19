@@ -89,17 +89,16 @@ public class MigrationCommandTests
 
     private static void RunScaffold(string repoPath)
     {
-        var scaffold = WorkbenchCli.Run(
+        TestAssertions.RunWorkbenchAndAssertSuccess(
             repoPath,
             "--repo",
             repoPath,
             "scaffold");
-        Assert.AreEqual(0, scaffold.ExitCode, $"stderr: {scaffold.StdErr}\nstdout: {scaffold.StdOut}");
     }
 
     private static string CreateDoneItemAndGetPath(string repoPath, string title)
     {
-        var created = WorkbenchCli.Run(
+        var createdJson = TestAssertions.RunWorkbenchAndParseJson(
             repoPath,
             "--repo",
             repoPath,
@@ -113,9 +112,6 @@ public class MigrationCommandTests
             title,
             "--status",
             "done");
-        Assert.AreEqual(0, created.ExitCode, $"stderr: {created.StdErr}\nstdout: {created.StdOut}");
-
-        var createdJson = TestAssertions.ParseJson(created.StdOut);
         var itemPath = createdJson.GetProperty("data").GetProperty("path").GetString();
         Assert.IsFalse(string.IsNullOrWhiteSpace(itemPath));
         Assert.IsTrue(File.Exists(itemPath!), itemPath);
@@ -127,7 +123,7 @@ public class MigrationCommandTests
         CommandResult migrate;
         if (dryRun)
         {
-            migrate = WorkbenchCli.Run(
+            migrate = TestAssertions.RunWorkbenchAndAssertSuccess(
                 repoPath,
                 "--repo",
                 repoPath,
@@ -139,7 +135,7 @@ public class MigrationCommandTests
         }
         else
         {
-            migrate = WorkbenchCli.Run(
+            migrate = TestAssertions.RunWorkbenchAndAssertSuccess(
                 repoPath,
                 "--repo",
                 repoPath,
@@ -148,8 +144,6 @@ public class MigrationCommandTests
                 "migrate",
                 "coherent-v1");
         }
-
-        Assert.AreEqual(0, migrate.ExitCode, $"stderr: {migrate.StdErr}\nstdout: {migrate.StdOut}");
         return TestAssertions.ParseJson(migrate.StdOut);
     }
 }
