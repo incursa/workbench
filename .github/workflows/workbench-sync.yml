@@ -1,0 +1,103 @@
+name: Workbench Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Sync mode: generate (projection-only) or active (state mutation)"
+        required: false
+        default: "generate"
+        type: choice
+        options:
+          - generate
+          - active
+      import_issues:
+        description: "When mode=active, import unlinked GitHub issues"
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: workbench-sync-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Workbench CLI tool
+        run: |
+          dotnet tool install --global Incursa.Workbench
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Configure GitHub provider
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          workbench config set --path github.provider --value octokit
+
+      - name: Run generate-mode sync
+        if: github.event_name == 'schedule' || inputs.mode == 'generate'
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          workbench sync --docs --nav --include-done --force --workboard true
+          workbench item normalize --include-done
+          workbench validate --strict
+
+      - name: Run active-mode sync
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'active'
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          args=(sync --items --docs --nav --include-done --force --workboard true)
+          if [[ "${{ inputs.import_issues }}" == "true" ]]; then
+            args+=(--import-issues)
+          fi
+          workbench "${args[@]}"
+          workbench item normalize --include-done
+          workbench validate --strict
+
+      - name: Resolve sync mode label
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "SYNC_MODE=generate" >> "$GITHUB_ENV"
+          else
+            echo "SYNC_MODE=${{ inputs.mode }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          commit-message: "chore: workbench sync (${{ env.SYNC_MODE }})"
+          branch: "chore/workbench-sync"
+          title: "Workbench sync (${{ env.SYNC_MODE }})"
+          body: |
+            ## Summary
+            - Run Workbench sync workflow in `${{ env.SYNC_MODE }}` mode.

@@ -6,6 +6,9 @@ workbench:
     - TASK-0006
     - TASK-0007
   codeRefs: []
+  pathHistory:
+    - "C:/docs/10-product/feature-spec-terminal-ui.md"
+  path: /docs/10-product/feature-spec-terminal-ui.md
 owner: platform
 status: draft
 updated: 2025-12-30

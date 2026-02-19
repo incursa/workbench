@@ -30,6 +30,7 @@ public static class ValidationService
         var items = new List<WorkItemRecord>();
         foreach (var dir in new[] { config.Paths.ItemsDir, config.Paths.DoneDir })
         {
+            var isDoneDirectory = string.Equals(dir, config.Paths.DoneDir, StringComparison.OrdinalIgnoreCase);
             var full = Path.Combine(repoRoot, dir);
             if (!Directory.Exists(full))
             {
@@ -41,7 +42,7 @@ public static class ValidationService
                 {
                     continue;
                 }
-                items.Add(new WorkItemRecord(file));
+                items.Add(new WorkItemRecord(file, isDoneDirectory));
             }
         }
         return items;
@@ -102,6 +103,18 @@ public static class ValidationService
             if (!string.IsNullOrWhiteSpace(status) && !allowedStatus.Contains(status))
             {
                 result.Errors.Add($"{item.Path}: invalid status '{status}'.");
+            }
+            else if (!string.IsNullOrWhiteSpace(status))
+            {
+                var isTerminal = IsTerminalStatus(status);
+                if (isTerminal && !item.IsDoneDirectory)
+                {
+                    result.Errors.Add($"{item.Path}: terminal status '{status}' must live under '{config.Paths.DoneDir}'.");
+                }
+                if (!isTerminal && item.IsDoneDirectory)
+                {
+                    result.Errors.Add($"{item.Path}: non-terminal status '{status}' must live under '{config.Paths.ItemsDir}'.");
+                }
             }
 
             var priority = GetString(data, "priority");
@@ -644,5 +657,11 @@ public static class ValidationService
         return true;
     }
 
-    private sealed record WorkItemRecord(string Path);
+    private static bool IsTerminalStatus(string status)
+    {
+        return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed record WorkItemRecord(string Path, bool IsDoneDirectory);
 }

@@ -8,6 +8,7 @@ namespace Workbench.Core;
 /// <param name="IssuesUpdated">Issues updated from local items.</param>
 /// <param name="ItemsUpdated">Items updated from GitHub issues.</param>
 /// <param name="BranchesCreated">Branches created during sync.</param>
+/// <param name="Conflicts">Conflicts that require an explicit sync preference.</param>
 /// <param name="Warnings">Warnings emitted during sync.</param>
 /// <param name="DryRun">True when no remote or file changes were applied.</param>
 public sealed record ItemSyncData(
@@ -16,5 +17,6 @@ public sealed record ItemSyncData(
     [property: JsonPropertyName("issuesUpdated")] IList<ItemSyncIssueUpdateEntry> IssuesUpdated,
     [property: JsonPropertyName("itemsUpdated")] IList<ItemSyncItemUpdateEntry> ItemsUpdated,
     [property: JsonPropertyName("branchesCreated")] IList<ItemSyncBranchEntry> BranchesCreated,
+    [property: JsonPropertyName("conflicts")] IList<ItemSyncConflictEntry> Conflicts,
     [property: JsonPropertyName("warnings")] IList<string> Warnings,
     [property: JsonPropertyName("dryRun")] bool DryRun);

@@ -3,6 +3,9 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
+  pathHistory:
+    - "C:/docs/30-contracts/cli-help.md"
+  path: /docs/30-contracts/cli-help.md
 owner: platform
 status: active
 updated: 2025-12-27
@@ -57,18 +60,22 @@ Commands:
   - Use `--json` for machine-readable output.
   - Example: `workbench doctor`
 
-- `workbench init [--force] [--skip-wizard] [--non-interactive] [--front-matter] [--configure-openai] [--credential-store <local|external|skip>] [--credential-path <path>] [--openai-provider <openai|none>] [--openai-key <key>] [--openai-model <model>]`
+- `workbench init [--force] [--skip-guide] [--non-interactive] [--front-matter] [--configure-openai] [--credential-store <local|external|skip>] [--credential-path <path>] [--openai-provider <openai|none>] [--openai-key <key>] [--openai-model <model>]`
   - Guided setup for scaffolding, front matter guidance, and OpenAI configuration.
-  - Runs the `run` wizard afterward unless `--skip-wizard` is set.
-  - Example: `workbench init --skip-wizard`
+  - Runs the `guide` flow afterward unless `--skip-guide` is set.
+  - Example: `workbench init --skip-guide`
 
-- `workbench run`
-  - Launch the interactive wizard for common document and work item actions.
-  - Example: `workbench run`
+- `workbench guide`
+  - Launch the interactive guide for common document and work item actions.
+  - Example: `workbench guide`
 
 - `workbench sync [--items] [--docs] [--nav] [--issues <true|false>] [--import-issues] [--include-done] [--force] [--dry-run] [--prefer <local|github>]`
   - Run the full repo sync (work items, docs/front matter, and navigation) in order. When no step flags are provided, runs all. Use `--import-issues` to scan GitHub for unlinked issues (slower).
   - Example: `workbench sync --dry-run`
+
+- `workbench migrate coherent-v1 [--dry-run]`
+  - Run the coherence migration: enforce status/folder placement, normalize links, and regenerate indexes/workboard.
+  - Example: `workbench migrate coherent-v1`
 
 - `workbench scaffold [--force]`
   - Create the default folder structure, templates, and config.
@@ -103,7 +110,7 @@ Commands:
 - Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 
 - `workbench item sync [--id <ID...>] [--issue <id|url...>] [--import-issues] [--prefer <local|github>] [--dry-run]`
-  - Sync work items with GitHub issues and branches (two-way, no deletes). Branches are only created when listed in `related.branches`. Defaults to pushing local content to GitHub unless `--prefer github` is set for ID-scoped sync. Use `--import-issues` to scan GitHub for unlinked issues (slower). Missing issues are reported as warnings and sync continues.
+  - Sync work items with GitHub issues and branches (two-way, no deletes). Branches are only created when listed in `related.branches`. When local and GitHub issue content both diverge, sync fails unless `--prefer` is set or `github.sync.conflictDefault` is configured to `local`/`github`. Use `--import-issues` to scan GitHub for unlinked issues (slower). Missing issues are reported as warnings and sync continues.
   - Example: `workbench item sync --dry-run`
 
 - `workbench item list [--type <...>] [--status <...>] [--include-done]`
@@ -120,9 +127,9 @@ Commands:
   - Example: `workbench item status TASK-0042 in-progress --note "started implementation"`
 - Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
 
-- `workbench item close <ID> [--move]`
-  - Set status to `done`; optionally move the file to `docs/70-work/done`.
-  - Example: `workbench item close TASK-0042 --move`
+- `workbench item close <ID> [--no-move]`
+  - Set status to `done` and move the file to `docs/70-work/done` by default.
+  - Example: `workbench item close TASK-0042`
 - `workbench item normalize [--include-done] [--dry-run]`
   - Normalize work item front matter lists (e.g., tags, related lists).
   - Example: `workbench item normalize --include-done`
@@ -218,10 +225,11 @@ Recording visualization:
 Aliases and intent:
 - "verify all work" maps to `workbench validate` (use `--strict` for CI).
 
-Deprecated commands:
-- `workbench spec new/link/unlink` -> `workbench doc new/link/unlink --type spec`
-- `workbench adr new/link/unlink` -> `workbench doc new/link/unlink --type adr`
-- `workbench pr create` -> `workbench github pr create`
+Removed commands:
+- `workbench run` (replaced by `workbench guide`)
+- `workbench spec` (use `workbench doc ... --type spec`)
+- `workbench adr` (use `workbench doc ... --type adr`)
+- `workbench pr` (use `workbench github pr ...`)
 
 Dependencies:
 - Commands that read or write work items require a git repo.

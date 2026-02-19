@@ -1,8 +1,12 @@
 ---
 workbench:
   type: spec
-  workItems: []
+  workItems:
+    - TASK-0002
   codeRefs: []
+  pathHistory:
+    - "C:/docs/10-product/feature-spec-work-item-sync.md"
+  path: /docs/10-product/feature-spec-work-item-sync.md
 owner: platform
 status: draft
 updated: 2025-12-27
@@ -67,7 +71,7 @@ GitHub issues aligned and can create missing branches when a branch is listed.
 
 ## Related work items
 
-- [TASK-0002](/docs/70-work/items/TASK-0002-promote-existing-work-items-to-github-issues.md)
+- [TASK-0002](/docs/70-work/done/TASK-0002-promote-existing-work-items-to-github-issues.md)
 
 ## Related ADRs
 

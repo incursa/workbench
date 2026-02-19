@@ -57,6 +57,10 @@ public sealed record WorkbenchConfig(
             {
                 config = config with { Validation = new ValidationConfig() };
             }
+            if (config.Github is not null && config.Github.Sync is null)
+            {
+                config = config with { Github = config.Github with { Sync = new GithubSyncConfig() } };
+            }
             if (config.Tui is null)
             {
                 config = config with { Tui = new TuiConfig() };

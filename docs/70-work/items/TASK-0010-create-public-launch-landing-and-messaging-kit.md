@@ -13,8 +13,7 @@ tags:
 related:
   specs: []
   adrs: []
-  files:
-    - /docs/00-overview/workbench-public-release.md
+  files: []
   prs: []
   issues: []
   branches: []

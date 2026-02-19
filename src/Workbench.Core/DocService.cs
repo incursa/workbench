@@ -157,6 +157,11 @@ public static class DocService
 
         foreach (var docPath in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
         {
+            if (IsWorkItemDocumentPath(repoRoot, config, docPath))
+            {
+                continue;
+            }
+
             if (!TryLoadOrCreateFrontMatter(
                     docPath,
                     includeAllDocs,
@@ -263,6 +268,10 @@ public static class DocService
         {
             return false;
         }
+        if (IsWorkItemDocumentPath(repoRoot, config, fullDocPath))
+        {
+            return false;
+        }
 
         if (!TryLoadOrCreateFrontMatter(
                 docPath,
@@ -320,6 +329,11 @@ public static class DocService
 
         foreach (var docPath in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
         {
+            if (IsWorkItemDocumentPath(repoRoot, config, docPath))
+            {
+                continue;
+            }
+
             if (!TryLoadOrCreateFrontMatter(
                     docPath,
                     includeAllDocs,
@@ -768,6 +782,24 @@ public static class DocService
             return "doc";
         }
         return "doc";
+    }
+
+    private static bool IsWorkItemDocumentPath(string repoRoot, WorkbenchConfig config, string docPath)
+    {
+        var full = Path.GetFullPath(docPath);
+        var itemsRoot = Path.GetFullPath(Path.Combine(repoRoot, config.Paths.ItemsDir));
+        var doneRoot = Path.GetFullPath(Path.Combine(repoRoot, config.Paths.DoneDir));
+        var templatesRoot = Path.GetFullPath(Path.Combine(repoRoot, config.Paths.TemplatesDir));
+
+        return IsChildPath(full, itemsRoot) || IsChildPath(full, doneRoot) || IsChildPath(full, templatesRoot);
+    }
+
+    private static bool IsChildPath(string path, string root)
+    {
+        var normalizedRoot = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+        return path.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, root, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildBody(string type, string title)

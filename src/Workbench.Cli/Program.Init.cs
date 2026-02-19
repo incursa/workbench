@@ -1,4 +1,4 @@
-// CLI init workflow and interactive wizard.
+// CLI init workflow and interactive guide.
 // Orchestrates scaffolding, front matter sync, and optional AI configuration without changing core behavior.
 using System.Collections.Generic;
 using System.IO;
@@ -323,22 +323,22 @@ public partial class Program
         return new InitWorkflowResult(0, shouldRunWizard, summary);
     }
 
-    static int RunWizard(string repoRoot)
+    static int RunGuide(string repoRoot)
     {
         var summary = new List<string>();
-        Console.WriteLine("Workbench wizard");
+        Console.WriteLine("Workbench guide");
         var options = new List<(string Label, string Description)>
         {
             ("Create work item", "Guided creation of task, bug, or spike work items."),
             ("Create document", "Create a spec, ADR, runbook, guide, or general doc."),
             ("Regenerate workboard", "Refresh docs/70-work/README.md from current items."),
-            ("Exit", "Leave the wizard.")
+            ("Exit", "Leave the guide.")
         };
 
         var selection = PromptSelection("Choose what you want to do", options);
         if (selection == 3 || selection < 0)
         {
-            Console.WriteLine("Wizard exited.");
+            Console.WriteLine("Guide exited.");
             return 0;
         }
 
@@ -447,7 +447,7 @@ public partial class Program
             return 2;
         }
 
-        Console.WriteLine("Wizard summary:");
+        Console.WriteLine("Guide summary:");
         foreach (var entry in summary)
         {
             Console.WriteLine($"- {entry}");

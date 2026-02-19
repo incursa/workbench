@@ -15,4 +15,6 @@ public sealed record GithubConfig
     public string? Owner { get; init; }
     /// <summary>Default repository name when not provided by inputs.</summary>
     public string? Repository { get; init; }
+    /// <summary>Sync behavior defaults for GitHub mirroring.</summary>
+    public GithubSyncConfig Sync { get; init; } = new();
 }

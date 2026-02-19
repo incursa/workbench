@@ -3,6 +3,9 @@ workbench:
   type: guide
   workItems: []
   codeRefs: []
+  pathHistory:
+    - "C:/docs/20-architecture/README.md"
+  path: /docs/20-architecture/README.md
 owner: platform
 status: active
 updated: 2025-12-27

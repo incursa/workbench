@@ -4,6 +4,9 @@ workbench:
   workItems:
     - TASK-0001
   codeRefs: []
+  pathHistory:
+    - "C:/docs/10-product/feature-spec-cli-onboarding-wizard.md"
+  path: /docs/10-product/feature-spec-cli-onboarding-wizard.md
 owner: platform
 status: draft
 updated: 2025-12-27

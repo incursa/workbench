@@ -6,6 +6,9 @@ workbench:
     - TASK-0006
     - TASK-0007
   codeRefs: []
+  pathHistory:
+    - "C:/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md"
+  path: /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
 owner: platform
 status: accepted
 updated: 2025-12-30
@@ -43,4 +46,4 @@ provide a global dry-run toggle that labels outputs accordingly.
 - </docs/10-product/feature-spec-terminal-ui.md>
 
 ## Related work items
-- [TASK-0005](/docs/70-work/items/TASK-0005-plan-terminal-ui-mode.md)
+- [TASK-0005](/docs/70-work/done/TASK-0005-plan-terminal-ui-mode.md)

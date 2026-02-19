@@ -26,7 +26,12 @@
     "DefaultDraft": true,
     "Host": "",
     "Owner": "incursa",
-    "Repository": "workbench"
+    "Repository": "workbench",
+    "Sync": {
+      "Mode": "generate",
+      "ConflictDefault": "fail",
+      "ScheduleEnabled": false
+    }
   },
   "Validation": {
     "LinkExclude": [],
@@ -34,6 +39,7 @@
   },
   "Tui": {
     "Theme": "dark",
-    "UseEmoji": false
+    "UseEmoji": false,
+    "AutoRefreshSeconds": 0
   }
 }

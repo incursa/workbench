@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Workbench.Cli\Workbench.Cli.csproj" />
-    <ProjectReference Include="..\Workbench.Tui\Workbench.Tui.csproj" />
   </ItemGroup>
 
   <ItemGroup>

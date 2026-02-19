@@ -3,6 +3,9 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
+  pathHistory:
+    - "C:/docs/commands.md"
+  path: /docs/commands.md
 owner: platform
 status: active
 updated: 2025-12-27
@@ -233,6 +236,13 @@ Data:
   "branchesCreated": [
     { "itemId": "TASK-0042", "branch": "TASK-0042-add-docs" }
   ],
+  "conflicts": [
+    {
+      "itemId": "TASK-0042",
+      "issueUrl": "https://github.com/org/repo/issues/42",
+      "reason": "Local and GitHub issue content diverged. Re-run with --prefer."
+    }
+  ],
   "warnings": [
     "Issue not found: org/repo#183"
   ],
@@ -330,13 +340,28 @@ Data:
 
 ## workbench github pr create
 
-Deprecated: `workbench pr create` (use `workbench github pr create`).
-
 Data:
 ```json
 {
   "item": { /* WorkItem */ },
   "pr": { "url": "https://github.com/org/repo/pull/42", "number": 42, "base": "main" }
+}
+```
+
+## workbench migrate coherent-v1
+
+Data:
+```json
+{
+  "movedToDone": ["docs/70-work/items/TASK-0002-foo.md -> docs/70-work/done/TASK-0002-foo.md"],
+  "movedToItems": [],
+  "itemsNormalized": 3,
+  "docsUpdated": 2,
+  "itemLinksUpdated": 2,
+  "indexFilesUpdated": 3,
+  "workboardUpdated": 1,
+  "reportPath": "docs/60-tracking/migration-coherent-v1-2026-02-19.md",
+  "dryRun": false
 }
 ```
 

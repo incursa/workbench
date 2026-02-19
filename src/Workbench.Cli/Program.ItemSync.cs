@@ -20,7 +20,9 @@ public partial class Program
         bool dryRun)
     {
         var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
-        var preferGithub = string.Equals(prefer, "github", StringComparison.OrdinalIgnoreCase);
+        var preferredSource = ResolvePreferredSyncSource(config, prefer);
+        var preferGithub = string.Equals(preferredSource, "github", StringComparison.OrdinalIgnoreCase);
+        var failOnConflict = string.Equals(preferredSource, "fail", StringComparison.OrdinalIgnoreCase);
         var items = new List<WorkItem>();
         if (ids.Length > 0)
         {
@@ -143,6 +145,7 @@ public partial class Program
 
         var issuesUpdated = new List<ItemSyncIssueUpdateEntry>();
         var itemsUpdated = new List<ItemSyncItemUpdateEntry>();
+        var conflicts = new List<ItemSyncConflictEntry>();
         foreach (var item in items)
         {
             var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
@@ -156,16 +159,30 @@ public partial class Program
             {
                 continue;
             }
+
+            var summary = ExtractSection(item.Body, "Summary");
+            var itemNeedsUpdate = !StringsEqual(item.Title, issue.Title);
+            if (!itemNeedsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
+            {
+                itemNeedsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
+            }
+
+            var desiredTitle = item.Title;
+            var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
+            var issueNeedsUpdate = !StringsEqual(issue.Title, desiredTitle) || !StringsEqual(issue.Body, desiredBody);
+
+            if (failOnConflict && issueNeedsUpdate && itemNeedsUpdate)
+            {
+                conflicts.Add(new ItemSyncConflictEntry(
+                    item.Id,
+                    issue.Url,
+                    "Local and GitHub issue content diverged. Re-run with `--prefer local` or `--prefer github`."));
+                continue;
+            }
+
             if (preferGithub)
             {
-                // "Prefer GitHub" means overwriting local work item content when any drift is detected.
-                var summary = ExtractSection(item.Body, "Summary");
-                var needsUpdate = !StringsEqual(item.Title, issue.Title);
-                if (!needsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
-                {
-                    needsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
-                }
-                if (!needsUpdate)
+                if (!itemNeedsUpdate)
                 {
                     continue;
                 }
@@ -184,9 +201,7 @@ public partial class Program
                     continue;
                 }
 
-                var desiredTitle = item.Title;
-                var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
-                if (StringsEqual(issue.Title, desiredTitle) && StringsEqual(issue.Body, desiredBody))
+                if (!issueNeedsUpdate)
                 {
                     continue;
                 }
@@ -252,6 +267,6 @@ public partial class Program
             }
         }
 
-        return new ItemSyncData(imported, issuesCreated, issuesUpdated, itemsUpdated, branchesCreated, warnings, dryRun);
+        return new ItemSyncData(imported, issuesCreated, issuesUpdated, itemsUpdated, branchesCreated, conflicts, warnings, dryRun);
     }
 }

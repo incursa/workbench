@@ -49,9 +49,26 @@ public partial class Program
         return string.Equals(left?.Trim(), right?.Trim(), StringComparison.Ordinal);
     }
 
-    static void PrintDeprecation(string oldCommand, string newCommand)
+    static string ResolvePreferredSyncSource(WorkbenchConfig config, string? prefer)
     {
-        Console.WriteLine($"Deprecated: `{oldCommand}`. Use `{newCommand}` instead.");
+        if (!string.IsNullOrWhiteSpace(prefer))
+        {
+            var normalized = prefer.Trim().ToLowerInvariant();
+            if (normalized is "local" or "github")
+            {
+                return normalized;
+            }
+            throw new InvalidOperationException("Invalid sync preference. Use 'local' or 'github'.");
+        }
+
+        var configured = config.Github.Sync.ConflictDefault?.Trim().ToLowerInvariant();
+        return configured switch
+        {
+            "local" => "local",
+            "github" => "github",
+            "fail" or null or "" => "fail",
+            _ => "fail"
+        };
     }
 
     static bool TryResolveDocLinkType(string? type, out string resolved)

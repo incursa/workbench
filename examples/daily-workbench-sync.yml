@@ -1,4 +1,4 @@
-name: Daily Workbench Sync
+name: Daily Workbench Sync (Generate Mode)
 
 on:
   schedule:
@@ -40,7 +40,7 @@ jobs:
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           workbench config set --path github.provider --value octokit
-          workbench sync --include-done --force --issues true
+          workbench sync --docs --nav --include-done --force --workboard true
 
       - name: Validate repo
         run: |

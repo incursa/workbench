@@ -4,6 +4,9 @@ workbench:
   workItems: []
   codeRefs: []
   changeNotes: []
+  pathHistory:
+    - "C:/docs/60-tracking/ai-change-notes.md"
+  path: /docs/60-tracking/ai-change-notes.md
 owner: platform
 status: draft
 updated: 2025-12-27

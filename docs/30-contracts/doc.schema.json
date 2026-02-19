@@ -22,7 +22,12 @@
     "created_utc": { "type": "string" },
     "updated_utc": { "type": "string" },
     "tags": { "type": "array", "items": { "type": "string" } },
-    "related": { "type": "array", "items": { "type": "string" } },
+    "related": {
+      "oneOf": [
+        { "type": "array", "items": { "type": "string" } },
+        { "type": "object", "additionalProperties": true }
+      ]
+    },
     "status": { "type": "string" },
     "source": {
       "type": "object",

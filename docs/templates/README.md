@@ -3,7 +3,10 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
-owner: <owner>
+  pathHistory:
+    - "C:/docs/templates/README.md"
+  path: /docs/templates/README.md
+owner: "<owner>"
 status: template
 updated: 0000-00-00
 ---

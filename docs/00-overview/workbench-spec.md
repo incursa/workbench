@@ -3,6 +3,9 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
+  pathHistory:
+    - "C:/docs/00-overview/workbench-spec.md"
+  path: /docs/00-overview/workbench-spec.md
 owner: platform
 status: active
 updated: 2025-12-27
@@ -313,15 +316,19 @@ Checks prerequisites and workspace:
 - paths exist (warn if not scaffolded)
 Use `--json` for machine-readable output.
 
-#### workbench init [--force] [--skip-wizard] [--non-interactive] [--front-matter] [--configure-openai] [...]
+#### workbench init [--force] [--skip-guide] [--non-interactive] [--front-matter] [--configure-openai] [...]
 Guided setup for scaffolding, front matter guidance, and OpenAI configuration.
-Runs the `run` wizard afterward unless `--skip-wizard` is set.
+Runs the `guide` flow afterward unless `--skip-guide` is set.
 
-#### workbench run
-Launches the interactive wizard for common document/work item actions.
+#### workbench guide
+Launches the interactive guide for common document/work item actions.
 
 #### workbench sync [--items] [--docs] [--nav] [--issues <true|false>] [--import-issues] [--include-done] [--force] [--dry-run] [--prefer <local|github>]
 Runs the full repository sync in order: work items ↔ GitHub issues, doc backlinks/front matter, then navigation indexes. When no step flags are provided, runs all.
+
+#### workbench migrate coherent-v1 [--dry-run]
+Runs the coherence migration: enforces folder/status placement for work items,
+normalizes links, and regenerates navigation/workboard outputs.
 
 #### workbench scaffold [--force]
 Creates the default folder structure, templates, and config.
