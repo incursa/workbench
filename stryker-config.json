@@ -1,0 +1,25 @@
+{
+  "stryker-config": {
+    "solution-path": "Workbench.slnx",
+    "project": "src/Workbench.Core/Workbench.Core.csproj",
+    "test-projects": [
+      "tests/Workbench.Tests/Workbench.Tests.csproj"
+    ],
+    "mutate": [
+      "**/FrontMatter.cs",
+      "**/SchemaValidationService.cs",
+      "**/ValidationService.cs",
+      "**/WorkItemService.cs"
+    ],
+    "thresholds": {
+      "high": 75,
+      "low": 65,
+      "break": 65
+    },
+    "reporters": [
+      "progress",
+      "html",
+      "cleartext"
+    ]
+  }
+}

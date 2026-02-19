@@ -25,6 +25,9 @@ Current schemas:
 
 Other contract docs:
 - `docs/30-contracts/cli-help.md`
+- `docs/30-contracts/error-codes.md`
+- `docs/30-contracts/test-gate.contract.yaml`
+- `docs/30-contracts/test-matrix.md`
 
 ## Guidance
 

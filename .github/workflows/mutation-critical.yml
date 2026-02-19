@@ -1,0 +1,32 @@
+name: Mutation (Critical Surface)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 9 * * 1"
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install Stryker
+        run: dotnet tool install --global dotnet-stryker --version 4.*
+
+      - name: Run mutation tests
+        run: dotnet stryker --config-file stryker-config.json
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: |
+            StrykerOutput/**

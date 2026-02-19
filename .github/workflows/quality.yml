@@ -4,11 +4,8 @@ on:
   pull_request:
     paths-ignore:
       - ".github/**"
-      - "docs/**"
       - "assets/**"
       - "examples/**"
-      - "testdata/**"
-      - "**/*.md"
   push:
     branches:
       - main
@@ -20,11 +17,8 @@ on:
       - hotfix/**
     paths-ignore:
       - ".github/**"
-      - "docs/**"
       - "assets/**"
       - "examples/**"
-      - "testdata/**"
-      - "**/*.md"
 
 jobs:
   verify:
@@ -57,6 +51,21 @@ jobs:
 
       - name: Test (integration)
         run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release
+
+      - name: Collect coverage (contract gate)
+        run: dotnet test --solution Workbench.slnx --no-build --configuration Release -- --coverage --coverage-output-format cobertura --coverage-output artifacts/coverage/coverage.cobertura.xml
+
+      - name: Verify critical coverage contract
+        shell: pwsh
+        run: ./scripts/testing/verify-critical-coverage.ps1 -ContractPath docs/30-contracts/test-gate.contract.yaml -CoverageSearchRoot tests
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cobertura
+          path: |
+            tests/**/coverage.cobertura.xml
 
       - name: Pack (repro 1)
         shell: bash

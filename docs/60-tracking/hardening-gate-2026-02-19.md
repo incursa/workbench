@@ -25,13 +25,20 @@ This checklist is the release bar before upgrading other repositories to this mo
   - JSON error envelope in non-git repo,
   - global options after subcommand.
 - [x] Run integration tests in CI and quality gates (not only unit tests).
-
-## Remaining before broad rollout
-
-- [ ] Extend CI-required smoke matrix for:
+- [x] Add contract docs for testing and failures:
+  - `docs/30-contracts/test-gate.contract.yaml`
+  - `docs/30-contracts/test-matrix.md`
+  - `docs/30-contracts/error-codes.md`
+- [x] Add critical-surface coverage verification script (`scripts/testing/verify-critical-coverage.ps1`).
+- [x] Add targeted parser/schema fuzz tests for resilience in `tests/Workbench.Tests/ParserFuzzTests.cs`.
+- [x] Add scheduled mutation workflow for critical core files (`.github/workflows/mutation-critical.yml`).
+- [x] Extend CI-required smoke matrix for:
   - non-git folder,
   - git repo without scaffold,
   - malformed config.
+
+## Remaining before broad rollout
+
 - [ ] Replace or re-enable currently skipped integration scenarios so release gates are fully enforced.
 - [ ] Run and document a two-repo external trial (one clean, one messy legacy) with zero unhandled exceptions.
 - [ ] Publish final operator runbook for cross-repo migration and rollback.

@@ -1,0 +1,26 @@
+version: 1
+
+scope:
+  includes:
+    - src/Workbench.Cli
+    - src/Workbench.Core
+  excludes:
+    - src/Workbench.Tui
+
+coverage:
+  lineMin: 0.55
+  branchMin: 0.50
+  criticalFiles:
+    - src/Workbench.Core/FrontMatter.cs
+    - src/Workbench.Core/SchemaValidationService.cs
+    - src/Workbench.Core/ValidationService.cs
+
+scenarios:
+  requiredTests:
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::Doctor_NonGitRepo_ReturnsFriendlyErrorWithoutStackTrace
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::Doctor_NonGitRepo_JsonFormatAfterCommand_ReturnsErrorEnvelope
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::Doctor_GitRepoWithoutScaffold_ReturnsWarningsInJson
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::ConfigShow_MalformedConfig_ReturnsConfigError
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::ValidateStrict_MissingSchemas_ReturnsErrors
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::Doctor_NonGitRepo_DebugIncludesExceptionDetails
+    - tests/Workbench.IntegrationTests/ResilienceTests.cs::ItemList_GlobalOptionsAfterSubcommand_AreAccepted

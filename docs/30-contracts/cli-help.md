@@ -23,6 +23,7 @@ Global options:
 - `--format table|json`: output format (default: table)
 - `--no-color`: disable colored output
 - `--quiet`: suppress non-error output
+- `--debug`: print full exception diagnostics on failure
 
 Config:
 - Repo config path: `.workbench/config.json`
@@ -38,15 +39,8 @@ Exit codes:
 - `1`: success with warnings (validate/doctor only)
 - `2`: command failed due to errors
 
-Common error codes:
-- `WB001`: not a git repo / repo not found
-- `WB002`: git not installed / not callable
-- `WB010`: config parse or schema error
-- `WB020`: work item not found by ID
-- `WB030`: front matter schema invalid
-- `WB040`: validation error (broken link, duplicate ID, etc.)
-- `WB050`: git command failed
-- `WB060`: GitHub provider failed
+Error code contract:
+- See `docs/30-contracts/error-codes.md` for machine-readable failure codes and semantics.
 
 Commands:
 

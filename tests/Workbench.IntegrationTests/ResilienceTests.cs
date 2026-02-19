@@ -6,6 +6,35 @@ namespace Workbench.IntegrationTests;
 public class ResilienceTests
 {
     [TestMethod]
+    public void Doctor_GitRepoWithoutScaffold_ReturnsWarningsInJson()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "doctor",
+            "--json");
+
+        Assert.AreEqual(1, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        var payload = TestAssertions.ParseJson(result.StdOut);
+        Assert.IsTrue(payload.GetProperty("ok").GetBoolean());
+        var checks = payload.GetProperty("data").GetProperty("checks").EnumerateArray().ToList();
+        Assert.IsTrue(
+            checks.Any(c =>
+                string.Equals(c.GetProperty("name").GetString(), "config", StringComparison.Ordinal)
+                && string.Equals(c.GetProperty("status").GetString(), "warn", StringComparison.Ordinal)),
+            result.StdOut);
+        Assert.IsTrue(
+            checks.Any(c =>
+                string.Equals(c.GetProperty("name").GetString(), "paths", StringComparison.Ordinal)
+                && string.Equals(c.GetProperty("status").GetString(), "warn", StringComparison.Ordinal)),
+            result.StdOut);
+    }
+
+    [TestMethod]
     public void Doctor_NonGitRepo_ReturnsFriendlyErrorWithoutStackTrace()
     {
         using var repo = TempRepo.Create();
@@ -21,6 +50,22 @@ public class ResilienceTests
         StringAssert.Contains(result.StdErr, "Hint: Run `git init` in the target directory, or pass `--repo <path>` for an existing repository.", StringComparison.Ordinal);
         Assert.IsFalse(result.StdErr.Contains("System.InvalidOperationException", StringComparison.Ordinal), result.StdErr);
         Assert.IsFalse(result.StdErr.Contains(" at Workbench.", StringComparison.Ordinal), result.StdErr);
+    }
+
+    [TestMethod]
+    public void Doctor_NonGitRepo_DebugIncludesExceptionDetails()
+    {
+        using var repo = TempRepo.Create();
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--debug",
+            "doctor");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        StringAssert.Contains(result.StdErr, "System.InvalidOperationException", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -44,6 +89,54 @@ public class ResilienceTests
         Assert.AreEqual("Target path is not inside a git repository.", error.GetProperty("message").GetString());
         Assert.IsFalse(string.IsNullOrWhiteSpace(error.GetProperty("hint").GetString()));
         Assert.IsFalse(result.StdErr.Contains("System.InvalidOperationException", StringComparison.Ordinal), result.StdErr);
+    }
+
+    [TestMethod]
+    public void ConfigShow_MalformedConfig_ReturnsConfigError()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+        var workbenchDir = Path.Combine(repo.Path, ".workbench");
+        Directory.CreateDirectory(workbenchDir);
+        File.WriteAllText(Path.Combine(workbenchDir, "config.json"), "{ invalid");
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "config",
+            "show");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        StringAssert.Contains(result.StdOut, "Config error:", StringComparison.Ordinal);
+        Assert.IsFalse(result.StdErr.Contains("System.", StringComparison.Ordinal), result.StdErr);
+    }
+
+    [TestMethod]
+    public void ValidateStrict_MissingSchemas_ReturnsErrors()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+
+        TestAssertions.RunWorkbenchAndAssertSuccess(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "scaffold");
+
+        File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "work-item.schema.json"));
+        File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "workbench-config.schema.json"));
+        File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "doc.schema.json"));
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "validate",
+            "--strict");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        StringAssert.Contains(result.StdOut, "schema not found at", StringComparison.Ordinal);
     }
 
     [TestMethod]

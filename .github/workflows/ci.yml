@@ -5,19 +5,13 @@ on:
     branches: ["**"]
     paths-ignore:
       - ".github/**"
-      - "docs/**"
       - "assets/**"
       - "examples/**"
-      - "testdata/**"
-      - "**/*.md"
   pull_request:
     paths-ignore:
       - ".github/**"
-      - "docs/**"
       - "assets/**"
       - "examples/**"
-      - "testdata/**"
-      - "**/*.md"
   workflow_dispatch:
     inputs:
       run_integration_tests:

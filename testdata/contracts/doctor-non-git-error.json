@@ -1,0 +1,8 @@
+{
+  "ok": false,
+  "error": {
+    "code": "repo_not_git",
+    "message": "Target path is not inside a git repository.",
+    "hint": "Run `git init` in the target directory, or pass `--repo <path>` for an existing repository."
+  }
+}
