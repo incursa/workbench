@@ -1,8 +1,72 @@
+using System.Text.Json;
+
 namespace Workbench.IntegrationTests;
 
 [TestClass]
 public class MigrationCommandTests
 {
+    [TestMethod]
+    public void MigrateCoherentV1_DryRunReportsWithoutMovingFiles()
+    {
+        using var repo = TempRepo.Create();
+        InitializeGitRepo(repo.Path);
+
+        var scaffold = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "scaffold");
+        Assert.AreEqual(0, scaffold.ExitCode, $"stderr: {scaffold.StdErr}\nstdout: {scaffold.StdOut}");
+
+        var created = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--format",
+            "json",
+            "item",
+            "new",
+            "--type",
+            "task",
+            "--title",
+            "Dry run target",
+            "--status",
+            "done");
+        Assert.AreEqual(0, created.ExitCode, $"stderr: {created.StdErr}\nstdout: {created.StdOut}");
+
+        var createdJson = TestAssertions.ParseJson(created.StdOut);
+        var itemPath = createdJson.GetProperty("data").GetProperty("path").GetString();
+        Assert.IsFalse(string.IsNullOrWhiteSpace(itemPath));
+        Assert.IsTrue(File.Exists(itemPath!), itemPath);
+
+        var migrate = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--format",
+            "json",
+            "migrate",
+            "coherent-v1",
+            "--dry-run");
+        Assert.AreEqual(0, migrate.ExitCode, $"stderr: {migrate.StdErr}\nstdout: {migrate.StdOut}");
+
+        var migrateJson = TestAssertions.ParseJson(migrate.StdOut);
+        var data = migrateJson.GetProperty("data");
+        var movedToDone = data.GetProperty("movedToDone");
+        Assert.IsTrue(data.GetProperty("dryRun").GetBoolean());
+        Assert.AreEqual(JsonValueKind.Null, data.GetProperty("reportPath").ValueKind);
+        Assert.IsGreaterThanOrEqualTo(movedToDone.GetArrayLength(), 1, migrate.StdOut);
+
+        var doneFile = Path.Combine(
+            repo.Path,
+            "docs",
+            "70-work",
+            "done",
+            Path.GetFileName(itemPath)!);
+        Assert.IsFalse(File.Exists(doneFile), doneFile);
+        Assert.IsTrue(File.Exists(itemPath), itemPath);
+    }
+
     [TestMethod]
     public void MigrateCoherentV1_MovesTerminalItemsToDoneDirectory()
     {
