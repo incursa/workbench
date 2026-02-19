@@ -40,7 +40,7 @@ public partial class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            ReportError(ex);
             SetExitCode(2);
         }
     }
@@ -94,7 +94,7 @@ public partial class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            ReportError(ex);
             SetExitCode(2);
         }
     }
@@ -197,7 +197,7 @@ public partial class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            ReportError(ex);
             SetExitCode(2);
         }
     }

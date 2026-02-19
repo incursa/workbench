@@ -77,7 +77,8 @@ public partial class Program
                 catch (Exception ex)
                 {
                     // Cache failures to avoid repeated network calls for missing/unauthorized issues.
-                    warnings.Add($"Issue fetch failed: {key} ({ex})");
+                    var reason = runtimeDebugEnabled ? ex.ToString() : ex.GetType().Name;
+                    warnings.Add($"Issue fetch failed: {key} ({reason})");
                     missingIssues.Add(key);
                     return (null, issueRef);
                 }

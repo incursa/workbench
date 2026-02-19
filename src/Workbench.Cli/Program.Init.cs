@@ -177,8 +177,8 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Front matter update failed: {ex}");
-                summary.Add("Front matter update failed.");
+                Console.WriteLine("Front matter update failed.");
+                summary.Add($"Front matter update failed ({ex.GetType().Name}).");
             }
         }
         else
@@ -443,7 +443,7 @@ public partial class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            ReportError(ex);
             return 2;
         }
 

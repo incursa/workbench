@@ -6,6 +6,7 @@ namespace Workbench.Core;
     PropertyNameCaseInsensitive = true,
     WriteIndented = true)]
 [JsonSerializable(typeof(WorkbenchConfig))]
+[JsonSerializable(typeof(CliErrorOutput))]
 [JsonSerializable(typeof(WorkItemDraft))]
 [JsonSerializable(typeof(DocDraft))]
 [JsonSerializable(typeof(DoctorOutput))]

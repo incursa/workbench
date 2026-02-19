@@ -13,6 +13,201 @@ namespace Workbench.Cli;
 
 public partial class Program
 {
+    static bool runtimeDebugEnabled;
+    static string runtimeFormat = "table";
+
+    static string[] NormalizeGlobalOptions(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            return args;
+        }
+
+        var front = new List<string>();
+        var remaining = new List<string>();
+
+        var i = 0;
+        while (i < args.Length)
+        {
+            var arg = args[i];
+            if (string.Equals(arg, "--repo", StringComparison.Ordinal))
+            {
+                if (i + 1 < args.Length)
+                {
+                    front.Add("--repo");
+                    front.Add(args[i + 1]);
+                    i += 2;
+                    continue;
+                }
+                remaining.Add(arg);
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--repo=", StringComparison.Ordinal))
+            {
+                front.Add("--repo");
+                front.Add(arg["--repo=".Length..]);
+                i++;
+                continue;
+            }
+
+            if (string.Equals(arg, "--format", StringComparison.Ordinal))
+            {
+                if (i + 1 < args.Length)
+                {
+                    front.Add("--format");
+                    front.Add(args[i + 1]);
+                    i += 2;
+                    continue;
+                }
+                remaining.Add(arg);
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--format=", StringComparison.Ordinal))
+            {
+                front.Add("--format");
+                front.Add(arg["--format=".Length..]);
+                i++;
+                continue;
+            }
+
+            if (string.Equals(arg, "--no-color", StringComparison.Ordinal)
+                || string.Equals(arg, "--quiet", StringComparison.Ordinal)
+                || string.Equals(arg, "--debug", StringComparison.Ordinal))
+            {
+                front.Add(arg);
+                i++;
+                continue;
+            }
+
+            remaining.Add(arg);
+            i++;
+        }
+
+        if (front.Count == 0)
+        {
+            return args;
+        }
+
+        front.AddRange(remaining);
+        return front.ToArray();
+    }
+
+    static void InitializeRuntimeContext(string[] args)
+    {
+        runtimeFormat = ResolveFormat(ResolveFormatFromArgs(args) ?? "table");
+        runtimeDebugEnabled = ResolveDebugFromArgs(args) || IsTruthy(Environment.GetEnvironmentVariable("WORKBENCH_DEBUG"));
+    }
+
+    static string? ResolveFormatFromArgs(string[] args)
+    {
+        string? format = null;
+        var index = 0;
+        while (index < args.Length)
+        {
+            var arg = args[index];
+            if (string.Equals(arg, "--format", StringComparison.Ordinal))
+            {
+                if (index + 1 < args.Length)
+                {
+                    format = args[index + 1];
+                    index += 2;
+                    continue;
+                }
+                index++;
+                continue;
+            }
+
+            if (arg.StartsWith("--format=", StringComparison.Ordinal))
+            {
+                format = arg["--format=".Length..];
+            }
+            index++;
+        }
+        return format;
+    }
+
+    static bool ResolveDebugFromArgs(string[] args)
+    {
+        return args.Any(arg => string.Equals(arg, "--debug", StringComparison.Ordinal));
+    }
+
+    static bool IsTruthy(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return value.Trim().ToLowerInvariant() is "1" or "true" or "yes" or "on";
+    }
+
+    static void ReportError(Exception ex, string? format = null)
+    {
+        var error = MapCliError(ex);
+        var resolvedFormat = ResolveFormat(format ?? runtimeFormat);
+        if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            var payload = new CliErrorOutput(
+                false,
+                error);
+            WriteJson(payload, WorkbenchJsonContext.Default.CliErrorOutput);
+            if (runtimeDebugEnabled)
+            {
+                Console.Error.WriteLine(ex);
+            }
+            return;
+        }
+
+        Console.Error.WriteLine($"Error: {error.Message}");
+        if (!string.IsNullOrWhiteSpace(error.Hint))
+        {
+            Console.Error.WriteLine($"Hint: {error.Hint}");
+        }
+        if (runtimeDebugEnabled)
+        {
+            Console.Error.WriteLine(ex);
+        }
+    }
+
+    static CliErrorData MapCliError(Exception ex)
+    {
+        var message = string.IsNullOrWhiteSpace(ex.Message) ? "Unexpected error." : ex.Message.Trim();
+
+        if (ex is InvalidOperationException &&
+            string.Equals(message, "Not a git repository.", StringComparison.Ordinal))
+        {
+            return new CliErrorData(
+                "repo_not_git",
+                "Target path is not inside a git repository.",
+                "Run `git init` in the target directory, or pass `--repo <path>` for an existing repository.");
+        }
+
+        if (ex is UnauthorizedAccessException)
+        {
+            return new CliErrorData(
+                "access_denied",
+                "Access denied while reading or writing repository files.",
+                "Check file permissions and retry.");
+        }
+
+        if (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return new CliErrorData(
+                "path_not_found",
+                message,
+                "Verify the referenced file or directory exists.");
+        }
+
+        return new CliErrorData(
+            "unexpected_error",
+            message,
+            runtimeDebugEnabled ? null : "Re-run with `--debug` for full diagnostics.");
+    }
+
     static string ResolveRepo(string? repoArg)
     {
         var envRepo = Environment.GetEnvironmentVariable("WORKBENCH_REPO");

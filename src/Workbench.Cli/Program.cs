@@ -20,6 +20,8 @@ public partial class Program
     /// <returns>Exit code to return to the host process.</returns>
     public async static Task<int> RunAsync(string[] args)
     {
+        args = NormalizeGlobalOptions(args);
+        InitializeRuntimeContext(args);
 
         var repoOption = new Option<string?>("--repo")
         {
@@ -43,11 +45,17 @@ public partial class Program
             Description = "Suppress non-error output"
         };
 
+        var debugOption = new Option<bool>("--debug")
+        {
+            Description = "Print full exception diagnostics on failure."
+        };
+
         var root = new RootCommand("Incursa Workbench CLI");
         root.Options.Add(repoOption);
         root.Options.Add(formatOption);
         root.Options.Add(noColorOption);
         root.Options.Add(quietOption);
+        root.Options.Add(debugOption);
 
         var versionCommand = new Command("version", "Print CLI version.");
         versionCommand.SetAction(parseResult =>
@@ -293,7 +301,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -386,7 +394,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -435,7 +443,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -474,7 +482,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -540,7 +548,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -603,7 +611,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -647,7 +655,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -749,7 +757,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -839,7 +847,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -931,7 +939,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1046,7 +1054,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1120,7 +1128,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1174,7 +1182,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1231,7 +1239,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1291,7 +1299,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1344,7 +1352,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1397,7 +1405,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1450,7 +1458,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1523,7 +1531,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1668,7 +1676,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1813,7 +1821,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1901,7 +1909,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -1940,7 +1948,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2070,7 +2078,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2358,7 +2366,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2529,7 +2537,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2636,7 +2644,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2727,7 +2735,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2846,7 +2854,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -2953,7 +2961,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -3180,7 +3188,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -3198,7 +3206,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -3266,7 +3274,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
@@ -3393,7 +3401,7 @@ public partial class Program
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                ReportError(ex);
                 SetExitCode(2);
             }
         });
