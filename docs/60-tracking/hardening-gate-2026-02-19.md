@@ -3,7 +3,8 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
-  pathHistory: []
+  pathHistory:
+    - "C:/docs/60-tracking/hardening-gate-2026-02-19.md"
   path: /docs/60-tracking/hardening-gate-2026-02-19.md
 owner: platform
 status: active
@@ -41,9 +42,9 @@ This checklist is the release bar before upgrading other repositories to this mo
 
 - [x] Replace or re-enable currently skipped integration scenarios so release gates are fully enforced.
 - [ ] Run and document a two-repo external trial (one clean, one messy legacy) with zero unhandled exceptions.
-- [ ] Publish final operator runbook for cross-repo migration and rollback.
+- [x] Publish final operator runbook for cross-repo migration and rollback.
 
 ## Current recommendation
 
 - Pilot rollouts are safe.
-- Broad rollout can begin with controlled onboarding if the runbook is published and the two-repo trial completes without regressions.
+- Broad rollout should proceed after the two-repo external trial completes without regressions.

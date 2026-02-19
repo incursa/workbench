@@ -18,6 +18,9 @@ Operational procedures, troubleshooting, and release playbooks.
 Templates:
 - `docs/templates/runbook.md`
 
+Published runbooks:
+- `docs/50-runbooks/cross-repo-migration-and-rollback.md`
+
 ## Include
 
 - Preconditions and access requirements.
