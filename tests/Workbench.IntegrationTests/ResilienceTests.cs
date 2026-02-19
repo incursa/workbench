@@ -163,4 +163,51 @@ public class ResilienceTests
         Assert.IsTrue(payload.GetProperty("ok").GetBoolean());
         Assert.AreEqual(JsonValueKind.Array, payload.GetProperty("data").GetProperty("items").ValueKind);
     }
+
+    [TestMethod]
+    public void RepoSync_IssuesFalse_DoesNotRequireGithubProviderForItemStep()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+
+        TestAssertions.RunWorkbenchAndAssertSuccess(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "scaffold");
+
+        TestAssertions.RunWorkbenchAndAssertSuccess(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "item",
+            "new",
+            "--type",
+            "task",
+            "--title",
+            "Local-only sync test item");
+
+        var configPath = Path.Combine(repo.Path, ".workbench", "config.json");
+        var configJson = File.ReadAllText(configPath);
+        File.WriteAllText(
+            configPath,
+            configJson.Replace("\"Provider\": \"octokit\"", "\"Provider\": \"broken-provider\"", StringComparison.Ordinal));
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--format",
+            "json",
+            "sync",
+            "--issues",
+            "false");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        var payload = TestAssertions.ParseJson(result.StdOut);
+        Assert.IsTrue(payload.GetProperty("ok").GetBoolean(), result.StdOut);
+        var itemData = payload.GetProperty("data").GetProperty("items");
+        Assert.AreEqual(0, itemData.GetProperty("issuesCreated").GetArrayLength(), result.StdOut);
+        Assert.AreEqual(0, itemData.GetProperty("issuesUpdated").GetArrayLength(), result.StdOut);
+    }
 }

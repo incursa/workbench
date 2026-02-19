@@ -17,9 +17,15 @@ public partial class Program
         string[] issueInputs,
         bool importIssues,
         string? prefer,
-        bool dryRun)
+        bool dryRun,
+        bool syncIssues = true)
     {
-        var defaultRepo = GithubService.ResolveRepo(repoRoot, config);
+        GithubRepoRef? defaultRepo = null;
+        if (syncIssues)
+        {
+            defaultRepo = GithubService.ResolveRepo(repoRoot, config);
+        }
+
         var preferredSource = ResolvePreferredSyncSource(config, prefer);
         var preferGithub = string.Equals(preferredSource, "github", StringComparison.OrdinalIgnoreCase);
         var failOnConflict = string.Equals(preferredSource, "fail", StringComparison.OrdinalIgnoreCase);
@@ -39,19 +45,22 @@ public partial class Program
         }
 
         var issueMap = new Dictionary<string, WorkItem>(StringComparer.OrdinalIgnoreCase);
-        foreach (var item in items)
+        if (syncIssues)
         {
-            foreach (var entry in item.Related.Issues)
+            foreach (var item in items)
             {
-                if (string.IsNullOrWhiteSpace(entry))
+                foreach (var entry in item.Related.Issues)
                 {
-                    continue;
-                }
-                var issueRef = GithubService.ParseIssueReference(entry, defaultRepo);
-                var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
-                if (!issueMap.ContainsKey(key))
-                {
-                    issueMap[key] = item;
+                    if (string.IsNullOrWhiteSpace(entry))
+                    {
+                        continue;
+                    }
+                    var issueRef = GithubService.ParseIssueReference(entry, defaultRepo!);
+                    var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
+                    if (!issueMap.ContainsKey(key))
+                    {
+                        issueMap[key] = item;
+                    }
                 }
             }
         }
@@ -61,7 +70,7 @@ public partial class Program
         var warnings = new List<string>();
         async Task<(GithubIssue? Issue, GithubIssueRef Ref)> TryFetchIssueAsync(string issueLink)
         {
-            GithubIssueRef issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo);
+            GithubIssueRef issueRef = GithubService.ParseIssueReference(issueLink, defaultRepo!);
             var key = $"{issueRef.Repo.Display}#{issueRef.Number.ToString(CultureInfo.InvariantCulture)}";
             if (missingIssues.Contains(key))
             {
@@ -88,7 +97,11 @@ public partial class Program
 
         var imported = new List<ItemSyncImportEntry>();
         IList<GithubIssue> issuesToImport;
-        if (issueInputs.Length > 0)
+        if (!syncIssues)
+        {
+            issuesToImport = Array.Empty<GithubIssue>();
+        }
+        else if (issueInputs.Length > 0)
         {
             var selected = new List<GithubIssue>();
             foreach (var input in issueInputs)
@@ -109,7 +122,7 @@ public partial class Program
         else
         {
             issuesToImport = importIssues
-                ? await GithubService.ListIssuesAsync(repoRoot, config, defaultRepo)
+                ? await GithubService.ListIssuesAsync(repoRoot, config, defaultRepo!)
                     .ConfigureAwait(false) : Array.Empty<GithubIssue>();
         }
 
@@ -147,98 +160,104 @@ public partial class Program
         var issuesUpdated = new List<ItemSyncIssueUpdateEntry>();
         var itemsUpdated = new List<ItemSyncItemUpdateEntry>();
         var conflicts = new List<ItemSyncConflictEntry>();
-        foreach (var item in items)
+        if (syncIssues)
         {
-            var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
-            if (string.IsNullOrWhiteSpace(issueLink))
+            foreach (var item in items)
             {
-                continue;
-            }
-
-            var (issue, issueRef) = await TryFetchIssueAsync(issueLink).ConfigureAwait(false);
-            if (issue is null)
-            {
-                continue;
-            }
-
-            var summary = ExtractSection(item.Body, "Summary");
-            var itemNeedsUpdate = !StringsEqual(item.Title, issue.Title);
-            if (!itemNeedsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
-            {
-                itemNeedsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
-            }
-
-            var desiredTitle = item.Title;
-            var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
-            var issueNeedsUpdate = !StringsEqual(issue.Title, desiredTitle) || !StringsEqual(issue.Body, desiredBody);
-
-            if (failOnConflict && issueNeedsUpdate && itemNeedsUpdate)
-            {
-                conflicts.Add(new ItemSyncConflictEntry(
-                    item.Id,
-                    issue.Url,
-                    "Local and GitHub issue content diverged. Re-run with `--prefer local` or `--prefer github`."));
-                continue;
-            }
-
-            if (preferGithub)
-            {
-                if (!itemNeedsUpdate)
+                var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
+                if (string.IsNullOrWhiteSpace(issueLink))
                 {
                     continue;
                 }
 
-                if (!dryRun)
-                {
-                    WorkItemService.UpdateItemFromGithubIssue(item.Path, issue, apply: true);
-                }
-                itemsUpdated.Add(new ItemSyncItemUpdateEntry(item.Id, issue.Url));
-            }
-            else
-            {
-                if (IsTerminalStatus(item.Status))
-                {
-                    // Terminal items do not push updates back to GitHub.
-                    continue;
-                }
-
-                if (!issueNeedsUpdate)
+                var (issue, issueRef) = await TryFetchIssueAsync(issueLink).ConfigureAwait(false);
+                if (issue is null)
                 {
                     continue;
                 }
 
-                if (!dryRun)
+                var summary = ExtractSection(item.Body, "Summary");
+                var itemNeedsUpdate = !StringsEqual(item.Title, issue.Title);
+                if (!itemNeedsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
                 {
-                    await GithubService.UpdateIssueAsync(repoRoot, config, issueRef, desiredTitle, desiredBody).ConfigureAwait(false);
-                    WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
+                    itemNeedsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
                 }
-                issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
+
+                var desiredTitle = item.Title;
+                var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo!, config.Git.DefaultBaseBranch);
+                var issueNeedsUpdate = !StringsEqual(issue.Title, desiredTitle) || !StringsEqual(issue.Body, desiredBody);
+
+                if (failOnConflict && issueNeedsUpdate && itemNeedsUpdate)
+                {
+                    conflicts.Add(new ItemSyncConflictEntry(
+                        item.Id,
+                        issue.Url,
+                        "Local and GitHub issue content diverged. Re-run with `--prefer local` or `--prefer github`."));
+                    continue;
+                }
+
+                if (preferGithub)
+                {
+                    if (!itemNeedsUpdate)
+                    {
+                        continue;
+                    }
+
+                    if (!dryRun)
+                    {
+                        WorkItemService.UpdateItemFromGithubIssue(item.Path, issue, apply: true);
+                    }
+                    itemsUpdated.Add(new ItemSyncItemUpdateEntry(item.Id, issue.Url));
+                }
+                else
+                {
+                    if (IsTerminalStatus(item.Status))
+                    {
+                        // Terminal items do not push updates back to GitHub.
+                        continue;
+                    }
+
+                    if (!issueNeedsUpdate)
+                    {
+                        continue;
+                    }
+
+                    if (!dryRun)
+                    {
+                        await GithubService.UpdateIssueAsync(repoRoot, config, issueRef, desiredTitle, desiredBody).ConfigureAwait(false);
+                        WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
+                    }
+                    issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
+                }
             }
         }
 
         var issuesCreated = new List<ItemSyncIssueEntry>();
-        foreach (var item in items)
+        if (syncIssues)
         {
-            if (IsTerminalStatus(item.Status))
+            foreach (var item in items)
             {
-                continue;
-            }
-            if (item.Related.Issues.Count > 0)
-            {
-                continue;
-            }
+                if (IsTerminalStatus(item.Status))
+                {
+                    continue;
+                }
+                if (item.Related.Issues.Count > 0)
+                {
+                    continue;
+                }
 
-            var body = PullRequestBuilder.BuildBody(item, defaultRepo, config.Git.DefaultBaseBranch);
-            if (dryRun)
-            {
-                issuesCreated.Add(new ItemSyncIssueEntry(item.Id, string.Empty));
-                continue;
-            }
+                var body = PullRequestBuilder.BuildBody(item, defaultRepo!, config.Git.DefaultBaseBranch);
+                if (dryRun)
+                {
+                    issuesCreated.Add(new ItemSyncIssueEntry(item.Id, string.Empty));
+                    continue;
+                }
 
-            var issueUrl = await GithubService.CreateIssueAsync(repoRoot, config, defaultRepo, item.Title, body, item.Tags).ConfigureAwait(false);
-            WorkItemService.AddRelatedLink(item.Path, "issues", issueUrl);
-            WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
-            issuesCreated.Add(new ItemSyncIssueEntry(item.Id, issueUrl));
+                var issueUrl = await GithubService.CreateIssueAsync(repoRoot, config, defaultRepo!, item.Title, body, item.Tags).ConfigureAwait(false);
+                WorkItemService.AddRelatedLink(item.Path, "issues", issueUrl);
+                WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
+                issuesCreated.Add(new ItemSyncIssueEntry(item.Id, issueUrl));
+            }
         }
 
         var branchesCreated = new List<ItemSyncBranchEntry>();

@@ -993,7 +993,7 @@ public partial class Program
                     return;
                 }
 
-                var data = await RunItemSyncAsync(repoRoot, config, ids, issueInputs, importIssues, prefer, dryRun).ConfigureAwait(false);
+                var data = await RunItemSyncAsync(repoRoot, config, ids, issueInputs, importIssues, prefer, dryRun, syncIssues: true).ConfigureAwait(false);
 
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -3063,7 +3063,7 @@ public partial class Program
 
                 if (runItems)
                 {
-                    itemData = await RunItemSyncAsync(repoRoot, config, Array.Empty<string>(), Array.Empty<string>(), importIssues, prefer, dryRun).ConfigureAwait(false);
+                    itemData = await RunItemSyncAsync(repoRoot, config, Array.Empty<string>(), Array.Empty<string>(), importIssues, prefer, dryRun, syncIssues).ConfigureAwait(false);
                     hasConflicts = itemData.Conflicts.Count > 0;
                 }
 
