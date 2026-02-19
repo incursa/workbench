@@ -55,6 +55,9 @@ jobs:
       - name: Test
         run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release
 
+      - name: Test (integration)
+        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release
+
       - name: Pack (repro 1)
         shell: bash
         run: |

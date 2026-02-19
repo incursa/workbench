@@ -57,8 +57,6 @@ jobs:
     needs: pre-commit
     name: Build and test (${{ matrix.os }}, .NET ${{ matrix.dotnet }})
     runs-on: ${{ matrix.os }}
-    env:
-      WORKBENCH_RUN_GH_TESTS: ${{ inputs.run_integration_tests || '0' }}
     strategy:
       fail-fast: false
       matrix:
@@ -87,5 +85,4 @@ jobs:
         run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj
 
       - name: Test (integration)
-        if: env.WORKBENCH_RUN_GH_TESTS == '1'
         run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj

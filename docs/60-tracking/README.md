@@ -18,6 +18,7 @@ Milestones, progress tracking, and delivery notes.
 Related:
 - [AI change notes for markdown docs](ai-change-notes.md)
 - [AI work item generation](ai-work-item-generation.md)
+- [Hardening gate (2026-02-19)](hardening-gate-2026-02-19.md)
 - [Work items and workboard](../70-work/README.md)
 
 ## Include
