@@ -22,7 +22,7 @@
     "RequireCleanWorkingTree": true
   },
   "Github": {
-    "Provider": "gh",
+    "Provider": "octokit",
     "DefaultDraft": true,
     "Host": "",
     "Owner": "incursa",
@@ -34,6 +34,7 @@
   },
   "Tui": {
     "Theme": "dark",
-    "UseEmoji": false
+    "UseEmoji": false,
+    "AutoRefreshSeconds": 0
   }
 }

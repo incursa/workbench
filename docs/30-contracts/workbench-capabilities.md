@@ -3,6 +3,8 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
+  pathHistory: []
+  path: /docs/30-contracts/workbench-capabilities.md
 owner: platform
 status: active
 updated: 2025-12-29

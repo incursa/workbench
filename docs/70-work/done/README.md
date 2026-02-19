@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/done/README.md
+---
+
 # Done
 
 Completed work items live here once closed.

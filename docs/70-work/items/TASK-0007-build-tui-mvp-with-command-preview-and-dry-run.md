@@ -6,7 +6,7 @@ priority: medium
 owner: platform
 created: 2025-12-30
 updated: null
-githubSynced: null
+githubSynced: "2026-02-19T04:22:35Z"
 tags: []
 related:
   specs:
@@ -15,9 +15,16 @@ related:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files: []
   prs: []
-  issues: []
+  issues:
+    - "https://github.com/incursa/workbench/issues/589"
   branches: []
 title: Build TUI MVP with command preview and dry-run
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md
 ---
 
 # TASK-0007 - Build TUI MVP with command preview and dry-run

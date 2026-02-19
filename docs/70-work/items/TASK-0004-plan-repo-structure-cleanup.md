@@ -16,6 +16,12 @@ related:
     - "https://github.com/incursa/workbench/issues/19"
   branches: []
 title: "Plan repo structure cleanup (reduce large files, improve navigation)"
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0004-plan-repo-structure-cleanup.md
 ---
 
 # TASK-0004 - Plan repo structure cleanup (reduce large files, improve navigation)

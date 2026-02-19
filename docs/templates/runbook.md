@@ -3,7 +3,9 @@ workbench:
   type: runbook
   workItems: []
   codeRefs: []
-owner: <owner>
+  pathHistory: []
+  path: /docs/templates/runbook.md
+owner: "<owner>"
 status: template
 updated: 0000-00-00
 ---

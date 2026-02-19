@@ -3,6 +3,8 @@ workbench:
   type: spec
   workItems: []
   codeRefs: []
+  pathHistory: []
+  path: /docs/10-product/feature-spec-work-item-sync.md
 owner: platform
 status: draft
 updated: 2025-12-27

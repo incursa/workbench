@@ -3,7 +3,9 @@ workbench:
   type: adr
   workItems: []
   codeRefs: []
-owner: <owner>
+  pathHistory: []
+  path: /docs/templates/adr.md
+owner: "<owner>"
 status: template
 updated: 0000-00-00
 ---

@@ -6,7 +6,7 @@ priority: high
 owner: platform
 created: 2026-01-01
 updated: null
-githubSynced: null
+githubSynced: "2026-02-19T04:22:36Z"
 tags:
   - launch
   - marketing
@@ -16,8 +16,15 @@ related:
   files:
     - /docs/00-overview/workbench-public-release.md
   prs: []
-  issues: []
+  issues:
+    - "https://github.com/incursa/workbench/issues/593"
   branches: []
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0010-create-public-launch-landing-and-messaging-kit.md
 ---
 
 # TASK-0010 - Create public launch landing and messaging kit

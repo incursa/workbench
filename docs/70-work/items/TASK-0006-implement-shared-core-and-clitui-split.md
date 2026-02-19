@@ -20,6 +20,12 @@ related:
   branches:
     - work/TASK-0006-implement-shared-core-and-clitui-split
 title: Implement shared core and CLI/TUI split
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /docs/70-work/items/TASK-0006-implement-shared-core-and-clitui-split.md
 ---
 
 # TASK-0006 - Implement shared core and CLI/TUI split
