@@ -82,13 +82,6 @@ jobs:
             **/*.csproj
             **/packages.lock.json
 
-      - name: Configure private NuGet feed credentials
-        uses: ./.github/actions/configure-incursa-nuget
-        with:
-          url: ${{ vars.NUGET_INCURSA_URL || 'https://nuget.incursa.com/index.json' }}
-          username: ${{ vars.NUGET_INCURSA_USERNAME }}
-          api-key: ${{ secrets.NUGET_INCURSA_APIKEY }}
-
       - name: Cache NuGet
         uses: actions/cache@v5
         with:
@@ -134,13 +127,6 @@ jobs:
             **/*.slnx
             **/*.csproj
             **/packages.lock.json
-
-      - name: Configure private NuGet feed credentials
-        uses: ./.github/actions/configure-incursa-nuget
-        with:
-          url: ${{ vars.NUGET_INCURSA_URL || 'https://nuget.incursa.com/index.json' }}
-          username: ${{ vars.NUGET_INCURSA_USERNAME }}
-          api-key: ${{ secrets.NUGET_INCURSA_APIKEY }}
 
       - name: Restore
         run: dotnet restore src/Workbench/Workbench.csproj -r ${{ matrix.rid }}
