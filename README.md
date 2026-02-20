@@ -3,12 +3,20 @@
 Workbench is a .NET CLI for managing Workbench documentation, work items, and
 contracts in this repo.
 
+## Getting Started
+
+**New to Workbench?** Start here:
+
+- **[Getting Started Guide](docs/00-overview/getting-started.md)**: Step-by-step tutorial covering installation, initialization, creating work items, and validation.
+- **[Sample Walkthrough](examples/sample-walkthrough/)**: Hands-on example demonstrating the complete Workbench workflow.
+
 ## Repository map
 
 - `src/Workbench`: CLI source code.
 - `tests/`: automated tests.
 - `docs/`: product, architecture, contracts, decisions, and runbooks.
 - `docs/70-work/`: active and completed work items plus templates.
+- `examples/`: sample walkthroughs and demonstrations.
 - `assets/`: static assets used by docs or tooling.
 - `artifacts/`: build outputs and local artifacts.
 - `testdata/`: fixtures for parsing and validation tests.
