@@ -44,7 +44,7 @@ repos:
       - id: dotnet-format-verify
         name: dotnet format (verify)
         language: system
-        entry: dotnet format Workbench.slnx --verify-no-changes
+        entry: pwsh -NoProfile -ExecutionPolicy Bypass -Command "dotnet restore Workbench.slnx; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; dotnet format Workbench.slnx --verify-no-changes --no-restore"
         files: "(?i)\\.(cs|csproj|sln|slnx|props|targets)$"
         pass_filenames: false
       - id: dotnet-build
