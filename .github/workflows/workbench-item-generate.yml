@@ -50,6 +50,13 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Configure private NuGet feed credentials
+        uses: ./.github/actions/configure-incursa-nuget
+        with:
+          url: ${{ vars.NUGET_INCURSA_URL || 'https://nuget.incursa.com/index.json' }}
+          username: ${{ vars.NUGET_INCURSA_USERNAME }}
+          api-key: ${{ secrets.NUGET_INCURSA_APIKEY }}
+
       - name: Install Workbench CLI tool
         run: |
           dotnet tool install --global Incursa.Workbench

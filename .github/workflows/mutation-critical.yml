@@ -17,6 +17,13 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Configure private NuGet feed credentials
+        uses: ./.github/actions/configure-incursa-nuget
+        with:
+          url: ${{ vars.NUGET_INCURSA_URL || 'https://nuget.incursa.com/index.json' }}
+          username: ${{ vars.NUGET_INCURSA_USERNAME }}
+          api-key: ${{ secrets.NUGET_INCURSA_APIKEY }}
+
       - name: Install Stryker
         run: dotnet tool install --global dotnet-stryker --version 4.*
 

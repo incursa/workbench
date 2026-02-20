@@ -153,6 +153,13 @@ dotnet build Workbench.slnx
 dotnet test Workbench.slnx
 ```
 
+Because `nuget.config` includes the private `incursa` feed, CI needs these
+repository settings:
+
+- Variable: `NUGET_INCURSA_URL` (for example `https://nuget.incursa.com/index.json`)
+- Variable: `NUGET_INCURSA_USERNAME`
+- Secret: `NUGET_INCURSA_APIKEY`
+
 ## Contributing
 
 - [Contribution guide](CONTRIBUTING.md)
