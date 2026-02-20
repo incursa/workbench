@@ -41,7 +41,7 @@ jobs:
         run: dotnet restore Workbench.slnx
 
       - name: Verify formatting and analyzers
-        run: dotnet format --verify-no-changes Workbench.slnx
+        run: dotnet format --verify-no-changes --no-restore Workbench.slnx
 
       - name: Build (deterministic)
         run: dotnet build Workbench.slnx --no-restore --configuration Release -warnaserror -p:ContinuousIntegrationBuild=true
