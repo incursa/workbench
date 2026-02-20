@@ -143,6 +143,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source scripts/ci/reporting.sh
 
           precommit_result="${{ needs.pre-commit.result }}"
           build_result="${{ needs.build-test.result }}"
@@ -158,34 +159,16 @@ jobs:
           build_status="✅"
           [[ "$build_result" != "success" ]] && build_status="❌"
 
-          passed=0
-          failed=0
-          skipped=0
-          trx_count=0
-
-          while IFS= read -r trx; do
-            trx_count=$((trx_count + 1))
-            p=$(sed -n 's/.*passed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            f=$(sed -n 's/.*failed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            ne=$(sed -n 's/.*notExecuted="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            nr=$(sed -n 's/.*notRunnable="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            [[ -z "$p" ]] && p=0
-            [[ -z "$f" ]] && f=0
-            [[ -z "$ne" ]] && ne=0
-            [[ -z "$nr" ]] && nr=0
-            passed=$((passed + p))
-            failed=$((failed + f))
-            skipped=$((skipped + ne + nr))
-          done < <(find artifacts -type f -name "*.trx" | sort)
+          eval "$(bash scripts/ci/parse-trx.sh artifacts)"
 
           tests_status="❌"
           tests_metric="Metrics missing"
           tests_threshold="0 fails"
           tests_notes="No TRX artifacts found"
 
-          if [[ "$trx_count" -gt 0 ]]; then
+          if [[ "$reports" -gt 0 ]]; then
             tests_metric="${passed} pass / ${failed} fail / ${skipped} skipped"
-            tests_notes="${trx_count} report(s)"
+            tests_notes="${reports} report(s)"
             if [[ "$failed" -eq 0 ]]; then
               tests_status="✅"
             fi

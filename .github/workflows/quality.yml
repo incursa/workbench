@@ -233,6 +233,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source scripts/ci/reporting.sh
 
           mkdir -p metrics/quality
 
@@ -246,25 +247,11 @@ jobs:
           pack2_outcome="${{ steps.pack_repro2.outcome }}"
           compare_outcome="${{ steps.compare.outcome }}"
 
-          test_passed=0
-          test_failed=0
-          test_skipped=0
-          trx_count=0
-
-          while IFS= read -r trx; do
-            trx_count=$((trx_count + 1))
-            p=$(sed -n 's/.*passed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            f=$(sed -n 's/.*failed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            ne=$(sed -n 's/.*notExecuted="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            nr=$(sed -n 's/.*notRunnable="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            [[ -z "$p" ]] && p=0
-            [[ -z "$f" ]] && f=0
-            [[ -z "$ne" ]] && ne=0
-            [[ -z "$nr" ]] && nr=0
-            test_passed=$((test_passed + p))
-            test_failed=$((test_failed + f))
-            test_skipped=$((test_skipped + ne + nr))
-          done < <(find artifacts/test-results -type f -name "*.trx" 2>/dev/null | sort || true)
+          eval "$(bash scripts/ci/parse-trx.sh artifacts/test-results)"
+          test_passed="$passed"
+          test_failed="$failed"
+          test_skipped="$skipped"
+          trx_count="$reports"
 
           coverage_file="$(find tests -type f -name "coverage.cobertura.xml" | head -n1 || true)"
           line_rate=""
@@ -281,17 +268,21 @@ jobs:
           branch_pct="n/a"
           line_threshold_pct="n/a"
           branch_threshold_pct="n/a"
+          line_pct_value=""
+          branch_pct_value=""
           if [[ -n "$line_rate" ]]; then
-            line_pct="$(awk -v v="$line_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            line_pct="$(format_percent_from_rate "$line_rate")"
+            line_pct_value="$(awk -v v="$line_rate" 'BEGIN { printf "%.2f", v * 100 }')"
           fi
           if [[ -n "$branch_rate" ]]; then
-            branch_pct="$(awk -v v="$branch_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            branch_pct="$(format_percent_from_rate "$branch_rate")"
+            branch_pct_value="$(awk -v v="$branch_rate" 'BEGIN { printf "%.2f", v * 100 }')"
           fi
           if [[ -n "$line_min" ]]; then
-            line_threshold_pct="$(awk -v v="$line_min" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            line_threshold_pct="$(format_percent_from_rate "$line_min")"
           fi
           if [[ -n "$branch_min" ]]; then
-            branch_threshold_pct="$(awk -v v="$branch_min" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            branch_threshold_pct="$(format_percent_from_rate "$branch_min")"
           fi
 
           package_count="$(find artifacts/repro1 -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | wc -l | tr -d ' ')"
@@ -349,6 +340,14 @@ jobs:
           }
           EOF
 
+          cat > metrics/quality/quality-baseline.json <<EOF
+          {
+            "line_pct_value": "${line_pct_value}",
+            "branch_pct_value": "${branch_pct_value}",
+            "package_count": ${package_count}
+          }
+          EOF
+
       - name: Upload quality metrics artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -356,11 +355,32 @@ jobs:
           name: quality-metrics
           path: metrics/quality/quality-metrics.json
 
+      - name: Upload quality baseline artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-baseline
+          path: metrics/quality/quality-baseline.json
+
+      - name: Download baseline snapshot from main
+        if: always()
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: quality.yml
+          workflow_conclusion: success
+          branch: main
+          name: quality-baseline
+          path: artifacts/baseline
+          if_no_artifact_found: warn
+
       - name: Write quality summary
         if: always()
         shell: bash
         run: |
           set -euo pipefail
+          source scripts/ci/reporting.sh
 
           format_outcome="${{ steps.format_gate.outcome }}"
           build_outcome="${{ steps.build_gate.outcome }}"
@@ -372,35 +392,11 @@ jobs:
           pack2_outcome="${{ steps.pack_repro2.outcome }}"
           compare_outcome="${{ steps.compare.outcome }}"
 
-          to_status() {
-            local outcome="$1"
-            if [[ "$outcome" == "success" ]]; then
-              echo "✅"
-            elif [[ "$outcome" == "failure" ]]; then
-              echo "❌"
-            else
-              echo "⚠️"
-            fi
-          }
-
-          tests_passed=0
-          tests_failed=0
-          tests_skipped=0
-          trx_count=0
-          while IFS= read -r trx; do
-            trx_count=$((trx_count + 1))
-            p=$(sed -n 's/.*passed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            f=$(sed -n 's/.*failed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            ne=$(sed -n 's/.*notExecuted="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            nr=$(sed -n 's/.*notRunnable="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
-            [[ -z "$p" ]] && p=0
-            [[ -z "$f" ]] && f=0
-            [[ -z "$ne" ]] && ne=0
-            [[ -z "$nr" ]] && nr=0
-            tests_passed=$((tests_passed + p))
-            tests_failed=$((tests_failed + f))
-            tests_skipped=$((tests_skipped + ne + nr))
-          done < <(find artifacts/test-results -type f -name "*.trx" 2>/dev/null | sort || true)
+          eval "$(bash scripts/ci/parse-trx.sh artifacts/test-results)"
+          tests_passed="$passed"
+          tests_failed="$failed"
+          tests_skipped="$skipped"
+          trx_count="$reports"
 
           coverage_file="$(find tests -type f -name "coverage.cobertura.xml" | head -n1 || true)"
           line_rate=""
@@ -419,16 +415,25 @@ jobs:
           branch_threshold="n/a"
           coverage_status="❌"
           coverage_note="❌ Metrics missing"
+          line_pct_value=""
           if [[ -n "$line_rate" && -n "$branch_rate" && -n "$line_min" && -n "$branch_min" ]]; then
-            line_pct="$(awk -v v="$line_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
-            branch_pct="$(awk -v v="$branch_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            line_pct="$(format_percent_from_rate "$line_rate")"
+            branch_pct="$(format_percent_from_rate "$branch_rate")"
             line_threshold="$(awk -v v="$line_min" 'BEGIN { printf ">= %.2f%%", v * 100 }')"
             branch_threshold="$(awk -v v="$branch_min" 'BEGIN { printf ">= %.2f%%", v * 100 }')"
             coverage_note="Branch ${branch_pct}"
+            line_pct_value="$(awk -v v="$line_rate" 'BEGIN { printf "%.2f", v * 100 }')"
             if [[ "$coverage_verify_outcome" == "success" ]]; then
               coverage_status="✅"
             fi
           fi
+
+          baseline_line_pct=""
+          baseline_file="$(find artifacts/baseline -type f -name "quality-baseline.json" 2>/dev/null | head -n1 || true)"
+          if [[ -n "$baseline_file" ]]; then
+            baseline_line_pct="$(sed -n 's/.*"line_pct_value":[[:space:]]*"\{0,1\}\([^",}]*\).*/\1/p' "$baseline_file" | head -n1)"
+          fi
+          coverage_delta="$(format_delta_percent "$line_pct_value" "$baseline_line_pct")"
 
           package_count="$(find artifacts/repro1 -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | wc -l | tr -d ' ')"
           package_details=""
@@ -464,8 +469,8 @@ jobs:
             fi
           fi
 
-          build_status="$(to_status "$build_outcome")"
-          format_status="$(to_status "$format_outcome")"
+          build_status="$(status_from_outcome "$build_outcome")"
+          format_status="$(status_from_outcome "$format_outcome")"
           overall="✅ Passed"
           if [[ "${{ job.status }}" != "success" ]]; then
             overall="❌ Failed"
@@ -485,7 +490,7 @@ jobs:
             echo "|---|---|---:|---:|---|"
             echo "| Build | $build_status | Deterministic release build | Success | -warnaserror enabled |"
             echo "| 🧪 Tests | $tests_status | $tests_metric | 0 fails | TRX files: ${trx_count} |"
-            echo "| 📊 Coverage | $coverage_status | Line ${line_pct} | ${line_threshold} | ${coverage_note} (branch gate: ${branch_threshold}) |"
+            echo "| 📊 Coverage | $coverage_status | Line ${line_pct} | ${line_threshold} | ${coverage_delta}; ${coverage_note} (branch gate: ${branch_threshold}) |"
             echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
             echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Separate scheduled workflow |"
             echo "| 📦 Packaging | $packaging_status | ${package_count} packages | >= 1 | ${package_details} |"

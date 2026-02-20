@@ -349,10 +349,24 @@ jobs:
         with:
           path: artifacts
 
+      - name: Download baseline snapshot from main
+        if: always()
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: nuget-publish.yml
+          workflow_conclusion: success
+          branch: main
+          name: publish-baseline
+          path: artifacts/baseline
+          if_no_artifact_found: warn
+
       - name: Write publish summary
         shell: bash
         run: |
           set -euo pipefail
+          source scripts/ci/reporting.sh
 
           version="${{ needs.version.outputs.semver }}"
           nuget_status="${{ needs.publish-nuget.outputs.publish_status }}"
@@ -361,6 +375,13 @@ jobs:
           [[ -z "$package_count" ]] && package_count="0"
           [[ -z "$package_details" ]] && package_details="❌ Metrics missing"
           [[ -z "$nuget_status" ]] && nuget_status="❌"
+
+          baseline_package_count=""
+          baseline_file="$(find artifacts/baseline -type f -name "publish-baseline.json" 2>/dev/null | head -n1 || true)"
+          if [[ -n "$baseline_file" ]]; then
+            baseline_package_count="$(sed -n 's/.*"package_count":[[:space:]]*\([0-9]\+\).*/\1/p' "$baseline_file" | head -n1)"
+          fi
+          package_delta="$(format_delta_int "$package_count" "$baseline_package_count")"
 
           aot_total=0
           aot_success=0
@@ -416,7 +437,7 @@ jobs:
             echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | CI/Quality workflows own coverage |"
             echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
             echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Mutation workflow owns this gate |"
-            echo "| 📦 Packaging (NuGet) | ${nuget_status} | ${package_count} package(s) | >= 1 | ${package_details} |"
+            echo "| 📦 Packaging (NuGet) | ${nuget_status} | ${package_count} package(s) | >= 1 | ${package_delta}; ${package_details} |"
             echo "| 📦 Packaging (AOT) | ${aot_status} | ${aot_success}/${aot_total} RID builds | 3/3 | win-x64; linux-x64; osx-arm64 |"
             echo "| 🚀 Release | ${release_status} | ${release_assets} | Draft release created | Tag v${version} |"
             echo ""
@@ -438,3 +459,24 @@ jobs:
               echo "- Check release job logs for tag/upload failures."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Export publish baseline
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/publish
+          package_count="${{ needs.publish-nuget.outputs.package_count }}"
+          [[ -z "$package_count" ]] && package_count=0
+          cat > metrics/publish/publish-baseline.json <<EOF
+          {
+            "package_count": ${package_count}
+          }
+          EOF
+
+      - name: Upload publish baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-baseline
+          path: metrics/publish/publish-baseline.json

@@ -80,6 +80,9 @@ jobs:
           }
 
           $payload | ConvertTo-Json -Depth 8 | Set-Content -Path metrics/mutation/mutation-metrics.json
+          [ordered]@{
+            mutation_score = $score
+          } | ConvertTo-Json -Depth 4 | Set-Content -Path metrics/mutation/mutation-baseline.json
 
       - name: Upload mutation metrics
         if: always()
@@ -87,6 +90,26 @@ jobs:
         with:
           name: mutation-metrics
           path: metrics/mutation/mutation-metrics.json
+
+      - name: Upload mutation baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-baseline
+          path: metrics/mutation/mutation-baseline.json
+
+      - name: Download baseline snapshot from main
+        if: always()
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: mutation-critical.yml
+          workflow_conclusion: success
+          branch: main
+          name: mutation-baseline
+          path: artifacts/baseline
+          if_no_artifact_found: warn
 
       - name: Upload mutation report
         if: always()
@@ -107,7 +130,16 @@ jobs:
           $scoreText = if ($metrics.mutation.score -ne $null) { "{0:N2}%" -f $metrics.mutation.score } else { "❌ Metrics missing" }
           $thresholdText = if ($metrics.mutation.threshold -ne $null) { ">= $($metrics.mutation.threshold)%" } else { "n/a" }
           $mutationStatus = $metrics.mutation.status
-          $notes = if ($metrics.mutation.reportFound) { "Killed $($metrics.mutation.killed); Survived $($metrics.mutation.survived); NoCoverage $($metrics.mutation.noCoverage); Timeout $($metrics.mutation.timedOut)" } else { "❌ mutation-report.json not found" }
+          $baselinePath = Get-ChildItem -Path artifacts/baseline -Recurse -File -Filter mutation-baseline.json -ErrorAction SilentlyContinue | Select-Object -First 1
+          $deltaText = "n/a"
+          if ($baselinePath -and $metrics.mutation.score -ne $null) {
+            $baseline = Get-Content $baselinePath.FullName -Raw | ConvertFrom-Json
+            if ($baseline.mutation_score -ne $null -and "$($baseline.mutation_score)" -ne "") {
+              $delta = [Math]::Round(([double]$metrics.mutation.score - [double]$baseline.mutation_score), 2)
+              $deltaText = "{0:+0.00;-0.00;0.00}% vs main" -f $delta
+            }
+          }
+          $notes = if ($metrics.mutation.reportFound) { "$deltaText; Killed $($metrics.mutation.killed); Survived $($metrics.mutation.survived); NoCoverage $($metrics.mutation.noCoverage); Timeout $($metrics.mutation.timedOut)" } else { "❌ mutation-report.json not found" }
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "# CI Quality Summary"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ""
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "**Workflow:** ${{ github.workflow }}"
