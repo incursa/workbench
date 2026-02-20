@@ -56,12 +56,16 @@ jobs:
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Generate work item
+        id: generate_item
         env:
           WORKBENCH_AI_PROVIDER: ${{ inputs.provider }}
           WORKBENCH_AI_WORK_ITEM_MODEL: ${{ inputs.model }}
           WORKBENCH_AI_OPENAI_KEY: ${{ secrets.WORKBENCH_AI_OPENAI_KEY || secrets.OPENAI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || secrets.WORKBENCH_AI_OPENAI_KEY }}
+        shell: bash
         run: |
+          set -euo pipefail
+          mkdir -p artifacts/workbench
           args=(item generate --prompt "${{ inputs.prompt }}")
 
           if [[ -n "${{ inputs.type }}" ]]; then
@@ -80,4 +84,77 @@ jobs:
             args+=(--owner "${{ inputs.owner }}")
           fi
 
-          workbench "${args[@]}"
+          workbench "${args[@]}" 2>&1 | tee artifacts/workbench/item-generate.log
+
+      - name: Export workflow metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/workbench
+          cat > metrics/workbench/item-generate.json <<EOF
+          {
+            "workflow": "Workbench Item Generate",
+            "job": "generate",
+            "status": "${{ job.status }}",
+            "provider": "${{ inputs.provider }}",
+            "type": "${{ inputs.type }}",
+            "priority": "${{ inputs.priority }}",
+            "owner": "${{ inputs.owner }}",
+            "generate_outcome": "${{ steps.generate_item.outcome }}"
+          }
+          EOF
+
+      - name: Upload operational artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-item-generate-artifacts
+          path: |
+            artifacts/workbench/item-generate.log
+            metrics/workbench/item-generate.json
+          if-no-files-found: ignore
+
+      - name: Write workflow summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          overall="✅ Passed"
+          generate_status="✅"
+          if [[ "${{ steps.generate_item.outcome }}" != "success" ]]; then
+            overall="❌ Failed"
+            generate_status="❌"
+          fi
+
+          {
+            echo "# CI Quality Summary"
+            echo ""
+            echo "**Workflow:** ${{ github.workflow }}"
+            echo "**Ref:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Trigger:** ${{ github.event_name }}"
+            echo "**Result:** $overall"
+            echo ""
+            echo "## Executive Gates"
+            echo "| Gate | Status | Metric | Threshold | Notes |"
+            echo "|---|---|---:|---:|---|"
+            echo "| Operational: Item Generation | $generate_status | Provider: ${{ inputs.provider }} | Command succeeds | Type=${{ inputs.type }}, Priority=${{ inputs.priority }} |"
+            echo "| 🧪 Tests | N/A | Not run in this workflow | n/a | n/a |"
+            echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | n/a |"
+            echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
+            echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | n/a |"
+            echo "| 📦 Packaging | N/A | Not run in this workflow | n/a | n/a |"
+            echo ""
+            echo "## Artifacts"
+            echo "- workbench-item-generate-artifacts"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$overall" != "✅ Passed" ]]; then
+            {
+              echo ""
+              echo "## 📝 Action Required"
+              echo "- Inspect `workbench-item-generate-artifacts` and open `item-generate.log` first."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

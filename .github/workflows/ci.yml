@@ -42,6 +42,27 @@ jobs:
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
+      - name: Export pre-commit metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/ci
+          cat > metrics/ci/pre-commit.json <<EOF
+          {
+            "workflow": "CI",
+            "job": "pre-commit",
+            "status": "${{ job.status }}"
+          }
+          EOF
+
+      - name: Upload pre-commit metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics-pre-commit
+          path: metrics/ci/pre-commit.json
+
   build-test:
     needs: pre-commit
     name: Build and test (${{ matrix.os }}, .NET ${{ matrix.dotnet }})
@@ -71,7 +92,136 @@ jobs:
         run: dotnet build Workbench.slnx
 
       - name: Test (unit)
-        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj
+        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --logger "trx;LogFileName=unit-${{ matrix.os }}.trx" --results-directory "artifacts/test-results/${{ matrix.os }}"
 
       - name: Test (integration)
-        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
+        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --logger "trx;LogFileName=integration-${{ matrix.os }}.trx" --results-directory "artifacts/test-results/${{ matrix.os }}"
+
+      - name: Export matrix metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/ci
+          cat > metrics/ci/build-test-${{ matrix.os }}.json <<EOF
+          {
+            "workflow": "CI",
+            "job": "build-test",
+            "os": "${{ matrix.os }}",
+            "dotnet": "${{ matrix.dotnet }}",
+            "status": "${{ job.status }}"
+          }
+          EOF
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-test-results-${{ matrix.os }}
+          path: artifacts/test-results/${{ matrix.os }}/*.trx
+          if-no-files-found: ignore
+
+      - name: Upload matrix metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-metrics-${{ matrix.os }}
+          path: metrics/ci/build-test-${{ matrix.os }}.json
+
+  report:
+    name: CI report
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [pre-commit, build-test]
+    steps:
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Write CI quality summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          precommit_result="${{ needs.pre-commit.result }}"
+          build_result="${{ needs.build-test.result }}"
+
+          overall="✅ Passed"
+          if [[ "$precommit_result" != "success" || "$build_result" != "success" ]]; then
+            overall="❌ Failed"
+          fi
+
+          precommit_status="✅"
+          [[ "$precommit_result" != "success" ]] && precommit_status="❌"
+
+          build_status="✅"
+          [[ "$build_result" != "success" ]] && build_status="❌"
+
+          passed=0
+          failed=0
+          skipped=0
+          trx_count=0
+
+          while IFS= read -r trx; do
+            trx_count=$((trx_count + 1))
+            p=$(sed -n 's/.*passed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            f=$(sed -n 's/.*failed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            ne=$(sed -n 's/.*notExecuted="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            nr=$(sed -n 's/.*notRunnable="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            [[ -z "$p" ]] && p=0
+            [[ -z "$f" ]] && f=0
+            [[ -z "$ne" ]] && ne=0
+            [[ -z "$nr" ]] && nr=0
+            passed=$((passed + p))
+            failed=$((failed + f))
+            skipped=$((skipped + ne + nr))
+          done < <(find artifacts -type f -name "*.trx" | sort)
+
+          tests_status="❌"
+          tests_metric="Metrics missing"
+          tests_threshold="0 fails"
+          tests_notes="No TRX artifacts found"
+
+          if [[ "$trx_count" -gt 0 ]]; then
+            tests_metric="${passed} pass / ${failed} fail / ${skipped} skipped"
+            tests_notes="${trx_count} report(s)"
+            if [[ "$failed" -eq 0 ]]; then
+              tests_status="✅"
+            fi
+          fi
+
+          {
+            echo "# CI Quality Summary"
+            echo ""
+            echo "**Workflow:** ${{ github.workflow }}"
+            echo "**Ref:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Trigger:** ${{ github.event_name }}"
+            echo "**Result:** $overall"
+            echo ""
+            echo "## Executive Gates"
+            echo "| Gate | Status | Metric | Threshold | Notes |"
+            echo "|---|---|---:|---:|---|"
+            echo "| Build | $build_status | Matrix build-test: $build_result | Success | ubuntu/windows/macos |"
+            echo "| 🧪 Tests | $tests_status | $tests_metric | $tests_threshold | $tests_notes |"
+            echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | Use Quality Gate workflow |"
+            echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
+            echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Use Mutation workflow |"
+            echo "| 📦 Packaging | N/A | Not run in this workflow | n/a | Use Quality/Publish workflows |"
+            echo "| 📝 Pre-commit | $precommit_status | $precommit_result | Success | Hook validation |"
+            echo ""
+            echo "## Artifacts"
+            echo "- ci-test-results-<os>"
+            echo "- ci-metrics-pre-commit"
+            echo "- ci-metrics-<os>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$overall" != "✅ Passed" ]]; then
+            {
+              echo ""
+              echo "## 📝 Action Required"
+              echo "- Open failing jobs in this run and start with the first non-success gate row above."
+              echo "- Use TRX artifacts to inspect failing tests and stack traces."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -41,21 +41,27 @@ jobs:
         run: dotnet restore Workbench.slnx
 
       - name: Verify formatting and analyzers
+        id: format_gate
         run: dotnet format --verify-no-changes --no-restore Workbench.slnx
 
       - name: Build (deterministic)
+        id: build_gate
         run: dotnet build Workbench.slnx --no-restore --configuration Release -warnaserror -p:ContinuousIntegrationBuild=true
 
       - name: Test
-        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release
+        id: test_unit
+        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=quality-unit.trx" --results-directory "artifacts/test-results"
 
       - name: Test (integration)
-        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release
+        id: test_integration
+        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=quality-integration.trx" --results-directory "artifacts/test-results"
 
       - name: Collect coverage (contract gate)
+        id: coverage_collect
         run: dotnet test --solution Workbench.slnx --no-build --configuration Release -- --coverage --coverage-output-format cobertura --coverage-output artifacts/coverage/coverage.cobertura.xml
 
       - name: Verify critical coverage contract
+        id: coverage_verify
         shell: pwsh
         run: ./scripts/testing/verify-critical-coverage.ps1 -ContractPath docs/30-contracts/test-gate.contract.yaml -CoverageSearchRoot tests
 
@@ -68,6 +74,7 @@ jobs:
             tests/**/coverage.cobertura.xml
 
       - name: Pack (repro 1)
+        id: pack_repro1
         shell: bash
         run: |
           set -euo pipefail
@@ -84,6 +91,7 @@ jobs:
             --no-restore
 
       - name: Pack (repro 2)
+        id: pack_repro2
         shell: bash
         run: |
           set -euo pipefail
@@ -197,6 +205,16 @@ jobs:
             exit 1
           fi
 
+      - name: Upload package artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-packages-repro
+          path: |
+            artifacts/repro1/*.nupkg
+            artifacts/repro2/*.nupkg
+          if-no-files-found: ignore
+
       - name: Upload normalized package diffs
         if: failure() && steps.compare.outcome == 'failure'
         uses: actions/upload-artifact@v4
@@ -208,3 +226,284 @@ jobs:
             /tmp/repro1.names
             /tmp/repro2.names
             /tmp/nupkg-names.diff
+
+      - name: Collect quality metrics
+        if: always()
+        id: quality_metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p metrics/quality
+
+          format_outcome="${{ steps.format_gate.outcome }}"
+          build_outcome="${{ steps.build_gate.outcome }}"
+          unit_outcome="${{ steps.test_unit.outcome }}"
+          integration_outcome="${{ steps.test_integration.outcome }}"
+          coverage_collect_outcome="${{ steps.coverage_collect.outcome }}"
+          coverage_verify_outcome="${{ steps.coverage_verify.outcome }}"
+          pack1_outcome="${{ steps.pack_repro1.outcome }}"
+          pack2_outcome="${{ steps.pack_repro2.outcome }}"
+          compare_outcome="${{ steps.compare.outcome }}"
+
+          test_passed=0
+          test_failed=0
+          test_skipped=0
+          trx_count=0
+
+          while IFS= read -r trx; do
+            trx_count=$((trx_count + 1))
+            p=$(sed -n 's/.*passed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            f=$(sed -n 's/.*failed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            ne=$(sed -n 's/.*notExecuted="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            nr=$(sed -n 's/.*notRunnable="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            [[ -z "$p" ]] && p=0
+            [[ -z "$f" ]] && f=0
+            [[ -z "$ne" ]] && ne=0
+            [[ -z "$nr" ]] && nr=0
+            test_passed=$((test_passed + p))
+            test_failed=$((test_failed + f))
+            test_skipped=$((test_skipped + ne + nr))
+          done < <(find artifacts/test-results -type f -name "*.trx" 2>/dev/null | sort || true)
+
+          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" | head -n1 || true)"
+          line_rate=""
+          branch_rate=""
+          if [[ -n "$coverage_file" ]]; then
+            line_rate="$(sed -n 's/.*line-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
+            branch_rate="$(sed -n 's/.*branch-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
+          fi
+
+          line_min="$(awk '/lineMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
+          branch_min="$(awk '/branchMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
+
+          line_pct="n/a"
+          branch_pct="n/a"
+          line_threshold_pct="n/a"
+          branch_threshold_pct="n/a"
+          if [[ -n "$line_rate" ]]; then
+            line_pct="$(awk -v v="$line_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+          fi
+          if [[ -n "$branch_rate" ]]; then
+            branch_pct="$(awk -v v="$branch_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+          fi
+          if [[ -n "$line_min" ]]; then
+            line_threshold_pct="$(awk -v v="$line_min" 'BEGIN { printf "%.2f%%", v * 100 }')"
+          fi
+          if [[ -n "$branch_min" ]]; then
+            branch_threshold_pct="$(awk -v v="$branch_min" 'BEGIN { printf "%.2f%%", v * 100 }')"
+          fi
+
+          package_count="$(find artifacts/repro1 -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | wc -l | tr -d ' ')"
+          package_details=""
+          while IFS= read -r nupkg; do
+            name="$(basename "$nupkg")"
+            base="${name%.nupkg}"
+            if [[ "$base" =~ ^(.+)\.([0-9]+\.[0-9]+\.[0-9]+([.-].+)?)$ ]]; then
+              pkg="${BASH_REMATCH[1]}"
+              ver="${BASH_REMATCH[2]}"
+            else
+              pkg="$base"
+              ver="unknown"
+            fi
+            if [[ -z "$package_details" ]]; then
+              package_details="${pkg} ${ver}"
+            else
+              package_details="${package_details}; ${pkg} ${ver}"
+            fi
+          done < <(find artifacts/repro1 -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | sort || true)
+          [[ -z "$package_details" ]] && package_details="none"
+
+          cat > metrics/quality/quality-metrics.json <<EOF
+          {
+            "workflow": "Quality Gate",
+            "job": "verify",
+            "status": "${{ job.status }}",
+            "gates": {
+              "format": "${format_outcome}",
+              "build": "${build_outcome}",
+              "tests": {
+                "unit": "${unit_outcome}",
+                "integration": "${integration_outcome}",
+                "passed": ${test_passed},
+                "failed": ${test_failed},
+                "skipped": ${test_skipped},
+                "trx_count": ${trx_count}
+              },
+              "coverage": {
+                "collect": "${coverage_collect_outcome}",
+                "verify": "${coverage_verify_outcome}",
+                "line_pct": "${line_pct}",
+                "branch_pct": "${branch_pct}",
+                "line_threshold_pct": "${line_threshold_pct}",
+                "branch_threshold_pct": "${branch_threshold_pct}"
+              },
+              "packaging": {
+                "pack_repro1": "${pack1_outcome}",
+                "pack_repro2": "${pack2_outcome}",
+                "compare": "${compare_outcome}",
+                "count": ${package_count},
+                "details": "${package_details}"
+              }
+            }
+          }
+          EOF
+
+      - name: Upload quality metrics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-metrics
+          path: metrics/quality/quality-metrics.json
+
+      - name: Write quality summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          format_outcome="${{ steps.format_gate.outcome }}"
+          build_outcome="${{ steps.build_gate.outcome }}"
+          unit_outcome="${{ steps.test_unit.outcome }}"
+          integration_outcome="${{ steps.test_integration.outcome }}"
+          coverage_collect_outcome="${{ steps.coverage_collect.outcome }}"
+          coverage_verify_outcome="${{ steps.coverage_verify.outcome }}"
+          pack1_outcome="${{ steps.pack_repro1.outcome }}"
+          pack2_outcome="${{ steps.pack_repro2.outcome }}"
+          compare_outcome="${{ steps.compare.outcome }}"
+
+          to_status() {
+            local outcome="$1"
+            if [[ "$outcome" == "success" ]]; then
+              echo "✅"
+            elif [[ "$outcome" == "failure" ]]; then
+              echo "❌"
+            else
+              echo "⚠️"
+            fi
+          }
+
+          tests_passed=0
+          tests_failed=0
+          tests_skipped=0
+          trx_count=0
+          while IFS= read -r trx; do
+            trx_count=$((trx_count + 1))
+            p=$(sed -n 's/.*passed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            f=$(sed -n 's/.*failed="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            ne=$(sed -n 's/.*notExecuted="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            nr=$(sed -n 's/.*notRunnable="\([0-9]\+\)".*/\1/p' "$trx" | head -n1)
+            [[ -z "$p" ]] && p=0
+            [[ -z "$f" ]] && f=0
+            [[ -z "$ne" ]] && ne=0
+            [[ -z "$nr" ]] && nr=0
+            tests_passed=$((tests_passed + p))
+            tests_failed=$((tests_failed + f))
+            tests_skipped=$((tests_skipped + ne + nr))
+          done < <(find artifacts/test-results -type f -name "*.trx" 2>/dev/null | sort || true)
+
+          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" | head -n1 || true)"
+          line_rate=""
+          branch_rate=""
+          if [[ -n "$coverage_file" ]]; then
+            line_rate="$(sed -n 's/.*line-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
+            branch_rate="$(sed -n 's/.*branch-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
+          fi
+
+          line_min="$(awk '/lineMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
+          branch_min="$(awk '/branchMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
+
+          line_pct="n/a"
+          branch_pct="n/a"
+          line_threshold="n/a"
+          branch_threshold="n/a"
+          coverage_status="❌"
+          coverage_note="❌ Metrics missing"
+          if [[ -n "$line_rate" && -n "$branch_rate" && -n "$line_min" && -n "$branch_min" ]]; then
+            line_pct="$(awk -v v="$line_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            branch_pct="$(awk -v v="$branch_rate" 'BEGIN { printf "%.2f%%", v * 100 }')"
+            line_threshold="$(awk -v v="$line_min" 'BEGIN { printf ">= %.2f%%", v * 100 }')"
+            branch_threshold="$(awk -v v="$branch_min" 'BEGIN { printf ">= %.2f%%", v * 100 }')"
+            coverage_note="Branch ${branch_pct}"
+            if [[ "$coverage_verify_outcome" == "success" ]]; then
+              coverage_status="✅"
+            fi
+          fi
+
+          package_count="$(find artifacts/repro1 -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | wc -l | tr -d ' ')"
+          package_details=""
+          while IFS= read -r nupkg; do
+            name="$(basename "$nupkg")"
+            base="${name%.nupkg}"
+            if [[ "$base" =~ ^(.+)\.([0-9]+\.[0-9]+\.[0-9]+([.-].+)?)$ ]]; then
+              pkg="${BASH_REMATCH[1]}"
+              ver="${BASH_REMATCH[2]}"
+            else
+              pkg="$base"
+              ver="unknown"
+            fi
+            if [[ -z "$package_details" ]]; then
+              package_details="${pkg} ${ver}"
+            else
+              package_details="${package_details}; ${pkg} ${ver}"
+            fi
+          done < <(find artifacts/repro1 -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | sort || true)
+          [[ -z "$package_details" ]] && package_details="❌ Metrics missing"
+
+          packaging_status="❌"
+          if [[ "$pack1_outcome" == "success" && "$pack2_outcome" == "success" && "$compare_outcome" == "success" && "$package_count" -gt 0 ]]; then
+            packaging_status="✅"
+          fi
+
+          tests_status="❌"
+          tests_metric="❌ Metrics missing"
+          if [[ "$trx_count" -gt 0 ]]; then
+            tests_metric="${tests_passed} pass / ${tests_failed} fail / ${tests_skipped} skipped"
+            if [[ "$tests_failed" -eq 0 && "$unit_outcome" == "success" && "$integration_outcome" == "success" ]]; then
+              tests_status="✅"
+            fi
+          fi
+
+          build_status="$(to_status "$build_outcome")"
+          format_status="$(to_status "$format_outcome")"
+          overall="✅ Passed"
+          if [[ "${{ job.status }}" != "success" ]]; then
+            overall="❌ Failed"
+          fi
+
+          {
+            echo "# CI Quality Summary"
+            echo ""
+            echo "**Workflow:** ${{ github.workflow }}"
+            echo "**Ref:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Trigger:** ${{ github.event_name }}"
+            echo "**Result:** $overall"
+            echo ""
+            echo "## Executive Gates"
+            echo "| Gate | Status | Metric | Threshold | Notes |"
+            echo "|---|---|---:|---:|---|"
+            echo "| Build | $build_status | Deterministic release build | Success | -warnaserror enabled |"
+            echo "| 🧪 Tests | $tests_status | $tests_metric | 0 fails | TRX files: ${trx_count} |"
+            echo "| 📊 Coverage | $coverage_status | Line ${line_pct} | ${line_threshold} | ${coverage_note} (branch gate: ${branch_threshold}) |"
+            echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
+            echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Separate scheduled workflow |"
+            echo "| 📦 Packaging | $packaging_status | ${package_count} packages | >= 1 | ${package_details} |"
+            echo "| 📝 Format/Analyzers | $format_status | dotnet format --verify-no-changes | Success | Policy gate |"
+            echo ""
+            echo "## Artifacts"
+            echo "- coverage-cobertura"
+            echo "- quality-packages-repro"
+            echo "- nupkg-normalized-diffs (on package compare failure)"
+            echo "- quality-metrics"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$overall" != "✅ Passed" ]]; then
+            {
+              echo ""
+              echo "## 📝 Action Required"
+              echo "- Start from the first ❌ gate above."
+              echo "- For coverage failures, inspect `coverage-cobertura` and `docs/30-contracts/test-gate.contract.yaml`."
+              echo "- For package determinism failures, open `nupkg-normalized-diffs`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

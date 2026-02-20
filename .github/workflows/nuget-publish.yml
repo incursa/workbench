@@ -22,7 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       semver: ${{ steps.git_version.outputs.semVer }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,7 +49,6 @@ jobs:
             $mainBranches = @("main", "master")
 
             if ($branchName -and ($mainBranches -notcontains $branchName.ToLowerInvariant())) {
-              # Sanitize branch name for pre-release tag
               $safeBranch = $branchName -replace '[^A-Za-z0-9-]', '-'
               $version = "$baseVersion-$safeBranch"
             }
@@ -61,11 +59,36 @@ jobs:
           Write-Host "Calculated Version: $version"
           echo "semVer=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
+      - name: Export version metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/publish
+          cat > metrics/publish/version.json <<EOF
+          {
+            "workflow": "Publish NuGet package and AOT binaries",
+            "job": "version",
+            "status": "${{ job.status }}",
+            "semver": "${{ steps.git_version.outputs.semVer }}"
+          }
+          EOF
+
+      - name: Upload version metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-metrics-version
+          path: metrics/publish/version.json
+
   publish-nuget:
     name: Publish NuGet
     runs-on: ubuntu-latest
     needs: version
-
+    outputs:
+      package_count: ${{ steps.nuget_metrics.outputs.package_count }}
+      package_details: ${{ steps.nuget_metrics.outputs.package_details }}
+      publish_status: ${{ steps.nuget_metrics.outputs.publish_status }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -94,10 +117,77 @@ jobs:
         run: dotnet restore Workbench.slnx
 
       - name: Pack
+        id: pack
         run: dotnet pack src/Workbench/Workbench.csproj -c Release -o ./artifacts -p:PackageVersion=${{ needs.version.outputs.semver }}
 
       - name: Publish
+        id: publish
         run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+
+      - name: Collect NuGet metrics
+        id: nuget_metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/publish
+
+          count="$(find artifacts -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | wc -l | tr -d ' ')"
+          details=""
+          while IFS= read -r nupkg; do
+            name="$(basename "$nupkg")"
+            base="${name%.nupkg}"
+            if [[ "$base" =~ ^(.+)\.([0-9]+\.[0-9]+\.[0-9]+([.-].+)?)$ ]]; then
+              pkg="${BASH_REMATCH[1]}"
+              ver="${BASH_REMATCH[2]}"
+            else
+              pkg="$base"
+              ver="unknown"
+            fi
+            if [[ -z "$details" ]]; then
+              details="${pkg} ${ver}"
+            else
+              details="${details}; ${pkg} ${ver}"
+            fi
+          done < <(find artifacts -maxdepth 1 -type f -name "*.nupkg" 2>/dev/null | sort || true)
+
+          [[ -z "$details" ]] && details="none"
+
+          publish_status="❌"
+          if [[ "${{ steps.publish.outcome }}" == "success" && "$count" -gt 0 ]]; then
+            publish_status="✅"
+          fi
+
+          echo "package_count=$count" >> "$GITHUB_OUTPUT"
+          echo "package_details=$details" >> "$GITHUB_OUTPUT"
+          echo "publish_status=$publish_status" >> "$GITHUB_OUTPUT"
+
+          cat > metrics/publish/nuget.json <<EOF
+          {
+            "workflow": "Publish NuGet package and AOT binaries",
+            "job": "publish-nuget",
+            "status": "${{ job.status }}",
+            "pack_outcome": "${{ steps.pack.outcome }}",
+            "publish_outcome": "${{ steps.publish.outcome }}",
+            "package_count": ${count},
+            "package_details": "${details}"
+          }
+          EOF
+
+      - name: Upload NuGet package artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/*.nupkg
+          if-no-files-found: ignore
+
+      - name: Upload NuGet metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-metrics-nuget
+          path: metrics/publish/nuget.json
 
   publish-aot:
     name: Publish AOT (${{ matrix.rid }})
@@ -113,7 +203,6 @@ jobs:
             rid: linux-x64
           - os: macos-latest
             rid: osx-arm64
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -132,9 +221,11 @@ jobs:
         run: dotnet restore src/Workbench/Workbench.csproj -r ${{ matrix.rid }}
 
       - name: Publish Executable
+        id: publish_aot
         run: dotnet publish src/Workbench/Workbench.csproj -c Release -r ${{ matrix.rid }} -o ./artifacts/aot/${{ matrix.rid }} -p:SelfContained=true -p:PublishSingleFile=true -p:StripSymbols=true -p:Version=${{ needs.version.outputs.semver }} --no-restore --sc
 
       - name: Collect single-file binary
+        id: collect_binary
         shell: bash
         run: |
           set -euo pipefail
@@ -151,11 +242,39 @@ jobs:
           fi
           cp "$src" "$dest"
 
+      - name: Export AOT metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/publish
+          binary_count="$(find ./artifacts/aot-binaries -maxdepth 1 -type f -name "workbench-${{ needs.version.outputs.semver }}-${{ matrix.rid }}*" 2>/dev/null | wc -l | tr -d ' ')"
+          cat > metrics/publish/aot-${{ matrix.rid }}.json <<EOF
+          {
+            "workflow": "Publish NuGet package and AOT binaries",
+            "job": "publish-aot",
+            "rid": "${{ matrix.rid }}",
+            "status": "${{ job.status }}",
+            "publish_outcome": "${{ steps.publish_aot.outcome }}",
+            "collect_outcome": "${{ steps.collect_binary.outcome }}",
+            "binary_count": ${binary_count}
+          }
+          EOF
+
       - name: Upload AOT artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: workbench-aot-bin-${{ matrix.rid }}
           path: ./artifacts/aot-binaries/workbench-${{ needs.version.outputs.semver }}-${{ matrix.rid }}*
+          if-no-files-found: ignore
+
+      - name: Upload AOT metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-metrics-aot-${{ matrix.rid }}
+          path: metrics/publish/aot-${{ matrix.rid }}.json
 
   release:
     name: Publish release
@@ -171,11 +290,13 @@ jobs:
           path: ./artifacts/aot-binaries
 
       - name: Package skills
+        id: package_skills
         run: scripts/package-skills.sh
         env:
           VERSION: ${{ needs.version.outputs.semver }}
 
       - name: Create release and upload AOT binaries
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.version.outputs.semver }}
@@ -185,3 +306,135 @@ jobs:
           files: |
             ./artifacts/aot-binaries/**/*
             ./artifacts/skills/*.skill
+
+      - name: Export release metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/publish
+
+          aot_asset_count="$(find ./artifacts/aot-binaries -type f 2>/dev/null | wc -l | tr -d ' ')"
+          skill_asset_count="$(find ./artifacts/skills -maxdepth 1 -type f -name "*.skill" 2>/dev/null | wc -l | tr -d ' ')"
+          total_assets=$((aot_asset_count + skill_asset_count))
+
+          cat > metrics/publish/release.json <<EOF
+          {
+            "workflow": "Publish NuGet package and AOT binaries",
+            "job": "release",
+            "status": "${{ job.status }}",
+            "package_skills_outcome": "${{ steps.package_skills.outcome }}",
+            "release_outcome": "${{ steps.create_release.outcome }}",
+            "aot_asset_count": ${aot_asset_count},
+            "skill_asset_count": ${skill_asset_count},
+            "total_assets": ${total_assets}
+          }
+          EOF
+
+      - name: Upload release metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-metrics-release
+          path: metrics/publish/release.json
+
+  report:
+    name: Publish report
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [version, publish-nuget, publish-aot, release]
+    steps:
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Write publish summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ needs.version.outputs.semver }}"
+          nuget_status="${{ needs.publish-nuget.outputs.publish_status }}"
+          package_count="${{ needs.publish-nuget.outputs.package_count }}"
+          package_details="${{ needs.publish-nuget.outputs.package_details }}"
+          [[ -z "$package_count" ]] && package_count="0"
+          [[ -z "$package_details" ]] && package_details="❌ Metrics missing"
+          [[ -z "$nuget_status" ]] && nuget_status="❌"
+
+          aot_total=0
+          aot_success=0
+          while IFS= read -r file; do
+            aot_total=$((aot_total + 1))
+            status="$(sed -n 's/.*"status":[[:space:]]*"\([^"]*\)".*/\1/p' "$file" | head -n1)"
+            if [[ "$status" == "success" ]]; then
+              aot_success=$((aot_success + 1))
+            fi
+          done < <(find artifacts -type f -name "aot-*.json" | sort || true)
+
+          aot_status="❌"
+          if [[ "$aot_total" -gt 0 && "$aot_success" -eq "$aot_total" ]]; then
+            aot_status="✅"
+          elif [[ "$aot_total" -eq 0 ]]; then
+            aot_status="❌"
+          else
+            aot_status="⚠️"
+          fi
+
+          release_metrics="$(find artifacts -type f -name "release.json" | head -n1 || true)"
+          release_status="❌"
+          release_assets="❌ Metrics missing"
+          if [[ -n "$release_metrics" ]]; then
+            outcome="$(sed -n 's/.*"release_outcome":[[:space:]]*"\([^"]*\)".*/\1/p' "$release_metrics" | head -n1)"
+            total_assets="$(sed -n 's/.*"total_assets":[[:space:]]*\([0-9]\+\).*/\1/p' "$release_metrics" | head -n1)"
+            [[ -z "$total_assets" ]] && total_assets="0"
+            release_assets="${total_assets} release asset(s)"
+            if [[ "$outcome" == "success" ]]; then
+              release_status="✅"
+            fi
+          fi
+
+          overall="✅ Passed"
+          if [[ "${{ needs.publish-nuget.result }}" != "success" || "${{ needs.publish-aot.result }}" != "success" || "${{ needs.release.result }}" != "success" ]]; then
+            overall="❌ Failed"
+          fi
+
+          {
+            echo "# CI Quality Summary"
+            echo ""
+            echo "**Workflow:** ${{ github.workflow }}"
+            echo "**Ref:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Trigger:** ${{ github.event_name }}"
+            echo "**Version:** ${version}"
+            echo "**Result:** ${overall}"
+            echo ""
+            echo "## Executive Gates"
+            echo "| Gate | Status | Metric | Threshold | Notes |"
+            echo "|---|---|---:|---:|---|"
+            echo "| 🧪 Tests | N/A | Not run in this workflow | n/a | CI/Quality workflows own tests |"
+            echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | CI/Quality workflows own coverage |"
+            echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
+            echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Mutation workflow owns this gate |"
+            echo "| 📦 Packaging (NuGet) | ${nuget_status} | ${package_count} package(s) | >= 1 | ${package_details} |"
+            echo "| 📦 Packaging (AOT) | ${aot_status} | ${aot_success}/${aot_total} RID builds | 3/3 | win-x64; linux-x64; osx-arm64 |"
+            echo "| 🚀 Release | ${release_status} | ${release_assets} | Draft release created | Tag v${version} |"
+            echo ""
+            echo "## Artifacts"
+            echo "- nuget-packages"
+            echo "- workbench-aot-bin-<rid>"
+            echo "- publish-metrics-version"
+            echo "- publish-metrics-nuget"
+            echo "- publish-metrics-aot-<rid>"
+            echo "- publish-metrics-release"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$overall" != "✅ Passed" ]]; then
+            {
+              echo ""
+              echo "## 📝 Action Required"
+              echo "- Start with the first ❌ row above."
+              echo "- Verify `nuget-packages` and per-RID AOT artifacts to isolate failed publish legs."
+              echo "- Check release job logs for tag/upload failures."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

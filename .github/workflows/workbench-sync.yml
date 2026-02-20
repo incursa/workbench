@@ -59,6 +59,7 @@ jobs:
           workbench config set --path github.provider --value octokit
 
       - name: Run generate-mode sync
+        id: sync_generate
         if: github.event_name == 'schedule' || inputs.mode == 'generate'
         env:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -69,6 +70,7 @@ jobs:
           workbench validate --strict
 
       - name: Run active-mode sync
+        id: sync_active
         if: github.event_name == 'workflow_dispatch' && inputs.mode == 'active'
         env:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -83,15 +85,19 @@ jobs:
           workbench validate --strict
 
       - name: Resolve sync mode label
+        id: resolve_mode
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             echo "SYNC_MODE=generate" >> "$GITHUB_ENV"
+            echo "sync_mode=generate" >> "$GITHUB_OUTPUT"
           else
             echo "SYNC_MODE=${{ inputs.mode }}" >> "$GITHUB_ENV"
+            echo "sync_mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create pull request
+        id: create_pr
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -101,3 +107,92 @@ jobs:
           body: |
             ## Summary
             - Run Workbench sync workflow in `${{ env.SYNC_MODE }}` mode.
+
+      - name: Export workflow metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/workbench
+
+          mode="${{ steps.resolve_mode.outputs.sync_mode }}"
+          [[ -z "$mode" ]] && mode="unknown"
+
+          cat > metrics/workbench/sync.json <<EOF
+          {
+            "workflow": "Workbench Sync",
+            "job": "sync",
+            "status": "${{ job.status }}",
+            "mode": "${mode}",
+            "import_issues": "${{ inputs.import_issues }}",
+            "generate_outcome": "${{ steps.sync_generate.outcome }}",
+            "active_outcome": "${{ steps.sync_active.outcome }}",
+            "create_pr_outcome": "${{ steps.create_pr.outcome }}"
+          }
+          EOF
+
+      - name: Upload operational artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-sync-artifacts
+          path: metrics/workbench/sync.json
+          if-no-files-found: ignore
+
+      - name: Write workflow summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mode="${{ steps.resolve_mode.outputs.sync_mode }}"
+          [[ -z "$mode" ]] && mode="unknown"
+
+          sync_status="✅"
+          if [[ "${{ steps.sync_generate.outcome }}" == "failure" || "${{ steps.sync_active.outcome }}" == "failure" ]]; then
+            sync_status="❌"
+          elif [[ "${{ steps.sync_generate.outcome }}" == "skipped" && "${{ steps.sync_active.outcome }}" == "skipped" ]]; then
+            sync_status="❌"
+          fi
+
+          pr_status="✅"
+          if [[ "${{ steps.create_pr.outcome }}" != "success" ]]; then
+            pr_status="❌"
+          fi
+
+          overall="✅ Passed"
+          if [[ "$sync_status" != "✅" || "$pr_status" != "✅" ]]; then
+            overall="❌ Failed"
+          fi
+
+          {
+            echo "# CI Quality Summary"
+            echo ""
+            echo "**Workflow:** ${{ github.workflow }}"
+            echo "**Ref:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Trigger:** ${{ github.event_name }}"
+            echo "**Result:** $overall"
+            echo ""
+            echo "## Executive Gates"
+            echo "| Gate | Status | Metric | Threshold | Notes |"
+            echo "|---|---|---:|---:|---|"
+            echo "| Operational: Sync | $sync_status | Mode=${mode} | Command succeeds | Import issues=${{ inputs.import_issues }} |"
+            echo "| Operational: PR | $pr_status | create-pull-request | Success | branch=chore/workbench-sync |"
+            echo "| 🧪 Tests | N/A | Not run in this workflow | n/a | n/a |"
+            echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | n/a |"
+            echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
+            echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | n/a |"
+            echo "| 📦 Packaging | N/A | Not run in this workflow | n/a | n/a |"
+            echo ""
+            echo "## Artifacts"
+            echo "- workbench-sync-artifacts"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$overall" != "✅ Passed" ]]; then
+            {
+              echo ""
+              echo "## 📝 Action Required"
+              echo "- Open the sync job logs and start with the first failing operational gate."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
