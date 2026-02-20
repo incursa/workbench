@@ -19,6 +19,7 @@ Related:
 - [AI change notes for markdown docs](ai-change-notes.md)
 - [AI work item generation](ai-work-item-generation.md)
 - [Hardening gate (2026-02-19)](hardening-gate-2026-02-19.md)
+- [External trial report (2026-02-20)](external-trial-2026-02-20.md)
 - [Work items and workboard](../70-work/README.md)
 
 ## Include

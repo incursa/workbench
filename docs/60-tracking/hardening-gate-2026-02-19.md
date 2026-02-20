@@ -8,7 +8,7 @@ workbench:
   path: /docs/60-tracking/hardening-gate-2026-02-19.md
 owner: platform
 status: active
-updated: 2026-02-19
+updated: 2026-02-20
 ---
 
 # Hardening Gate (2026-02-19)
@@ -41,10 +41,10 @@ This checklist is the release bar before upgrading other repositories to this mo
 ## Remaining before broad rollout
 
 - [x] Replace or re-enable currently skipped integration scenarios so release gates are fully enforced.
-- [ ] Run and document a two-repo external trial (one clean, one messy legacy) with zero unhandled exceptions.
+- [x] Run and document a two-repo external trial (one clean, one messy legacy) with zero unhandled exceptions.
 - [x] Publish final operator runbook for cross-repo migration and rollback.
 
 ## Current recommendation
 
 - Pilot rollouts are safe.
-- Broad rollout should proceed after the two-repo external trial completes without regressions.
+- Broad rollout is approved. Keep onboarding controlled and continue tracking repo-specific schema/link debt through normal backlog.
