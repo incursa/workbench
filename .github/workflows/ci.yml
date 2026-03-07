@@ -92,10 +92,10 @@ jobs:
         run: dotnet build Workbench.slnx
 
       - name: Test (unit)
-        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --logger "trx;LogFileName=unit-${{ matrix.os }}.trx" --results-directory "artifacts/test-results/${{ matrix.os }}"
+        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --results-directory "artifacts/test-results/${{ matrix.os }}" --report-trx --report-trx-filename "unit-${{ matrix.os }}.trx"
 
       - name: Test (integration)
-        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --logger "trx;LogFileName=integration-${{ matrix.os }}.trx" --results-directory "artifacts/test-results/${{ matrix.os }}"
+        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --results-directory "artifacts/test-results/${{ matrix.os }}" --report-trx --report-trx-filename "integration-${{ matrix.os }}.trx"
 
       - name: Export matrix metrics
         if: always()

@@ -50,11 +50,11 @@ jobs:
 
       - name: Test
         id: test_unit
-        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=quality-unit.trx" --results-directory "artifacts/test-results"
+        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release --results-directory "artifacts/test-results" --report-trx --report-trx-filename "quality-unit.trx"
 
       - name: Test (integration)
         id: test_integration
-        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=quality-integration.trx" --results-directory "artifacts/test-results"
+        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release --results-directory "artifacts/test-results" --report-trx --report-trx-filename "quality-integration.trx"
 
       - name: Collect coverage (contract gate)
         id: coverage_collect
