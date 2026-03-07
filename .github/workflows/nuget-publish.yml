@@ -344,6 +344,9 @@ jobs:
     if: always()
     needs: [version, publish-nuget, publish-aot, release]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download workflow artifacts
         uses: actions/download-artifact@v4
         with:
@@ -377,9 +380,9 @@ jobs:
           [[ -z "$nuget_status" ]] && nuget_status="❌"
 
           baseline_package_count=""
-          baseline_file="$(find artifacts/baseline -type f -name "publish-baseline.json" 2>/dev/null | head -n1 || true)"
+          baseline_file="$(find artifacts/baseline -type f -name "publish-baseline.json" -print -quit 2>/dev/null || true)"
           if [[ -n "$baseline_file" ]]; then
-            baseline_package_count="$(sed -n 's/.*"package_count":[[:space:]]*\([0-9]\+\).*/\1/p' "$baseline_file" | head -n1)"
+            baseline_package_count="$(awk -F'[: ,}]+' '/"package_count"/ { print $3; exit }' "$baseline_file")"
           fi
           package_delta="$(format_delta_int "$package_count" "$baseline_package_count")"
 
@@ -387,7 +390,7 @@ jobs:
           aot_success=0
           while IFS= read -r file; do
             aot_total=$((aot_total + 1))
-            status="$(sed -n 's/.*"status":[[:space:]]*"\([^"]*\)".*/\1/p' "$file" | head -n1)"
+            status="$(awk -F'"' '/"status"/ { print $4; exit }' "$file")"
             if [[ "$status" == "success" ]]; then
               aot_success=$((aot_success + 1))
             fi
@@ -402,12 +405,12 @@ jobs:
             aot_status="⚠️"
           fi
 
-          release_metrics="$(find artifacts -type f -name "release.json" | head -n1 || true)"
+          release_metrics="$(find artifacts -type f -name "release.json" -print -quit 2>/dev/null || true)"
           release_status="❌"
           release_assets="❌ Metrics missing"
           if [[ -n "$release_metrics" ]]; then
-            outcome="$(sed -n 's/.*"release_outcome":[[:space:]]*"\([^"]*\)".*/\1/p' "$release_metrics" | head -n1)"
-            total_assets="$(sed -n 's/.*"total_assets":[[:space:]]*\([0-9]\+\).*/\1/p' "$release_metrics" | head -n1)"
+            outcome="$(awk -F'"' '/"release_outcome"/ { print $4; exit }' "$release_metrics")"
+            total_assets="$(awk -F'[: ,}]+' '/"total_assets"/ { print $3; exit }' "$release_metrics")"
             [[ -z "$total_assets" ]] && total_assets="0"
             release_assets="${total_assets} release asset(s)"
             if [[ "$outcome" == "success" ]]; then

@@ -253,12 +253,12 @@ jobs:
           test_skipped="$skipped"
           trx_count="$reports"
 
-          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" | head -n1 || true)"
+          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" -print -quit 2>/dev/null || true)"
           line_rate=""
           branch_rate=""
           if [[ -n "$coverage_file" ]]; then
-            line_rate="$(sed -n 's/.*line-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
-            branch_rate="$(sed -n 's/.*branch-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
+            line_rate="$(awk 'match($0, /line-rate="([0-9.]+)"/, parts) { print parts[1]; exit }' "$coverage_file")"
+            branch_rate="$(awk 'match($0, /branch-rate="([0-9.]+)"/, parts) { print parts[1]; exit }' "$coverage_file")"
           fi
 
           line_min="$(awk '/lineMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
@@ -398,12 +398,12 @@ jobs:
           tests_skipped="$skipped"
           trx_count="$reports"
 
-          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" | head -n1 || true)"
+          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" -print -quit 2>/dev/null || true)"
           line_rate=""
           branch_rate=""
           if [[ -n "$coverage_file" ]]; then
-            line_rate="$(sed -n 's/.*line-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
-            branch_rate="$(sed -n 's/.*branch-rate="\([0-9.]\+\)".*/\1/p' "$coverage_file" | head -n1)"
+            line_rate="$(awk 'match($0, /line-rate="([0-9.]+)"/, parts) { print parts[1]; exit }' "$coverage_file")"
+            branch_rate="$(awk 'match($0, /branch-rate="([0-9.]+)"/, parts) { print parts[1]; exit }' "$coverage_file")"
           fi
 
           line_min="$(awk '/lineMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
@@ -429,9 +429,9 @@ jobs:
           fi
 
           baseline_line_pct=""
-          baseline_file="$(find artifacts/baseline -type f -name "quality-baseline.json" 2>/dev/null | head -n1 || true)"
+          baseline_file="$(find artifacts/baseline -type f -name "quality-baseline.json" -print -quit 2>/dev/null || true)"
           if [[ -n "$baseline_file" ]]; then
-            baseline_line_pct="$(sed -n 's/.*"line_pct_value":[[:space:]]*"\{0,1\}\([^",}]*\).*/\1/p' "$baseline_file" | head -n1)"
+            baseline_line_pct="$(awk -F'"' '/"line_pct_value"/ { print $4; exit }' "$baseline_file")"
           fi
           coverage_delta="$(format_delta_percent "$line_pct_value" "$baseline_line_pct")"
 
