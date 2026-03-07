@@ -41,6 +41,10 @@ Verify the checked-in CLI help contract matches the live command tree:
 dotnet run --project src/Workbench/Workbench.csproj -- doc regen-help --check
 ```
 
+For integration tests that need git, use `GitTestRepo.RunGit` rather than raw
+`ProcessRunner.Run(..., "git", ...)` so test repos stay hermetic and ignore
+host-machine hooks, signing, and global git config.
+
 ## Submitting changes
 
 1. Create a feature branch.

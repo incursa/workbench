@@ -2,6 +2,8 @@ namespace Workbench.IntegrationTests;
 
 internal static class GitTestRepo
 {
+    // Integration tests must route git commands through this helper so host-machine
+    // config, signing, hooks, and credential agents cannot leak into test repos.
     public static void InitializeGitRepo(string repoRoot)
     {
         EnsureHermeticGitLayout(repoRoot);

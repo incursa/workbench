@@ -63,11 +63,11 @@ public class ScaffoldPromoteTests
         Assert.AreEqual(expectedItemPath, itemPath!.Replace('\\', '/'));
         Assert.IsTrue(File.Exists(itemPath!));
 
-        var branchResult = ProcessRunner.Run(repo.Path, "git", "rev-parse", "--abbrev-ref", "HEAD");
+        var branchResult = GitTestRepo.RunGit(repo.Path, "rev-parse", "--abbrev-ref", "HEAD");
         Assert.AreEqual(0, branchResult.ExitCode);
         Assert.AreEqual(expectedBranch, branchResult.StdOut);
 
-        var messageResult = ProcessRunner.Run(repo.Path, "git", "log", "-1", "--pretty=%B");
+        var messageResult = GitTestRepo.RunGit(repo.Path, "log", "-1", "--pretty=%B");
         Assert.AreEqual(0, messageResult.ExitCode);
         Assert.AreEqual(commitMessage, messageResult.StdOut.Trim());
     }
