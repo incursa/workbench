@@ -17,13 +17,22 @@ mirror layer, not the primary system of record.
 
 1. Use `workbench guide` for the human-friendly entry point, or go straight to
    `workbench item new` / `workbench doc new`.
-2. Edit the created Markdown files to tighten the summary, acceptance criteria,
-   and supporting links.
+2. Use `workbench item edit` for structured updates to work-item title,
+   summary, acceptance criteria, and notes; edit the Markdown directly when you
+   need broader freeform changes.
 3. Use `workbench item link` to connect specs, ADRs, files, PRs, or issues, and
    `workbench promote` when you want branch + commit scaffolding in one step.
 4. Refresh generated views with `workbench nav sync` and run
    `workbench validate` before review or automation.
 5. Agents should prefer `workbench llm help` and `--format json`.
+
+## Sync model
+
+- Use `workbench sync` for the common repo-wide happy path. It is the umbrella command and runs the lower-level sync stages.
+- Use `workbench item sync` when you specifically need to reconcile local work items with GitHub issues or branch state.
+- Use `workbench doc sync` when you need to repair or refresh doc front matter and doc/work-item backlinks without rebuilding indexes.
+- Use `workbench nav sync` when you need to rebuild derived docs indexes, repo indexes, or the workboard. It also syncs links first unless that work already ran via `workbench sync --docs --nav`.
+- Use `workbench board regen` only when you want the narrowest workboard-only refresh.
 
 ## Repository map
 
@@ -63,19 +72,19 @@ dotnet test --solution Workbench.slnx
 Run unit tests only:
 
 ```bash
-dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
+dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj
 ```
 
 Run integration tests:
 
 ```bash
-dotnet test tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
+dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
 ```
 
 Run GitHub CLI-dependent integration tests:
 
 ```bash
-WORKBENCH_RUN_GH_TESTS=1 dotnet test tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
+WORKBENCH_RUN_GH_TESTS=1 dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
 ```
 
 Pack the .NET tool:

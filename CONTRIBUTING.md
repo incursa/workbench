@@ -26,7 +26,7 @@ dotnet build Workbench.slnx
 Run the targeted test project:
 
 ```bash
-dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
+dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj
 ```
 
 Run the full solution verification:

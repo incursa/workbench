@@ -275,6 +275,20 @@ Data:
 { "item": { /* WorkItem */ } }
 ```
 
+## workbench item edit
+
+Data:
+```json
+{
+  "item": { /* WorkItem with body included */ },
+  "pathChanged": true,
+  "titleUpdated": true,
+  "summaryUpdated": true,
+  "acceptanceCriteriaUpdated": true,
+  "notesAppended": true
+}
+```
+
 ## workbench item status
 
 Data:

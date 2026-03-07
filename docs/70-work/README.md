@@ -69,8 +69,9 @@ _None._
 
 1. Create a work item with `workbench item new`, `workbench item generate`, or
    `workbench voice workitem`.
-2. Edit the Markdown file to tighten the summary, acceptance criteria, and
-   notes.
+2. Prefer `workbench item edit` for structured updates to title, summary,
+   acceptance criteria, and notes so the front matter title, H1 heading, and
+   file slug stay aligned.
 3. Link specs, ADRs, files, PRs, or issues with `workbench item link`, and use
    `workbench promote` when you want branch + commit scaffolding.
 4. Refresh the generated views with `workbench nav sync` and run

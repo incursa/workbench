@@ -78,6 +78,13 @@ public partial class Program
         AppendLine(builder, "## Global options");
         AppendOptionList(builder, root.Options);
         AppendLine(builder);
+        AppendLine(builder, "## Sync model");
+        AppendLine(builder, "- `workbench sync`: umbrella command that runs the item, doc, and nav sync stages. Use this for the common happy path.");
+        AppendLine(builder, "- `workbench item sync`: external sync stage for GitHub issues, imports, and branch state.");
+        AppendLine(builder, "- `workbench doc sync`: repo metadata stage for doc/work-item backlinks and doc front matter.");
+        AppendLine(builder, "- `workbench nav sync`: derived view stage for docs indexes, repo indexes, and the workboard.");
+        AppendLine(builder, "- `workbench board regen`: narrow workboard-only regeneration when you do not need the broader nav stage.");
+        AppendLine(builder);
         AppendLine(builder, "## Config");
         AppendLine(builder, "- Repo config path: `.workbench/config.json`.");
         AppendLine(builder);

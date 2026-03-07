@@ -539,4 +539,55 @@ public partial class Program
 
         return string.Equals(issue.State, "closed", StringComparison.OrdinalIgnoreCase) ? "done" : "ready";
     }
+
+    static string? ReadOptionalInputText(string repoRoot, string? inlineValue, string? filePath)
+    {
+        if (!string.IsNullOrWhiteSpace(inlineValue))
+        {
+            return inlineValue;
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return null;
+        }
+
+        var resolvedPath = ResolveCommandInputPath(repoRoot, filePath);
+        return File.ReadAllText(resolvedPath);
+    }
+
+    static IReadOnlyList<string>? ResolveAcceptanceCriteriaInput(string repoRoot, IEnumerable<string> inlineValues, string? filePath)
+    {
+        var entries = inlineValues
+            .Select(value => value?.Trim() ?? string.Empty)
+            .Where(value => value.Length > 0)
+            .ToList();
+        if (entries.Count > 0)
+        {
+            return entries;
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return null;
+        }
+
+        var resolvedPath = ResolveCommandInputPath(repoRoot, filePath);
+        return File.ReadAllLines(resolvedPath)
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .Select(line => line.StartsWith("-", StringComparison.Ordinal) ? line[1..].TrimStart() : line)
+            .Where(line => line.Length > 0)
+            .ToList();
+    }
+
+    static string ResolveCommandInputPath(string repoRoot, string path)
+    {
+        if (Path.IsPathRooted(path))
+        {
+            return path;
+        }
+
+        return Path.Combine(repoRoot, path);
+    }
 }

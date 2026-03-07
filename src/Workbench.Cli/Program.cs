@@ -945,18 +945,18 @@ public partial class Program
         });
         itemCommand.Subcommands.Add(itemImportCommand);
 
-        var itemSyncCommand = new Command("sync", "Sync work items with GitHub issues and branches.");
+        var itemSyncCommand = new Command("sync", "External sync stage: reconcile local work items with GitHub issues and branch state.");
         var syncIdOption = new Option<string[]>("--id")
         {
-            Description = "Work item IDs to sync (limits local-to-GitHub and branch creation)."
+            Description = "Limit external sync to specific work item IDs."
         };
         var syncIssueOption = new Option<string[]>("--issue")
         {
-            Description = "Issue numbers or URLs to import (limits GitHub-to-local)."
+            Description = "Import or reconcile specific GitHub issues by number or URL."
         };
         var syncPreferOption = new Option<string?>("--prefer")
         {
-            Description = "When descriptions differ, prefer 'local' or 'github'."
+            Description = "When local and GitHub descriptions differ, prefer 'local' or 'github'."
         };
         syncPreferOption.CompletionSources.Add("local", "github");
         var itemSyncDryRunOption = new Option<bool>("--dry-run")
@@ -965,7 +965,7 @@ public partial class Program
         };
         var itemSyncImportIssuesOption = new Option<bool>("--import-issues")
         {
-            Description = "List GitHub issues and import ones not yet linked (slower)."
+            Description = "Import unlinked GitHub issues into local work items (slower)."
         };
         itemSyncCommand.Options.Add(syncIdOption);
         itemSyncCommand.Options.Add(syncIssueOption);
@@ -1244,6 +1244,159 @@ public partial class Program
             }
         });
         itemCommand.Subcommands.Add(itemStatusCommand);
+
+        var itemEditCommand = new Command("edit", "Safely edit structured work item fields and keep title/body/slug alignment coherent.");
+        var editIdArg = new Argument<string>("id")
+        {
+            Description = "Work item ID."
+        };
+        var editTitleOption = new Option<string?>("--title")
+        {
+            Description = "New title. Updates front matter, the H1 heading, and the file slug by default."
+        };
+        var editSummaryOption = new Option<string?>("--summary")
+        {
+            Description = "Replace the Summary section with inline text."
+        };
+        var editSummaryFileOption = new Option<string?>("--summary-file")
+        {
+            Description = "Replace the Summary section from a text file."
+        };
+        var editAcceptanceOption = new Option<string[]>("--acceptance")
+        {
+            Description = "Replace Acceptance criteria with one or more list entries."
+        };
+        var editAcceptanceFileOption = new Option<string?>("--acceptance-file")
+        {
+            Description = "Replace Acceptance criteria from a text file (one item per non-empty line)."
+        };
+        var editAppendNoteOption = new Option<string?>("--append-note")
+        {
+            Description = "Append a bullet to the Notes section."
+        };
+        var editKeepPathOption = new Option<bool>("--keep-path")
+        {
+            Description = "Do not rename the file slug when updating the title."
+        };
+        itemEditCommand.Arguments.Add(editIdArg);
+        itemEditCommand.Options.Add(editTitleOption);
+        itemEditCommand.Options.Add(editSummaryOption);
+        itemEditCommand.Options.Add(editSummaryFileOption);
+        itemEditCommand.Options.Add(editAcceptanceOption);
+        itemEditCommand.Options.Add(editAcceptanceFileOption);
+        itemEditCommand.Options.Add(editAppendNoteOption);
+        itemEditCommand.Options.Add(editKeepPathOption);
+        itemEditCommand.SetAction(parseResult =>
+        {
+            try
+            {
+                var repo = parseResult.GetValue(repoOption);
+                var format = parseResult.GetValue(formatOption) ?? "table";
+                var id = parseResult.GetValue(editIdArg) ?? string.Empty;
+                var title = parseResult.GetValue(editTitleOption);
+                var summary = parseResult.GetValue(editSummaryOption);
+                var summaryFile = parseResult.GetValue(editSummaryFileOption);
+                var acceptance = parseResult.GetValue(editAcceptanceOption) ?? Array.Empty<string>();
+                var acceptanceFile = parseResult.GetValue(editAcceptanceFileOption);
+                var appendNote = parseResult.GetValue(editAppendNoteOption);
+                var keepPath = parseResult.GetValue(editKeepPathOption);
+                var repoRoot = ResolveRepo(repo);
+                var resolvedFormat = ResolveFormat(format);
+                var config = WorkbenchConfig.Load(repoRoot, out var configError);
+                if (configError is not null)
+                {
+                    Console.WriteLine($"Config error: {configError}");
+                    SetExitCode(2);
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(summary) && !string.IsNullOrWhiteSpace(summaryFile))
+                {
+                    throw new InvalidOperationException("Choose either --summary or --summary-file, not both.");
+                }
+
+                if (acceptance.Length > 0 && !string.IsNullOrWhiteSpace(acceptanceFile))
+                {
+                    throw new InvalidOperationException("Choose either --acceptance or --acceptance-file, not both.");
+                }
+
+                if (string.IsNullOrWhiteSpace(title)
+                    && string.IsNullOrWhiteSpace(summary)
+                    && string.IsNullOrWhiteSpace(summaryFile)
+                    && acceptance.Length == 0
+                    && string.IsNullOrWhiteSpace(acceptanceFile)
+                    && string.IsNullOrWhiteSpace(appendNote))
+                {
+                    throw new InvalidOperationException("Specify at least one edit: --title, --summary, --summary-file, --acceptance, --acceptance-file, or --append-note.");
+                }
+
+                var summaryText = ReadOptionalInputText(repoRoot, summary, summaryFile);
+                var acceptanceItems = ResolveAcceptanceCriteriaInput(repoRoot, acceptance, acceptanceFile);
+
+                var path = WorkItemService.GetItemPathById(repoRoot, config, id);
+                var result = WorkItemService.EditItem(
+                    path,
+                    title,
+                    summaryText,
+                    acceptanceItems,
+                    appendNote,
+                    renameFile: !keepPath,
+                    config,
+                    repoRoot);
+
+                if (result.PathChanged)
+                {
+                    LinkUpdater.UpdateLinks(repoRoot, result.OriginalPath, result.Item.Path);
+                }
+
+                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payload = new ItemEditOutput(
+                        true,
+                        new ItemEditData(
+                            ItemToPayload(result.Item, includeBody: true),
+                            result.PathChanged,
+                            result.TitleUpdated,
+                            result.SummaryUpdated,
+                            result.AcceptanceCriteriaUpdated,
+                            result.NotesAppended));
+                    WriteJson(payload, Core.WorkbenchJsonContext.Default.ItemEditOutput);
+                }
+                else
+                {
+                    Console.WriteLine($"{result.Item.Id} edited.");
+                    Console.WriteLine($"Path: {result.Item.Path}");
+                    if (result.TitleUpdated)
+                    {
+                        Console.WriteLine("Updated: title");
+                    }
+                    if (result.SummaryUpdated)
+                    {
+                        Console.WriteLine("Updated: summary");
+                    }
+                    if (result.AcceptanceCriteriaUpdated)
+                    {
+                        Console.WriteLine("Updated: acceptance criteria");
+                    }
+                    if (result.NotesAppended)
+                    {
+                        Console.WriteLine("Updated: notes");
+                    }
+                    if (result.PathChanged)
+                    {
+                        Console.WriteLine("Updated: file slug");
+                    }
+                }
+
+                SetExitCode(0);
+            }
+            catch (Exception ex)
+            {
+                ReportError(ex);
+                SetExitCode(2);
+            }
+        });
+        itemCommand.Subcommands.Add(itemEditCommand);
 
         var itemCloseCommand = new Command("close", "Set status to done and move to docs/70-work/done.");
         var closeIdArg = new Argument<string>("id")
@@ -1916,7 +2069,7 @@ public partial class Program
         root.Subcommands.Add(normalizeCommand);
 
         var boardCommand = new Command("board", "Group: workboard commands.");
-        var boardRegenCommand = new Command("regen", "Regenerate docs/70-work/README.md.");
+        var boardRegenCommand = new Command("regen", "Regenerate only the workboard section in docs/70-work/README.md.");
         boardRegenCommand.SetAction(parseResult =>
         {
             try
@@ -2474,14 +2627,14 @@ public partial class Program
             HandleDocLink(repo, format, resolvedType, path, workItems, add: false, dryRun: dryRun);
         });
 
-        var docSyncCommand = new Command("sync", "Sync doc/work item backlinks.");
+        var docSyncCommand = new Command("sync", "Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.");
         var docSyncAllOption = new Option<bool>("--all")
         {
-            Description = "Add Workbench front matter to all docs (default)."
+            Description = "Add or normalize Workbench front matter on all docs (default)."
         };
         var docSyncIssuesOption = new Option<bool>("--issues")
         {
-            Description = "Sync GitHub issue links for work items."
+            Description = "Sync GitHub issue links while updating doc/work-item backlinks."
         };
         var docSyncIncludeDoneOption = new Option<bool>("--include-done")
         {
@@ -2882,24 +3035,24 @@ public partial class Program
         root.Subcommands.Add(voiceCommand);
 
         var navCommand = new Command("nav", "Group: navigation/index commands.");
-        var navSyncCommand = new Command("sync", "Sync links and navigation indexes.");
+        var navSyncCommand = new Command("sync", "Derived view stage: regenerate indexes and the workboard, syncing links first by default.");
         var navSyncIssuesOption = new Option<bool>("--issues")
         {
-            Description = "Sync GitHub issue links for work items.",
+            Description = "Sync GitHub issue links while rebuilding derived navigation views.",
             DefaultValueFactory = _ => true
         };
         var navSyncForceOption = new Option<bool>("--force")
         {
-            Description = "Rewrite index sections even if content is unchanged."
+            Description = "Rewrite derived index sections even if content is unchanged."
         };
         var navSyncWorkboardOption = new Option<bool>("--workboard")
         {
-            Description = "Regenerate the workboard.",
+            Description = "Regenerate the workboard section in docs/70-work/README.md.",
             DefaultValueFactory = _ => true
         };
         var navSyncIncludeDoneOption = new Option<bool>("--include-done")
         {
-            Description = "Include done/dropped work items in indexes."
+            Description = "Include done/dropped work items in derived indexes and the workboard."
         };
         var navSyncDryRunOption = new Option<bool>("--dry-run")
         {
@@ -2988,39 +3141,39 @@ public partial class Program
         navCommand.Subcommands.Add(navSyncCommand);
         root.Subcommands.Add(navCommand);
 
-        var syncCommand = new Command("sync", "Sync work items, docs, and navigation.");
+        var syncCommand = new Command("sync", "Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.");
         var syncItemsOption = new Option<bool>("--items")
         {
-            Description = "Run work item sync with GitHub issues and branches."
+            Description = "Run the `item sync` stage (GitHub issues/branches <-> local work items)."
         };
         var syncDocsOption = new Option<bool>("--docs")
         {
-            Description = "Sync doc/work item backlinks and front matter."
+            Description = "Run the `doc sync` stage (backlinks + doc front matter)."
         };
         var syncNavOption = new Option<bool>("--nav")
         {
-            Description = "Sync navigation indexes."
+            Description = "Run the `nav sync` stage (derived indexes + workboard)."
         };
         var syncIssuesOption = new Option<bool>("--issues")
         {
-            Description = "Sync GitHub issue links for docs and navigation.",
+            Description = "Sync GitHub issue links in the doc and nav stages.",
             DefaultValueFactory = _ => true
         };
         var syncImportIssuesOption = new Option<bool>("--import-issues")
         {
-            Description = "List GitHub issues and import ones not yet linked (slower)."
+            Description = "Pass through to the item sync stage to import unlinked GitHub issues (slower)."
         };
         var syncIncludeDoneOption = new Option<bool>("--include-done")
         {
-            Description = "Include done/dropped work items in docs and navigation."
+            Description = "Include done/dropped work items in the doc and nav stages."
         };
         var syncForceOption = new Option<bool>("--force")
         {
-            Description = "Rewrite index sections even if content is unchanged."
+            Description = "Pass through to the nav sync stage to rewrite derived sections even if unchanged."
         };
         var syncWorkboardOption = new Option<bool>("--workboard")
         {
-            Description = "Regenerate the workboard when syncing navigation.",
+            Description = "Pass through to the nav sync stage to regenerate the workboard.",
             DefaultValueFactory = _ => true
         };
         var repoSyncDryRunOption = new Option<bool>("--dry-run")
@@ -3029,7 +3182,7 @@ public partial class Program
         };
         var repoSyncPreferOption = new Option<string?>("--prefer")
         {
-            Description = "When syncing work items, prefer 'local' or 'github'."
+            Description = "Pass through to the item sync stage when local and GitHub descriptions differ."
         };
         repoSyncPreferOption.CompletionSources.Add("local", "github");
         syncCommand.Options.Add(syncItemsOption);

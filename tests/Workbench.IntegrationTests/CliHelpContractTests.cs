@@ -27,7 +27,7 @@ public class CliHelpContractTests
     public void DocRegenHelp_CheckFailsOnDrift_AndRegenRestoresSnapshot()
     {
         using var repo = TempRepo.Create();
-        GitTestRepo.InitializeGitRepo(repo.Path);
+        Directory.CreateDirectory(Path.Combine(repo.Path, ".git"));
 
         var cliHelpPath = Path.Combine(repo.Path, "docs", "30-contracts", "cli-help.md");
         Directory.CreateDirectory(Path.GetDirectoryName(cliHelpPath)!);
@@ -57,6 +57,9 @@ public class CliHelpContractTests
         var content = File.ReadAllText(cliHelpPath);
         StringAssert.Contains(content, "# Workbench CLI Help", StringComparison.Ordinal);
         StringAssert.Contains(content, "Generated from the live `System.CommandLine` tree.", StringComparison.Ordinal);
+        StringAssert.Contains(content, "## Sync model", StringComparison.Ordinal);
+        StringAssert.Contains(content, "`workbench sync`: umbrella command", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench item edit`", StringComparison.Ordinal);
         StringAssert.Contains(content, "### `workbench doc regen-help`", StringComparison.Ordinal);
 
         var secondCheckResult = WorkbenchCli.Run(

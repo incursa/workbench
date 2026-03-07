@@ -17,6 +17,7 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(ItemCreateOutput))]
 [JsonSerializable(typeof(ItemListOutput))]
 [JsonSerializable(typeof(ItemShowOutput))]
+[JsonSerializable(typeof(ItemEditOutput))]
 [JsonSerializable(typeof(ItemStatusOutput))]
 [JsonSerializable(typeof(ItemCloseOutput))]
 [JsonSerializable(typeof(ItemDeleteOutput))]

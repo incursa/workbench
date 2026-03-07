@@ -23,6 +23,25 @@ public static class WorkItemService
     /// <param name="Items">List of loaded work items.</param>
     public sealed record WorkItemListResult(IList<WorkItem> Items);
 
+    /// <summary>
+    /// Result payload returned by structured work item edits.
+    /// </summary>
+    /// <param name="Item">Updated work item.</param>
+    /// <param name="OriginalPath">Original absolute path before any rename.</param>
+    /// <param name="PathChanged">True when the file path changed.</param>
+    /// <param name="TitleUpdated">True when the title/front matter heading changed.</param>
+    /// <param name="SummaryUpdated">True when the Summary section changed.</param>
+    /// <param name="AcceptanceCriteriaUpdated">True when the Acceptance criteria section changed.</param>
+    /// <param name="NotesAppended">True when a note was appended.</param>
+    public sealed record WorkItemEditResult(
+        WorkItem Item,
+        string OriginalPath,
+        bool PathChanged,
+        bool TitleUpdated,
+        bool SummaryUpdated,
+        bool AcceptanceCriteriaUpdated,
+        bool NotesAppended);
+
     public static WorkItemResult CreateItem(
         string repoRoot,
         WorkbenchConfig config,
@@ -557,10 +576,111 @@ public static class WorkItemService
             throw new InvalidOperationException($"Front matter error: {error}");
         }
         frontMatter!.Data["title"] = newTitle;
+        frontMatter.Data["updated"] = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var body = ReplaceTitleHeading(frontMatter.Body, item.Id, newTitle);
+        frontMatter = new FrontMatter(frontMatter.Data, body);
         File.WriteAllText(path, frontMatter.Serialize());
 
         File.Move(path, newPath, overwrite: false);
         return LoadItem(newPath) ?? throw new InvalidOperationException("Failed to reload work item.");
+    }
+
+    public static WorkItemEditResult EditItem(
+        string path,
+        string? title,
+        string? summary,
+        IEnumerable<string>? acceptanceCriteria,
+        string? appendNote,
+        bool renameFile,
+        WorkbenchConfig config,
+        string repoRoot)
+    {
+        var content = File.ReadAllText(path);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            throw new InvalidOperationException($"Front matter error: {error}");
+        }
+
+        var originalPath = path;
+        var data = frontMatter!.Data;
+        var itemId = GetString(data, "id") ?? string.Empty;
+        var body = frontMatter.Body;
+
+        var titleUpdated = false;
+        var summaryUpdated = false;
+        var acceptanceCriteriaUpdated = false;
+        var notesAppended = false;
+
+        var normalizedTitle = title?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedTitle))
+        {
+            var currentTitle = GetString(data, "title") ?? string.Empty;
+            if (!string.Equals(currentTitle, normalizedTitle, StringComparison.Ordinal))
+            {
+                data["title"] = normalizedTitle;
+                body = ReplaceTitleHeading(body, itemId, normalizedTitle);
+                titleUpdated = true;
+            }
+        }
+
+        if (summary is not null)
+        {
+            var normalizedSummary = summary.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedSummary))
+            {
+                throw new InvalidOperationException("Summary cannot be empty.");
+            }
+
+            body = ReplaceSection(body, "Summary", normalizedSummary);
+            summaryUpdated = true;
+        }
+
+        if (acceptanceCriteria is not null)
+        {
+            body = ReplaceSection(body, "Acceptance criteria", FormatAcceptanceCriteria(acceptanceCriteria));
+            acceptanceCriteriaUpdated = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(appendNote))
+        {
+            body = AppendNote(body, appendNote.Trim());
+            notesAppended = true;
+        }
+
+        if (!titleUpdated && !summaryUpdated && !acceptanceCriteriaUpdated && !notesAppended)
+        {
+            throw new InvalidOperationException("No work item edits were requested.");
+        }
+
+        data["updated"] = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        frontMatter = new FrontMatter(data, body);
+        File.WriteAllText(path, frontMatter.Serialize());
+
+        var finalPath = path;
+        var pathChanged = false;
+        if (renameFile && titleUpdated && !string.IsNullOrWhiteSpace(normalizedTitle))
+        {
+            var slug = Slugify(normalizedTitle);
+            var newFileName = $"{itemId}-{slug}.md";
+            var currentDir = Path.GetDirectoryName(path) ?? repoRoot;
+            var newPath = Path.Combine(currentDir, newFileName);
+            if (!string.Equals(path, newPath, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Move(path, newPath, overwrite: false);
+                finalPath = newPath;
+                pathChanged = true;
+            }
+        }
+
+        var item = LoadItem(finalPath) ?? throw new InvalidOperationException("Failed to reload work item.");
+        return new WorkItemEditResult(
+            item,
+            originalPath,
+            pathChanged,
+            titleUpdated,
+            summaryUpdated,
+            acceptanceCriteriaUpdated,
+            notesAppended);
     }
 
     public static void AddPrLink(string path, string prUrl)
@@ -954,6 +1074,7 @@ public static class WorkItemService
     private static string ReplaceTitleHeading(string body, string id, string title)
     {
         var lines = body.Replace("\r\n", "\n").Split('\n').ToList();
+        var heading = string.IsNullOrWhiteSpace(id) ? $"# {title}" : $"# {id} - {title}";
         for (var i = 0; i < lines.Count; i++)
         {
             var line = lines[i];
@@ -965,10 +1086,19 @@ public static class WorkItemService
             {
                 continue;
             }
-            lines[i] = string.IsNullOrWhiteSpace(id) ? $"# {title}" : $"# {id} - {title}";
+            lines[i] = heading;
             return string.Join("\n", lines);
         }
-        return string.Join("\n", lines);
+
+        var trimmedLines = lines.SkipWhile(string.IsNullOrWhiteSpace).ToList();
+        if (trimmedLines.Count == 0)
+        {
+            return heading;
+        }
+
+        var updated = new List<string> { heading, string.Empty };
+        updated.AddRange(trimmedLines);
+        return string.Join("\n", updated);
     }
 
     private static string BuildIssueSummary(GithubIssue issue)

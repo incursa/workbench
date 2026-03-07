@@ -33,6 +33,13 @@ workbench <command> [options]
 - `--quiet`: Suppress non-error output
 - `--debug`: Print full exception diagnostics on failure.
 
+## Sync model
+- `workbench sync`: umbrella command that runs the item, doc, and nav sync stages. Use this for the common happy path.
+- `workbench item sync`: external sync stage for GitHub issues, imports, and branch state.
+- `workbench doc sync`: repo metadata stage for doc/work-item backlinks and doc front matter.
+- `workbench nav sync`: derived view stage for docs indexes, repo indexes, and the workboard.
+- `workbench board regen`: narrow workboard-only regeneration when you do not need the broader nav stage.
+
 ## Config
 - Repo config path: `.workbench/config.json`.
 
@@ -44,7 +51,7 @@ workbench <command> [options]
 ## Command tree
 - `workbench`
   - `workbench board`: Group: workboard commands.
-    - `workbench board regen`: Regenerate docs/70-work/README.md.
+    - `workbench board regen`: Regenerate only the workboard section in docs/70-work/README.md.
   - `workbench codex`: Group: Codex agent commands.
     - `workbench codex doctor`: Check whether Codex is installed and callable.
     - `workbench codex run`: Run Codex in full-auto mode with web search.
@@ -60,7 +67,7 @@ workbench <command> [options]
     - `workbench doc new`: Create a documentation file with Workbench front matter.
     - `workbench doc regen-help`: Regenerate docs/30-contracts/cli-help.md from the live command tree.
     - `workbench doc summarize`: Summarize doc changes with AI and append change notes.
-    - `workbench doc sync`: Sync doc/work item backlinks.
+    - `workbench doc sync`: Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.
     - `workbench doc unlink`: Unlink a doc from work items.
   - `workbench doctor`: Check git, config, and expected paths.
   - `workbench github`: Group: GitHub commands.
@@ -71,6 +78,7 @@ workbench <command> [options]
   - `workbench item`: Group: work item commands.
     - `workbench item close`: Set status to done and move to docs/70-work/done.
     - `workbench item delete`: Delete a work item file and update doc backlinks.
+    - `workbench item edit`: Safely edit structured work item fields and keep title/body/slug alignment coherent.
     - `workbench item generate`: Generate a work item draft with AI and create it.
     - `workbench item import`: Import GitHub issues into work items.
     - `workbench item link`: Link specs, ADRs, files, PRs, or issues to a work item.
@@ -81,17 +89,17 @@ workbench <command> [options]
     - `workbench item rename`: Regenerate slug from title, rename the file, and update inbound links.
     - `workbench item show`: Show metadata and resolved path for an item.
     - `workbench item status`: Update status and updated date.
-    - `workbench item sync`: Sync work items with GitHub issues and branches.
+    - `workbench item sync`: External sync stage: reconcile local work items with GitHub issues and branch state.
     - `workbench item unlink`: Remove specs, ADRs, files, PRs, or issues from a work item.
   - `workbench llm`: Group: AI-oriented help and guidance commands.
     - `workbench llm help`: Print a comprehensive CLI reference for AI agents.
   - `workbench migrate`: Run repository migrations.
   - `workbench nav`: Group: navigation/index commands.
-    - `workbench nav sync`: Sync links and navigation indexes.
+    - `workbench nav sync`: Derived view stage: regenerate indexes and the workboard, syncing links first by default.
   - `workbench normalize`: Normalize work item and doc front matter.
   - `workbench promote`: Create a work item, branch, and commit in one step.
   - `workbench scaffold`: Create the default folder structure, templates, and config.
-  - `workbench sync`: Sync work items, docs, and navigation.
+  - `workbench sync`: Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.
   - `workbench validate`: Validate work items, links, and schemas.
   - `workbench version`: Print CLI version.
   - `workbench voice`: Group: voice input commands.
@@ -106,10 +114,10 @@ workbench <command> [options]
 Group: workboard commands.
 
 Subcommands:
-- `regen`: Regenerate docs/70-work/README.md.
+- `regen`: Regenerate only the workboard section in docs/70-work/README.md.
 
 ### `workbench board regen`
-Regenerate docs/70-work/README.md.
+Regenerate only the workboard section in docs/70-work/README.md.
 
 ### `workbench codex`
 Group: Codex agent commands.
@@ -178,7 +186,7 @@ Subcommands:
 - `new`: Create a documentation file with Workbench front matter.
 - `regen-help`: Regenerate docs/30-contracts/cli-help.md from the live command tree.
 - `summarize`: Summarize doc changes with AI and append change notes.
-- `sync`: Sync doc/work item backlinks.
+- `sync`: Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.
 - `unlink`: Unlink a doc from work items.
 
 ### `workbench doc delete`
@@ -225,11 +233,11 @@ Options:
 - `--update-index`: Run git add on updated files.
 
 ### `workbench doc sync`
-Sync doc/work item backlinks.
+Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.
 
 Options:
-- `--all`: Add Workbench front matter to all docs (default).
-- `--issues`: Sync GitHub issue links for work items.
+- `--all`: Add or normalize Workbench front matter on all docs (default).
+- `--issues`: Sync GitHub issue links while updating doc/work-item backlinks.
 - `--include-done`: Include done/dropped work items.
 - `--dry-run`: Report changes without writing files.
 
@@ -295,6 +303,7 @@ Group: work item commands.
 Subcommands:
 - `close`: Set status to done and move to docs/70-work/done.
 - `delete`: Delete a work item file and update doc backlinks.
+- `edit`: Safely edit structured work item fields and keep title/body/slug alignment coherent.
 - `generate`: Generate a work item draft with AI and create it.
 - `import`: Import GitHub issues into work items.
 - `link`: Link specs, ADRs, files, PRs, or issues to a work item.
@@ -305,7 +314,7 @@ Subcommands:
 - `rename`: Regenerate slug from title, rename the file, and update inbound links.
 - `show`: Show metadata and resolved path for an item.
 - `status`: Update status and updated date.
-- `sync`: Sync work items with GitHub issues and branches.
+- `sync`: External sync stage: reconcile local work items with GitHub issues and branch state.
 - `unlink`: Remove specs, ADRs, files, PRs, or issues from a work item.
 
 ### `workbench item close`
@@ -325,6 +334,21 @@ Arguments:
 
 Options:
 - `--keep-links`: Skip removing doc backlinks.
+
+### `workbench item edit`
+Safely edit structured work item fields and keep title/body/slug alignment coherent.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--title <title>`: New title. Updates front matter, the H1 heading, and the file slug by default.
+- `--summary <summary>`: Replace the Summary section with inline text.
+- `--summary-file <summary-file>`: Replace the Summary section from a text file.
+- `--acceptance <acceptance>`: Replace Acceptance criteria with one or more list entries.
+- `--acceptance-file <acceptance-file>`: Replace Acceptance criteria from a text file (one item per non-empty line).
+- `--append-note <append-note>`: Append a bullet to the Notes section.
+- `--keep-path`: Do not rename the file slug when updating the title.
 
 ### `workbench item generate`
 Generate a work item draft with AI and create it.
@@ -420,14 +444,14 @@ Options:
 - `--note <note>`: Append a note.
 
 ### `workbench item sync`
-Sync work items with GitHub issues and branches.
+External sync stage: reconcile local work items with GitHub issues and branch state.
 
 Options:
-- `--id <id>`: Work item IDs to sync (limits local-to-GitHub and branch creation).
-- `--issue <issue>`: Issue numbers or URLs to import (limits GitHub-to-local).
-- `--prefer <prefer>`: When descriptions differ, prefer 'local' or 'github'.
+- `--id <id>`: Limit external sync to specific work item IDs.
+- `--issue <issue>`: Import or reconcile specific GitHub issues by number or URL.
+- `--prefer <prefer>`: When local and GitHub descriptions differ, prefer 'local' or 'github'.
 - `--dry-run`: Report changes without writing.
-- `--import-issues`: List GitHub issues and import ones not yet linked (slower).
+- `--import-issues`: Import unlinked GitHub issues into local work items (slower).
 
 ### `workbench item unlink`
 Remove specs, ADRs, files, PRs, or issues from a work item.
@@ -467,16 +491,16 @@ Options:
 Group: navigation/index commands.
 
 Subcommands:
-- `sync`: Sync links and navigation indexes.
+- `sync`: Derived view stage: regenerate indexes and the workboard, syncing links first by default.
 
 ### `workbench nav sync`
-Sync links and navigation indexes.
+Derived view stage: regenerate indexes and the workboard, syncing links first by default.
 
 Options:
-- `--issues`: Sync GitHub issue links for work items.
-- `--force`: Rewrite index sections even if content is unchanged.
-- `--workboard`: Regenerate the workboard.
-- `--include-done`: Include done/dropped work items in indexes.
+- `--issues`: Sync GitHub issue links while rebuilding derived navigation views.
+- `--force`: Rewrite derived index sections even if content is unchanged.
+- `--workboard`: Regenerate the workboard section in docs/70-work/README.md.
+- `--include-done`: Include done/dropped work items in derived indexes and the workboard.
 - `--dry-run`: Report changes without writing files.
 
 ### `workbench normalize`
@@ -509,19 +533,19 @@ Options:
 - `--force`: Overwrite existing files.
 
 ### `workbench sync`
-Sync work items, docs, and navigation.
+Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.
 
 Options:
-- `--items`: Run work item sync with GitHub issues and branches.
-- `--docs`: Sync doc/work item backlinks and front matter.
-- `--nav`: Sync navigation indexes.
-- `--issues`: Sync GitHub issue links for docs and navigation.
-- `--import-issues`: List GitHub issues and import ones not yet linked (slower).
-- `--include-done`: Include done/dropped work items in docs and navigation.
-- `--force`: Rewrite index sections even if content is unchanged.
-- `--workboard`: Regenerate the workboard when syncing navigation.
+- `--items`: Run the `item sync` stage (GitHub issues/branches <-> local work items).
+- `--docs`: Run the `doc sync` stage (backlinks + doc front matter).
+- `--nav`: Run the `nav sync` stage (derived indexes + workboard).
+- `--issues`: Sync GitHub issue links in the doc and nav stages.
+- `--import-issues`: Pass through to the item sync stage to import unlinked GitHub issues (slower).
+- `--include-done`: Include done/dropped work items in the doc and nav stages.
+- `--force`: Pass through to the nav sync stage to rewrite derived sections even if unchanged.
+- `--workboard`: Pass through to the nav sync stage to regenerate the workboard.
 - `--dry-run`: Report changes without writing files.
-- `--prefer <prefer>`: When syncing work items, prefer 'local' or 'github'.
+- `--prefer <prefer>`: Pass through to the item sync stage when local and GitHub descriptions differ.
 
 ### `workbench validate`
 Validate work items, links, and schemas.
