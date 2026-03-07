@@ -101,12 +101,9 @@ public partial class Program
     {
         foreach (var option in options)
         {
-            var aliases = option.Aliases.Count > 0
-                ? string.Join(", ", option.Aliases)
-                : option.Name;
             var required = option.Required ? " (required)" : string.Empty;
             var description = string.IsNullOrWhiteSpace(option.Description) ? "(no description)" : option.Description;
-            Console.WriteLine($"- {aliases}{required}: {description}");
+            Console.WriteLine($"- {FormatOptionDisplay(option)}{required}: {description}");
         }
     }
 }

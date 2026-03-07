@@ -32,4 +32,8 @@ Other contract docs:
 ## Guidance
 
 - Keep schemas in sync with CLI behavior.
-- Update contract docs when inputs, outputs, or defaults change.
+- `docs/30-contracts/cli-help.md` is generated from the live CLI tree.
+- Regenerate it with `workbench doc regen-help`.
+- Verify it is current with `workbench doc regen-help --check`.
+- Machine-readable command contracts remain in `docs/commands.md`.
+- Update other contract docs when inputs, outputs, or defaults change.

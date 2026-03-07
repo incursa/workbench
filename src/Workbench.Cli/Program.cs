@@ -2269,6 +2269,25 @@ public partial class Program
             HandleDocCreate(repo, format, type, title, path, workItems, codeRefs, force);
         });
 
+        var docRegenHelpCommand = new Command("regen-help", "Regenerate docs/30-contracts/cli-help.md from the live command tree.");
+        var docRegenHelpCheckOption = new Option<bool>("--check")
+        {
+            Description = "Fail if docs/30-contracts/cli-help.md is out of date."
+        };
+        var docRegenHelpPathOption = new Option<string?>("--path")
+        {
+            Description = "Output path (defaults to docs/30-contracts/cli-help.md)."
+        };
+        docRegenHelpCommand.Options.Add(docRegenHelpCheckOption);
+        docRegenHelpCommand.Options.Add(docRegenHelpPathOption);
+        docRegenHelpCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var check = parseResult.GetValue(docRegenHelpCheckOption);
+            var path = parseResult.GetValue(docRegenHelpPathOption);
+            HandleCliHelpRegeneration(root, repo, check, path);
+        });
+
         var docDeleteCommand = new Command("delete", "Delete a documentation file and update work item links.");
         var docDeletePathOption = new Option<string>("--path")
         {
@@ -2650,6 +2669,7 @@ public partial class Program
         });
 
         docCommand.Subcommands.Add(docNewCommand);
+        docCommand.Subcommands.Add(docRegenHelpCommand);
         docCommand.Subcommands.Add(docDeleteCommand);
         docCommand.Subcommands.Add(docLinkCommand);
         docCommand.Subcommands.Add(docUnlinkCommand);

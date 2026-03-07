@@ -11,221 +11,571 @@ status: active
 updated: 2025-12-27
 ---
 
-# Workbench CLI Help (v0.1)
+# Workbench CLI Help
 
-Usage:
-```
+Generated from the live `System.CommandLine` tree.
+Regenerate with `workbench doc regen-help`.
+Verify drift with `workbench doc regen-help --check`.
+
+Machine-readable command output contracts remain documented in `docs/commands.md`.
+
+## Usage
+```text
 workbench <command> [options]
 ```
 
-Global options:
-- `--repo <path>`: target repo (defaults to current dir)
-- `--format table|json`: output format (default: table)
-- `--no-color`: disable colored output
-- `--quiet`: suppress non-error output
-- `--debug`: print full exception diagnostics on failure
+## Global options
+- `-?`, `-h`, `/?`, `/h`: Show help and usage information
+- `--version`: Show version information
+- `--repo <repo>`: Target repo (defaults to current dir)
+- `--format <format>`: Output format (table|json)
+- `--no-color`: Disable colored output
+- `--quiet`: Suppress non-error output
+- `--debug`: Print full exception diagnostics on failure.
 
-Config:
-- Repo config path: `.workbench/config.json`
+## Config
+- Repo config path: `.workbench/config.json`.
 
-Environment overrides:
-- `WORKBENCH_REPO`: default repo path (overrides current dir)
-- `WORKBENCH_FORMAT`: default format (`table` or `json`)
-- `WORKBENCH_NO_COLOR`: set to `1` to disable color
-- `WORKBENCH_QUIET`: set to `1` to suppress non-error output
+## Exit codes
+- `0`: success, no warnings.
+- `1`: success with warnings (`doctor` and `validate`).
+- `2`: command failed due to errors.
 
-Exit codes:
-- `0`: success, no warnings
-- `1`: success with warnings (validate/doctor only)
-- `2`: command failed due to errors
+## Command tree
+- `workbench`
+  - `workbench board`: Group: workboard commands.
+    - `workbench board regen`: Regenerate docs/70-work/README.md.
+  - `workbench codex`: Group: Codex agent commands.
+    - `workbench codex doctor`: Check whether Codex is installed and callable.
+    - `workbench codex run`: Run Codex in full-auto mode with web search.
+  - `workbench config`: Group: configuration commands.
+    - `workbench config credentials`: Manage credentials.env entries.
+      - `workbench config credentials set`: Set an entry in credentials.env.
+      - `workbench config credentials unset`: Remove an entry from credentials.env.
+    - `workbench config set`: Write or update config values in .workbench/config.json.
+    - `workbench config show`: Print effective config (defaults + repo config + CLI overrides).
+  - `workbench doc`: Group: documentation commands.
+    - `workbench doc delete`: Delete a documentation file and update work item links.
+    - `workbench doc link`: Link a doc to work items.
+    - `workbench doc new`: Create a documentation file with Workbench front matter.
+    - `workbench doc regen-help`: Regenerate docs/30-contracts/cli-help.md from the live command tree.
+    - `workbench doc summarize`: Summarize doc changes with AI and append change notes.
+    - `workbench doc sync`: Sync doc/work item backlinks.
+    - `workbench doc unlink`: Unlink a doc from work items.
+  - `workbench doctor`: Check git, config, and expected paths.
+  - `workbench github`: Group: GitHub commands.
+    - `workbench github pr`: Group: GitHub pull request commands.
+      - `workbench github pr create`: Create a GitHub PR via the configured provider and backlink the PR URL.
+  - `workbench guide`: Run the interactive guide for common tasks.
+  - `workbench init`: Interactive setup for Workbench (scaffold + guidance + guide).
+  - `workbench item`: Group: work item commands.
+    - `workbench item close`: Set status to done and move to docs/70-work/done.
+    - `workbench item delete`: Delete a work item file and update doc backlinks.
+    - `workbench item generate`: Generate a work item draft with AI and create it.
+    - `workbench item import`: Import GitHub issues into work items.
+    - `workbench item link`: Link specs, ADRs, files, PRs, or issues to a work item.
+    - `workbench item list`: List work items.
+    - `workbench item move`: Move a work item file and update inbound links where possible.
+    - `workbench item new`: Create a new work item in docs/70-work/items using templates and ID allocation.
+    - `workbench item normalize`: Normalize work item front matter lists.
+    - `workbench item rename`: Regenerate slug from title, rename the file, and update inbound links.
+    - `workbench item show`: Show metadata and resolved path for an item.
+    - `workbench item status`: Update status and updated date.
+    - `workbench item sync`: Sync work items with GitHub issues and branches.
+    - `workbench item unlink`: Remove specs, ADRs, files, PRs, or issues from a work item.
+  - `workbench llm`: Group: AI-oriented help and guidance commands.
+    - `workbench llm help`: Print a comprehensive CLI reference for AI agents.
+  - `workbench migrate`: Run repository migrations.
+  - `workbench nav`: Group: navigation/index commands.
+    - `workbench nav sync`: Sync links and navigation indexes.
+  - `workbench normalize`: Normalize work item and doc front matter.
+  - `workbench promote`: Create a work item, branch, and commit in one step.
+  - `workbench scaffold`: Create the default folder structure, templates, and config.
+  - `workbench sync`: Sync work items, docs, and navigation.
+  - `workbench validate`: Validate work items, links, and schemas.
+  - `workbench version`: Print CLI version.
+  - `workbench voice`: Group: voice input commands.
+    - `workbench voice doc`: Create a documentation file from voice input.
+    - `workbench voice workitem`: Create a work item from voice input.
+  - `workbench worktree`: Group: git worktree commands.
+    - `workbench worktree start`: Create or reuse a task worktree.
 
-Error code contract:
-- See `docs/30-contracts/error-codes.md` for machine-readable failure codes and semantics.
+## Detailed command reference
 
-Commands:
+### `workbench board`
+Group: workboard commands.
 
-- `workbench version`
-  - Print CLI version.
-  - Example: `workbench version`
+Subcommands:
+- `regen`: Regenerate docs/70-work/README.md.
 
-- `workbench doctor`
-  - Check git, config, and expected paths.
-  - Includes GitHub provider checks; missing tokens or unauthenticated gh report a warning.
-  - Use `--json` for machine-readable output.
-  - Example: `workbench doctor`
+### `workbench board regen`
+Regenerate docs/70-work/README.md.
 
-- `workbench init [--force] [--skip-guide] [--non-interactive] [--front-matter] [--configure-openai] [--credential-store <local|external|skip>] [--credential-path <path>] [--openai-provider <openai|none>] [--openai-key <key>] [--openai-model <model>]`
-  - Guided setup for scaffolding, front matter guidance, and OpenAI configuration.
-  - Runs the `guide` flow afterward unless `--skip-guide` is set.
-  - Example: `workbench init --skip-guide`
+### `workbench codex`
+Group: Codex agent commands.
 
-- `workbench guide`
-  - Launch the interactive guide for common document and work item actions.
-  - Example: `workbench guide`
+Subcommands:
+- `doctor`: Check whether Codex is installed and callable.
+- `run`: Run Codex in full-auto mode with web search.
 
-- `workbench sync [--items] [--docs] [--nav] [--issues <true|false>] [--import-issues] [--include-done] [--force] [--dry-run] [--prefer <local|github>]`
-  - Run the full repo sync (work items, docs/front matter, and navigation) in order. When no step flags are provided, runs all. Use `--import-issues` to scan GitHub for unlinked issues (slower).
-  - Example: `workbench sync --dry-run`
+### `workbench codex doctor`
+Check whether Codex is installed and callable.
 
-- `workbench migrate coherent-v1 [--dry-run]`
-  - Run the coherence migration: enforce status/folder placement, normalize links, and regenerate indexes/workboard.
-  - Example: `workbench migrate coherent-v1`
+### `workbench codex run`
+Run Codex in full-auto mode with web search.
 
-- `workbench scaffold [--force]`
-  - Create the default folder structure, templates, and config.
-  - Example: `workbench scaffold`
+Options:
+- `--prompt <prompt>` (required): Prompt to send to Codex.
+- `--terminal`: Launch in a separate terminal window instead of waiting for output.
 
-- `workbench config show`
-  - Print effective config (defaults + repo config + CLI overrides).
-  - Example: `workbench config show --format json`
-- `workbench config set --path <path> --value "<...>" [--json]`
-  - Update a single config value (dot-path).
-  - Example: `workbench config set --path github.owner --value "incursa"`
-- `workbench config credentials set --key <KEY> --value "<...>" [--path <path>]`
-  - Write or update a credentials.env entry (defaults to `.workbench/credentials.env`).
-  - Example: `workbench config credentials set --key WORKBENCH_AI_OPENAI_KEY --value "<...>"`
-- `workbench config credentials unset --key <KEY> [--path <path>]`
-  - Remove a credentials.env entry.
-  - Example: `workbench config credentials unset --key WORKBENCH_AI_OPENAI_KEY`
+### `workbench config`
+Group: configuration commands.
 
-- `workbench item new --type <bug|task|spike> --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]`
-  - Create a new work item in `docs/70-work/items` using templates and ID allocation.
-  - Example: `workbench item new --type task --title "Add promote command"`
-- `workbench item generate --prompt "<...>" [--type <bug|task|spike>] [--status <...>] [--priority <...>] [--owner <...>]`
-  - Generate a work item with AI from freeform text and create it in `docs/70-work/items`.
-  - Example: `workbench item generate --prompt "Add guardrails to prevent empty summaries"`
-- `workbench voice workitem [--type <bug|task|spike>] [--status <...>] [--priority <...>] [--owner <...>]`
-  - Record voice input, transcribe it, and generate a work item draft.
-  - Example: `workbench voice workitem --type task`
-- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
-- `workbench item import --issue <id|url...> [--type <bug|task|spike>] [--status <...>] [--priority <...>] [--owner <...>]`
-  - Import GitHub issues into work items, linking related PRs when available.
-  - Example: `workbench item import --issue 42 --issue https://github.com/org/repo/issues/18`
-- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
+Subcommands:
+- `credentials`: Manage credentials.env entries.
+- `set`: Write or update config values in .workbench/config.json.
+- `show`: Print effective config (defaults + repo config + CLI overrides).
 
-- `workbench item sync [--id <ID...>] [--issue <id|url...>] [--import-issues] [--prefer <local|github>] [--dry-run]`
-  - Sync work items with GitHub issues and branches (two-way, no deletes). Branches are only created when listed in `related.branches`. When local and GitHub issue content both diverge, sync fails unless `--prefer` is set or `github.sync.conflictDefault` is configured to `local`/`github`. Use `--import-issues` to scan GitHub for unlinked issues (slower). Missing issues are reported as warnings and sync continues.
-  - Example: `workbench item sync --dry-run`
+### `workbench config credentials`
+Manage credentials.env entries.
 
-- `workbench item list [--type <...>] [--status <...>] [--include-done]`
-  - List work items. Use `--include-done` to include `docs/70-work/done`.
-  - Example: `workbench item list --status ready`
-- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
+Subcommands:
+- `set`: Set an entry in credentials.env.
+- `unset`: Remove an entry from credentials.env.
 
-- `workbench item show <ID>`
-  - Show metadata and resolved path for an item.
-  - Example: `workbench item show TASK-0042`
+### `workbench config credentials set`
+Set an entry in credentials.env.
 
-- `workbench item status <ID> <status> [--note "<...>"]`
-  - Update status and updated date. Optionally append a note.
-  - Example: `workbench item status TASK-0042 in-progress --note "started implementation"`
-- Status values: `draft`, `ready`, `in-progress`, `blocked`, `done`, `dropped`.
+Options:
+- `--key <key>` (required): Environment variable name.
+- `--value <value>` (required): Environment variable value.
+- `--path <path>`: Credentials file path (defaults to .workbench/credentials.env).
 
-- `workbench item close <ID> [--no-move]`
-  - Set status to `done` and move the file to `docs/70-work/done` by default.
-  - Example: `workbench item close TASK-0042`
-- `workbench item normalize [--include-done] [--dry-run]`
-  - Normalize work item front matter lists (e.g., tags, related lists).
-  - Example: `workbench item normalize --include-done`
-- `workbench item delete <ID> [--keep-links]`
-  - Delete a work item file and remove doc backlinks (unless `--keep-links`).
-  - Example: `workbench item delete TASK-0042`
+### `workbench config credentials unset`
+Remove an entry from credentials.env.
 
-- `workbench item move <ID> --to <path>`
-  - Move a work item file and update inbound links to the old path where possible.
-  - Example: `workbench item move TASK-0042 --to docs/70-work/done/TASK-0042-add-promotion-workflow.md`
+Options:
+- `--key <key>` (required): Environment variable name.
+- `--path <path>`: Credentials file path (defaults to .workbench/credentials.env).
 
-- `workbench item rename <ID> --title "<...>"`
-  - Regenerate slug from title, rename the file, and update inbound links.
-  - Example: `workbench item rename TASK-0042 --title "Finalize promotion workflow"`
+### `workbench config set`
+Write or update config values in .workbench/config.json.
 
-- `workbench item link <ID> [--spec <path...>] [--adr <path...>] [--file <path...>] [--pr <url...>] [--issue <id...>] [--dry-run]`
-  - Add spec/ADR/file/PR/issue links to a work item and update doc backlinks when applicable.
-  - Example: `workbench item link TASK-0042 --spec /docs/10-product/payment-flow.md --pr https://github.com/org/repo/pull/12`
+Options:
+- `--path <path>` (required): Config path in dot notation (e.g., paths.docsRoot).
+- `--value <value>` (required): Config value (string by default).
+- `--json`: Parse the value as JSON (for booleans, numbers, or objects).
 
-- `workbench item unlink <ID> [--spec <path...>] [--adr <path...>] [--file <path...>] [--pr <url...>] [--issue <id...>] [--dry-run]`
-  - Remove spec/ADR/file/PR/issue links from a work item and update doc backlinks when applicable.
-  - Example: `workbench item unlink TASK-0042 --adr /docs/40-decisions/2025-01-01-audit-logs.md`
+### `workbench config show`
+Print effective config (defaults + repo config + CLI overrides).
 
-- `workbench board regen`
-  - Regenerate the workboard section in `docs/70-work/README.md`.
-  - Example: `workbench board regen`
+### `workbench doc`
+Group: documentation commands.
 
-- `workbench doc new --type <spec|adr|doc|runbook|guide> --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]`
-  - Create a documentation file with Workbench front matter and optional backlinks.
-  - Example: `workbench doc new --type spec --title "Payment flow" --work-item TASK-0042`
-- `workbench voice doc --type <spec|adr|doc|runbook|guide> [--out <...>] [--title "<...>"]`
-  - Record voice input, transcribe it, and generate a documentation file.
-  - Example: `workbench voice doc --type adr --title "Decision on caching"`
+Subcommands:
+- `delete`: Delete a documentation file and update work item links.
+- `link`: Link a doc to work items.
+- `new`: Create a documentation file with Workbench front matter.
+- `regen-help`: Regenerate docs/30-contracts/cli-help.md from the live command tree.
+- `summarize`: Summarize doc changes with AI and append change notes.
+- `sync`: Sync doc/work item backlinks.
+- `unlink`: Unlink a doc from work items.
 
-Recording visualization:
-- The recording dialog shows a level meter/equalizer while capturing audio.
-- Optional env vars: `WORKBENCH_VOICE_VIZ_BANDS`, `WORKBENCH_VOICE_VIZ_UPDATE_HZ`, `WORKBENCH_VOICE_VIZ_FFT_SIZE`, `WORKBENCH_VOICE_VIZ_LEVEL_BOOST`, `WORKBENCH_VOICE_VIZ_SPECTRUM`.
-- `workbench doc delete --path <...> [--keep-links]`
-  - Delete a documentation file and remove links from work items (unless `--keep-links`).
-  - Example: `workbench doc delete --path docs/10-product/payment-flow.md`
+### `workbench doc delete`
+Delete a documentation file and update work item links.
 
-- `workbench doc link --type <spec|adr> --path <...> --work-item <ID...> [--dry-run]`
-  - Link a doc to work items.
-  - Example: `workbench doc link --type spec --path docs/10-product/access-model.md --work-item TASK-0100`
+Options:
+- `--path <path>` (required): Doc path or link.
+- `--keep-links`: Skip removing doc links from work items.
 
-- `workbench doc unlink --type <spec|adr> --path <...> --work-item <ID...> [--dry-run]`
-  - Unlink a doc from work items.
-  - Example: `workbench doc unlink --type adr --path docs/40-decisions/2025-01-01-audit-logs.md --work-item TASK-0123`
+### `workbench doc link`
+Link a doc to work items.
 
-- `workbench doc sync [--all] [--issues] [--include-done] [--dry-run]`
-  - Sync doc/work item backlinks. Adds Workbench front matter to all docs by default; `--all false` limits to referenced docs. `--issues` syncs GitHub issue links; `--include-done` includes done/dropped items; `--dry-run` reports changes without writing.
-  - Example: `workbench doc sync --issues --dry-run`
+Options:
+- `--type <type>` (required): Doc type: spec, adr
+- `--path <path>` (required): Doc path.
+- `--work-item <work-item>`: Work item ID(s) to link.
+- `--dry-run`: Report changes without writing files.
 
-- `workbench nav sync [--issues <true|false>] [--include-done] [--workboard <true|false>] [--force] [--dry-run]`
-  - Sync doc/work item backlinks, update navigation indexes, and regenerate the workboard. Defaults to syncing issue links; set `--issues false` to skip GitHub lookups. `--workboard false` skips workboard regeneration. `--force` rewrites index sections even if they are unchanged.
-  - Example: `workbench nav sync --include-done --issues false --workboard false --force`
+### `workbench doc new`
+Create a documentation file with Workbench front matter.
 
-- `workbench doc summarize [--staged] [--path <path...>] [--dry-run] [--update-index]`
-  - Summarize markdown diffs using AI and append `workbench.changeNotes` entries.
-  - Example: `workbench doc summarize --staged --update-index`
+Options:
+- `--type <type>` (required): Doc type: spec, adr, doc, runbook, guide
+- `--title <title>` (required): Doc title
+- `--path <path>`: Destination path (defaults by type).
+- `--work-item <work-item>`: Link one or more work items.
+- `--code-ref <code-ref>`: Add code reference(s) (e.g., src/Foo.cs#L10-L20).
+- `--force`: Overwrite existing file.
 
-- `workbench promote --type <...> --title "<...>" [--push] [--start] [--pr] [--base <branch>] [--draft|--no-draft]`
-  - Create a work item, branch, and commit in one step; optionally create a PR.
-  - Example: `workbench promote --type task --title "Add validate command" --start --pr --draft`
+### `workbench doc regen-help`
+Regenerate docs/30-contracts/cli-help.md from the live command tree.
 
-- `workbench github pr create <ID> [--base <branch>] [--draft] [--fill]`
-  - Create a GitHub PR via the configured provider and backlink the PR URL.
-  - Example: `workbench github pr create TASK-0042 --draft --fill`
+Options:
+- `--check`: Fail if docs/30-contracts/cli-help.md is out of date.
+- `--path <path>`: Output path (defaults to docs/30-contracts/cli-help.md).
 
-- `workbench codex doctor`
-  - Check whether `codex` is installed and callable from the current repo context.
-  - Example: `workbench codex doctor`
+### `workbench doc summarize`
+Summarize doc changes with AI and append change notes.
 
-- `workbench codex run --prompt "<...>" [--terminal]`
-  - Run Codex in full-auto mode with web search enabled. Use `--terminal` to launch in a new terminal window.
-  - Example: `workbench codex run --prompt "Create TASK-0042 and link it to docs/10-product/..." --terminal`
+Options:
+- `--staged`: Use staged diff (default when no --path is provided).
+- `--path <path>`: File path(s) to summarize (defaults to staged markdown files).
+- `--dry-run`: Report changes without writing files.
+- `--update-index`: Run git add on updated files.
 
-- `workbench worktree start --slug <slug> [--ticket <id>] [--base <branch>] [--root <path>] [--start-codex] [--prompt "<...>"] [--codex-terminal <true|false>]`
-  - Create or reuse a task worktree under `<repo>.worktrees/feature/` and optionally launch Codex in that worktree.
-  - Example: `workbench worktree start --slug payment-retry --ticket 113 --start-codex --prompt "Implement retry flow with tests"`
+### `workbench doc sync`
+Sync doc/work item backlinks.
 
-- `workbench llm help` (alias: `workbench llms help`, `workbench llms`)
-  - Print a comprehensive, AI-oriented CLI reference in one stdout stream (command tree + arguments + options + usage guidance).
-  - Example: `workbench llm help`
+Options:
+- `--all`: Add Workbench front matter to all docs (default).
+- `--issues`: Sync GitHub issue links for work items.
+- `--include-done`: Include done/dropped work items.
+- `--dry-run`: Report changes without writing files.
 
-- `workbench validate [--strict] [--link-include <path...>] [--link-exclude <path...>] [--skip-doc-schema]`
-  - Validate work items, links, and schemas. `--strict` treats warnings as errors. Use `--link-include/--link-exclude` to scope link checks, and `--skip-doc-schema` if doc schema is not available.
-  - Example: `workbench validate --strict --link-exclude docs/tabler --skip-doc-schema`
+### `workbench doc unlink`
+Unlink a doc from work items.
 
-- `workbench verify [--strict]`
-  - Alias for `workbench validate`.
+Options:
+- `--type <type>` (required): Doc type: spec, adr
+- `--path <path>` (required): Doc path.
+- `--work-item <work-item>`: Work item ID(s) to unlink.
+- `--dry-run`: Report changes without writing files.
 
-Aliases and intent:
-- "verify all work" maps to `workbench validate` (use `--strict` for CI).
+### `workbench doctor`
+Check git, config, and expected paths.
 
-Removed commands:
-- `workbench run` (replaced by `workbench guide`)
-- `workbench spec` (use `workbench doc ... --type spec`)
-- `workbench adr` (use `workbench doc ... --type adr`)
-- `workbench pr` (use `workbench github pr ...`)
+Options:
+- `--json`: Output machine-readable JSON.
 
-Dependencies:
-- Commands that read or write work items require a git repo.
-- `promote` requires git.
-- `pr create` and `promote --pr` require a configured GitHub provider (Octokit token or authenticated gh).
+### `workbench github`
+Group: GitHub commands.
+
+Subcommands:
+- `pr`: Group: GitHub pull request commands.
+
+### `workbench github pr`
+Group: GitHub pull request commands.
+
+Subcommands:
+- `create`: Create a GitHub PR via the configured provider and backlink the PR URL.
+
+### `workbench github pr create`
+Create a GitHub PR via the configured provider and backlink the PR URL.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--base <base>`: Base branch for PR.
+- `--draft`: Create as draft.
+- `--fill`: Fill PR body from work item.
+
+### `workbench guide`
+Run the interactive guide for common tasks.
+
+### `workbench init`
+Interactive setup for Workbench (scaffold + guidance + guide).
+
+Options:
+- `--force`: Overwrite existing files.
+- `--non-interactive`: Run init without prompts (use flags to enable steps).
+- `--skip-guide`: Skip launching the interactive guide after init.
+- `--front-matter`: Add Workbench front matter to docs (non-interactive).
+- `--configure-openai`: Configure OpenAI settings (non-interactive).
+- `--credential-store <credential-store>`: Credential storage: local, external, skip.
+- `--credential-path <credential-path>`: Credentials file path for local or external storage.
+- `--openai-provider <openai-provider>`: AI provider (openai|none).
+- `--openai-key <openai-key>`: OpenAI API key (stored in credentials file).
+- `--openai-model <openai-model>`: OpenAI model (default: gpt-4o-mini).
+
+### `workbench item`
+Group: work item commands.
+
+Subcommands:
+- `close`: Set status to done and move to docs/70-work/done.
+- `delete`: Delete a work item file and update doc backlinks.
+- `generate`: Generate a work item draft with AI and create it.
+- `import`: Import GitHub issues into work items.
+- `link`: Link specs, ADRs, files, PRs, or issues to a work item.
+- `list`: List work items.
+- `move`: Move a work item file and update inbound links where possible.
+- `new`: Create a new work item in docs/70-work/items using templates and ID allocation.
+- `normalize`: Normalize work item front matter lists.
+- `rename`: Regenerate slug from title, rename the file, and update inbound links.
+- `show`: Show metadata and resolved path for an item.
+- `status`: Update status and updated date.
+- `sync`: Sync work items with GitHub issues and branches.
+- `unlink`: Remove specs, ADRs, files, PRs, or issues from a work item.
+
+### `workbench item close`
+Set status to done and move to docs/70-work/done.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--no-move`: Do not move the item to docs/70-work/done.
+
+### `workbench item delete`
+Delete a work item file and update doc backlinks.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--keep-links`: Skip removing doc backlinks.
+
+### `workbench item generate`
+Generate a work item draft with AI and create it.
+
+Options:
+- `--prompt <prompt>` (required): Freeform description for the AI-generated work item.
+- `--type <type>`: Work item type: bug, task, spike (defaults to AI choice).
+- `--status <status>`: Work item status: draft, ready, in-progress, blocked, done, dropped
+- `--priority <priority>`: Work item priority
+- `--owner <owner>`: Work item owner
+
+### `workbench item import`
+Import GitHub issues into work items.
+
+Options:
+- `--issue <issue>` (required): Issue numbers or URLs to import.
+- `--type <type>`: Work item type: bug, task, spike (defaults based on labels).
+- `--status <status>`: Work item status: draft, ready, in-progress, blocked, done, dropped
+- `--priority <priority>`: Work item priority
+- `--owner <owner>`: Work item owner
+
+### `workbench item link`
+Link specs, ADRs, files, PRs, or issues to a work item.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--spec <spec>`: Spec path(s) to link.
+- `--adr <adr>`: ADR path(s) to link.
+- `--file <file>`: File path(s) to link.
+- `--pr <pr>`: PR URL(s) to link.
+- `--issue <issue>`: Issue URL(s) or IDs to link.
+- `--dry-run`: Report changes without writing files.
+
+### `workbench item list`
+List work items.
+
+Options:
+- `--type <type>`: Filter by type
+- `--status <status>`: Filter by status: draft, ready, in-progress, blocked, done, dropped
+- `--include-done`: Include items from docs/70-work/done.
+
+### `workbench item move`
+Move a work item file and update inbound links where possible.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--to <to>` (required): Destination path.
+
+### `workbench item new`
+Create a new work item in docs/70-work/items using templates and ID allocation.
+
+Options:
+- `--type <type>` (required): Work item type: bug, task, spike
+- `--title <title>` (required): Work item title
+- `--status <status>`: Work item status: draft, ready, in-progress, blocked, done, dropped
+- `--priority <priority>`: Work item priority
+- `--owner <owner>`: Work item owner
+
+### `workbench item normalize`
+Normalize work item front matter lists.
+
+Options:
+- `--include-done`: Include docs/70-work/done items.
+- `--dry-run`: Report changes without writing files.
+
+### `workbench item rename`
+Regenerate slug from title, rename the file, and update inbound links.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--title <title>` (required): New title.
+
+### `workbench item show`
+Show metadata and resolved path for an item.
+
+Arguments:
+- `id`: Work item ID (e.g., TASK-0042).
+
+### `workbench item status`
+Update status and updated date.
+
+Arguments:
+- `id`: Work item ID.
+- `status`: New status: draft, ready, in-progress, blocked, done, dropped.
+
+Options:
+- `--note <note>`: Append a note.
+
+### `workbench item sync`
+Sync work items with GitHub issues and branches.
+
+Options:
+- `--id <id>`: Work item IDs to sync (limits local-to-GitHub and branch creation).
+- `--issue <issue>`: Issue numbers or URLs to import (limits GitHub-to-local).
+- `--prefer <prefer>`: When descriptions differ, prefer 'local' or 'github'.
+- `--dry-run`: Report changes without writing.
+- `--import-issues`: List GitHub issues and import ones not yet linked (slower).
+
+### `workbench item unlink`
+Remove specs, ADRs, files, PRs, or issues from a work item.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--spec <spec>`: Spec path(s) to unlink.
+- `--adr <adr>`: ADR path(s) to unlink.
+- `--file <file>`: File path(s) to unlink.
+- `--pr <pr>`: PR URL(s) to unlink.
+- `--issue <issue>`: Issue URL(s) or IDs to unlink.
+- `--dry-run`: Report changes without writing files.
+
+### `workbench llm`
+Group: AI-oriented help and guidance commands.
+
+Aliases: `llms`
+
+Subcommands:
+- `help`: Print a comprehensive CLI reference for AI agents.
+
+### `workbench llm help`
+Print a comprehensive CLI reference for AI agents.
+
+### `workbench migrate`
+Run repository migrations.
+
+Arguments:
+- `target`: Migration target (coherent-v1).
+
+Options:
+- `--dry-run`: Report migration changes without writing files.
+
+### `workbench nav`
+Group: navigation/index commands.
+
+Subcommands:
+- `sync`: Sync links and navigation indexes.
+
+### `workbench nav sync`
+Sync links and navigation indexes.
+
+Options:
+- `--issues`: Sync GitHub issue links for work items.
+- `--force`: Rewrite index sections even if content is unchanged.
+- `--workboard`: Regenerate the workboard.
+- `--include-done`: Include done/dropped work items in indexes.
+- `--dry-run`: Report changes without writing files.
+
+### `workbench normalize`
+Normalize work item and doc front matter.
+
+Options:
+- `--items`: Normalize work item front matter.
+- `--docs`: Normalize doc front matter.
+- `--include-done`: Include docs/70-work/done items.
+- `--all-docs`: Add Workbench front matter to all docs (default).
+- `--dry-run`: Report changes without writing files.
+
+### `workbench promote`
+Create a work item, branch, and commit in one step.
+
+Options:
+- `--type <type>` (required): Work item type: bug, task, spike
+- `--title <title>` (required): Work item title
+- `--push`: Push the branch to origin.
+- `--start`: Set status to in-progress.
+- `--pr`: Create a GitHub PR.
+- `--base <base>`: Base branch for PR.
+- `--draft`: Create a draft PR.
+- `--no-draft`: Create a ready PR.
+
+### `workbench scaffold`
+Create the default folder structure, templates, and config.
+
+Options:
+- `--force`: Overwrite existing files.
+
+### `workbench sync`
+Sync work items, docs, and navigation.
+
+Options:
+- `--items`: Run work item sync with GitHub issues and branches.
+- `--docs`: Sync doc/work item backlinks and front matter.
+- `--nav`: Sync navigation indexes.
+- `--issues`: Sync GitHub issue links for docs and navigation.
+- `--import-issues`: List GitHub issues and import ones not yet linked (slower).
+- `--include-done`: Include done/dropped work items in docs and navigation.
+- `--force`: Rewrite index sections even if content is unchanged.
+- `--workboard`: Regenerate the workboard when syncing navigation.
+- `--dry-run`: Report changes without writing files.
+- `--prefer <prefer>`: When syncing work items, prefer 'local' or 'github'.
+
+### `workbench validate`
+Validate work items, links, and schemas.
+
+Aliases: `verify`
+
+Options:
+- `--strict`: Treat warnings as errors.
+- `--verbose`: Show detailed validation output.
+- `--link-include <link-include>`: Repo-relative path prefixes to include in link validation.
+- `--link-exclude <link-exclude>`: Repo-relative path prefixes to exclude from link validation.
+- `--skip-doc-schema`: Skip doc front matter schema validation.
+
+### `workbench version`
+Print CLI version.
+
+### `workbench voice`
+Group: voice input commands.
+
+Subcommands:
+- `doc`: Create a documentation file from voice input.
+- `workitem`: Create a work item from voice input.
+
+### `workbench voice doc`
+Create a documentation file from voice input.
+
+Options:
+- `--type <type>` (required): Doc type: spec, adr, doc, runbook, guide
+- `--out <out>`: Output path (defaults by type).
+- `--title <title>`: Doc title (optional).
+
+### `workbench voice workitem`
+Create a work item from voice input.
+
+Options:
+- `--type <type>`: Work item type: bug, task, spike (defaults to AI choice).
+- `--status <status>`: Work item status: draft, ready, in-progress, blocked, done, dropped
+- `--priority <priority>`: Work item priority
+- `--owner <owner>`: Work item owner
+
+### `workbench worktree`
+Group: git worktree commands.
+
+Subcommands:
+- `start`: Create or reuse a task worktree.
+
+### `workbench worktree start`
+Create or reuse a task worktree.
+
+Options:
+- `--slug <slug>` (required): Short task slug used for branch and directory naming.
+- `--ticket <ticket>`: Optional numeric ticket to prefix the branch.
+- `--base <base>`: Base branch for new branches (defaults to config git.defaultBaseBranch).
+- `--root <root>`: Root directory for worktrees (defaults to <repo>.worktrees).
+- `--prompt <prompt>`: Prompt to send when launching Codex.
+- `--start-codex`: Launch Codex after creating/reusing the worktree.
+- `--codex-terminal`: When launching Codex, use a separate terminal window.

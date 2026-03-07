@@ -446,6 +446,11 @@ public static class WorkItemService
 
     public static WorkItem? LoadItem(string path)
     {
+        if (Path.GetFileName(path).Equals("README.md", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
         var content = File.ReadAllText(path);
         if (!FrontMatter.TryParse(content, out var frontMatter, out _))
         {
@@ -461,6 +466,15 @@ public static class WorkItemService
         var owner = GetString(data, "owner");
         var created = GetString(data, "created") ?? "";
         var updated = GetString(data, "updated");
+
+        if (string.IsNullOrWhiteSpace(id) ||
+            string.IsNullOrWhiteSpace(type) ||
+            string.IsNullOrWhiteSpace(status) ||
+            string.IsNullOrWhiteSpace(created))
+        {
+            return null;
+        }
+
         var tags = GetStringList(data, "tags");
         var related = GetRelated(data);
         var slug = DeriveSlugFromPath(path, id);
@@ -829,6 +843,11 @@ public static class WorkItemService
             }
             foreach (var file in Directory.EnumerateFiles(path, "*.md", SearchOption.TopDirectoryOnly))
             {
+                if (Path.GetFileName(file).Equals("README.md", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 yield return file;
             }
         }

@@ -53,4 +53,41 @@ public class SchemaValidationTests
         var errors = SchemaValidationService.ValidateConfig(repoRoot);
         Assert.IsNotEmpty(errors);
     }
+
+    [TestMethod]
+    public void ValidateDocFrontMatter_AllowsContractDocType()
+    {
+        var tempRepoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRepoRoot);
+        Directory.CreateDirectory(Path.Combine(tempRepoRoot, ".git"));
+
+        var schemaDir = Path.Combine(tempRepoRoot, "docs", "30-contracts");
+        Directory.CreateDirectory(schemaDir);
+
+        var sourceRepoRoot = Repository.FindRepoRoot(Directory.GetCurrentDirectory())
+            ?? throw new InvalidOperationException("Repo root not found for schema fixture.");
+        var sourceSchemaPath = Path.Combine(sourceRepoRoot, "docs", "30-contracts", "doc.schema.json");
+        File.Copy(sourceSchemaPath, Path.Combine(schemaDir, "doc.schema.json"));
+
+        var data = new Dictionary<string, object?>(StringComparer.InvariantCulture)
+        {
+            ["workbench"] = new Dictionary<string, object?>
+(StringComparer.Ordinal)
+            {
+                ["type"] = "contract",
+                ["workItems"] = Array.Empty<string>(),
+                ["codeRefs"] = Array.Empty<string>()
+            },
+            ["owner"] = "platform",
+            ["status"] = "active",
+            ["updated"] = "2026-03-07"
+        };
+
+        var errors = SchemaValidationService.ValidateDocFrontMatter(
+            tempRepoRoot,
+            "docs/30-contracts/error-codes.md",
+            data);
+
+        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
+    }
 }

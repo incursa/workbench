@@ -32,7 +32,13 @@ dotnet test tests/Workbench.Tests/Workbench.Tests.csproj
 Run the full solution verification:
 
 ```bash
-dotnet test Workbench.slnx
+dotnet test --solution Workbench.slnx
+```
+
+Verify the checked-in CLI help contract matches the live command tree:
+
+```bash
+dotnet run --project src/Workbench/Workbench.csproj -- doc regen-help --check
 ```
 
 ## Submitting changes

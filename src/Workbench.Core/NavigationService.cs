@@ -106,7 +106,9 @@ public static class NavigationService
         foreach (var path in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
         {
             var relative = NormalizePath(Path.GetRelativePath(repoRoot, path));
-            if (IsDocsIndexFile(config, relative) || IsDocTemplate(config, relative))
+            if (IsDocsIndexFile(config, relative) ||
+                IsDocTemplate(config, relative) ||
+                IsWorkArtifactDoc(config, relative))
             {
                 continue;
             }
@@ -569,11 +571,17 @@ public static class NavigationService
             "- `docs/70-work/done`: closed items for reference and audit history.",
             "- `docs/70-work/templates`: templates used to create new work items.",
             string.Empty,
+            "## Source of truth",
+            string.Empty,
+            "- Hand-author the individual work item files under `docs/70-work/items` and `docs/70-work/done`.",
+            "- Treat the workboard and index sections between `workbench:` markers as generated views maintained by `workbench nav sync` or `workbench board regen`.",
+            string.Empty,
             "## Workflow",
             string.Empty,
-            "1. Start from a template in `docs/70-work/templates/`.",
-            "2. Create a new file in `docs/70-work/items/` with a clear ID and slug.",
-            "3. Move the item to `docs/70-work/done/` when it is closed or superseded.",
+            "1. Create a work item with `workbench item new`, `workbench item generate`, or `workbench voice workitem`.",
+            "2. Edit the Markdown file to tighten the summary, acceptance criteria, and notes.",
+            "3. Link specs, ADRs, files, PRs, or issues with `workbench item link`, and use `workbench promote` when you want branch + commit scaffolding.",
+            "4. Refresh the generated views with `workbench nav sync` and run `workbench validate` before review or automation.",
             string.Empty,
             "## Index",
             string.Empty,
@@ -631,6 +639,21 @@ public static class NavigationService
     {
         var normalized = NormalizePath(relativePath);
         return normalized.StartsWith($"{config.Paths.DocsRoot}/templates/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsWorkArtifactDoc(WorkbenchConfig config, string relativePath)
+    {
+        var normalized = NormalizePath(relativePath);
+        var workRoot = NormalizePath(config.Paths.WorkRoot).TrimEnd('/');
+        if (!normalized.StartsWith($"{workRoot}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var remainder = normalized[(workRoot.Length + 1)..];
+        return remainder.StartsWith("items/", StringComparison.OrdinalIgnoreCase)
+            || remainder.StartsWith("done/", StringComparison.OrdinalIgnoreCase)
+            || remainder.StartsWith("templates/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ExtractTitle(string body)
@@ -794,6 +817,7 @@ public static class NavigationService
         {
             "spec" => "🧭 spec",
             "adr" => "📘 adr",
+            "contract" => "📐 contract",
             "runbook" => "🛠 runbook",
             "guide" => "🧩 guide",
             "doc" => "📄 doc",

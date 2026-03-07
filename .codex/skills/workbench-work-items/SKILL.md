@@ -29,7 +29,7 @@ workbench.ps1 item status TASK-0001 in-progress --note "started implementation"
 
 Close and move to done:
 ```bash
-workbench.ps1 item close TASK-0001 --move
+workbench.ps1 item close TASK-0001
 ```
 
 Link docs or PRs:
@@ -39,7 +39,7 @@ workbench.ps1 item link TASK-0001 --spec /docs/10-product/spec.md --adr /docs/40
 
 ## Output
 
-- Work items in `work/items` (active) and `work/done` (closed).
+- Work items in `docs/70-work/items` (active) and `docs/70-work/done` (closed).
 - Linked docs and external artifacts tracked in front matter.
 
 ## Guardrails

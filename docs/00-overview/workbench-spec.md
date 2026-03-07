@@ -360,8 +360,8 @@ Prints the resolved file path and renders key metadata.
 #### workbench item status <ID> <status> [--note "<...>"]
 Updates front matter status and updated. Optional note appended to a Notes section.
 
-#### workbench item close <ID> [--move]
-Sets status to done and optionally moves file to done dir.
+#### workbench item close <ID> [--no-move]
+Sets status to done and moves file to the done dir unless `--no-move` is set.
 
 #### workbench item delete <ID> [--keep-links]
 Deletes a work item file and removes doc backlinks unless `--keep-links` is set.

@@ -9,7 +9,7 @@
       "additionalProperties": false,
       "required": ["type"],
       "properties": {
-        "type": { "type": "string", "enum": ["spec", "adr", "doc", "runbook", "guide"] },
+        "type": { "type": "string", "enum": ["spec", "adr", "doc", "runbook", "guide", "contract"] },
         "workItems": { "type": "array", "items": { "type": "string" } },
         "codeRefs": { "type": "array", "items": { "type": "string" } },
         "path": { "type": "string" },
