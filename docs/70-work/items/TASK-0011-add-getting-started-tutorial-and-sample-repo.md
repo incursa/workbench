@@ -6,7 +6,7 @@ priority: high
 owner: platform
 created: 2026-01-01
 updated: 2026-01-01
-githubSynced: null
+githubSynced: "2026-02-19T04:59:21Z"
 tags:
   - docs
   - onboarding
@@ -15,7 +15,8 @@ related:
   adrs: []
   files: []
   prs: []
-  issues: []
+  issues:
+    - "https://github.com/incursa/workbench/issues/594"
   branches: []
 ---
 
