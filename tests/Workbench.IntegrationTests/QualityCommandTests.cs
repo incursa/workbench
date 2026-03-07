@@ -178,12 +178,8 @@ public class QualityCommandTests
             }
             """);
 
-        File.Copy(
-            Path.Combine(sourceRepoRoot, "testdata", "quality", "sample-results.trx"),
-            Path.Combine(repo.Path, "artifacts", "raw", "test-results", "sample-results.trx"));
-        File.Copy(
-            Path.Combine(sourceRepoRoot, "testdata", "quality", "sample-coverage.cobertura.xml"),
-            Path.Combine(repo.Path, "artifacts", "raw", "coverage", "sample-coverage.cobertura.xml"));
+        WriteSampleResultsArtifact(repo.Path);
+        WriteSampleCoverageArtifact(repo.Path);
 
         return repo;
     }
@@ -202,5 +198,61 @@ public class QualityCommandTests
         }
 
         throw new DirectoryNotFoundException("Could not locate the Workbench repo root.");
+    }
+
+    private static void WriteSampleResultsArtifact(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "artifacts", "raw", "test-results", "sample-results.trx"), """
+            <?xml version="1.0" encoding="utf-8"?>
+            <TestRun id="6c574911-54e4-4f7a-bc3a-07dc30e803c7" name="quality-sample" runUser="workbench" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+              <Times creation="2026-03-07T16:00:00.0000000+00:00" start="2026-03-07T16:00:01.0000000+00:00" finish="2026-03-07T16:00:03.0000000+00:00" />
+              <TestDefinitions>
+                <UnitTest name="Sample.Tests.WidgetTests.Adds_numbers" storage="Sample.Tests.dll" id="11111111-1111-1111-1111-111111111111">
+                  <Execution id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" />
+                  <TestMethod codeBase="C:\agent\bin\Debug\net10.0\Sample.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Sample.Tests.WidgetTests" name="Adds_numbers" />
+                </UnitTest>
+                <UnitTest name="Sample.Tests.WidgetTests.Handles_zero" storage="Sample.Tests.dll" id="22222222-2222-2222-2222-222222222222">
+                  <Execution id="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" />
+                  <TestMethod codeBase="C:\agent\bin\Debug\net10.0\Sample.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Sample.Tests.WidgetTests" name="Handles_zero" />
+                </UnitTest>
+              </TestDefinitions>
+              <Results>
+                <UnitTestResult executionId="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" testId="11111111-1111-1111-1111-111111111111" testName="Sample.Tests.WidgetTests.Adds_numbers" outcome="Passed" duration="00:00:00.0100000" />
+                <UnitTestResult executionId="bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb" testId="22222222-2222-2222-2222-222222222222" testName="Sample.Tests.WidgetTests.Handles_zero" outcome="Failed" duration="00:00:00.0250000">
+                  <Output>
+                    <ErrorInfo>
+                      <Message>Expected zero to be handled.</Message>
+                    </ErrorInfo>
+                  </Output>
+                </UnitTestResult>
+              </Results>
+              <ResultSummary outcome="Failed">
+                <Counters total="2" executed="2" passed="1" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="2" inProgress="0" pending="0" />
+              </ResultSummary>
+            </TestRun>
+            """);
+    }
+
+    private static void WriteSampleCoverageArtifact(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "artifacts", "raw", "coverage", "sample-coverage.cobertura.xml"), """
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage line-rate="0.75" branch-rate="0.5" lines-covered="3" lines-valid="4" branches-covered="1" branches-valid="2" version="1.9" timestamp="1772899200">
+              <packages>
+                <package name="Sample" line-rate="0.75" branch-rate="0.5">
+                  <classes>
+                    <class name="Sample.Widget" filename="src/Sample/Widget.cs" line-rate="0.75" branch-rate="0.5">
+                      <lines>
+                        <line number="1" hits="1" branch="false" />
+                        <line number="2" hits="1" branch="true" condition-coverage="50% (1/2)" />
+                        <line number="3" hits="1" branch="false" />
+                        <line number="4" hits="0" branch="false" />
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """);
     }
 }
