@@ -43,6 +43,12 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(CodexDoctorOutput))]
 [JsonSerializable(typeof(CodexRunOutput))]
 [JsonSerializable(typeof(WorktreeStartOutput))]
+[JsonSerializable(typeof(TestInventory))]
+[JsonSerializable(typeof(TestRunSummary))]
+[JsonSerializable(typeof(CoverageSummary))]
+[JsonSerializable(typeof(QualityReport))]
+[JsonSerializable(typeof(QualitySyncOutput))]
+[JsonSerializable(typeof(QualityShowOutput))]
 public partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

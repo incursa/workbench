@@ -98,6 +98,9 @@ workbench <command> [options]
     - `workbench nav sync`: Derived view stage: regenerate indexes and the workboard, syncing links first by default.
   - `workbench normalize`: Normalize work item and doc front matter.
   - `workbench promote`: Create a work item, branch, and commit in one step.
+  - `workbench quality`: Group: repo-native quality evidence commands.
+    - `workbench quality show`: Read the latest normalized quality artifact or a selected evidence kind.
+    - `workbench quality sync`: Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
   - `workbench scaffold`: Create the default folder structure, templates, and config.
   - `workbench sync`: Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.
   - `workbench validate`: Validate work items, links, and schemas.
@@ -525,6 +528,30 @@ Options:
 - `--base <base>`: Base branch for PR.
 - `--draft`: Create a draft PR.
 - `--no-draft`: Create a ready PR.
+
+### `workbench quality`
+Group: repo-native quality evidence commands.
+
+Subcommands:
+- `show`: Read the latest normalized quality artifact or a selected evidence kind.
+- `sync`: Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
+
+### `workbench quality show`
+Read the latest normalized quality artifact or a selected evidence kind.
+
+Options:
+- `--kind <kind>`: Artifact kind to show (report|inventory|results|coverage).
+- `--path <path>`: Optional explicit artifact path to read.
+
+### `workbench quality sync`
+Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
+
+Options:
+- `--contract <contract>`: Authored testing intent contract path.
+- `--results <results>`: TRX file or directory root to ingest.
+- `--coverage <coverage>`: Cobertura file or directory root to ingest.
+- `--out-dir <out-dir>`: Directory for normalized quality artifacts.
+- `--dry-run`: Compute the quality artifacts without writing files.
 
 ### `workbench scaffold`
 Create the default folder structure, templates, and config.

@@ -31,6 +31,14 @@ public static class SchemaValidationService
         return ValidateJsonAgainstSchema(json, schemaPath, docPath, jsonIsContent: true);
     }
 
+    public static IList<string> ValidateJsonContent(string repoRoot, string schemaRelativePath, string context, string json)
+    {
+        var schemaPath = Path.IsPathRooted(schemaRelativePath)
+            ? schemaRelativePath
+            : Path.Combine(repoRoot, schemaRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        return ValidateJsonAgainstSchema(json, schemaPath, context, jsonIsContent: true);
+    }
+
     private static List<string> ValidateJsonAgainstSchema(
         string jsonOrPath,
         string schemaPath,

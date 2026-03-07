@@ -11,6 +11,7 @@ public class CommandSurfaceTests
 
         StringAssert.Contains(result.StdOut, "guide", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "migrate <target>", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "quality", StringComparison.Ordinal);
         Assert.IsFalse(result.StdOut.Contains("  run ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  tui ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  spec ", StringComparison.Ordinal), result.StdOut);
@@ -44,5 +45,14 @@ public class CommandSurfaceTests
         var boardRegenHelp = WorkbenchCli.Run(Environment.CurrentDirectory, "board", "regen", "--help");
         Assert.AreEqual(0, boardRegenHelp.ExitCode, $"stderr: {boardRegenHelp.StdErr}\nstdout: {boardRegenHelp.StdOut}");
         StringAssert.Contains(boardRegenHelp.StdOut, "only the workboard section", StringComparison.Ordinal);
+
+        var qualityHelp = WorkbenchCli.Run(Environment.CurrentDirectory, "quality", "--help");
+        Assert.AreEqual(0, qualityHelp.ExitCode, $"stderr: {qualityHelp.StdErr}\nstdout: {qualityHelp.StdOut}");
+        StringAssert.Contains(qualityHelp.StdOut, "repo-native quality evidence", StringComparison.Ordinal);
+
+        var qualitySyncHelp = WorkbenchCli.Run(Environment.CurrentDirectory, "quality", "sync", "--help");
+        Assert.AreEqual(0, qualitySyncHelp.ExitCode, $"stderr: {qualitySyncHelp.StdErr}\nstdout: {qualitySyncHelp.StdOut}");
+        StringAssert.Contains(qualitySyncHelp.StdOut, "--results <results>", StringComparison.Ordinal);
+        StringAssert.Contains(qualitySyncHelp.StdOut, "--coverage <coverage>", StringComparison.Ordinal);
     }
 }

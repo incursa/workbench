@@ -22,10 +22,15 @@ Current schemas:
 - `docs/30-contracts/workbench-config.schema.json`
 - `docs/30-contracts/work-item.schema.json`
 - `docs/30-contracts/doc.schema.json`
+- `docs/30-contracts/test-inventory.schema.json`
+- `docs/30-contracts/test-run-summary.schema.json`
+- `docs/30-contracts/coverage-summary.schema.json`
+- `docs/30-contracts/quality-report.schema.json`
 
 Other contract docs:
 - `docs/30-contracts/cli-help.md`
 - `docs/30-contracts/error-codes.md`
+- `docs/30-contracts/quality-evidence-model.md`
 - `docs/30-contracts/test-gate.contract.yaml`
 - `docs/30-contracts/test-matrix.md`
 

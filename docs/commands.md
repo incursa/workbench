@@ -447,6 +447,75 @@ Data:
 }
 ```
 
+## workbench quality sync
+
+Data:
+```json
+{
+  "inventory": {
+    "path": "artifacts/quality/testing/test-inventory.json",
+    "projects": 1,
+    "tests": 2
+  },
+  "results": {
+    "path": "artifacts/quality/testing/test-run-summary.json",
+    "runId": "20260307T160003Z",
+    "status": "failed",
+    "passed": 1,
+    "failed": 1,
+    "skipped": 0
+  },
+  "coverage": {
+    "path": "artifacts/quality/testing/coverage-summary.json",
+    "available": true,
+    "lineRate": 0.75,
+    "branchRate": 0.5
+  },
+  "report": {
+    "jsonPath": "artifacts/quality/testing/quality-report.json",
+    "markdownPath": "artifacts/quality/testing/quality-summary.md",
+    "status": "fail",
+    "findings": 2
+  },
+  "warnings": [],
+  "dryRun": false
+}
+```
+
+Notes:
+- Reads authored testing intent from `docs/30-contracts/test-gate.contract.yaml` by default.
+- Normalizes observed truth under `artifacts/quality/testing/`.
+- Surfaces missing or partial evidence as warnings/findings; does not enforce policy.
+
+## workbench quality show
+
+Data:
+```json
+{
+  "kind": "report",
+  "path": "artifacts/quality/testing/quality-report.json",
+  "inventory": null,
+  "results": null,
+  "coverage": null,
+  "report": {
+    "schemaVersion": 1,
+    "domain": "testing",
+    "reportId": "quality-20260307T160003Z",
+    "generatedAt": "2026-03-07T16:00:03.0000000+00:00",
+    "authored": {},
+    "observed": {},
+    "assessment": {},
+    "markdownPath": "artifacts/quality/testing/quality-summary.md"
+  },
+  "markdownPath": "artifacts/quality/testing/quality-summary.md"
+}
+```
+
+Notes:
+- `--kind report|inventory|results|coverage` selects the normalized artifact to read.
+- `--path` can point at an explicit generated artifact file.
+- JSON output returns the selected artifact in the standard `ok/data` envelope.
+
 ## workbench doc delete
 
 Data:
