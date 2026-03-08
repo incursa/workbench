@@ -1,7 +1,7 @@
 param(
     [string]$ContractPath = "docs/30-contracts/test-gate.contract.yaml",
     [string]$CoverageSearchRoot = "tests",
-    [string]$CoverageFileName = "coverage.cobertura.xml"
+    [string]$CoverageFileName = "*.cobertura.xml"
 )
 
 Set-StrictMode -Version Latest
@@ -25,49 +25,43 @@ function Parse-TestGateContract {
     $criticalFiles = New-Object System.Collections.Generic.List[string]
     $requiredTests = New-Object System.Collections.Generic.List[string]
 
-    $section = ""
+    $topLevel = ""
+    $nested = ""
     foreach ($rawLine in Get-Content $PathValue) {
         $trimmed = $rawLine.Trim()
         if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith("#", [System.StringComparison]::Ordinal)) {
             continue
         }
 
-        if ($trimmed -eq "coverage:") {
-            $section = "coverage"
+        $indent = $rawLine.Length - $rawLine.TrimStart().Length
+
+        if ($indent -eq 0 -and $trimmed -match "^([A-Za-z][A-Za-z0-9]*):$") {
+            $topLevel = $Matches[1]
+            $nested = ""
             continue
         }
 
-        if ($trimmed -eq "scenarios:") {
-            $section = "scenarios"
+        if ($indent -eq 2 -and $trimmed -match "^([A-Za-z][A-Za-z0-9]*):$") {
+            $nested = $Matches[1]
             continue
         }
 
-        if ($trimmed -eq "criticalFiles:") {
-            $section = "criticalFiles"
-            continue
-        }
-
-        if ($trimmed -eq "requiredTests:") {
-            $section = "requiredTests"
-            continue
-        }
-
-        if ($section -eq "coverage" -and $trimmed -match "^lineMin:\s*([0-9]*\.?[0-9]+)$") {
+        if ($topLevel -eq "coverage" -and $trimmed -match "^lineMin:\s*([0-9]*\.?[0-9]+)$") {
             $lineMin = [double]::Parse($Matches[1], [System.Globalization.CultureInfo]::InvariantCulture)
             continue
         }
 
-        if ($section -eq "coverage" -and $trimmed -match "^branchMin:\s*([0-9]*\.?[0-9]+)$") {
+        if ($topLevel -eq "coverage" -and $trimmed -match "^branchMin:\s*([0-9]*\.?[0-9]+)$") {
             $branchMin = [double]::Parse($Matches[1], [System.Globalization.CultureInfo]::InvariantCulture)
             continue
         }
 
-        if ($section -eq "criticalFiles" -and $trimmed -match "^- (.+)$") {
+        if ($topLevel -eq "coverage" -and $nested -eq "criticalFiles" -and $trimmed -match "^- (.+)$") {
             $criticalFiles.Add((Normalize-RepoPath -PathValue $Matches[1]))
             continue
         }
 
-        if ($section -eq "requiredTests" -and $trimmed -match "^- (.+)$") {
+        if ($topLevel -eq "scenarios" -and $nested -eq "requiredTests" -and $trimmed -match "^- (.+)$") {
             $requiredTests.Add($Matches[1].Trim())
             continue
         }
@@ -193,7 +187,14 @@ foreach ($coveragePath in $coverageFiles) {
                 continue
             }
 
-            $parsed = Parse-ConditionCoverage -ConditionCoverage ([string]$line.'condition-coverage')
+            $conditionCoverage = if ($line -is [System.Xml.XmlElement]) {
+                $line.GetAttribute("condition-coverage")
+            }
+            else {
+                ""
+            }
+
+            $parsed = Parse-ConditionCoverage -ConditionCoverage $conditionCoverage
             if ($null -eq $parsed) {
                 continue
             }

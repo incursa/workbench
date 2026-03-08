@@ -9,3 +9,4 @@ and sync.
 - `skills/workbench-work-items`: manage work items and links.
 - `skills/workbench-sync`: sync work items with GitHub issues and branches.
 - `skills/workbench-github`: create GitHub PRs from work items.
+- `skills/workbench-quality`: generate and inspect repo-native testing evidence for Workbench quality reports.

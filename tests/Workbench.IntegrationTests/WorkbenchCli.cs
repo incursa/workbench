@@ -6,9 +6,17 @@ namespace Workbench.IntegrationTests
 
         public static CommandResult Run(string workingDirectory, params string[] args)
         {
+            return Run(workingDirectory, null, args);
+        }
+
+        public static CommandResult Run(
+            string workingDirectory,
+            IReadOnlyDictionary<string, string?>? environmentVariables,
+            params string[] args)
+        {
             var allArgs = new List<string> { WorkbenchCli.dllPath.Value };
             allArgs.AddRange(args);
-            return ProcessRunner.Run(workingDirectory, "dotnet", allArgs.ToArray());
+            return ProcessRunner.Run(workingDirectory, "dotnet", environmentVariables, allArgs.ToArray());
         }
 
         private static string BuildWorkbenchCli()

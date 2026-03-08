@@ -40,6 +40,9 @@ jobs:
       - name: Restore
         run: dotnet restore Workbench.slnx
 
+      - name: Restore local tools
+        run: dotnet tool restore
+
       - name: Verify formatting and analyzers
         id: format_gate
         run: dotnet format --verify-no-changes --no-restore Workbench.slnx
@@ -50,20 +53,32 @@ jobs:
 
       - name: Test
         id: test_unit
-        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release --results-directory "artifacts/test-results" --report-trx --report-trx-filename "quality-unit.trx"
+        run: dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj --no-build --configuration Release --results-directory "$GITHUB_WORKSPACE/artifacts/quality/raw/test-results" --report-trx --report-trx-filename "workbench-tests.trx" -- --coverage --coverage-output-format cobertura --coverage-output "$GITHUB_WORKSPACE/artifacts/quality/raw/coverage/workbench-tests.coverage.cobertura.xml"
 
       - name: Test (integration)
         id: test_integration
-        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release --results-directory "artifacts/test-results" --report-trx --report-trx-filename "quality-integration.trx"
+        run: dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj --no-build --configuration Release --results-directory "$GITHUB_WORKSPACE/artifacts/quality/raw/test-results" --report-trx --report-trx-filename "workbench-integration.trx" -- --coverage --coverage-output-format cobertura --coverage-output "$GITHUB_WORKSPACE/artifacts/quality/raw/coverage/workbench-integration.coverage.cobertura.xml"
 
       - name: Collect coverage (contract gate)
         id: coverage_collect
-        run: dotnet test --solution Workbench.slnx --no-build --configuration Release -- --coverage --coverage-output-format cobertura --coverage-output artifacts/coverage/coverage.cobertura.xml
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f artifacts/quality/raw/coverage/workbench-tests.coverage.cobertura.xml
+          test -f artifacts/quality/raw/coverage/workbench-integration.coverage.cobertura.xml
 
       - name: Verify critical coverage contract
         id: coverage_verify
         shell: pwsh
-        run: ./scripts/testing/verify-critical-coverage.ps1 -ContractPath docs/30-contracts/test-gate.contract.yaml -CoverageSearchRoot tests
+        run: ./scripts/testing/verify-critical-coverage.ps1 -ContractPath docs/30-contracts/test-gate.contract.yaml -CoverageSearchRoot artifacts/quality/raw/coverage
+
+      - name: Workbench quality sync
+        id: quality_sync
+        run: dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage --out-dir artifacts/quality/testing
+
+      - name: Workbench quality show
+        if: always()
+        run: dotnet tool run workbench quality show
 
       - name: Upload coverage artifacts
         if: always()
@@ -71,7 +86,28 @@ jobs:
         with:
           name: coverage-cobertura
           path: |
-            tests/**/coverage.cobertura.xml
+            artifacts/quality/raw/coverage/*.cobertura.xml
+          if-no-files-found: ignore
+
+      - name: Upload raw quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-raw-evidence
+          path: |
+            artifacts/quality/raw/test-results/*.trx
+            artifacts/quality/raw/coverage/*.cobertura.xml
+          if-no-files-found: ignore
+
+      - name: Upload normalized quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: |
+            artifacts/quality/testing/*.json
+            artifacts/quality/testing/*.md
+          if-no-files-found: ignore
 
       - name: Pack (repro 1)
         id: pack_repro1
@@ -247,13 +283,13 @@ jobs:
           pack2_outcome="${{ steps.pack_repro2.outcome }}"
           compare_outcome="${{ steps.compare.outcome }}"
 
-          eval "$(bash scripts/ci/parse-trx.sh artifacts/test-results)"
+          eval "$(bash scripts/ci/parse-trx.sh artifacts/quality/raw/test-results)"
           test_passed="$passed"
           test_failed="$failed"
           test_skipped="$skipped"
           trx_count="$reports"
 
-          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" -print -quit 2>/dev/null || true)"
+          coverage_file="$(find artifacts/quality/raw/coverage -type f -name "*.cobertura.xml" -print -quit 2>/dev/null || true)"
           line_rate=""
           branch_rate=""
           if [[ -n "$coverage_file" ]]; then
@@ -392,13 +428,13 @@ jobs:
           pack2_outcome="${{ steps.pack_repro2.outcome }}"
           compare_outcome="${{ steps.compare.outcome }}"
 
-          eval "$(bash scripts/ci/parse-trx.sh artifacts/test-results)"
+          eval "$(bash scripts/ci/parse-trx.sh artifacts/quality/raw/test-results)"
           tests_passed="$passed"
           tests_failed="$failed"
           tests_skipped="$skipped"
           trx_count="$reports"
 
-          coverage_file="$(find tests -type f -name "coverage.cobertura.xml" -print -quit 2>/dev/null || true)"
+          coverage_file="$(find artifacts/quality/raw/coverage -type f -name "*.cobertura.xml" -print -quit 2>/dev/null || true)"
           line_rate=""
           branch_rate=""
           if [[ -n "$coverage_file" ]]; then
@@ -498,6 +534,8 @@ jobs:
             echo ""
             echo "## Artifacts"
             echo "- coverage-cobertura"
+            echo "- quality-raw-evidence"
+            echo "- quality-report"
             echo "- quality-packages-repro"
             echo "- nupkg-normalized-diffs (on package compare failure)"
             echo "- quality-metrics"

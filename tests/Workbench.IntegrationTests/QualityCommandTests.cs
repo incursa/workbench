@@ -42,16 +42,7 @@ public class QualityCommandTests
     {
         using var repo = CreateFixtureRepo();
 
-        var sync = WorkbenchCli.Run(
-            repo.Path,
-            "quality",
-            "sync",
-            "--results",
-            "artifacts/raw/test-results",
-            "--coverage",
-            "artifacts/raw/coverage",
-            "--format",
-            "json");
+        var sync = RunQualitySync(repo.Path, "--format", "json");
         Assert.AreEqual(0, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
 
         var report = WorkbenchCli.Run(repo.Path, "quality", "show", "--format", "json");
@@ -67,6 +58,198 @@ public class QualityCommandTests
         var inventoryData = inventoryJson.RootElement.GetProperty("data");
         Assert.AreEqual("inventory", inventoryData.GetProperty("kind").GetString());
         Assert.AreEqual(2, inventoryData.GetProperty("inventory").GetProperty("tests").GetArrayLength());
+    }
+
+    [TestMethod]
+    public void QualitySync_TableOutput_DryRun_PrintsSummaryWithoutWritingArtifacts()
+    {
+        using var repo = CreateFixtureRepo();
+
+        var result = RunQualitySync(repo.Path, "--dry-run");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        StringAssert.Contains(result.StdOut, "Inventory: 1 projects, 2 tests", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Results: failed (1 passed, 1 failed, 0 skipped)", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Coverage: line 75.0 %, branch 50.0 %", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Dry run: no files were written.", StringComparison.Ordinal);
+        Assert.IsFalse(Directory.Exists(Path.Combine(repo.Path, "artifacts", "quality", "testing")));
+    }
+
+    [TestMethod]
+    public void QualityShow_TableOutput_RendersReportInventoryResultsAndCoverageKinds()
+    {
+        using var repo = CreateFixtureRepo();
+
+        var sync = RunQualitySync(repo.Path, "--format", "json");
+        Assert.AreEqual(0, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
+
+        var report = WorkbenchCli.Run(repo.Path, "quality", "show");
+        Assert.AreEqual(0, report.ExitCode, $"stderr: {report.StdErr}\nstdout: {report.StdOut}");
+        StringAssert.Contains(report.StdOut, "Kind: report", StringComparison.Ordinal);
+        StringAssert.Contains(report.StdOut, "Status: fail", StringComparison.Ordinal);
+        StringAssert.Contains(report.StdOut, "Confidence: under-target", StringComparison.Ordinal);
+        StringAssert.Contains(report.StdOut, "Observed tests: 2", StringComparison.Ordinal);
+        StringAssert.Contains(report.StdOut, "Findings:", StringComparison.Ordinal);
+        StringAssert.Contains(report.StdOut, "Markdown summary:", StringComparison.Ordinal);
+
+        var inventory = WorkbenchCli.Run(repo.Path, "quality", "show", "--kind", "inventory");
+        Assert.AreEqual(0, inventory.ExitCode, $"stderr: {inventory.StdErr}\nstdout: {inventory.StdOut}");
+        StringAssert.Contains(inventory.StdOut, "Kind: inventory", StringComparison.Ordinal);
+        StringAssert.Contains(inventory.StdOut, "Projects: 1", StringComparison.Ordinal);
+        StringAssert.Contains(inventory.StdOut, "Tests: 2", StringComparison.Ordinal);
+        StringAssert.Contains(inventory.StdOut, "Frameworks:", StringComparison.Ordinal);
+
+        var results = WorkbenchCli.Run(repo.Path, "quality", "show", "--kind", "results");
+        Assert.AreEqual(0, results.ExitCode, $"stderr: {results.StdErr}\nstdout: {results.StdOut}");
+        StringAssert.Contains(results.StdOut, "Kind: results", StringComparison.Ordinal);
+        StringAssert.Contains(results.StdOut, "Status: failed", StringComparison.Ordinal);
+        StringAssert.Contains(results.StdOut, "Passed: 1", StringComparison.Ordinal);
+        StringAssert.Contains(results.StdOut, "Failed: 1", StringComparison.Ordinal);
+        StringAssert.Contains(results.StdOut, "Skipped: 0", StringComparison.Ordinal);
+
+        var coverage = WorkbenchCli.Run(repo.Path, "quality", "show", "--kind", "coverage");
+        Assert.AreEqual(0, coverage.ExitCode, $"stderr: {coverage.StdErr}\nstdout: {coverage.StdOut}");
+        StringAssert.Contains(coverage.StdOut, "Kind: coverage", StringComparison.Ordinal);
+        StringAssert.Contains(coverage.StdOut, "Line coverage: 75.0 %", StringComparison.Ordinal);
+        StringAssert.Contains(coverage.StdOut, "Branch coverage: 50.0 %", StringComparison.Ordinal);
+        StringAssert.Contains(coverage.StdOut, "Critical files:", StringComparison.Ordinal);
+        StringAssert.Contains(coverage.StdOut, "- src/Sample/Widget.cs: pass", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void QualityRootCommand_PrintsGuidance()
+    {
+        using var repo = CreateFixtureRepo();
+
+        var result = WorkbenchCli.Run(repo.Path, "quality");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        StringAssert.Contains(result.StdOut, "Use `workbench quality sync`", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "`workbench quality show`", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void QualityCommands_MalformedConfig_ReturnConfigError()
+    {
+        using var repo = CreateFixtureRepo();
+        Directory.CreateDirectory(Path.Combine(repo.Path, ".workbench"));
+        File.WriteAllText(Path.Combine(repo.Path, ".workbench", "config.json"), "{");
+
+        var sync = RunQualitySync(repo.Path);
+        Assert.AreEqual(2, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
+        StringAssert.Contains(sync.StdOut, "Config error:", StringComparison.Ordinal);
+
+        var show = WorkbenchCli.Run(repo.Path, "quality", "show");
+        Assert.AreEqual(2, show.ExitCode, $"stderr: {show.StdErr}\nstdout: {show.StdOut}");
+        StringAssert.Contains(show.StdOut, "Config error:", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void QualityShow_GlobalOptionsWithEqualsSyntax_AreAcceptedOutsideRepo()
+    {
+        using var repo = CreateFixtureRepo();
+        using var outside = TempRepo.Create();
+
+        var sync = RunQualitySync(repo.Path, "--format", "json");
+        Assert.AreEqual(0, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
+
+        var result = WorkbenchCli.Run(
+            outside.Path,
+            "quality",
+            "show",
+            $"--repo={repo.Path}",
+            "--format=json");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        using var json = JsonDocument.Parse(result.StdOut);
+        var data = json.RootElement.GetProperty("data");
+        Assert.AreEqual("report", data.GetProperty("kind").GetString());
+    }
+
+    [TestMethod]
+    public void QualityShow_EnvironmentRepoAndFormat_AreRespected()
+    {
+        using var repo = CreateFixtureRepo();
+        using var outside = TempRepo.Create();
+
+        var sync = RunQualitySync(repo.Path, "--format", "json");
+        Assert.AreEqual(0, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
+
+        var result = WorkbenchCli.Run(
+            outside.Path,
+            new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["WORKBENCH_REPO"] = repo.Path,
+                ["WORKBENCH_FORMAT"] = "json",
+            },
+            "quality",
+            "show");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        using var json = JsonDocument.Parse(result.StdOut);
+        var data = json.RootElement.GetProperty("data");
+        Assert.AreEqual("report", data.GetProperty("kind").GetString());
+    }
+
+    [TestMethod]
+    public void QualityShow_MissingExplicitPath_ReturnsPathNotFoundErrorEnvelope()
+    {
+        using var repo = CreateFixtureRepo();
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "quality",
+            "show",
+            "--path",
+            "artifacts/quality/testing/missing-report.json",
+            "--format",
+            "json");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        using var json = JsonDocument.Parse(result.StdOut);
+        var error = json.RootElement.GetProperty("error");
+        Assert.AreEqual("path_not_found", error.GetProperty("code").GetString());
+        StringAssert.Contains(error.GetProperty("hint").GetString()!, "Verify the referenced file or directory exists.", StringComparison.Ordinal);
+        Assert.IsFalse(result.StdErr.Contains("FileNotFoundException", StringComparison.Ordinal), result.StdErr);
+    }
+
+    [TestMethod]
+    public void QualityShow_EnvironmentDebug_PrintsExceptionDetailsForJsonErrors()
+    {
+        using var repo = CreateFixtureRepo();
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["WORKBENCH_DEBUG"] = "on",
+                ["WORKBENCH_FORMAT"] = "json",
+            },
+            "quality",
+            "show",
+            "--path",
+            "artifacts/quality/testing/missing-report.json");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        using var json = JsonDocument.Parse(result.StdOut);
+        var error = json.RootElement.GetProperty("error");
+        Assert.AreEqual("path_not_found", error.GetProperty("code").GetString());
+        StringAssert.Contains(result.StdErr, "FileNotFoundException", StringComparison.Ordinal);
+    }
+
+    private static CommandResult RunQualitySync(string repoPath, params string[] extraArgs)
+    {
+        var args = new List<string>
+        {
+            "quality",
+            "sync",
+            "--results",
+            "artifacts/raw/test-results",
+            "--coverage",
+            "artifacts/raw/coverage"
+        };
+        args.AddRange(extraArgs);
+        return WorkbenchCli.Run(repoPath, args.ToArray());
     }
 
     private static TempRepo CreateFixtureRepo()

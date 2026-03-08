@@ -42,3 +42,6 @@ Other contract docs:
 - Verify it is current with `workbench doc regen-help --check`.
 - Machine-readable command contracts remain in `docs/commands.md`.
 - Update other contract docs when inputs, outputs, or defaults change.
+- `docs/30-contracts/test-gate.contract.yaml` is the canonical authored testing-intent contract for this repo.
+- Raw test and coverage evidence belongs under `artifacts/quality/raw/`.
+- Normalized artifacts under `artifacts/quality/testing/` are derived outputs from `workbench quality sync` and must not be edited by hand.

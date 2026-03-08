@@ -35,6 +35,19 @@ Run the full solution verification:
 dotnet test --solution Workbench.slnx
 ```
 
+Generate the standard raw quality evidence set:
+
+```powershell
+dotnet tool restore
+pwsh -File scripts/testing/run-quality-evidence.ps1
+dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage
+dotnet tool run workbench quality show
+```
+
+The authored contract is `docs/30-contracts/test-gate.contract.yaml`.
+Raw test and coverage inputs belong under `artifacts/quality/raw/`.
+Generated quality artifacts under `artifacts/quality/testing/` are derived and should not be edited by hand.
+
 Verify the checked-in CLI help contract matches the live command tree:
 
 ```bash
@@ -50,7 +63,8 @@ host-machine hooks, signing, and global git config.
 1. Create a feature branch.
 2. Make your changes with clear, focused commits.
 3. Ensure tests pass locally.
-4. Open a pull request with:
+4. If you changed code or test scope, refresh the quality evidence flow above.
+5. Open a pull request with:
    - A short summary of the change.
    - Links to any related issues or context.
    - Screenshots or logs when behavior changes.

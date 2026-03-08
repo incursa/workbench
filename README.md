@@ -81,6 +81,18 @@ Run integration tests:
 dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
 ```
 
+Produce raw quality evidence in the standard repo locations:
+
+```powershell
+pwsh -File scripts/testing/run-quality-evidence.ps1
+```
+
+On macOS or Linux:
+
+```bash
+bash ./scripts/testing/run-quality-evidence.sh
+```
+
 Run GitHub CLI-dependent integration tests:
 
 ```bash
@@ -118,6 +130,29 @@ Expected warnings:
 - Operating model ADR: `docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md`
 - CLI help: `docs/30-contracts/cli-help.md`
 - Schemas: `docs/30-contracts/`
+- Testing intent contract: `docs/30-contracts/test-gate.contract.yaml`
+
+## Quality evidence
+
+Workbench quality evidence is advisory in this repo. It summarizes authored test intent plus observed test and coverage artifacts, but it does not introduce a merge gate.
+
+Happy path:
+
+```powershell
+dotnet tool restore
+pwsh -File scripts/testing/run-quality-evidence.ps1
+dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage
+dotnet tool run workbench quality show
+```
+
+Path conventions:
+
+- Authored intent: `docs/30-contracts/test-gate.contract.yaml`
+- Raw test evidence: `artifacts/quality/raw/test-results/*.trx`
+- Raw coverage evidence: `artifacts/quality/raw/coverage/*.cobertura.xml`
+- Generated quality artifacts: `artifacts/quality/testing/`
+
+Generated artifacts under `artifacts/quality/testing/` are derived outputs. Do not hand-edit them.
 
 ## Voice commands
 

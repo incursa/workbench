@@ -1,47 +1,37 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Project Structure
 
-This repository is currently minimal and only contains top-level documentation. At the moment there is no `src/`, `tests/`, or asset directory. If you add code, prefer a conventional layout such as:
+- `src/Workbench`: tool entry point packaged as the `workbench` .NET tool.
+- `src/Workbench.Core`, `src/Workbench.Cli`, `src/Workbench.Tui`: shared implementation and command surface.
+- `tests/Workbench.Tests`, `tests/Workbench.IntegrationTests`: unit and integration coverage.
+- `docs/`: canonical specs, contracts, ADRs, runbooks, and work items.
+- `artifacts/`: generated outputs only. Do not hand-edit files there.
 
-- `src/` for application or library source
-- `tests/` for automated tests
-- `assets/` or `public/` for static files
+## Build, Test, and Quality Commands
 
-Keep related modules together and add a short README in any new top-level directory that explains its purpose.
+- `dotnet build Workbench.slnx -c Release`
+- `dotnet test --solution Workbench.slnx`
+- `dotnet tool restore`
+- `pwsh -File scripts/testing/run-quality-evidence.ps1`
+- `dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage`
+- `dotnet tool run workbench quality show`
 
-## Build, Test, and Development Commands
+## Quality Evidence Workflow
 
-No build or test commands are defined yet. When you introduce tooling, document the primary commands here and in `README.md`, for example:
+- Canonical authored intent lives in `docs/30-contracts/test-gate.contract.yaml`.
+- Raw observed evidence lives in `artifacts/quality/raw/test-results/*.trx` and `artifacts/quality/raw/coverage/*.cobertura.xml`.
+- Generated quality artifacts live in `artifacts/quality/testing/` and are derived outputs from Workbench. Do not edit them by hand.
+- Treat the quality report as advisory evidence for humans and agents. Do not add merge-blocking behavior based on the generated report in this repo.
+- Prefer `dotnet tool run workbench` for quality commands so the repo uses the version pinned in `dotnet-tools.json`. Use `workbench.ps1` only when intentionally validating in-repo source changes.
 
-- `npm run dev` for local development
-- `npm test` for the test suite
-- `make build` for production builds
- - `dotnet format Workbench.slnx` to apply .NET formatting rules across the solution
-
-## Coding Style & Naming Conventions
-
-No style guide is established yet. When adding code, align with the chosen language’s standard formatter and document it here (e.g., `prettier`, `gofmt`, `black`). Prefer clear, descriptive names and consistent casing (e.g., `camelCase` for variables, `PascalCase` for types).
-
-## Testing Guidelines
-
-There are no tests or frameworks configured. If you add tests, describe the framework and conventions, such as:
-
-- Test files named `*.test.*` under `tests/`
-- `npm test` or `pytest` as the entry point
-
-## Commit & Pull Request Guidelines
-
-No repository-specific conventions are recorded yet. Use concise, imperative commit messages (e.g., "Add CLI scaffold"). For pull requests, include:
-
-- A short summary of the change
-- Links to relevant issues or context
-- Screenshots or logs when behavior changes
 ## Agent-Specific Instructions
 
-If you add automation or agents, document them in `AGENTS.md` and keep instructions short and actionable.
+- If you change test scope, thresholds, or critical areas, update `docs/30-contracts/test-gate.contract.yaml`.
+- If you change the quality workflow, keep the artifact paths above stable unless you also update the docs and agent guidance.
+- When summarizing repo quality state, rely on `workbench quality show` or the generated files in `artifacts/quality/testing/`, not on ad hoc TRX or Cobertura parsing.
 
-### Formatting (Required)
+## Formatting (Required)
 
 - Always run `dotnet format Workbench.slnx` after making code changes.
 - Fix any formatting or analyzer issues reported by `dotnet format` before finalizing changes.
