@@ -327,6 +327,13 @@ public static class DocService
             return updated;
         }
 
+        HashSet<string>? referencedDocs = null;
+        if (!includeAllDocs)
+        {
+            var itemsById = LoadItems(repoRoot, config);
+            referencedDocs = BuildReferencedDocSet(repoRoot, itemsById.Values);
+        }
+
         foreach (var docPath in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
         {
             if (IsWorkItemDocumentPath(repoRoot, config, docPath))
@@ -337,7 +344,7 @@ public static class DocService
             if (!TryLoadOrCreateFrontMatter(
                     docPath,
                     includeAllDocs,
-                    referencedDocs: null,
+                    referencedDocs,
                     out var frontMatter,
                     out var createdFrontMatter))
             {
@@ -625,6 +632,12 @@ public static class DocService
             trimmed = trimmed[1..^1];
         }
 
+        if (LooksLikeRepoRelativeDocPath(trimmed))
+        {
+            trimmed = trimmed.Replace('\\', '/');
+            return trimmed.StartsWith("/", StringComparison.Ordinal) ? trimmed : "/" + trimmed.TrimStart('/');
+        }
+
         if (Path.IsPathRooted(trimmed))
         {
             var full = Path.GetFullPath(trimmed);
@@ -645,6 +658,29 @@ public static class DocService
         }
 
         return trimmed;
+    }
+
+    private static bool LooksLikeRepoRelativeDocPath(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = value.Replace('\\', '/');
+        if (!normalized.StartsWith("/", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (normalized.StartsWith("//", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return normalized.Length < 3
+            || normalized[2] != ':'
+            || !char.IsLetter(normalized[1]);
     }
 
     private static List<string> EnsureStringList(Dictionary<string, object?> data, string key, out bool changed)

@@ -87,6 +87,31 @@ public class QualityServiceTests
     }
 
     [TestMethod]
+    public void IngestCoverageSummary_AggregatesCoverageAcrossArtifactsForSameFile()
+    {
+        using var repo = CreateFixtureRepo();
+        var authored = QualityService.LoadAuthoredIntent(repo.Path, Path.Combine(repo.Path, QualityService.DefaultContractPath));
+        WriteSecondaryCoverageArtifact(repo.Path);
+
+        var coverage = QualityService.IngestCoverageSummary(
+            repo.Path,
+            "artifacts/raw/coverage",
+            authored,
+            Array.Empty<TestInventoryProject>(),
+            "workbench quality sync");
+
+        Assert.HasCount(1, coverage.Files);
+        Assert.AreEqual("src/Sample/Widget.cs", coverage.Files[0].RepoPath);
+        Assert.AreEqual(3, coverage.Files[0].LinesCovered);
+        Assert.AreEqual(8, coverage.Files[0].LinesValid);
+        Assert.AreEqual(0.375, coverage.Files[0].LineRate, 0.0001);
+        Assert.AreEqual(1, coverage.Files[0].BranchesCovered);
+        Assert.AreEqual(4, coverage.Files[0].BranchesValid);
+        Assert.AreEqual(0.25, coverage.Files[0].BranchRate, 0.0001);
+        Assert.AreEqual("fail", coverage.CriticalFiles[0].Status);
+    }
+
+    [TestMethod]
     public void DiscoverTestInventory_UsesAuthoredSolutionPath_AndCsprojGlobScope()
     {
         using var repo = CreateFixtureRepo(
@@ -310,6 +335,29 @@ public class QualityServiceTests
                         <line number="1" hits="1" branch="false" />
                         <line number="2" hits="1" branch="true" condition-coverage="50% (1/2)" />
                         <line number="3" hits="1" branch="false" />
+                        <line number="4" hits="0" branch="false" />
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """);
+    }
+
+    private static void WriteSecondaryCoverageArtifact(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "artifacts", "raw", "coverage", "sample-coverage-secondary.cobertura.xml"), """
+            <?xml version="1.0" encoding="utf-8"?>
+            <coverage line-rate="0" branch-rate="0" lines-covered="0" lines-valid="4" branches-covered="0" branches-valid="2" version="1.9" timestamp="1772899201">
+              <packages>
+                <package name="Sample" line-rate="0" branch-rate="0">
+                  <classes>
+                    <class name="Sample.Widget" filename="src/Sample/Widget.cs" line-rate="0" branch-rate="0">
+                      <lines>
+                        <line number="1" hits="0" branch="false" />
+                        <line number="2" hits="0" branch="true" condition-coverage="0% (0/2)" />
+                        <line number="3" hits="0" branch="false" />
                         <line number="4" hits="0" branch="false" />
                       </lines>
                     </class>
