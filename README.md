@@ -34,12 +34,20 @@ mirror layer, not the primary system of record.
 - Use `workbench nav sync` when you need to rebuild derived docs indexes, repo indexes, or the workboard. It also syncs links first unless that work already ran via `workbench sync --docs --nav`.
 - Use `workbench board regen` only when you want the narrowest workboard-only refresh.
 
+## Getting Started
+
+**New to Workbench?** Start here:
+
+- **[Getting Started Guide](docs/00-overview/getting-started.md)**: Step-by-step tutorial covering installation, initialization, creating work items, and validation.
+- **[Sample Walkthrough](examples/sample-walkthrough/)**: Hands-on example demonstrating the complete Workbench workflow.
+
 ## Repository map
 
 - `src/Workbench`: CLI source code.
 - `tests/`: automated tests.
 - `docs/`: product, architecture, contracts, decisions, and runbooks.
 - `docs/70-work/`: active and completed work items plus templates.
+- `examples/`: sample walkthroughs and demonstrations.
 - `assets/`: static assets used by docs or tooling.
 - `artifacts/`: build outputs and local artifacts.
 - `testdata/`: fixtures for parsing and validation tests.
