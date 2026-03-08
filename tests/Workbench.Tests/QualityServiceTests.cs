@@ -86,6 +86,35 @@ public class QualityServiceTests
         Assert.AreEqual("pass", coverage.CriticalFiles[0].Status);
     }
 
+    [TestMethod]
+    public void DiscoverTestInventory_UsesAuthoredSolutionPath_AndCsprojGlobScope()
+    {
+        using var repo = CreateFixtureRepo(
+            """
+            version: 2
+            domain: testing
+
+            scope:
+              solutionPath: src/Sample.All.slnx
+              includes:
+                - tests/**/*.csproj
+
+            expectations:
+              evidence:
+                - inventory
+            """,
+            solutionRelativePath: "src/Sample.All.slnx");
+
+        var authored = QualityService.LoadAuthoredIntent(repo.Path, Path.Combine(repo.Path, QualityService.DefaultContractPath));
+        var inventory = QualityService.DiscoverTestInventory(repo.Path, authored, "workbench quality sync");
+
+        Assert.AreEqual("src/Sample.All.slnx", authored.SolutionPath);
+        Assert.AreEqual("src/Sample.All.slnx", inventory.Scope.SolutionPath);
+        Assert.HasCount(1, inventory.Projects);
+        Assert.HasCount(2, inventory.Tests);
+        Assert.AreEqual("tests/Sample.Tests/Sample.Tests.csproj", inventory.Projects[0].ProjectPath);
+    }
+
     private static void AssertSchema(string repoRoot, string schemaPath, string artifactPath)
     {
         var fullPath = Path.Combine(repoRoot, artifactPath.Replace('/', Path.DirectorySeparatorChar));
@@ -97,7 +126,7 @@ public class QualityServiceTests
         Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
     }
 
-    private static TempQualityRepo CreateFixtureRepo()
+    private static TempQualityRepo CreateFixtureRepo(string? contractContent = null, string? solutionRelativePath = null)
     {
         var repoRoot = Path.Combine(Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(repoRoot);
@@ -122,7 +151,7 @@ public class QualityServiceTests
                 Path.Combine(repoRoot, "docs", "30-contracts", schema));
         }
 
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "30-contracts", "test-gate.contract.yaml"), """
+        File.WriteAllText(Path.Combine(repoRoot, "docs", "30-contracts", "test-gate.contract.yaml"), contractContent ?? """
             version: 2
             domain: testing
 
@@ -157,6 +186,13 @@ public class QualityServiceTests
               codeRefs:
                 - src/Sample/Widget.cs
             """);
+
+        if (!string.IsNullOrWhiteSpace(solutionRelativePath))
+        {
+            var solutionPath = Path.Combine(repoRoot, solutionRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(solutionPath) ?? repoRoot);
+            File.WriteAllText(solutionPath, "<Solution />\n");
+        }
 
         File.WriteAllText(Path.Combine(repoRoot, "src", "Sample", "Sample.csproj"), """
             <Project Sdk="Microsoft.NET.Sdk">

@@ -38,6 +38,7 @@ public sealed record QualityAuthoredIntent(
     string ContractPath,
     int? Version,
     string Domain,
+    string? SolutionPath,
     IList<string> Includes,
     IList<string> Excludes,
     IList<string> ExpectedEvidence,
@@ -231,6 +232,7 @@ public static class QualityService
         var intentionalGaps = new List<QualityIntentionalGap>();
         int? version = null;
         string domain = "testing";
+        string? solutionPath = null;
         string? confidenceTarget = null;
         double? lineMin = null;
         double? branchMin = null;
@@ -354,6 +356,9 @@ public static class QualityService
                 case "domain":
                     domain = string.IsNullOrWhiteSpace(value) ? "testing" : value;
                     break;
+                case "scope.solutionPath":
+                    solutionPath = NormalizeContractPath(value);
+                    break;
                 case "coverage.lineMin":
                     lineMin = ParseDouble(value, lineMin);
                     break;
@@ -382,6 +387,7 @@ public static class QualityService
             NormalizeRepoPath(repoRoot, contractPath),
             version,
             domain,
+            solutionPath,
             includes,
             excludes,
             expectedEvidence.Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
@@ -399,7 +405,7 @@ public static class QualityService
         var projects = new List<TestInventoryProject>();
         var tests = new List<TestInventoryTest>();
         var warnings = new List<string>();
-        var solutionPath = FindSolutionPath(repoRoot);
+        var solutionPath = ResolveSolutionPath(repoRoot, intent, warnings);
         var projectFiles = EnumerateProjectFiles(repoRoot);
 
         foreach (var projectPath in projectFiles)
@@ -481,7 +487,7 @@ public static class QualityService
                 typeof(QualityService).Assembly.GetName().Version?.ToString(),
                 projects.Select(project => project.ProjectPath).ToList()),
             new TestInventoryScope(
-                solutionPath is null ? null : NormalizeRepoPath(repoRoot, solutionPath),
+                solutionPath,
                 intent.Includes.ToList(),
                 intent.Excludes.ToList()),
             new TestInventorySummary(
@@ -640,7 +646,7 @@ public static class QualityService
                     ? new List<string> { NormalizeRepoPath(repoRoot, requestedPath) }
                     : trxFiles.Select(file => NormalizeRepoPath(repoRoot, file)).ToList()),
             new TestRunSelection(
-                FindSolutionPath(repoRoot) is { } solution ? NormalizeRepoPath(repoRoot, solution) : null,
+                ResolveSolutionPath(repoRoot, null, null),
                 inventoryProjects.Select(project => project.ProjectPath).ToList(),
                 null),
             new TestRunSummaryCounts(
@@ -1415,29 +1421,77 @@ public static class QualityService
 
     private static bool IsIncluded(string path, IList<string> includes, IList<string> excludes)
     {
-        var included = includes.Count == 0 || includes.Any(include =>
-        {
-            var normalized = include.Trim('/').Replace('\\', '/');
-            return path.StartsWith(normalized, StringComparison.OrdinalIgnoreCase);
-        });
+        var included = includes.Count == 0 || includes.Any(include => MatchesScopePattern(path, include));
         if (!included)
         {
             return false;
         }
 
-        return !excludes.Any(exclude =>
+        return !excludes.Any(exclude => MatchesScopePattern(path, exclude));
+    }
+
+    private static string? ResolveSolutionPath(string repoRoot, QualityAuthoredIntent? intent, IList<string>? warnings)
+    {
+        if (!string.IsNullOrWhiteSpace(intent?.SolutionPath))
         {
-            var normalized = exclude.Trim('/').Replace('\\', '/');
-            return path.StartsWith(normalized, StringComparison.OrdinalIgnoreCase);
-        });
+            var authoredPath = intent.SolutionPath!;
+            var resolvedPath = ResolvePath(repoRoot, authoredPath);
+            if (File.Exists(resolvedPath))
+            {
+                return NormalizeRepoPath(repoRoot, resolvedPath);
+            }
+
+            warnings?.Add($"Authored solutionPath was not found: {authoredPath}");
+            return authoredPath;
+        }
+
+        return FindSolutionPath(repoRoot) is { } discovered
+            ? NormalizeRepoPath(repoRoot, discovered)
+            : null;
     }
 
     private static string? FindSolutionPath(string repoRoot)
     {
         return Directory
-            .EnumerateFiles(repoRoot, "*.sln*", SearchOption.TopDirectoryOnly)
+            .EnumerateFiles(repoRoot, "*", SearchOption.AllDirectories)
+            .Where(path =>
+                !IsGeneratedOrBuildPath(path)
+                && (string.Equals(Path.GetExtension(path), ".sln", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Path.GetExtension(path), ".slnx", StringComparison.OrdinalIgnoreCase)))
             .OrderBy(path => path.Length)
             .FirstOrDefault();
+    }
+
+    private static bool MatchesScopePattern(string path, string pattern)
+    {
+        var normalizedPath = NormalizeContractPath(path);
+        var normalizedPattern = NormalizeContractPath(pattern);
+        if (string.IsNullOrWhiteSpace(normalizedPattern))
+        {
+            return false;
+        }
+
+        if (!ContainsWildcard(normalizedPattern))
+        {
+            return string.Equals(normalizedPath, normalizedPattern, StringComparison.OrdinalIgnoreCase)
+                || normalizedPath.StartsWith(normalizedPattern + "/", StringComparison.OrdinalIgnoreCase);
+        }
+
+        var expression = "^" + Regex.Escape(normalizedPattern)
+            .Replace(@"\*\*/", "(?:.*/)?")
+            .Replace(@"\*\*", ".*")
+            .Replace(@"\*", @"[^/]*")
+            .Replace(@"\?", @"[^/]") + "$";
+
+        return Regex.IsMatch(
+            normalizedPath,
+            expression,
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    }
+
+    private static bool ContainsWildcard(string value)
+    {
+        return value.Contains('*', StringComparison.Ordinal) || value.Contains('?', StringComparison.Ordinal);
     }
 
     private static List<string> EnumerateProjectFiles(string repoRoot)

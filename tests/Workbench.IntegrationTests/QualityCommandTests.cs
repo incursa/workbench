@@ -237,6 +237,40 @@ public class QualityCommandTests
         StringAssert.Contains(result.StdErr, "FileNotFoundException", StringComparison.Ordinal);
     }
 
+    [TestMethod]
+    public void QualitySync_RespectsAuthoredSolutionPath_AndCsprojGlobIncludes()
+    {
+        using var repo = CreateFixtureRepo(
+            """
+            version: 2
+            domain: testing
+
+            scope:
+              solutionPath: src/Sample.All.slnx
+              includes:
+                - tests/**/*.csproj
+
+            expectations:
+              evidence:
+                - inventory
+                - results
+                - coverage
+            """,
+            solutionRelativePath: "src/Sample.All.slnx");
+
+        var sync = RunQualitySync(repo.Path, "--format", "json");
+        Assert.AreEqual(0, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
+
+        var inventory = WorkbenchCli.Run(repo.Path, "quality", "show", "--kind", "inventory", "--format", "json");
+        Assert.AreEqual(0, inventory.ExitCode, $"stderr: {inventory.StdErr}\nstdout: {inventory.StdOut}");
+        using var inventoryJson = JsonDocument.Parse(inventory.StdOut);
+        var data = inventoryJson.RootElement.GetProperty("data").GetProperty("inventory");
+        Assert.AreEqual("src/Sample.All.slnx", data.GetProperty("scope").GetProperty("solutionPath").GetString());
+        Assert.AreEqual(1, data.GetProperty("projects").GetArrayLength());
+        Assert.AreEqual(2, data.GetProperty("tests").GetArrayLength());
+        Assert.AreEqual("tests/Sample.Tests/Sample.Tests.csproj", data.GetProperty("projects")[0].GetProperty("projectPath").GetString());
+    }
+
     private static CommandResult RunQualitySync(string repoPath, params string[] extraArgs)
     {
         var args = new List<string>
@@ -252,7 +286,7 @@ public class QualityCommandTests
         return WorkbenchCli.Run(repoPath, args.ToArray());
     }
 
-    private static TempRepo CreateFixtureRepo()
+    private static TempRepo CreateFixtureRepo(string? contractContent = null, string? solutionRelativePath = null)
     {
         var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
@@ -277,7 +311,7 @@ public class QualityCommandTests
                 Path.Combine(repo.Path, "docs", "30-contracts", schema));
         }
 
-        File.WriteAllText(Path.Combine(repo.Path, "docs", "30-contracts", "test-gate.contract.yaml"), """
+        File.WriteAllText(Path.Combine(repo.Path, "docs", "30-contracts", "test-gate.contract.yaml"), contractContent ?? """
             version: 2
             domain: testing
 
@@ -304,6 +338,13 @@ public class QualityCommandTests
                 - tests/Sample.Tests/WidgetTests.cs::Adds_numbers
                 - tests/Sample.Tests/WidgetTests.cs::Handles_zero
             """);
+
+        if (!string.IsNullOrWhiteSpace(solutionRelativePath))
+        {
+            var solutionPath = Path.Combine(repo.Path, solutionRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(solutionPath) ?? repo.Path);
+            File.WriteAllText(solutionPath, "<Solution />\n");
+        }
 
         File.WriteAllText(Path.Combine(repo.Path, "src", "Sample", "Sample.csproj"), """
             <Project Sdk="Microsoft.NET.Sdk">
