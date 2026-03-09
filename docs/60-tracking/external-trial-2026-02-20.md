@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/60-tracking/external-trial-2026-02-20.md"
+    - "/C:/docs/60-tracking/external-trial-2026-02-20.md"
   path: /docs/60-tracking/external-trial-2026-02-20.md
 owner: platform
 status: active

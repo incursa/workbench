@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/60-tracking/workbench-gaps.md"
+    - "/C:/docs/60-tracking/workbench-gaps.md"
   path: /docs/60-tracking/workbench-gaps.md
 owner: platform
 status: active

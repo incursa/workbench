@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md"
+    - "/C:/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md"
   path: /docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md
 owner: platform
 status: accepted

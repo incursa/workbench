@@ -7,7 +7,7 @@ workbench:
     - TASK-0007
   codeRefs: []
   pathHistory:
-    - "C:/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md"
+    - "/C:/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md"
   path: /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
 owner: platform
 status: accepted

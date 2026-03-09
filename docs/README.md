@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/README.md"
+    - "/C:/docs/README.md"
   path: /docs/README.md
 owner: platform
 status: active

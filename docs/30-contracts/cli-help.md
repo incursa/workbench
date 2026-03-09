@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/30-contracts/cli-help.md"
+    - "/C:/docs/30-contracts/cli-help.md"
   path: /docs/30-contracts/cli-help.md
 owner: platform
 status: active

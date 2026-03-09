@@ -12,7 +12,7 @@ workbench:
     - TASK-0022
   codeRefs: []
   pathHistory:
-    - "C:/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md"
+    - "/C:/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md"
   path: /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
 owner: platform
 status: proposed

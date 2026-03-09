@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/commands.md"
+    - "/C:/docs/commands.md"
   path: /docs/commands.md
 owner: platform
 status: active

@@ -5,7 +5,7 @@ workbench:
   codeRefs: []
   changeNotes: []
   pathHistory:
-    - "C:/docs/60-tracking/ai-work-item-generation.md"
+    - "/C:/docs/60-tracking/ai-work-item-generation.md"
   path: /docs/60-tracking/ai-work-item-generation.md
 owner: platform
 status: draft

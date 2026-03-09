@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/30-contracts/error-codes.md"
+    - "/C:/docs/30-contracts/error-codes.md"
   path: /docs/30-contracts/error-codes.md
 owner: platform
 status: active

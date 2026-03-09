@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/60-tracking/hardening-gate-2026-02-19.md"
+    - "/C:/docs/60-tracking/hardening-gate-2026-02-19.md"
   path: /docs/60-tracking/hardening-gate-2026-02-19.md
 owner: platform
 status: active

@@ -14,7 +14,7 @@ workbench:
     - scripts/ci/parse-trx.sh
     - scripts/testing/verify-critical-coverage.ps1
   pathHistory:
-    - "C:/docs/10-product/feature-spec-quality-evidence-testing-v1.md"
+    - "/C:/docs/10-product/feature-spec-quality-evidence-testing-v1.md"
   path: /docs/10-product/feature-spec-quality-evidence-testing-v1.md
 owner: platform
 status: draft

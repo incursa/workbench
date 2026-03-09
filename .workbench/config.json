@@ -22,7 +22,7 @@
     "RequireCleanWorkingTree": true
   },
   "Github": {
-    "Provider": "gh",
+    "Provider": "octokit",
     "DefaultDraft": true,
     "Host": "",
     "Owner": "incursa",

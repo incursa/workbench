@@ -5,7 +5,7 @@ workbench:
     - TASK-0001
   codeRefs: []
   pathHistory:
-    - "C:/docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md"
+    - "/C:/docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md"
   path: /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md
 owner: platform
 status: accepted
