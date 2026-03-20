@@ -44,7 +44,9 @@ public partial class Program
             items.AddRange(WorkItemService.ListItems(repoRoot, config, includeDone: true).Items);
         }
 
+        var itemsById = items.ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
         var issueMap = new Dictionary<string, WorkItem>(StringComparer.OrdinalIgnoreCase);
+        var issueBackfillLinks = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (syncIssues)
         {
             foreach (var item in items)
@@ -134,6 +136,19 @@ public partial class Program
                 continue;
             }
 
+            if (GithubIssueLinker.TryMatchIssueToItem(issue, itemsById, out var matchedItem)
+                && matchedItem is not null)
+            {
+                issueMap[key] = matchedItem;
+                issueBackfillLinks[matchedItem.Id] = issue.Url;
+                if (!dryRun && WorkItemService.AddRelatedLink(matchedItem.Path, "issues", issue.Url))
+                {
+                    WorkItemService.UpdateGithubSynced(matchedItem.Path, DateTime.UtcNow);
+                }
+
+                continue;
+            }
+
             var issuePayload = new GithubIssuePayload(
                 issue.Repo.Display,
                 issue.Number,
@@ -154,6 +169,7 @@ public partial class Program
             var item = WorkItemService.CreateItemFromGithubIssue(repoRoot, config, issue, type, status, null, null);
             imported.Add(new ItemSyncImportEntry(issuePayload, ItemToPayload(item)));
             items.Add(item);
+            itemsById[item.Id] = item;
             issueMap[key] = item;
         }
 
@@ -165,6 +181,11 @@ public partial class Program
             foreach (var item in items)
             {
                 var issueLink = item.Related.Issues.FirstOrDefault(link => !string.IsNullOrWhiteSpace(link));
+                if (string.IsNullOrWhiteSpace(issueLink)
+                    && issueBackfillLinks.TryGetValue(item.Id, out var backfilledIssueLink))
+                {
+                    issueLink = backfilledIssueLink;
+                }
                 if (string.IsNullOrWhiteSpace(issueLink))
                 {
                     continue;
@@ -176,6 +197,32 @@ public partial class Program
                     continue;
                 }
 
+                var desiredTitle = item.Title;
+                var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo!, config.Git.DefaultBaseBranch);
+                var markerBackfillNeeded = GithubIssueLinker.TryBuildMarkerBackfillBody(issue.Body, item.Id, out var markerBackfillBody);
+                if (markerBackfillNeeded)
+                {
+                    if (!dryRun)
+                    {
+                        await GithubService.UpdateIssueAsync(repoRoot, config, issueRef, issue.Title, markerBackfillBody).ConfigureAwait(false);
+                        WorkItemService.UpdateGithubSynced(item.Path, DateTime.UtcNow);
+                    }
+                    issuesUpdated.Add(new ItemSyncIssueUpdateEntry(item.Id, issue.Url));
+                    issue = issue with { Body = markerBackfillBody };
+                    if (!StringsEqual(issue.Title, desiredTitle) && !preferGithub)
+                    {
+                        // Keep evaluating normal sync when other GitHub fields still need reconciliation.
+                    }
+                    else if (!StringsEqual(issue.Body, desiredBody))
+                    {
+                        // Keep evaluating normal sync when the full GitHub body still differs from the local item.
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
                 var summary = ExtractSection(item.Body, "Summary");
                 var itemNeedsUpdate = !StringsEqual(item.Title, issue.Title);
                 if (!itemNeedsUpdate && !string.IsNullOrWhiteSpace(issue.Body))
@@ -183,8 +230,6 @@ public partial class Program
                     itemNeedsUpdate = !summary.Contains(issue.Body, StringComparison.Ordinal);
                 }
 
-                var desiredTitle = item.Title;
-                var desiredBody = PullRequestBuilder.BuildBody(item, defaultRepo!, config.Git.DefaultBaseBranch);
                 var issueNeedsUpdate = !StringsEqual(issue.Title, desiredTitle) || !StringsEqual(issue.Body, desiredBody);
 
                 if (failOnConflict && issueNeedsUpdate && itemNeedsUpdate)
@@ -242,6 +287,10 @@ public partial class Program
                     continue;
                 }
                 if (item.Related.Issues.Count > 0)
+                {
+                    continue;
+                }
+                if (issueBackfillLinks.ContainsKey(item.Id))
                 {
                     continue;
                 }

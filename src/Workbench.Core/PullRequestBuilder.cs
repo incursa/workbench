@@ -63,7 +63,8 @@ public static class PullRequestBuilder
             lines.Add(string.Empty);
         }
 
-        return string.Join("\n", lines).TrimEnd();
+        var body = string.Join("\n", lines).TrimEnd();
+        return GithubIssueLinker.AppendWorkbenchItemMarker(body, item.Id);
     }
 
     private static string ExtractSection(string body, string heading)
