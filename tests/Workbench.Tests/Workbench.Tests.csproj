@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Workbench.Core\Workbench.Core.csproj" />
+    <ProjectReference Include="..\..\src\Workbench\Workbench.csproj" />
   </ItemGroup>
 
 </Project>

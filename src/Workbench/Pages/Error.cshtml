@@ -1,0 +1,14 @@
+@page
+@model Workbench.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<section class="panel error-panel">
+    <h2>Something went wrong.</h2>
+    <p>The local Workbench UI hit an unexpected failure.</p>
+    @if (Model.ShowRequestId)
+    {
+        <p class="muted">Request ID: @Model.RequestId</p>
+    }
+</section>

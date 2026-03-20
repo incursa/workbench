@@ -593,7 +593,10 @@ public static class WorkItemService
         string? appendNote,
         bool renameFile,
         WorkbenchConfig config,
-        string repoRoot)
+        string repoRoot,
+        string? status = null,
+        string? priority = null,
+        string? owner = null)
     {
         var content = File.ReadAllText(path);
         if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
@@ -610,6 +613,7 @@ public static class WorkItemService
         var summaryUpdated = false;
         var acceptanceCriteriaUpdated = false;
         var notesAppended = false;
+        var metadataUpdated = false;
 
         var normalizedTitle = title?.Trim();
         if (!string.IsNullOrWhiteSpace(normalizedTitle))
@@ -620,6 +624,55 @@ public static class WorkItemService
                 data["title"] = normalizedTitle;
                 body = ReplaceTitleHeading(body, itemId, normalizedTitle);
                 titleUpdated = true;
+            }
+        }
+
+        var normalizedStatus = status?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedStatus))
+        {
+            var currentStatus = GetString(data, "status") ?? string.Empty;
+            if (!string.Equals(currentStatus, normalizedStatus, StringComparison.Ordinal))
+            {
+                data["status"] = normalizedStatus;
+                metadataUpdated = true;
+            }
+        }
+
+        if (priority is not null)
+        {
+            var normalizedPriority = priority.Trim();
+            var currentPriority = GetString(data, "priority");
+            if (string.IsNullOrWhiteSpace(normalizedPriority))
+            {
+                if (currentPriority is not null)
+                {
+                    data.Remove("priority");
+                    metadataUpdated = true;
+                }
+            }
+            else if (!string.Equals(currentPriority, normalizedPriority, StringComparison.Ordinal))
+            {
+                data["priority"] = normalizedPriority;
+                metadataUpdated = true;
+            }
+        }
+
+        if (owner is not null)
+        {
+            var normalizedOwner = owner.Trim();
+            var currentOwner = GetString(data, "owner");
+            if (string.IsNullOrWhiteSpace(normalizedOwner))
+            {
+                if (currentOwner is not null)
+                {
+                    data.Remove("owner");
+                    metadataUpdated = true;
+                }
+            }
+            else if (!string.Equals(currentOwner, normalizedOwner, StringComparison.Ordinal))
+            {
+                data["owner"] = normalizedOwner;
+                metadataUpdated = true;
             }
         }
 
@@ -647,7 +700,7 @@ public static class WorkItemService
             notesAppended = true;
         }
 
-        if (!titleUpdated && !summaryUpdated && !acceptanceCriteriaUpdated && !notesAppended)
+        if (!titleUpdated && !summaryUpdated && !acceptanceCriteriaUpdated && !notesAppended && !metadataUpdated)
         {
             throw new InvalidOperationException("No work item edits were requested.");
         }

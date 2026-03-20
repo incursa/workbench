@@ -1,3 +1,4 @@
+using Workbench;
 using Workbench.Core;
 
 namespace Workbench.Tests;
@@ -157,6 +158,229 @@ public class WorkItemEditTests
         StringAssert.Contains(content, "- Second criterion", StringComparison.Ordinal);
         StringAssert.Contains(content, "## Notes", StringComparison.Ordinal);
         StringAssert.Contains(content, "- Captured a structured note.", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void EditItem_UpdatesMetadataFields()
+    {
+        using var repo = new TempRepoFixture();
+        var itemPath = repo.WriteItem(
+            "TASK-0001-metadata.md",
+            """
+            ---
+            id: TASK-0001
+            type: task
+            status: draft
+            priority: medium
+            owner: null
+            created: 2026-03-07
+            updated: null
+            githubSynced: null
+            tags: []
+            related:
+              specs: []
+              adrs: []
+              files: []
+              prs: []
+              issues: []
+              branches: []
+            ---
+
+            # TASK-0001 - Metadata target
+
+            ## Summary
+
+            Original summary
+
+            ## Acceptance criteria
+            - Original criterion
+            """);
+
+        var result = WorkItemService.EditItem(
+            itemPath,
+            null,
+            null,
+            null,
+            null,
+            renameFile: false,
+            WorkbenchConfig.Default,
+            repo.Path,
+            status: "in-progress",
+            priority: "high",
+            owner: "platform");
+
+        Assert.AreEqual("in-progress", result.Item.Status);
+        Assert.AreEqual("high", result.Item.Priority);
+        Assert.AreEqual("platform", result.Item.Owner);
+
+        var content = File.ReadAllText(result.Item.Path);
+        StringAssert.Contains(content, "status: in-progress", StringComparison.Ordinal);
+        StringAssert.Contains(content, "priority: high", StringComparison.Ordinal);
+        StringAssert.Contains(content, "owner: platform", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void ListDocs_AndGetDoc_BrowseLocalMarkdown()
+    {
+        using var repo = new TempRepoFixture();
+        var docsRoot = Path.Combine(repo.Path, "docs", "10-product");
+        Directory.CreateDirectory(docsRoot);
+
+        var docPath = Path.Combine(docsRoot, "feature-spec-local-web-ui.md");
+        File.WriteAllText(
+            docPath,
+            """
+            ---
+            workbench:
+              type: spec
+              workItems:
+                - TASK-0023
+            status: draft
+            ---
+
+            # Feature Spec: Local Web UI Mode
+
+            A browser-based local UI for the repo.
+            """);
+
+        var workspace = new WorkbenchWorkspace(repo.Path, WorkbenchConfig.Default);
+        var docs = workspace.ListDocs("spec", null);
+
+        Assert.HasCount(1, docs);
+        Assert.AreEqual("Feature Spec: Local Web UI Mode", docs[0].Title);
+        Assert.AreEqual("spec", docs[0].Type);
+        StringAssert.Contains(docs[0].Excerpt, "browser-based local UI", StringComparison.Ordinal);
+
+        var detail = workspace.GetDoc("docs/10-product/feature-spec-local-web-ui.md");
+        Assert.IsNotNull(detail);
+        Assert.AreEqual("Feature Spec: Local Web UI Mode", detail!.Summary.Title);
+        StringAssert.Contains(detail.Body, "browser-based local UI", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void ListFiles_AndGetFile_BrowseLocalRepoFiles()
+    {
+        using var repo = new TempRepoFixture();
+        var docsRoot = Path.Combine(repo.Path, "docs", "10-product");
+        var srcRoot = Path.Combine(repo.Path, "src", "Workbench");
+        Directory.CreateDirectory(docsRoot);
+        Directory.CreateDirectory(srcRoot);
+
+        var markdownPath = Path.Combine(docsRoot, "feature-spec-local-web-ui.md");
+        File.WriteAllText(
+            markdownPath,
+            """
+            # Feature Spec: Local Web UI Mode
+
+            A browser-based local UI for the repo.
+            """);
+
+        var textPath = Path.Combine(srcRoot, "notes.txt");
+        File.WriteAllText(textPath, "First line\nSecond line\nThird line");
+
+        var binaryPath = Path.Combine(repo.Path, "assets.bin");
+        File.WriteAllBytes(binaryPath, [0x00, 0x01, 0x02, 0x03]);
+
+        var workspace = new WorkbenchWorkspace(repo.Path, WorkbenchConfig.Default);
+        var files = workspace.ListFiles("all", null);
+
+        Assert.IsTrue(files.Any(file => file.Path.Equals("docs/10-product/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(files.Any(file => file.Path.Equals("src/Workbench/notes.txt", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(files.Any(file => file.Path.Equals("assets.bin", StringComparison.OrdinalIgnoreCase)));
+
+        var markdown = files.First(file => file.Path.Equals("docs/10-product/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual("markdown", markdown.FileType);
+        StringAssert.Contains(markdown.Excerpt, "browser-based local UI", StringComparison.Ordinal);
+
+        var text = files.First(file => file.Path.Equals("src/Workbench/notes.txt", StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual("text", text.FileType);
+        StringAssert.Contains(text.Excerpt, "First line", StringComparison.Ordinal);
+
+        var binary = files.First(file => file.Path.Equals("assets.bin", StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual("binary", binary.FileType);
+
+        var detail = workspace.GetFile("docs/10-product/feature-spec-local-web-ui.md");
+        Assert.IsNotNull(detail);
+        Assert.IsTrue(detail!.IsMarkdown);
+        StringAssert.Contains(detail.Body, "browser-based local UI", StringComparison.Ordinal);
+
+        var rendered = RepoContentRenderer.RenderMarkdown(detail.Body);
+        StringAssert.Contains(rendered, "id=\"feature-spec-local-web-ui-mode\"", StringComparison.Ordinal);
+        StringAssert.Contains(rendered, "Feature Spec: Local Web UI Mode", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void BuildDocTree_AndBuildFileTree_CreateNestedNavigators()
+    {
+        using var repo = new TempRepoFixture();
+        var docsRoot = Path.Combine(repo.Path, "docs");
+        var docsProductRoot = Path.Combine(docsRoot, "10-product");
+        var srcPagesRoot = Path.Combine(repo.Path, "src", "Workbench", "Pages");
+        Directory.CreateDirectory(docsProductRoot);
+        Directory.CreateDirectory(srcPagesRoot);
+
+        File.WriteAllText(
+            Path.Combine(docsRoot, "README.md"),
+            """
+            # Repository docs
+            """);
+
+        File.WriteAllText(
+            Path.Combine(docsProductRoot, "feature-spec-local-web-ui.md"),
+            """
+            # Feature Spec: Local Web UI Mode
+            """);
+
+        File.WriteAllText(
+            Path.Combine(srcPagesRoot, "Index.cshtml"),
+            """
+            <h1>Items</h1>
+            """);
+
+        var workspace = new WorkbenchWorkspace(repo.Path, WorkbenchConfig.Default);
+
+        var docTree = WorkbenchWorkspace.BuildDocTree(
+            workspace.ListDocs("all", null),
+            doc => $"/Docs?selectedPath={Uri.EscapeDataString(doc.Path)}",
+            "docs/10-product/feature-spec-local-web-ui.md");
+
+        var docsBranch = docTree.Children.First(child => child.Name.Equals("docs", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(docsBranch.Children.Any(child => child.Name.Equals("10-product", StringComparison.OrdinalIgnoreCase)));
+
+        var productBranch = docsBranch.Children.First(child => child.Name.Equals("10-product", StringComparison.OrdinalIgnoreCase));
+        Assert.HasCount(1, productBranch.Entries);
+        Assert.IsTrue(productBranch.Entries[0].IsSelected);
+
+        var fileTree = WorkbenchWorkspace.BuildFileTree(
+            workspace.ListFiles("all", null),
+            file => $"/Files?selectedPath={Uri.EscapeDataString(file.Path)}",
+            "src/Workbench/Pages/Index.cshtml");
+
+        var srcBranch = fileTree.Children.First(child => child.Name.Equals("src", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(srcBranch.Children.Any(child => child.Name.Equals("Workbench", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [TestMethod]
+    public void UserProfileStore_SavesAndLoadsLocalIdentity()
+    {
+        var profilePath = Path.Combine(Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"), "profile.json");
+        var store = new WorkbenchUserProfileStore(profilePath);
+        var profile = new WorkbenchUserProfile
+        {
+            DisplayName = "Sam Example",
+            Handle = "sam",
+            Email = "sam@example.com",
+            DefaultOwner = "platform"
+        };
+
+        store.Save(profile);
+        var loaded = store.Load(out var error);
+
+        Assert.IsNull(error);
+        Assert.AreEqual("Sam Example", loaded.DisplayName);
+        Assert.AreEqual("sam", loaded.Handle);
+        Assert.AreEqual("sam@example.com", loaded.Email);
+        Assert.AreEqual("platform", loaded.DefaultOwner);
     }
 
     [TestMethod]

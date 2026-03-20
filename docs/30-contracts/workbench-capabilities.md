@@ -8,7 +8,7 @@ workbench:
   path: /docs/30-contracts/workbench-capabilities.md
 owner: platform
 status: active
-updated: 2025-12-29
+updated: 2026-03-20
 ---
 
 # Workbench Capabilities Map (v0.1)
@@ -33,6 +33,7 @@ It is intentionally capability-first rather than a full command catalog.
 - Import a GitHub issue into a work item -> `workbench item import`
 - Sync work items with GitHub issues/branches (two-way, no deletes) -> `workbench item sync` (or `workbench sync --items`)
 - List or inspect work items -> `workbench item list`, `workbench item show`
+- Open the local browser UI for browsing and editing work items, creating new items, browsing docs/files, and editing local profile settings -> `workbench web`
 - Update status and append a note -> `workbench item status`
 - Close an item and move it to `docs/70-work/done` by default -> `workbench item close`
 - Delete work items and remove doc backlinks -> `workbench item delete`

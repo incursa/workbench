@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Workbench</title>
+    <link rel="stylesheet" href="~/lib/incursa-ui-kit/inc-design-language.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="topbar-copy">
+                <div class="eyebrow">Workbench</div>
+                <h1>@ViewData["Title"]</h1>
+                <div class="topbar-meta">
+                    <span>@(ViewData["RepoRoot"] ?? "Local repo UI")</span>
+                    <span>@(ViewData["ProfileName"] ?? "Local profile not set")</span>
+                </div>
+            </div>
+            <nav class="topnav">
+                <a asp-page="/Index">Items</a>
+                <a asp-page="/Create">Create</a>
+                <a asp-page="/Docs">Docs</a>
+                <a asp-page="/Files">Files</a>
+                <a asp-page="/Settings">Settings</a>
+            </nav>
+        </header>
+        <main class="content">
+            @RenderBody()
+        </main>
+    </div>
+</body>
+</html>

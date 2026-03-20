@@ -1,0 +1,102 @@
+@page
+@model Workbench.Pages.CreateModel
+@{
+    ViewData["Title"] = "Create";
+}
+
+<section class="hero compact-hero inc-card">
+    <div class="hero-copy">
+        <div class="eyebrow">New work item</div>
+        <h2>Create a repo-native item in one place.</h2>
+        <p>
+            Use this page for new items so the editor stays focused on the selected record instead of mixing creation and editing.
+        </p>
+        <div class="hero-links">
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Index">Back to items</a>
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="inc-card stat-card accent">
+            <span class="stat-label">Type</span>
+            <span class="stat-value">task</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Default status</span>
+            <span class="stat-value">draft</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Owner</span>
+            <span class="stat-value">local profile</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Mode</span>
+            <span class="stat-value">local</span>
+        </div>
+    </div>
+</section>
+
+<section class="inc-card panel">
+    <div class="panel-head compact">
+        <h3>Create item</h3>
+        <span class="muted">Uses the same file-backed work item service as the editor.</span>
+    </div>
+
+    <form method="post" class="editor-stack">
+        <div asp-validation-summary="All" class="validation-summary"></div>
+        <section class="inc-card editor-section">
+            <div class="editor-section-head">
+                <h4>Identity</h4>
+                <span class="muted">New item metadata and ownership.</span>
+            </div>
+            <div class="editor-grid editor-grid-two">
+                <label class="inc-form__group">
+                    <span class="field-label">Type</span>
+                    <select class="inc-form__select" asp-for="Create.Type">
+                        @foreach (var type in TypeOptions)
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </label>
+                <label class="inc-form__group">
+                    <span class="field-label">Owner / team</span>
+                    <input class="inc-form__control" asp-for="Create.Owner" placeholder="optional team or person" />
+                </label>
+                <label class="inc-form__group span-2">
+                    <span class="field-label">Title</span>
+                    <input class="inc-form__control" asp-for="Create.Title" />
+                </label>
+            </div>
+        </section>
+        <section class="inc-card editor-section">
+            <div class="editor-section-head">
+                <h4>Workflow</h4>
+                <span class="muted">Initial state and priority.</span>
+            </div>
+            <div class="editor-grid editor-grid-two">
+                <label class="inc-form__group">
+                    <span class="field-label">Status</span>
+                    <select class="inc-form__select" asp-for="Create.Status">
+                        @foreach (var status in StatusOptions)
+                        {
+                            <option value="@status">@Workbench.Pages.IndexModel.StatusLabel(status)</option>
+                        }
+                    </select>
+                </label>
+                <label class="inc-form__group">
+                    <span class="field-label">Priority</span>
+                    <select class="inc-form__select" asp-for="Create.Priority">
+                        @foreach (var priority in PriorityOptions)
+                        {
+                            <option value="@priority">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
+                        }
+                    </select>
+                </label>
+            </div>
+        </section>
+        <div class="button-row">
+            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Create item</button>
+        </div>
+    </form>
+</section>

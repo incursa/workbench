@@ -1,0 +1,131 @@
+@page
+@model Workbench.Pages.DocsModel
+@{
+    ViewData["Title"] = "Docs";
+}
+
+<section class="hero inc-card">
+    <div class="hero-copy">
+        <div class="eyebrow">Local document browser</div>
+        <h2>Inspect specs, ADRs, and repo docs without leaving the repo.</h2>
+        <p>
+            This page scans the local markdown tree, renders a nested folder navigator, and lets you open the raw content with no login or external service.
+        </p>
+        <div class="hero-links">
+            <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Index">Items</a>
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Create">Create item</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="inc-card stat-card accent">
+            <span class="stat-label">Docs found</span>
+            <span class="stat-value">@Model.Docs.Count</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Type filter</span>
+            <span class="stat-value">@Model.TypeFilter</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Repo root</span>
+            <span class="stat-value">@Model.RepoRoot</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Profile</span>
+            <span class="stat-value">@Model.ProfileName</span>
+        </div>
+    </div>
+</section>
+
+<div class="workspace docs-layout">
+    <aside class="inc-card panel sidebar">
+        <div class="panel-head">
+            <h3>Browse docs</h3>
+            <form method="get" class="inline-filter docs-filter">
+                <input type="hidden" name="selectedPath" value="@Model.SelectedPath" />
+                <label class="inc-form__group">
+                    <span class="field-label">Search</span>
+                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, body, path, work item" />
+                </label>
+                <label class="inc-form__group">
+                    <span class="field-label">Type</span>
+                    <select class="inc-form__select" asp-for="TypeFilter">
+                        @foreach (var type in global::Workbench.Pages.DocsModel.TypeOptions)
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+            </form>
+        </div>
+
+        <div class="tree-list">
+            @if (Model.Docs.Count == 0)
+            {
+                <div class="empty-state">No documents match the current filters.</div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_TreeBranch", Model.Tree)
+            }
+        </div>
+    </aside>
+
+    <section class="inc-card panel detail">
+        @if (Model.SelectedDoc is null)
+        {
+            <div class="empty-state large">Select a document to preview it here.</div>
+        }
+        else
+        {
+            <div class="detail-header">
+                <div>
+                    <div class="eyebrow">Selected doc</div>
+                    <h3>@Model.SelectedDoc.Summary.Title</h3>
+                    <p>@Model.SelectedDoc.Summary.Path</p>
+                </div>
+                <div class="detail-badges">
+                    <span class="pill">@Model.SelectedDoc.Summary.Type</span>
+                    <span class="pill">@Model.SelectedDoc.Summary.Status</span>
+                </div>
+            </div>
+
+            <section class="inc-card snapshot">
+                <div class="snapshot-head">
+                    <h4>Metadata</h4>
+                    <span class="muted">@Model.SelectedDoc.Summary.Section</span>
+                </div>
+                <div class="link-grid">
+                    <div>
+                        <div class="field-label">Work items</div>
+                        @if (Model.SelectedDoc.Summary.WorkItems.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var id in Model.SelectedDoc.Summary.WorkItems)
+                            {
+                                <div class="mono">@id</div>
+                            }
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Excerpt</div>
+                        <div class="muted">@Model.SelectedDoc.Summary.Excerpt</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="doc-viewer">
+                <div class="panel-head compact">
+                    <h4>Rendered preview</h4>
+                    <span class="muted">Read-only local preview</span>
+                </div>
+                <div class="markdown-body">
+                    @Html.Raw(Model.SelectedDocHtml)
+                </div>
+            </section>
+        }
+    </section>
+</div>

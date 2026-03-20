@@ -8,6 +8,7 @@ It provides commands to:
 - create, update, and sync work items
 - link docs, architecture decisions, and work items
 - run repository validation and consistency checks
+- open a local browser UI for browsing and editing work items
 
 ## Installation
 
@@ -44,6 +45,12 @@ Run diagnostics:
 workbench doctor
 ```
 
+Open the local browser UI:
+
+```bash
+workbench web
+```
+
 ## Typical Workflows
 
 Create a work item:
@@ -75,4 +82,3 @@ Project documentation and contracts are available in the repository:
 
 - `docs/README.md`
 - `docs/30-contracts/cli-help.md`
-

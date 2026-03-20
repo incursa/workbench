@@ -1,0 +1,34 @@
+@model RepoTreeBranch
+
+<details class="inc-card tree-branch" open>
+    <summary class="tree-summary">
+        <span>@Model.Name</span>
+        <span class="muted">@Model.EntryCount items</span>
+    </summary>
+    <div class="tree-children">
+        @foreach (var child in Model.Children)
+        {
+            @await Html.PartialAsync("_TreeBranch", child)
+        }
+
+        @foreach (var entry in Model.Entries)
+        {
+            <a class="inc-card tree-entry @(entry.IsSelected ? "selected" : string.Empty)" href="@entry.Href">
+                <div class="inc-card__body">
+                    <div class="tree-entry-top">
+                        <span class="tree-entry-title">@entry.Title</span>
+                        <span class="pill">@entry.Badge</span>
+                    </div>
+                    <div class="tree-entry-meta">
+                        <span>@entry.Secondary</span>
+                        <span>@entry.Path</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(entry.Excerpt))
+                    {
+                        <div class="doc-excerpt">@entry.Excerpt</div>
+                    }
+                </div>
+            </a>
+        }
+    </div>
+</details>

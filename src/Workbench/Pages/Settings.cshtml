@@ -1,0 +1,69 @@
+@page
+@model Workbench.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<section class="hero inc-card">
+    <div class="hero-copy">
+        <div class="eyebrow">Local identity</div>
+        <h2>Store a machine-local authoring profile.</h2>
+        <p>
+            This is not an auth flow. It simply gives the browser UI a default name, handle, email, and work item owner for local authoring.
+        </p>
+        @if (!string.IsNullOrWhiteSpace(Model.Message))
+        {
+            <div class="banner" style="margin-top: 16px;">
+                <div class="banner-title">Saved</div>
+                <div class="banner-message">@Model.Message</div>
+            </div>
+        }
+    </div>
+    <div class="hero-stats">
+        <div class="inc-card stat-card accent">
+            <span class="stat-label">Profile file</span>
+            <span class="stat-value">@Model.ProfilePath</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Display name</span>
+            <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.DisplayName) ? "unset" : Model.DisplayName)</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Default owner</span>
+            <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.DefaultOwner) ? "unset" : Model.DefaultOwner)</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Effective author</span>
+            <span class="stat-value">@Model.EffectiveAuthorDisplay</span>
+        </div>
+    </div>
+</section>
+
+<section class="inc-card panel">
+    <div class="panel-head compact">
+        <h3>Edit profile</h3>
+        <a class="muted" asp-page="/Index">Back to items</a>
+    </div>
+
+    <form method="post" class="editor-grid settings-grid">
+        <label class="inc-form__group">
+            <span class="field-label">Display name</span>
+            <input class="inc-form__control" asp-for="DisplayName" placeholder="Sam McAravey" />
+        </label>
+        <label class="inc-form__group">
+            <span class="field-label">Handle</span>
+            <input class="inc-form__control" asp-for="Handle" placeholder="sam" />
+        </label>
+        <label class="inc-form__group">
+            <span class="field-label">Email</span>
+            <input class="inc-form__control" asp-for="Email" placeholder="sam@example.com" />
+        </label>
+        <label class="inc-form__group">
+            <span class="field-label">Default owner</span>
+            <input class="inc-form__control" asp-for="DefaultOwner" placeholder="platform" />
+        </label>
+        <div class="button-row span-2">
+            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save profile</button>
+        </div>
+    </form>
+</section>

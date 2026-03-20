@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,7 +10,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>workbench</ToolCommandName>
     <PackageId>Incursa.Workbench</PackageId>
-    <Description>Incursa Workbench is a .NET CLI tool for managing structured project documentation, work items, and repository workflows from the terminal.</Description>
+    <Description>Incursa Workbench is a .NET tool for managing structured project documentation, work items, repository workflows, and local browser-based editing.</Description>
     <PackageTags>dotnet-tool;cli;documentation;work-items;developer-productivity</PackageTags>
     <PackageProjectUrl>https://github.com/incursa/workbench</PackageProjectUrl>
     <RepositoryUrl>https://github.com/incursa/workbench</RepositoryUrl>
@@ -20,9 +20,11 @@
     <IsPackable>true</IsPackable>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="wwwroot\**\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +33,11 @@
 
   <ItemGroup>
     <None Include="NUGET_README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
+    <PackageReference Include="Markdig" />
   </ItemGroup>
 
 </Project>
