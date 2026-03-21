@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/00-overview/workbench-public-release.md"
+    - "/C:/docs/00-overview/workbench-public-release.md"
   path: /docs/00-overview/workbench-public-release.md
 owner: platform
 status: draft

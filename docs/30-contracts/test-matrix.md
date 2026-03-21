@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/30-contracts/test-matrix.md"
+    - "/C:/docs/30-contracts/test-matrix.md"
   path: /docs/30-contracts/test-matrix.md
 owner: platform
 status: active

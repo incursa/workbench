@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/00-overview/documentation-structure.md"
+    - "/C:/docs/00-overview/documentation-structure.md"
   path: /docs/00-overview/documentation-structure.md
 owner: platform
 status: active

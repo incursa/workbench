@@ -5,7 +5,7 @@ workbench:
     - TASK-0002
   codeRefs: []
   pathHistory:
-    - "C:/docs/10-product/feature-spec-work-item-sync.md"
+    - "/C:/docs/10-product/feature-spec-work-item-sync.md"
   path: /docs/10-product/feature-spec-work-item-sync.md
 owner: platform
 status: draft

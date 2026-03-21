@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/templates/adr.md"
+    - "/C:/docs/templates/adr.md"
   path: /docs/templates/adr.md
 owner: "<owner>"
 status: template

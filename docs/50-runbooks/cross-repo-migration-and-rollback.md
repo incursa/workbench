@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/50-runbooks/cross-repo-migration-and-rollback.md"
+    - "/C:/docs/50-runbooks/cross-repo-migration-and-rollback.md"
   path: /docs/50-runbooks/cross-repo-migration-and-rollback.md
 owner: platform
 status: active

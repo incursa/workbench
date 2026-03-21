@@ -4,7 +4,7 @@ workbench:
   workItems: []
   codeRefs: []
   pathHistory:
-    - "C:/docs/60-tracking/product-coherence-follow-up-2026-03-07.md"
+    - "/C:/docs/60-tracking/product-coherence-follow-up-2026-03-07.md"
   path: /docs/60-tracking/product-coherence-follow-up-2026-03-07.md
 owner: platform
 status: active
