@@ -8,7 +8,7 @@ namespace Workbench.Core;
 public static partial class GithubIssueLinker
 {
     [GeneratedRegex(
-        @"<!--\s*workbench:item\s+(?<itemId>[A-Za-z]+-\d+)\s*-->",
+        @"<!--\s*workbench:item\s+(?<itemId>(?:WI-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-\d{4,}|[A-Za-z]+-\d+))\s*-->",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.NonBacktracking)]
     private static partial Regex ItemMarkerRegex();
 

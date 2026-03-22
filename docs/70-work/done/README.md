@@ -3,7 +3,8 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
-  pathHistory: []
+  pathHistory:
+    - "C:/docs/70-work/done/README.md"
   path: /docs/70-work/done/README.md
 tags: []
 related:
@@ -22,4 +23,5 @@ Completed work items live here once closed.
 ## Guidance
 
 - Keep the original filename and ID for traceability.
-- Add a final status note when closing the item.
+- Preserve completion-oriented notes and closing context.
+- Move items here only after the status is terminal.

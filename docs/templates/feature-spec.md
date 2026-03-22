@@ -1,45 +1,26 @@
 ---
+artifact_id: "SPEC-<DOMAIN>[-<GROUPING>...]"
+artifact_type: specification
+title: "<Specification Title>"
+domain: "<domain>"
+capability: "<capability>"
+status: draft
+owner: "<team-or-role>"
+tags:
+  - "<tag>"
+related_artifacts:
+  - "<artifact-id>"
 workbench:
-  type: spec
+  type: doc
   workItems: []
   codeRefs: []
   pathHistory:
     - "C:/docs/templates/feature-spec.md"
   path: /docs/templates/feature-spec.md
-owner: "<owner>"
-status: template
-updated: 0000-00-00
 ---
 
-# Feature Spec: <title>
+# Compatibility Note
 
-## Summary
+This file is retained as a compatibility alias.
 
-## Goals
--
-
-## Non-goals
--
-
-## User stories / scenarios
--
-
-## Requirements
--
-
-## UX notes
-
-## Dependencies
--
-
-## Risks and mitigations
--
-
-## Related work items
-- `/docs/70-work/items/TASK-0000-short-title.md`
-
-## Related ADRs
-- `/docs/40-decisions/ADR-0000-short-title.md`
-
-## Open questions
--
+New product requirement specifications should use `requirement-spec.md`.

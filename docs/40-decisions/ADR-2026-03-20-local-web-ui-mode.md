@@ -42,7 +42,7 @@ Add a browser-based local UI mode to the existing Workbench executable using ASP
 
 ## Related specs
 
-- /docs/10-product/feature-spec-local-web-ui.md
+- /docs/10-product/specs/feature-spec-local-web-ui.md
 
 ## Related work items
 

@@ -45,7 +45,7 @@ setup steps are skipped when the repo appears partially configured.
 
 ## Related specs
 
-- </docs/10-product/feature-spec-cli-onboarding-wizard.md>
+- </docs/10-product/specs/feature-spec-cli-onboarding-wizard.md>
 
 ## Related work items
 

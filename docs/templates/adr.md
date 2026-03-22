@@ -28,7 +28,7 @@ updated: 0000-00-00
 -
 
 ## Related specs
-- `/docs/10-product/feature-short-title.md`
+- [CLI Onboarding, Init Walkthrough, and Wizard Mode](/specs/requirements/CLI/SPEC-CLI-ONBOARDING.md)
 
 ## Related work items
-- `/docs/70-work/items/TASK-0000-short-title.md`
+- [TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)

@@ -35,7 +35,7 @@ It is intentionally capability-first rather than a full command catalog.
 - List or inspect work items -> `workbench item list`, `workbench item show`
 - Open the local browser UI for browsing and editing work items, creating new items, browsing docs/files, and editing local profile settings -> `workbench web`
 - Update status and append a note -> `workbench item status`
-- Close an item and move it to `docs/70-work/done` by default -> `workbench item close`
+- Close an item and move it to `work/done` by default -> `workbench item close`
 - Delete work items and remove doc backlinks -> `workbench item delete`
 - Move or rename items and update inbound links -> `workbench item move`, `workbench item rename`
 - Normalize work item front matter lists -> `workbench item normalize`
@@ -44,7 +44,11 @@ It is intentionally capability-first rather than a full command catalog.
 
 ## Docs and knowledge base
 
-- Create docs/specs/ADRs/runbooks/guides with front matter/backlinks -> `workbench doc new`
+- Create or inspect requirement specs -> `workbench spec new`, `workbench spec show`
+- Edit, delete, or relink requirement specs -> `workbench spec edit`, `workbench spec delete`, `workbench spec link`, `workbench spec unlink`
+- Sync spec front matter and work-item backlinks -> `workbench spec sync`
+- Open the browser-based Specs editor to browse, create, and edit policy-aware specs -> `workbench web`
+- Create docs/ADRs/runbooks/guides/contracts with front matter/backlinks -> `workbench doc new`
 - Delete docs and remove work item links -> `workbench doc delete`
 - Link/unlink docs to work items -> `workbench doc link`, `workbench doc unlink`
 - Sync doc front matter and backlinks -> `workbench doc sync` (or `workbench sync --docs`)

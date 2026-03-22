@@ -9,7 +9,7 @@ updated: null
 tags: []
 related:
   specs:
-    - /docs/10-product/feature-spec-cli-onboarding-wizard.md
+    - /docs/10-product/specs/feature-spec-cli-onboarding-wizard.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md
   files: []
@@ -19,6 +19,14 @@ related:
   branches:
     - TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard
 title: "Improve CLI onboarding help, init walkthrough, and run wizard"
+githubSynced: null
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md"
+  path: /docs/70-work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md
 ---
 
 # TASK-0001 - Improve CLI onboarding help, init walkthrough, and run wizard
@@ -28,7 +36,23 @@ title: "Improve CLI onboarding help, init walkthrough, and run wizard"
 Deliver clearer CLI onboarding by updating help output, adding a guided `init`,
 and introducing a `run` wizard command, per the linked feature spec.
 
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
 - Help output distinguishes command groups vs. leaf commands and version
   reporting is not duplicated or missing.
 - `init` runs interactively with explicit steps, including guidance for
@@ -42,3 +66,7 @@ and introducing a `run` wizard command, per the linked feature spec.
   `--skip-wizard` is set.
 - `doctor` defaults to human-readable output with `--json` required for machine
   output.
+
+## Notes
+
+-

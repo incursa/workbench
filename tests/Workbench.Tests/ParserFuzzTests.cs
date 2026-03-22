@@ -76,7 +76,7 @@ public class ParserFuzzTests
             {
                 _ = SchemaValidationService.ValidateFrontMatter(
                     repoRoot,
-                    $"docs/70-work/items/TASK-{i:0000}-fuzz.md",
+                    $"work/items/TASK-{i:0000}-fuzz.md",
                     payload);
             }
             catch (Exception ex)

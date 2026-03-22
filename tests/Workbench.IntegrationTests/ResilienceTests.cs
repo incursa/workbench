@@ -124,6 +124,7 @@ public class ResilienceTests
             repo.Path,
             "scaffold");
 
+        Directory.CreateDirectory(Path.Combine(repo.Path, "docs", "30-contracts"));
         File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "work-item.schema.json"));
         File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "workbench-config.schema.json"));
         File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "doc.schema.json"));

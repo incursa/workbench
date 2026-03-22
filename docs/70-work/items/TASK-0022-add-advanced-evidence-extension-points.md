@@ -14,7 +14,7 @@ tags:
   - phase-4
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -22,15 +22,38 @@ related:
   prs: []
   issues: []
   branches: []
+title: add advanced evidence extension points
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0022-add-advanced-evidence-extension-points.md"
+  path: /docs/70-work/items/TASK-0022-add-advanced-evidence-extension-points.md
 ---
 
-# TASK-0022 - Add advanced evidence extension points
+# TASK-0022 - add advanced evidence extension points
 
 ## Summary
 
 Define and implement extension points for mutation evidence, fuzz evidence, and
 AI-assisted remediation suggestions without making any of them mandatory or
 autonomous in the default workflow.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -39,3 +62,7 @@ autonomous in the default workflow.
 - AI-assisted suggestions remain advisory artifacts, not silent auto-fixes.
 - The subsystem keeps authored truth, observed truth, and suggested actions as
   separate layers.
+
+## Notes
+
+-

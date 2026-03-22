@@ -87,7 +87,7 @@ while still allowing external systems as intake.
 - Workspace: a git repo (detected automatically).
 - Work item: a Markdown file representing a unit of work (bug/task/spike).
 - Promotion: creating the work item on a new branch with an initial commit.
-- Spec: documentation in /docs that describes behavior/requirements.
+- Spec: documentation in `specs/requirements` that describes behavior/requirements.
 - ADR: architecture decision record, stored in /docs/40-decisions.
 
 ---
@@ -100,17 +100,31 @@ Workbench supports configurable paths, but defaults to:
   README.md
   00-overview/
   10-product/
-  20-architecture/
+    specs/
   30-contracts/
   40-decisions/
   50-runbooks/
   60-tracking/
+  templates/
 
-/docs/70-work/
+specs/
   README.md
-  /items/
-  /done/                (optional)
-  /templates/
+  requirements/
+    README.md
+    CLI/
+    QA/
+    SYNC/
+    TUI/
+    WEB/
+
+architecture/
+  README.md
+
+work/
+  README.md
+  items/
+  done/                (optional)
+  templates/
     work-item.bug.md
     work-item.task.md
     work-item.spike.md
@@ -120,9 +134,10 @@ Workbench supports configurable paths, but defaults to:
 
 Scaffolding rules:
 - Never overwrite existing files unless --force.
-- Templates are copied into /docs/70-work/templates.
+- Doc templates are copied into /docs/templates.
+- Work-item templates are copied into /work/templates.
 - Minimal README files explain "what goes here".
-- The workboard lives inside /docs/70-work/README.md.
+- The workboard lives inside /work/README.md.
 
 ---
 
@@ -130,8 +145,8 @@ Scaffolding rules:
 
 ### File location and naming
 Default:
-- Active items: /docs/70-work/items/<ID>-<slug>.md
-- Done items: /docs/70-work/done/<ID>-<slug>.md (optional)
+- Active items: /work/items/<ID>-<slug>.md
+- Done items: /work/done/<ID>-<slug>.md (optional)
 
 <slug> is derived from title:
 - lowercase
@@ -140,14 +155,15 @@ Default:
 - collapse multiple -
 
 ### ID allocation
-Workbench determines the next ID by scanning existing items in `docs/70-work/items` and `docs/70-work/done`.
+Workbench determines the next ID by scanning existing items in `work/items` and `work/done`.
 Allocation rules:
 - IDs are per type (bug/task/spike) and monotonically increase.
 - Width is padded to the configured `ids.width` (default: 4).
 - Gaps are allowed; the next ID is `max(existing)+1`.
 
 ### Template tokens
-Templates in `docs/70-work/templates` are copied verbatim, then tokens are replaced:
+Templates in `docs/templates` and `work/templates` are copied verbatim,
+then tokens are replaced:
 - `<title>` becomes the title passed to `workbench item new`
 - `0000-00-00` becomes the current date (UTC, YYYY-MM-DD)
 - `BUG-0000` / `TASK-0000` / `SPIKE-0000` replaced with the allocated ID
@@ -199,7 +215,7 @@ updated: null
 tags: [docs, workflow]
 related:
   specs:
-    - /docs/10-product/features/feature.work-items.md
+    - /specs/requirements/CLI/SPEC-CLI-ONBOARDING.md
   adrs: []
   files: []
   prs: []
@@ -223,18 +239,20 @@ related:
 Docs use YAML front matter aligned with `/docs/30-contracts/doc.schema.json`. Workbench keeps path metadata so moved files can be detected and links updated.
 
 ### Workbench fields
-- workbench.type: spec | adr | doc | runbook | guide
+- workbench.type: spec | adr | doc | runbook | guide | contract
 - workbench.workItems: linked work item IDs
 - workbench.codeRefs: related code references
-- workbench.path: current repo-relative path (e.g. /docs/10-product/onboarding.md)
+- workbench.path: current repo-relative path (e.g. /specs/requirements/CLI/SPEC-CLI-ONBOARDING.md)
 - workbench.pathHistory: prior repo-relative paths used to repair links after moves
 - status: active | draft | legacy (recommended for imported docs)
 
 ### Body conventions (template-driven)
 Each type has a template. At minimum:
-- Title H1
-- Summary
-- Acceptance criteria (bulleted)
+- spec: requirement spec with structured requirement blocks
+- guide: architecture/design doc that explains how requirements are satisfied
+- doc: overview or support doc with summary and contextual sections
+- runbook: operational procedure with purpose, procedure, and recovery
+- adr: decision record with context, decision, and consequences
 
 ---
 
@@ -255,11 +273,14 @@ Workbench works without config (defaults applied), but writes config on scaffold
 {
   "paths": {
     "docsRoot": "docs",
-    "workRoot": "docs/70-work",
-    "itemsDir": "docs/70-work/items",
-    "doneDir": "docs/70-work/done",
-    "templatesDir": "docs/70-work/templates",
-    "workboardFile": "docs/70-work/README.md"
+    "specsRoot": "specs",
+    "requirementsDir": "specs/requirements",
+    "architectureDir": "architecture",
+    "workRoot": "work",
+    "itemsDir": "work/items",
+    "doneDir": "work/done",
+    "templatesDir": "work/templates",
+    "workboardFile": "work/README.md"
   },
   "ids": {
     "width": 4,
@@ -346,10 +367,10 @@ Writes or updates a credentials.env entry (defaults to /.workbench/credentials.e
 Removes a credentials.env entry.
 
 #### workbench item new --type <bug|task|spike> --title "<...>" [--status <...>] [--priority <...>] [--owner <...>]
-Creates a new work item file in /docs/70-work/items using templates and ID allocation rules.
+Creates a new work item file in /work/items using templates and ID allocation rules.
 
 #### workbench item generate --prompt "<...>" [--type <bug|task|spike>] [--status <...>] [--priority <...>] [--owner <...>]
-Generates a work item draft with AI from freeform text and creates it in /docs/70-work/items.
+Generates a work item draft with AI from freeform text and creates it in /work/items.
 
 #### workbench item list [--type ...] [--status ...] [--include-done]
 Lists items from active and optionally includes done items.
@@ -366,17 +387,40 @@ Sets status to done and moves file to the done dir unless `--no-move` is set.
 #### workbench item delete <ID> [--keep-links]
 Deletes a work item file and removes doc backlinks unless `--keep-links` is set.
 
-#### workbench doc new --type <spec|adr|doc|runbook|guide> --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]
-Creates a documentation file with Workbench front matter and optional backlinks.
+#### workbench spec new --title "<...>" [--path <...>] [--artifact-id <...>] [--domain <...>] [--capability <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]
+Creates a requirement specification in /specs/requirements using the spec template and policy-driven ID rules.
+
+#### workbench spec show <reference>
+Prints the resolved file path and renders key spec metadata.
+
+#### workbench spec edit <reference> [--artifact-id <...>] [--title <...>] [--status <...>] [--owner <...>] [--domain <...>] [--capability <...>] [--body <...>] [--body-file <...>] [--work-item <ID...>] [--code-ref <ref...>]
+Updates spec metadata and body while preserving structured traceability.
+
+#### workbench spec delete --path <...> [--keep-links]
+Deletes a specification file and removes work item links unless `--keep-links` is set.
+
+#### workbench spec link --path <...> --work-item <ID...> [--dry-run]
+Links a specification to one or more work items.
+
+#### workbench spec unlink --path <...> --work-item <ID...> [--dry-run]
+Unlinks a specification from one or more work items.
+
+#### workbench spec sync [--all] [--issues] [--include-done] [--dry-run]
+Syncs specification front matter and work item backlinks. Adds front matter to all specs by default; pass `--all false` to limit to referenced specs.
+
+For a step-by-step CLI workflow, see [docs/50-runbooks/spec-cli-workflow.md](../50-runbooks/spec-cli-workflow.md).
+
+#### workbench doc new --type <spec|adr|doc|runbook|guide|contract> --title "<...>" [--path <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]
+Creates a documentation file with Workbench front matter and optional backlinks. Use `workbench spec new` for requirement specifications.
 
 #### workbench doc delete --path <...> [--keep-links]
 Deletes a documentation file and removes work item links unless `--keep-links` is set.
 
-#### workbench doc link --type <spec|adr> --path <...> --work-item <ID...> [--dry-run]
-Links a spec/ADR doc to one or more work items.
+#### workbench doc link --type <spec|adr|guide|contract|doc|runbook> --path <...> --work-item <ID...> [--dry-run]
+Links a doc to one or more work items. Use the spec family for requirement specifications.
 
-#### workbench doc unlink --type <spec|adr> --path <...> --work-item <ID...> [--dry-run]
-Unlinks a spec/ADR doc from one or more work items.
+#### workbench doc unlink --type <spec|adr|guide|contract|doc|runbook> --path <...> --work-item <ID...> [--dry-run]
+Unlinks a doc from one or more work items. Use the spec family for requirement specifications.
 
 #### workbench doc sync [--all] [--issues] [--include-done] [--dry-run]
 Syncs doc/work item backlinks and front matter. Adds front matter to all docs by default; pass `--all false` to limit to referenced docs.
@@ -385,7 +429,7 @@ Syncs doc/work item backlinks and front matter. Adds front matter to all docs by
 Summarizes markdown diffs with AI and appends change notes.
 
 #### workbench board regen
-Regenerates the workboard section in /docs/70-work/README.md with sections based on status:
+Regenerates the workboard section in /work/README.md with sections based on status:
 - Now: in-progress
 - Next: ready
 - Blocked
@@ -484,10 +528,10 @@ Backlink rules for related.files:
 - A backlink is either a plain text mention of the ID or a markdown link to the work item file.
 Examples:
 - Plain text: `TASK-0042`
-- Markdown link: `[TASK-0001](/docs/70-work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)`
+- Markdown link: `[TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)`
 
 Doc cross-link rules:
-- ADRs in `/docs/40-decisions` must include a "Related specs" section with at least one link to a spec in `/docs/10-product` or `/docs/20-architecture`.
+- ADRs in `/docs/40-decisions` must include a "Related specs" section with at least one link to a spec in `/specs/requirements` or `/architecture`.
 - Specs referenced in `related.specs` must include a backlink to the work item ID (plain text or markdown link).
 
 ### Errors (must fail)

@@ -18,8 +18,30 @@ public class IdAllocationTests
         Directory.CreateDirectory(Path.Combine(repoRoot, config.Paths.DoneDir));
         Directory.CreateDirectory(Path.Combine(repoRoot, config.Paths.TemplatesDir));
 
-        File.WriteAllText(Path.Combine(repoRoot, config.Paths.ItemsDir, "TASK-0001-first.md"), "#");
-        File.WriteAllText(Path.Combine(repoRoot, config.Paths.DoneDir, "TASK-0003-third.md"), "#");
+        File.WriteAllText(
+            Path.Combine(repoRoot, config.Paths.ItemsDir, "TASK-0001-first.md"),
+            """
+            ---
+            id: TASK-0001
+            type: task
+            status: draft
+            created: 2025-01-01
+            ---
+
+            # TASK-0001 - First
+            """);
+        File.WriteAllText(
+            Path.Combine(repoRoot, config.Paths.DoneDir, "TASK-0003-third.md"),
+            """
+            ---
+            id: TASK-0003
+            type: task
+            status: done
+            created: 2025-01-03
+            ---
+
+            # TASK-0003 - Third
+            """);
 
         var template = """
             ---

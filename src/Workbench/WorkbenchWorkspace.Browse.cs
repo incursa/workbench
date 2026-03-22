@@ -9,39 +9,49 @@ public sealed partial class WorkbenchWorkspace
     public IReadOnlyList<RepoDocSummary> ListDocs(string? typeFilter, string? query)
     {
         var docsRoot = Path.Combine(RepoRoot, Config.Paths.DocsRoot);
-        if (!Directory.Exists(docsRoot))
+        var specsRoot = Path.Combine(RepoRoot, Config.Paths.SpecsRoot);
+        var architectureRoot = Path.Combine(RepoRoot, Config.Paths.ArchitectureDir);
+        if (!Directory.Exists(docsRoot) &&
+            !Directory.Exists(specsRoot) &&
+            !Directory.Exists(architectureRoot))
         {
             return Array.Empty<RepoDocSummary>();
         }
 
         var docs = new List<RepoDocSummary>();
-        foreach (var file in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
+        foreach (var root in new[] { docsRoot, specsRoot, architectureRoot })
         {
-            var relative = NormalizePath(Path.GetRelativePath(RepoRoot, file));
-            if (IsWorkItemArtifactDoc(relative) || IsDocTemplate(relative))
+            if (!Directory.Exists(root))
             {
                 continue;
             }
 
-            var summary = LoadDocSummary(file, relative);
-            if (summary is null)
+            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
             {
-                continue;
-            }
+                var relative = NormalizePath(Path.GetRelativePath(RepoRoot, file));
+                if (IsWorkItemArtifactDoc(relative) || IsDocTemplate(relative))
+                {
+                    continue;
+                }
 
-            if (!string.IsNullOrWhiteSpace(typeFilter) &&
-                !string.Equals(typeFilter, "all", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(summary.Type, typeFilter, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
+                var summary = LoadDocSummary(file, relative);
+                if (summary is null)
+                {
+                    continue;
+                }
 
-            if (!string.IsNullOrWhiteSpace(query) && !MatchesQuery(summary, query))
-            {
-                continue;
-            }
+                if (!DocTypeMatchesFilter(summary.Type, typeFilter))
+                {
+                    continue;
+                }
 
-            docs.Add(summary);
+                if (!string.IsNullOrWhiteSpace(query) && !MatchesQuery(summary, query))
+                {
+                    continue;
+                }
+
+                docs.Add(summary);
+            }
         }
 
         return docs
@@ -58,8 +68,7 @@ public sealed partial class WorkbenchWorkspace
             return null;
         }
 
-        var resolvedPath = ResolveDocPath(path);
-        if (!File.Exists(resolvedPath))
+        if (!DocService.TryResolveDocPath(RepoRoot, Config, path, out var resolvedPath))
         {
             return null;
         }
@@ -95,11 +104,13 @@ public sealed partial class WorkbenchWorkspace
             doc.Path,
             doc.Title,
             doc.Type,
-            doc.Status,
+            string.IsNullOrWhiteSpace(doc.ArtifactId) ? doc.Status : $"{doc.ArtifactId} · {doc.Status}",
             string.IsNullOrWhiteSpace(doc.Excerpt) ? null : doc.Excerpt,
             hrefFactory(doc),
             IsSelected: !string.IsNullOrWhiteSpace(selectedPath) &&
-                doc.Path.Equals(selectedPath, StringComparison.OrdinalIgnoreCase)))
+                (doc.Path.Equals(selectedPath, StringComparison.OrdinalIgnoreCase) ||
+                 (!string.IsNullOrWhiteSpace(doc.ArtifactId) &&
+                  doc.ArtifactId.Equals(selectedPath, StringComparison.OrdinalIgnoreCase)))))
             .ToList();
 
         return RepoTreeBuilder.BuildRoot(entries);
@@ -213,14 +224,17 @@ public sealed partial class WorkbenchWorkspace
     private static RepoDocSummary BuildDocSummary(string relative, IDictionary<string, object?> data, string body)
     {
         var workbench = GetNestedMap(data, "workbench");
-        var type = GetString(workbench, "type") ?? InferDocType(relative);
+        var type = GetString(data, "artifact_type") ?? GetString(workbench, "type") ?? InferDocType(relative);
         var status = GetString(data, "status") ?? GetString(workbench, "status") ?? "unknown";
         var title = ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(relative);
         var section = GetDocSection(relative);
         var workItems = GetStringList(workbench, "workItems");
         var excerpt = ExtractExcerpt(body);
+        var artifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId");
+        var domain = GetString(data, "domain");
+        var capability = GetString(data, "capability");
 
-        return new RepoDocSummary(relative, title, type, status, section, excerpt, workItems);
+        return new RepoDocSummary(relative, artifactId, domain, capability, title, type, status, section, excerpt, workItems);
     }
 
     private static RepoFileSummary? BuildFileSummary(string path, string relative)
@@ -253,6 +267,9 @@ public sealed partial class WorkbenchWorkspace
     private static bool MatchesQuery(RepoDocSummary doc, string query)
     {
         return doc.Path.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(doc.ArtifactId) && doc.ArtifactId.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (!string.IsNullOrWhiteSpace(doc.Domain) && doc.Domain.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || (!string.IsNullOrWhiteSpace(doc.Capability) && doc.Capability.Contains(query, StringComparison.OrdinalIgnoreCase))
             || doc.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
             || doc.Type.Contains(query, StringComparison.OrdinalIgnoreCase)
             || doc.Status.Contains(query, StringComparison.OrdinalIgnoreCase)
@@ -344,46 +361,78 @@ public sealed partial class WorkbenchWorkspace
     private static string GetDocSection(string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        var docsPrefix = "docs/";
-        if (!normalized.StartsWith(docsPrefix, StringComparison.OrdinalIgnoreCase))
+        foreach (var root in new[] { "architecture/", "specs/", "docs/" })
         {
-            return "repo";
+            if (!normalized.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var remainder = normalized[root.Length..];
+            var slashIndex = remainder.IndexOf('/', StringComparison.Ordinal);
+            if (slashIndex < 0)
+            {
+                return root.TrimEnd('/');
+            }
+
+            return remainder[..slashIndex];
         }
 
-        var remainder = normalized[docsPrefix.Length..];
-        var slashIndex = remainder.IndexOf('/', StringComparison.Ordinal);
-        if (slashIndex < 0)
-        {
-            return "root";
-        }
-
-        return remainder[..slashIndex];
+        return "repo";
     }
 
     private static string InferDocType(string relativePath)
     {
         var normalized = NormalizePath(relativePath).ToLowerInvariant();
-        if (normalized.Contains("/10-product/"))
+        if (normalized.StartsWith("architecture/", StringComparison.OrdinalIgnoreCase))
         {
-            return "spec";
+            return "architecture";
         }
 
-        if (normalized.Contains("/40-decisions/"))
+        if (normalized.StartsWith("specs/", StringComparison.OrdinalIgnoreCase))
         {
-            return "adr";
+            return "specification";
         }
 
-        if (normalized.Contains("/50-runbooks/"))
+        if (normalized.StartsWith("docs/", StringComparison.OrdinalIgnoreCase))
         {
-            return "runbook";
+            return "doc";
         }
 
-        if (normalized.Contains("/20-architecture/"))
+        if (normalized.Contains("/work/items/") || normalized.Contains("/work/done/"))
         {
-            return "guide";
+            return "work_item";
+        }
+
+        if (normalized.Contains("/10-product/specs/"))
+        {
+            return "specification";
         }
 
         return "doc";
+    }
+
+    private static bool DocTypeMatchesFilter(string docType, string? typeFilter)
+    {
+        if (string.IsNullOrWhiteSpace(typeFilter) ||
+            string.Equals(typeFilter, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (string.Equals(docType, typeFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return (string.Equals(typeFilter, "spec", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(docType, "specification", StringComparison.OrdinalIgnoreCase))
+            || (string.Equals(typeFilter, "specification", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(docType, "spec", StringComparison.OrdinalIgnoreCase))
+            || (string.Equals(typeFilter, "guide", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(docType, "architecture", StringComparison.OrdinalIgnoreCase))
+            || (string.Equals(typeFilter, "architecture", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(docType, "guide", StringComparison.OrdinalIgnoreCase));
     }
 
     private static Dictionary<string, object?> GetNestedMap(IDictionary<string, object?> data, string key)
@@ -455,7 +504,10 @@ public sealed partial class WorkbenchWorkspace
     private static bool IsWorkItemArtifactDoc(string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        return normalized.Contains("/70-work/items/", StringComparison.OrdinalIgnoreCase)
+        return normalized.Contains("/work/items/", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("/work/done/", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("/work/templates/", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("/70-work/items/", StringComparison.OrdinalIgnoreCase)
             || normalized.Contains("/70-work/done/", StringComparison.OrdinalIgnoreCase)
             || normalized.Contains("/70-work/templates/", StringComparison.OrdinalIgnoreCase);
     }

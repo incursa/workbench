@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "work-item-trace-fields.schema.json",
+  "title": "Work Item Trace Fields",
+  "description": "Reference schema for the canonical labels used in a work-item Trace Links section.",
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "type": "object",
+  "properties": {
+    "Addresses": {
+      "description": "Requirement IDs addressed by the work item.",
+      "$ref": "#/$defs/stringArray"
+    },
+    "Uses Design": {
+      "description": "Architecture or design artifact IDs used as inputs for the work item.",
+      "$ref": "#/$defs/stringArray"
+    },
+    "Verified By": {
+      "description": "Verification artifact IDs associated with the work item.",
+      "$ref": "#/$defs/stringArray"
+    }
+  },
+  "additionalProperties": false
+}

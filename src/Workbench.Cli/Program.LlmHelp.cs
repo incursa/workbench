@@ -23,6 +23,7 @@ public partial class Program
         Console.WriteLine("- `workbench sync`: umbrella command for the common happy path.");
         Console.WriteLine("- `workbench item sync`: external issue/branch reconciliation.");
         Console.WriteLine("- `workbench doc sync`: backlink and front matter maintenance.");
+        Console.WriteLine("- `workbench spec`: dedicated requirement-spec workflow for creation, inspection, editing, linking, unlinking, deletion, and sync.");
         Console.WriteLine("- `workbench nav sync`: derived index and workboard regeneration.");
         Console.WriteLine("- `workbench board regen`: workboard-only regeneration.");
         Console.WriteLine();

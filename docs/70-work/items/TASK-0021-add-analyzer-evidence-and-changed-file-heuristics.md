@@ -13,7 +13,7 @@ tags:
   - phase-2
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -21,15 +21,38 @@ related:
   prs: []
   issues: []
   branches: []
+title: add analyzer evidence and changed file heuristics
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0021-add-analyzer-evidence-and-changed-file-heuristics.md"
+  path: /docs/70-work/items/TASK-0021-add-analyzer-evidence-and-changed-file-heuristics.md
 ---
 
-# TASK-0021 - Add analyzer evidence and changed-file heuristics
+# TASK-0021 - add analyzer evidence and changed file heuristics
 
 ## Summary
 
 Extend the quality evidence subsystem beyond test execution by ingesting
 analyzer/static-check outputs and flagging changed files with weak nearby
 evidence.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -38,3 +61,7 @@ evidence.
   policy failures.
 - The quality report keeps analyzer evidence separate from authored testing
   intent and from test results.
+
+## Notes
+
+-

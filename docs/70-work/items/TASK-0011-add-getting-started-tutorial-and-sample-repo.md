@@ -17,14 +17,37 @@ related:
   prs: []
   issues: []
   branches: []
+title: add getting started tutorial and sample repo
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0011-add-getting-started-tutorial-and-sample-repo.md"
+  path: /docs/70-work/items/TASK-0011-add-getting-started-tutorial-and-sample-repo.md
 ---
 
-# TASK-0011 - Add getting started tutorial and sample repo
+# TASK-0011 - add getting started tutorial and sample repo
 
 ## Summary
 
 Provide a step-by-step onboarding tutorial plus a small sample repository that
 shows Workbench in action end-to-end.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -33,3 +56,7 @@ shows Workbench in action end-to-end.
 - A sample repo (or scripted walkthrough in `examples/`) demonstrates the
   workflow with real work items and docs.
 - README references the tutorial and sample so new users can find it quickly.
+
+## Notes
+
+-

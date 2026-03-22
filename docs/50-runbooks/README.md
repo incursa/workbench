@@ -20,6 +20,7 @@ Templates:
 
 Published runbooks:
 - `docs/50-runbooks/cross-repo-migration-and-rollback.md`
+- `docs/50-runbooks/spec-cli-workflow.md`
 
 ## Include
 

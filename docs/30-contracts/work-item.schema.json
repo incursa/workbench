@@ -18,6 +18,9 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "workbench": {
+      "type": "object"
+    },
     "related": {
       "type": "object",
       "additionalProperties": false,

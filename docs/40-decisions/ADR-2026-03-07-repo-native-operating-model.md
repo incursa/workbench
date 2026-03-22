@@ -106,7 +106,7 @@ Out of scope:
 ## Related specs
 
 - `/docs/00-overview/workbench-spec.md`
-- `/docs/10-product/feature-spec-work-item-sync.md`
+- `/docs/10-product/specs/feature-spec-work-item-sync.md`
 
 ## Related work items
 

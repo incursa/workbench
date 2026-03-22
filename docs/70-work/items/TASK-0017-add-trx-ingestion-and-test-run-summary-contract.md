@@ -13,7 +13,7 @@ tags:
   - phase-1
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -21,14 +21,37 @@ related:
   prs: []
   issues: []
   branches: []
+title: add trx ingestion and test run summary contract
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0017-add-trx-ingestion-and-test-run-summary-contract.md"
+  path: /docs/70-work/items/TASK-0017-add-trx-ingestion-and-test-run-summary-contract.md
 ---
 
-# TASK-0017 - Add TRX ingestion and test run summary contract
+# TASK-0017 - add trx ingestion and test run summary contract
 
 ## Summary
 
 Normalize TRX outputs into a stable run-summary artifact that captures what ran,
 what passed, what failed, and what was skipped.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -37,3 +60,7 @@ what passed, what failed, and what was skipped.
 - The summary retains enough per-test identity to compare run results against
   inventory and required tests.
 - The output matches `docs/30-contracts/test-run-summary.schema.json`.
+
+## Notes
+
+-

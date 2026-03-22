@@ -236,7 +236,10 @@ public partial class Program
     static bool IsTerminalStatus(string status)
     {
         return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "cancelled", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "superseded", StringComparison.OrdinalIgnoreCase);
     }
 
     static bool StringsEqual(string? left, string? right)
@@ -269,7 +272,7 @@ public partial class Program
     static bool TryResolveDocLinkType(string? type, out string resolved)
     {
         resolved = (type ?? string.Empty).Trim().ToLowerInvariant();
-        if (resolved is "spec" or "adr")
+        if (resolved is "spec" or "specification" or "guide" or "architecture" or "doc" or "work_item")
         {
             return true;
         }
@@ -363,6 +366,10 @@ public partial class Program
             item.Type,
             item.Status,
             item.Title,
+            item.ArtifactId,
+            item.ArtifactType,
+            item.ArtifactStatus,
+            item.Domain,
             item.Priority,
             item.Owner,
             item.Created,
@@ -375,6 +382,11 @@ public partial class Program
                 item.Related.Prs,
                 item.Related.Issues,
                 item.Related.Branches),
+            item.Addresses,
+            item.DesignLinks,
+            item.VerificationLinks,
+            item.RelatedArtifacts,
+            item.GithubSynced,
             item.Slug,
             item.Path,
             includeBody ? item.Body : null);

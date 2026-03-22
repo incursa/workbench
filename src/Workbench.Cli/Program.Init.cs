@@ -330,8 +330,8 @@ public partial class Program
         var options = new List<(string Label, string Description)>
         {
             ("Create work item", "Guided creation of task, bug, or spike work items."),
-            ("Create document", "Create a spec, ADR, runbook, guide, or general doc."),
-            ("Regenerate workboard", "Refresh docs/70-work/README.md from current items."),
+            ("Create document", "Create a spec, architecture doc, or general doc."),
+            ("Regenerate workboard", "Refresh work/README.md from current items."),
             ("Exit", "Leave the guide.")
         };
 
@@ -392,8 +392,7 @@ public partial class Program
                 var docTypes = new List<(string Label, string Description)>
                 {
                     ("spec", "Product or feature specification."),
-                    ("adr", "Architecture decision record."),
-                    ("runbook", "Operational procedure or checklist."),
+                    ("architecture", "Architecture or design document."),
                     ("guide", "How-to or onboarding guide."),
                     ("doc", "General documentation.")
                 };
@@ -438,7 +437,7 @@ public partial class Program
                 var result = WorkboardService.Regenerate(repoRoot, config);
                 Console.WriteLine($"Workboard regenerated: {result.Path}");
                 summary.Add("Regenerated workboard.");
-                Console.WriteLine("Next steps: review `docs/70-work/README.md` for updated status.");
+                Console.WriteLine("Next steps: review `work/README.md` for updated status.");
             }
         }
         catch (Exception ex)

@@ -13,7 +13,7 @@ tags:
   - phase-1
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -21,14 +21,37 @@ related:
   prs: []
   issues: []
   branches: []
+title: add quality sync and show command surface
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0020-add-quality-sync-and-show-command-surface.md"
+  path: /docs/70-work/items/TASK-0020-add-quality-sync-and-show-command-surface.md
 ---
 
-# TASK-0020 - Add quality sync and show command surface
+# TASK-0020 - add quality sync and show command surface
 
 ## Summary
 
 Implement the small V1 CLI surface for the subsystem and keep it aligned with
 Workbench's existing sync/show and JSON-envelope conventions.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -38,3 +61,7 @@ Workbench's existing sync/show and JSON-envelope conventions.
   selected artifacts in table or JSON form.
 - No extra V1 subcommands are introduced unless they are strictly required by
   the implementation.
+
+## Notes
+
+-

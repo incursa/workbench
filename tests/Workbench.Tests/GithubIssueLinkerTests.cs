@@ -77,7 +77,7 @@ public class GithubIssueLinkerTests
                 new List<string>(),
                 new List<string>()),
             "sample-item",
-            Path.Combine("docs", "70-work", "items", $"{id}-sample-item.md"),
+            Path.Combine("work", "items", $"{id}-sample-item.md"),
             "## Summary\n\nLocal summary.");
     }
 }

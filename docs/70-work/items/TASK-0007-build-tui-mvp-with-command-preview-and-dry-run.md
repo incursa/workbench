@@ -10,7 +10,7 @@ githubSynced: null
 tags: []
 related:
   specs:
-    - /docs/10-product/feature-spec-terminal-ui.md
+    - /docs/10-product/specs/feature-spec-terminal-ui.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files: []
@@ -18,17 +18,45 @@ related:
   issues: []
   branches: []
 title: Build TUI MVP with command preview and dry-run
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md"
+  path: /docs/70-work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md
 ---
 
 # TASK-0007 - Build TUI MVP with command preview and dry-run
 
 ## Summary
+
 Build the initial Terminal.Gui-based TUI with work item workflows, command preview,
 and a global dry-run toggle for discoverability.
 
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
 - TUI provides basic work item workflows defined in the spec (list, view, create, update).
 - Bottom status line shows the last command invoked by the TUI.
 - Global dry-run toggle is visible and marks outputs as dry-run.
 - Errors surface CLI validation messages in dialogs.
 - Spec and ADR links are up to date.
+
+## Notes
+
+-

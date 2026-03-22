@@ -12,10 +12,16 @@ public class ValidationServiceDocTests
         var repoRoot = CreateTempRepo();
         SeedValidationSchemas(repoRoot);
 
-        var docPath = "/docs/10-product/sample-spec.md";
+        var docPath = "/specs/requirements/sample-spec.md";
         WriteCodeFile(repoRoot, "src/Workbench.Core/SampleCode.cs", "// TASK-0001 backlink\npublic static class SampleCode { }\n");
         WriteWorkItem(repoRoot, "TASK-0001", "task", "draft", specs: new[] { docPath }, files: new[] { "/src/Workbench.Core/SampleCode.cs" });
-        WriteDoc(repoRoot, "docs/10-product/sample-spec.md", "spec", new[] { "TASK-0001" }, new[] { "src/Workbench.Core/SampleCode.cs#L1" });
+        WriteDoc(
+            repoRoot,
+            "specs/requirements/sample-spec.md",
+            "spec",
+            new[] { "TASK-0001" },
+            new[] { "src/Workbench.Core/SampleCode.cs#L1" },
+            artifactId: "SPEC-TEST-0001");
 
         var result = ValidationService.ValidateRepo(
             repoRoot,
@@ -23,6 +29,97 @@ public class ValidationServiceDocTests
             new ValidationOptions(SkipDocSchema: true));
 
         Assert.IsEmpty(result.Errors, string.Join(Environment.NewLine, result.Errors));
+    }
+
+    [TestMethod]
+    public void ValidateRepo_CanonicalSpecificationDocWithRequirementTrace_Passes()
+    {
+        var repoRoot = CreateTempRepo();
+        SeedCanonicalSchemas(repoRoot);
+
+        File.WriteAllText(
+            Path.Combine(repoRoot, "specs", "requirements", "canonical-spec.md"),
+            """
+            ---
+            artifact_id: SPEC-CLI-ONBOARDING
+            artifact_type: specification
+            title: Canonical specification
+            domain: CLI
+            capability: onboarding
+            status: draft
+            owner: platform
+            related_artifacts:
+              - ARC-CLI-0001
+            ---
+
+            # SPEC-CLI-ONBOARDING - Canonical specification
+
+            ## Purpose
+
+            Canonical spec for validation.
+
+            ## REQ-CLI-0001 Canonical trace labels
+            The system MUST preserve canonical trace labels.
+
+            Trace:
+            - Satisfied By:
+              - ARC-CLI-0001
+            - Implemented By:
+              - WI-CLI-0001
+            - Test Refs:
+              - tests/Workbench.Tests/ValidationServiceDocTests.cs
+            - Code Refs:
+              - src/Workbench.Core/ValidationService.cs
+            - Related:
+              - REQ-CLI-0002
+
+            Notes:
+            - Example note.
+            """);
+
+        var result = ValidationService.ValidateRepo(
+            repoRoot,
+            WorkbenchConfig.Default,
+            new ValidationOptions(SkipDocSchema: true));
+
+        Assert.IsEmpty(result.Errors, string.Join(Environment.NewLine, result.Errors));
+    }
+
+    [TestMethod]
+    public void ValidateRepo_PolicyDrivenSpecIdMismatch_IsReported()
+    {
+        var repoRoot = CreateTempRepo();
+        SeedValidationSchemas(repoRoot);
+
+        File.WriteAllText(
+            Path.Combine(repoRoot, "artifact-id-policy.json"),
+            """
+            {
+              "sequence": { "minimum_digits": 4 },
+              "artifact_id_templates": {
+                "specification": "SPEC-{domain}{grouping}"
+              }
+            }
+            """);
+
+        WriteDoc(
+            repoRoot,
+            "specs/requirements/sample-spec.md",
+            "spec",
+            new[] { "TASK-0001" },
+            new[] { "src/Workbench.Core/SampleCode.cs#L1" },
+            artifactId: "SPEC-OPS-0001");
+        WriteCodeFile(repoRoot, "src/Workbench.Core/SampleCode.cs", "// TASK-0001 backlink\npublic static class SampleCode { }\n");
+        WriteWorkItem(repoRoot, "TASK-0001", "task", "draft", specs: new[] { "/specs/requirements/sample-spec.md" }, files: new[] { "/src/Workbench.Core/SampleCode.cs" });
+
+        var result = ValidationService.ValidateRepo(
+            repoRoot,
+            WorkbenchConfig.Default,
+            new ValidationOptions(SkipDocSchema: true));
+
+        Assert.IsTrue(
+            result.Errors.Any(error => error.Contains("does not match the configured artifact ID policy", StringComparison.Ordinal)),
+            string.Join(Environment.NewLine, result.Errors));
     }
 
     [TestMethod]
@@ -35,7 +132,7 @@ public class ValidationServiceDocTests
         WriteWorkItem(repoRoot, "TASK-0001", "task", "draft");
         WriteDoc(
             repoRoot,
-            "docs/10-product/sample-spec.md",
+            "specs/requirements/sample-spec.md",
             "spec",
             new[] { "TASK-0001", "TASK-9999" },
             new[]
@@ -67,7 +164,7 @@ public class ValidationServiceDocTests
             "TASK-0002",
             "task",
             "draft",
-            specs: new[] { "/docs/10-product/missing-spec.md" },
+            specs: new[] { "/specs/requirements/missing-spec.md" },
             adrs: new[] { "/docs/40-decisions/missing-adr.md" },
             files: new[] { "/src/Workbench.Core/NoBacklink.cs" });
 
@@ -177,7 +274,7 @@ public class ValidationServiceDocTests
         SeedValidationSchemas(repoRoot);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "10-product", "bad-doc.md"),
+            Path.Combine(repoRoot, "specs", "requirements", "bad-doc.md"),
             """
             ---
             workbench:
@@ -201,10 +298,11 @@ public class ValidationServiceDocTests
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "10-product"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "40-decisions"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "70-work", "items"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "70-work", "done"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "work", "items"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "work", "done"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "src", "Workbench.Core"));
         return repoRoot;
     }
@@ -221,6 +319,23 @@ public class ValidationServiceDocTests
             """);
     }
 
+    private static void SeedCanonicalSchemas(string repoRoot)
+    {
+        var sourceRepoRoot = Repository.FindRepoRoot(Directory.GetCurrentDirectory())
+            ?? throw new InvalidOperationException("Repo root not found for schema fixture.");
+
+        CopySchemaFile(sourceRepoRoot, repoRoot, "artifact-frontmatter.schema.json");
+        CopySchemaFile(sourceRepoRoot, repoRoot, "requirement-clause.schema.json");
+        CopySchemaFile(sourceRepoRoot, repoRoot, "requirement-trace-fields.schema.json");
+    }
+
+    private static void CopySchemaFile(string sourceRepoRoot, string targetRepoRoot, string schemaName)
+    {
+        File.Copy(
+            Path.Combine(sourceRepoRoot, "docs", "30-contracts", schemaName),
+            Path.Combine(targetRepoRoot, "docs", "30-contracts", schemaName));
+    }
+
     private static void WriteWorkItem(
         string repoRoot,
         string id,
@@ -230,7 +345,7 @@ public class ValidationServiceDocTests
         IEnumerable<string>? adrs = null,
         IEnumerable<string>? files = null)
     {
-        var path = Path.Combine(repoRoot, "docs", "70-work", "items", $"{id}-sample.md");
+        var path = Path.Combine(repoRoot, "work", "items", $"{id}-sample.md");
         File.WriteAllText(
             path,
             $$"""
@@ -260,15 +375,17 @@ public class ValidationServiceDocTests
         string relativePath,
         string docType,
         IEnumerable<string> workItems,
-        IEnumerable<string> codeRefs)
+        IEnumerable<string> codeRefs,
+        string? artifactId = null)
     {
         var fullPath = Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        var artifactLine = string.IsNullOrWhiteSpace(artifactId) ? string.Empty : $"artifact_id: {artifactId}\n";
         File.WriteAllText(
             fullPath,
             $$"""
             ---
-            workbench:
+            {{artifactLine}}workbench:
               type: {{docType}}
               workItems:{{FormatListSection(workItems)}}
               codeRefs:{{FormatListSection(codeRefs)}}

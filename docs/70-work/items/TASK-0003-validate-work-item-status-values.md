@@ -17,6 +17,14 @@ related:
   branches:
     - TASK-0003-validate-work-item-status-values
 title: Validate work item status values
+githubSynced: null
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0003-validate-work-item-status-values.md"
+  path: /docs/70-work/items/TASK-0003-validate-work-item-status-values.md
 ---
 
 # TASK-0003 - Validate work item status values
@@ -26,7 +34,27 @@ title: Validate work item status values
 Prevent setting work item statuses that are not in the allowed set. Add a
 future-friendly path for configurable statuses.
 
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
 - `workbench item status` rejects invalid status values with a clear error.
 - `workbench item new` and `workbench item import` validate status overrides.
 - Validation logic is centralized so future configuration can override defaults.
+
+## Notes
+
+-

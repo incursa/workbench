@@ -7,9 +7,10 @@ mirror layer, not the primary system of record.
 
 ## Operating model
 
-- Hand-author specs, ADRs, and work items as Markdown under `docs/`.
+- Hand-author requirement specs under `specs/requirements/`, architecture docs
+  under `architecture/`, and work items under `work/`.
 - Let Workbench maintain front matter, backlinks, and the generated sections
-  inside the repo READMEs.
+  inside the repo READMEs for `specs/`, `architecture/`, and `work/`.
 - Use GitHub issues, branches, and PRs as linked execution artifacts around the
   local Markdown record.
 
@@ -38,8 +39,10 @@ mirror layer, not the primary system of record.
 
 - `src/Workbench`: CLI source code.
 - `tests/`: automated tests.
-- `docs/`: product, architecture, contracts, decisions, and runbooks.
-- `docs/70-work/`: active and completed work items plus templates.
+- `specs/`: canonical requirement specs.
+- `architecture/`: canonical architecture docs.
+- `work/`: active and completed work items plus templates.
+- `docs/`: product, contracts, decisions, runbooks, and legacy compatibility docs.
 - `assets/`: static assets used by docs or tooling.
 - `artifacts/`: build outputs and local artifacts.
 - `testdata/`: fixtures for parsing and validation tests.
@@ -126,7 +129,9 @@ Expected warnings:
 ## Documentation and contracts
 
 - Docs overview: `docs/README.md`
-- Work items: `docs/70-work/README.md`
+- Specs: `specs/README.md`
+- Architecture: `architecture/README.md`
+- Work items: `work/README.md`
 - Operating model ADR: `docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md`
 - CLI help: `docs/30-contracts/cli-help.md`
 - Schemas: `docs/30-contracts/`

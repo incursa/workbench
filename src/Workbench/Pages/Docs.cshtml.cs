@@ -5,7 +5,7 @@ namespace Workbench.Pages;
 
 public class DocsModel : RepoPageModel
 {
-    private static readonly IReadOnlyList<string> documentTypes = ["all", "spec", "adr", "guide", "runbook", "doc"];
+    private static readonly IReadOnlyList<string> documentTypes = ["all", "specification", "architecture", "work_item", "doc", "guide"];
 
     public DocsModel(WorkbenchWorkspace workspace, WorkbenchUserProfileStore profileStore)
         : base(workspace, profileStore)
@@ -49,7 +49,7 @@ public class DocsModel : RepoPageModel
         Docs = Workspace.ListDocs(TypeFilter, Query);
         Tree = WorkbenchWorkspace.BuildDocTree(
             Docs,
-            doc => Url.Page("/Docs", new { selectedPath = doc.Path, typeFilter = TypeFilter, query = Query }) ?? doc.Path,
+            doc => Url.Page("/Docs", new { selectedPath = doc.ArtifactId ?? doc.Path, typeFilter = TypeFilter, query = Query }) ?? doc.Path,
             SelectedPath);
         SelectedDoc = ResolveSelectedDoc();
         if (SelectedDoc is null && Docs.Count > 0)
@@ -73,7 +73,21 @@ public class DocsModel : RepoPageModel
 
         if (!string.IsNullOrWhiteSpace(SelectedPath))
         {
+            var direct = Workspace.GetDoc(SelectedPath);
+            if (direct is not null)
+            {
+                return direct;
+            }
+
             var selected = Docs.FirstOrDefault(doc => doc.Path.Equals(SelectedPath, StringComparison.OrdinalIgnoreCase));
+            if (selected is not null)
+            {
+                return Workspace.GetDoc(selected.Path);
+            }
+
+            selected = Docs.FirstOrDefault(doc =>
+                !string.IsNullOrWhiteSpace(doc.ArtifactId) &&
+                doc.ArtifactId.Equals(SelectedPath, StringComparison.OrdinalIgnoreCase));
             if (selected is not null)
             {
                 return Workspace.GetDoc(selected.Path);

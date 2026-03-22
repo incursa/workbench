@@ -91,5 +91,5 @@ If you want a calmer, more durable workflow, Workbench is ready.
 - Run `dotnet run --project src/Workbench/Workbench.csproj -- --help` to explore
   the CLI.
 - Review the CLI contract in `docs/30-contracts/cli-help.md`.
-- Inspect the work item templates in `docs/70-work/templates/` and create your
+- Inspect the work item templates in `work/templates/` and create your
   first task.

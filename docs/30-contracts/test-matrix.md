@@ -26,9 +26,9 @@ This matrix maps spec-level behavior to executable test coverage for `Workbench.
 | Config parsing | Malformed `.workbench/config.json` | invalid file content | Exit `2`; explicit config error; no stack trace | `ResilienceTests.ConfigShow_MalformedConfig_ReturnsConfigError` |
 | Schema validation | Missing schema contracts | invalid env | `validate --strict` exits `2` and reports missing schema paths | `ResilienceTests.ValidateStrict_MissingSchemas_ReturnsErrors` |
 | Global options | Options after subcommand | valid usage variation | `--repo` and `--format json` work after subcommands | `ResilienceTests.ItemList_GlobalOptionsAfterSubcommand_AreAccepted` |
-| Migration | Move done/dropped to done dir | valid mutation | item file relocated to `docs/70-work/done` | `MigrationCommandTests.MigrateCoherentV1_MovesTerminalItemsToDoneDirectory` |
+| Migration | Move done/dropped to done dir | valid mutation | item file relocated to `work/done` | `MigrationCommandTests.MigrateCoherentV1_MovesTerminalItemsToDoneDirectory` |
 | Migration | Dry-run does not mutate | valid dry-run | reports moves without file mutation; no report file | `MigrationCommandTests.MigrateCoherentV1_DryRunReportsWithoutMovingFiles` |
-| Migration | Move active item from done to items | repair mutation | item with non-terminal status moves back to `docs/70-work/items` | `MigrationCommandTests.MigrateCoherentV1_MovesActiveItemsBackToItemsDirectory` |
+| Migration | Move active item from done to items | repair mutation | item with non-terminal status moves back to `work/items` | `MigrationCommandTests.MigrateCoherentV1_MovesActiveItemsBackToItemsDirectory` |
 
 ## Core File Contract Scenarios
 

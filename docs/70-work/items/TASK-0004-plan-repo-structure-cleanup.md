@@ -16,6 +16,14 @@ related:
     - "https://github.com/incursa/workbench/issues/19"
   branches: []
 title: "Plan repo structure cleanup (reduce large files, improve navigation)"
+githubSynced: null
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0004-plan-repo-structure-cleanup.md"
+  path: /docs/70-work/items/TASK-0004-plan-repo-structure-cleanup.md
 ---
 
 # TASK-0004 - Plan repo structure cleanup (reduce large files, improve navigation)
@@ -25,6 +33,32 @@ title: "Plan repo structure cleanup (reduce large files, improve navigation)"
 Create a structured plan to refactor the Workbench codebase into clearer
 modules, reduce large file sizes (notably `Program.cs`), and improve overall
 navigability without changing behavior.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
+## Acceptance criteria
+
+- `Program.cs` reduced to <300 lines and contains only wiring.
+- Each command has a focused module with a single responsibility.
+- Services are grouped by domain with minimal cross-dependencies.
+- No behavior changes (CLI output parity verified).
+
+## Notes
+
+-
 
 ## Goals
 
@@ -90,10 +124,3 @@ navigability without changing behavior.
 
 - Update `README.md` with the new structure map.
 - Add a short README in any new top-level folder (e.g., `src/Workbench/Commands/README.md`).
-
-## Success criteria
-
-- `Program.cs` reduced to <300 lines and contains only wiring.
-- Each command has a focused module with a single responsibility.
-- Services are grouped by domain with minimal cross-dependencies.
-- No behavior changes (CLI output parity verified).

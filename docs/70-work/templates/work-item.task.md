@@ -1,6 +1,7 @@
 ---
 id: TASK-0000
 type: task
+title: "<short actionable title>"
 status: draft
 priority: medium
 owner: null
@@ -15,11 +16,45 @@ related:
   prs: []
   issues: []
   branches: []
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/templates/work-item.task.md"
+  path: /docs/70-work/templates/work-item.task.md
 ---
 
-# TASK-0000 - <title>
+# TASK-0000 - <short actionable title>
 
 ## Summary
 
+## Context
+
+-
+
+## Trace Links
+
+Addresses:
+
+- REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+
+Uses Design:
+
+- ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+
+Verified By:
+
+- VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
+-
+
+## Notes
+
 -

@@ -1,6 +1,6 @@
 ---
 workbench:
-  type: doc
+  type: contract
   workItems: []
   codeRefs: []
   pathHistory:
@@ -36,7 +36,7 @@ updated: 0000-00-00
 ## Change management
 
 ## Related specs
-- </docs/10-product/feature-short-title.md>
+- [Quality Evidence v1 (Testing First)](/specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Related ADRs
-- </docs/40-decisions/ADR-0000-short-title.md>
+- [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)

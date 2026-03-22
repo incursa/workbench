@@ -13,7 +13,7 @@ tags:
   - phase-1
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -21,14 +21,37 @@ related:
   prs: []
   issues: []
   branches: []
+title: add cobertura ingestion and coverage summary contract
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0018-add-cobertura-ingestion-and-coverage-summary-contract.md"
+  path: /docs/70-work/items/TASK-0018-add-cobertura-ingestion-and-coverage-summary-contract.md
 ---
 
-# TASK-0018 - Add Cobertura ingestion and coverage summary contract
+# TASK-0018 - add cobertura ingestion and coverage summary contract
 
 ## Summary
 
 Normalize coverage outputs into a stable coverage-summary artifact that can
 compare authored thresholds and critical files against observed coverage.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -36,3 +59,7 @@ compare authored thresholds and critical files against observed coverage.
   `artifacts/quality/testing/coverage-summary.json`.
 - The summary includes overall coverage plus per-file and critical-file views.
 - The output matches `docs/30-contracts/coverage-summary.schema.json`.
+
+## Notes
+
+-

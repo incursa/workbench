@@ -8,32 +8,35 @@ workbench:
   path: /docs/00-overview/documentation-structure.md
 owner: platform
 status: active
-updated: 2025-12-27
+updated: 2026-03-20
 ---
 
 # Documentation structure
 
 ## Purpose
-This overview describes how the documentation is organized, who each category serves, and where new material should live. It aligns with the scaffold described in [Workbench spec](/docs/00-overview/workbench-spec.md) and clarifies the intent of each `/docs/*` directory.
+This overview describes how the documentation is organized, who each category serves, and where new material should live. It aligns with the repo standard in [Specification and traceability standard](/docs/00-overview/specification-and-traceability-standard.md) and clarifies the intent of the canonical `specs/`, `architecture/`, and `work/` roots alongside the legacy `/docs/*` tree.
 
 ## Quick lookup: doc types and canonical paths
 
 | Doc type | Canonical path | Intended audience | Belongs here (examples) |
 | --- | --- | --- | --- |
-| Overview | `/docs/00-overview/` | Everyone | Vision, scope, and cross-cutting specs (e.g., [workbench-spec](/docs/00-overview/workbench-spec.md)). |
-| Product | `/docs/10-product/` | Product, design, engineering | Feature specs, requirements, user journeys (see [Product README](/docs/10-product/README.md)). |
-| Architecture | `/docs/20-architecture/` | Engineering | System design, data flow, component boundaries (see [Architecture README](/docs/20-architecture/README.md)). |
+| Overview | `/docs/00-overview/` | Everyone | Vision, scope, and cross-cutting standards (e.g., [specification-and-traceability-standard](/docs/00-overview/specification-and-traceability-standard.md)). |
+| Product | `/docs/10-product/` | Product, design, engineering | Feature specs, requirements, user journeys, and product notes (see [Product README](/docs/10-product/README.md)). |
+| Requirements | `/specs/requirements/` | Product, engineering | Canonical requirement specifications and related spec indexes (see [Requirements README](/specs/requirements/README.md)). |
+| Architecture | `/architecture/` | Engineering | System design, data flow, component boundaries, and design guidance (see [Architecture README](/architecture/README.md)). |
+| Work | `/work/` | Delivery, engineering | Active and closed work items plus templates (see [Work README](/work/README.md)). |
 | Contracts | `/docs/30-contracts/` | Engineering, integrators | Schemas, CLI/API contracts, interface docs (see [Contracts README](/docs/30-contracts/README.md)). |
 | Decisions | `/docs/40-decisions/` | Engineering, stakeholders | ADRs and tradeoff history (see [Decisions README](/docs/40-decisions/README.md)). |
 | Runbooks | `/docs/50-runbooks/` | Ops, support, on-call | Operational procedures, troubleshooting, releases (see [Runbooks README](/docs/50-runbooks/README.md)). |
 | Tracking | `/docs/60-tracking/` | Delivery, leadership | Milestones, progress notes, delivery status (see [Tracking README](/docs/60-tracking/README.md)). |
+| Templates | `/docs/templates/` | Authors | Reusable doc templates for specs, architecture, ADRs, contracts, and runbooks. |
 
 ## Directory intent and placement guidance
 
 ### `/docs/00-overview`
 **Audience:** everyone (first stop for orientation)
 
-**Purpose:** High-level summaries, the documentation map, and foundational specs that describe how Workbench is intended to work. The canonical scaffold and workflow description live in [workbench-spec](/docs/00-overview/workbench-spec.md).
+**Purpose:** High-level summaries, the documentation map, and foundational standards that describe how Workbench documentation is organized. The canonical repo standard lives in [specification-and-traceability-standard](/docs/00-overview/specification-and-traceability-standard.md).
 
 **Belongs here:**
 - Product vision or scope overviews
@@ -43,22 +46,32 @@ This overview describes how the documentation is organized, who each category se
 ### `/docs/10-product`
 **Audience:** product, design, engineering
 
-**Purpose:** User-facing requirements and feature-level behavior. The stub [Product README](/docs/10-product/README.md) anchors the category.
+**Purpose:** User-facing requirements and feature-level behavior. Requirement specs live under [specs/requirements](/specs/requirements/README.md), and the category is anchored by [Product README](/docs/10-product/README.md).
 
 **Belongs here:**
 - Feature specs and acceptance criteria
 - User flows or experience notes
 - Roadmap-level requirement statements
 
-### `/docs/20-architecture`
+### `/architecture`
 **Audience:** engineering
 
-**Purpose:** System-level design, architecture diagrams, and component boundaries. See [Architecture README](/docs/20-architecture/README.md).
+**Purpose:** System-level design, architecture diagrams, and component boundaries. See [Architecture README](/architecture/README.md).
 
 **Belongs here:**
 - High-level system diagrams
 - Data flow descriptions
 - Component responsibilities and interfaces
+
+### `/work`
+**Audience:** delivery, engineering
+
+**Purpose:** Active and closed work items plus the templates used to create them. See [Work README](/work/README.md).
+
+**Belongs here:**
+- Active work items
+- Closed work items
+- Work-item templates
 
 ### `/docs/30-contracts`
 **Audience:** engineering, integrators
@@ -118,7 +131,7 @@ This overview describes how the documentation is organized, who each category se
 
 ### Metadata conventions (front matter)
 Documentation can use optional YAML front matter aligned with work item conventions in
-[workbench-spec](/docs/00-overview/workbench-spec.md):
+[specification-and-traceability-standard](/docs/00-overview/specification-and-traceability-standard.md):
 - `owner`: team or individual responsible for the doc.
 - `status`: e.g., `draft`, `active`, `deprecated`, `archived`.
 - `updated`: ISO date (YYYY-MM-DD).

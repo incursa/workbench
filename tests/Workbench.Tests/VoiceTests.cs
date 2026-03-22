@@ -64,12 +64,20 @@ public sealed class VoiceTests
 
         var serialized = File.ReadAllText(created.Path);
         StringAssert.Contains(serialized, "title: Voice doc", StringComparison.Ordinal);
-        StringAssert.Contains(serialized, "type: spec", StringComparison.Ordinal);
-        StringAssert.Contains(serialized, "source:", StringComparison.Ordinal);
-        StringAssert.Contains(serialized, "kind: voice", StringComparison.Ordinal);
-        StringAssert.Contains(serialized, "sample_rate_hz: 16000", StringComparison.Ordinal);
-        StringAssert.Contains(serialized, "format: wav", StringComparison.Ordinal);
-        StringAssert.Contains(serialized, "path: /docs/10-product/voice-doc.md", StringComparison.Ordinal);
+        StringAssert.Contains(serialized, "artifact_type: specification", StringComparison.Ordinal);
+        var artifactIdLine = serialized
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .First(line => line.StartsWith("artifact_id:", StringComparison.Ordinal));
+        Assert.IsTrue(artifactIdLine.StartsWith("artifact_id: SPEC-", StringComparison.Ordinal), serialized);
+        Assert.IsFalse(artifactIdLine.EndsWith("-0001", StringComparison.Ordinal), serialized);
+        Assert.IsFalse(serialized.Contains("source:", StringComparison.Ordinal), serialized);
+        StringAssert.Contains(serialized, "domain: VOICE-DOC", StringComparison.Ordinal);
+        StringAssert.Contains(serialized, "capability: VOICE-DOC", StringComparison.Ordinal);
+        Assert.IsTrue(created.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase), created.Path);
+        var fileName = Path.GetFileName(created.Path);
+        Assert.IsTrue(fileName.StartsWith("SPEC-", StringComparison.Ordinal), created.Path);
+        Assert.IsTrue(fileName.EndsWith(".md", StringComparison.Ordinal), created.Path);
+        Assert.IsFalse(fileName.Contains("-0001", StringComparison.Ordinal), created.Path);
 
         File.Delete(created.Path);
     }
@@ -77,10 +85,9 @@ public sealed class VoiceTests
     [TestMethod]
     public void DocPathResolverUsesDocTypeDefaults()
     {
-        var repoRoot = Path.Combine(Path.GetTempPath(), "workbench-tests");
+        var repoRoot = Path.Combine(Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
         var config = WorkbenchConfig.Default;
         var title = "Voice Doc";
-        var slug = WorkItemService.Slugify(title);
 
         var created = DocService.CreateGeneratedDoc(
             repoRoot,
@@ -97,8 +104,11 @@ public sealed class VoiceTests
             source: null,
             force: false);
 
-        var expected = Path.Combine(repoRoot, "docs", "10-product", $"{slug}.md");
-        Assert.AreEqual(expected, created.Path);
+        var normalizedPath = created.Path.Replace('/', '\\');
+        StringAssert.Contains(normalizedPath, Path.Combine("specs", "requirements"), StringComparison.OrdinalIgnoreCase);
+        var createdFileName = Path.GetFileName(created.Path);
+        Assert.IsTrue(createdFileName.StartsWith("SPEC-", StringComparison.Ordinal), created.Path);
+        Assert.IsTrue(createdFileName.EndsWith(".md", StringComparison.Ordinal), created.Path);
 
         File.Delete(created.Path);
     }

@@ -711,7 +711,7 @@ public partial class Program
             };
         }
 
-        var itemNewCommand = new Command("new", "Create a new work item in docs/70-work/items using templates and ID allocation.");
+        var itemNewCommand = new Command("new", "Create a new work item in work/items using templates and ID allocation.");
         var itemTitleOption = CreateTitleOption();
         var itemStatusOption = CreateStatusOption();
         var itemPriorityOption = CreatePriorityOption();
@@ -1073,7 +1073,7 @@ public partial class Program
         listStatusOption.CompletionSources.Add("draft", "ready", "in-progress", "blocked", "done", "dropped");
         var includeDoneOption = new Option<bool>("--include-done")
         {
-            Description = "Include items from docs/70-work/done."
+            Description = "Include items from work/done."
         };
         itemListCommand.Options.Add(listTypeOption);
         itemListCommand.Options.Add(listStatusOption);
@@ -1398,14 +1398,14 @@ public partial class Program
         });
         itemCommand.Subcommands.Add(itemEditCommand);
 
-        var itemCloseCommand = new Command("close", "Set status to done and move to docs/70-work/done.");
+        var itemCloseCommand = new Command("close", "Set status to done and move to work/done.");
         var closeIdArg = new Argument<string>("id")
         {
             Description = "Work item ID."
         };
         var noMoveOption = new Option<bool>("--no-move")
         {
-            Description = "Do not move the item to docs/70-work/done."
+            Description = "Do not move the item to work/done."
         };
         itemCloseCommand.Arguments.Add(closeIdArg);
         itemCloseCommand.Options.Add(noMoveOption);
@@ -1567,7 +1567,7 @@ public partial class Program
         var itemNormalizeCommand = new Command("normalize", "Normalize work item front matter lists.");
         var normalizeItemsIncludeDoneOption = new Option<bool>("--include-done")
         {
-            Description = "Include docs/70-work/done items."
+            Description = "Include work/done items."
         };
         var normalizeAllDryRunOption = new Option<bool>("--dry-run")
         {
@@ -1690,7 +1690,7 @@ public partial class Program
         });
         itemCommand.Subcommands.Add(itemDeleteCommand);
 
-        var itemLinkCommand = new Command("link", "Link specs, ADRs, files, PRs, or issues to a work item.");
+        var itemLinkCommand = new Command("link", "Link specs, files, PRs, or issues to a work item.");
         var linkIdArg = new Argument<string>("id")
         {
             Description = "Work item ID."
@@ -1698,11 +1698,6 @@ public partial class Program
         var linkSpecOption = new Option<string[]>("--spec")
         {
             Description = "Spec path(s) to link.",
-            AllowMultipleArgumentsPerToken = true
-        };
-        var linkAdrOption = new Option<string[]>("--adr")
-        {
-            Description = "ADR path(s) to link.",
             AllowMultipleArgumentsPerToken = true
         };
         var linkFileOption = new Option<string[]>("--file")
@@ -1722,7 +1717,6 @@ public partial class Program
         };
         itemLinkCommand.Arguments.Add(linkIdArg);
         itemLinkCommand.Options.Add(linkSpecOption);
-        itemLinkCommand.Options.Add(linkAdrOption);
         itemLinkCommand.Options.Add(linkFileOption);
         itemLinkCommand.Options.Add(linkPrOption);
         itemLinkCommand.Options.Add(linkIssueOption);
@@ -1739,13 +1733,12 @@ public partial class Program
                 var format = parseResult.GetValue(formatOption) ?? "table";
                 var id = parseResult.GetValue(linkIdArg) ?? string.Empty;
                 var specs = parseResult.GetValue(linkSpecOption) ?? Array.Empty<string>();
-                var adrs = parseResult.GetValue(linkAdrOption) ?? Array.Empty<string>();
                 var files = parseResult.GetValue(linkFileOption) ?? Array.Empty<string>();
                 var prs = parseResult.GetValue(linkPrOption) ?? Array.Empty<string>();
                 var issues = parseResult.GetValue(linkIssueOption) ?? Array.Empty<string>();
                 var dryRun = parseResult.GetValue(linkDryRunOption);
 
-                if (specs.Length + adrs.Length + files.Length + prs.Length + issues.Length == 0)
+                if (specs.Length + files.Length + prs.Length + issues.Length == 0)
                 {
                     Console.WriteLine("No links provided.");
                     SetExitCode(2);
@@ -1769,16 +1762,6 @@ public partial class Program
                 {
                     var normalized = NormalizeRepoLink(repoRoot, spec);
                     if (WorkItemService.AddRelatedLink(itemPath, "specs", normalized, apply: !dryRun))
-                    {
-                        updated = true;
-                    }
-                    DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: true, apply: !dryRun);
-                }
-
-                foreach (var adr in adrs)
-                {
-                    var normalized = NormalizeRepoLink(repoRoot, adr);
-                    if (WorkItemService.AddRelatedLink(itemPath, "adrs", normalized, apply: !dryRun))
                     {
                         updated = true;
                     }
@@ -1835,7 +1818,7 @@ public partial class Program
         });
         itemCommand.Subcommands.Add(itemLinkCommand);
 
-        var itemUnlinkCommand = new Command("unlink", "Remove specs, ADRs, files, PRs, or issues from a work item.");
+        var itemUnlinkCommand = new Command("unlink", "Remove specs, files, PRs, or issues from a work item.");
         var unlinkIdArg = new Argument<string>("id")
         {
             Description = "Work item ID."
@@ -1843,11 +1826,6 @@ public partial class Program
         var unlinkSpecOption = new Option<string[]>("--spec")
         {
             Description = "Spec path(s) to unlink.",
-            AllowMultipleArgumentsPerToken = true
-        };
-        var unlinkAdrOption = new Option<string[]>("--adr")
-        {
-            Description = "ADR path(s) to unlink.",
             AllowMultipleArgumentsPerToken = true
         };
         var unlinkFileOption = new Option<string[]>("--file")
@@ -1867,7 +1845,6 @@ public partial class Program
         };
         itemUnlinkCommand.Arguments.Add(unlinkIdArg);
         itemUnlinkCommand.Options.Add(unlinkSpecOption);
-        itemUnlinkCommand.Options.Add(unlinkAdrOption);
         itemUnlinkCommand.Options.Add(unlinkFileOption);
         itemUnlinkCommand.Options.Add(unlinkPrOption);
         itemUnlinkCommand.Options.Add(unlinkIssueOption);
@@ -1884,13 +1861,12 @@ public partial class Program
                 var format = parseResult.GetValue(formatOption) ?? "table";
                 var id = parseResult.GetValue(unlinkIdArg) ?? string.Empty;
                 var specs = parseResult.GetValue(unlinkSpecOption) ?? Array.Empty<string>();
-                var adrs = parseResult.GetValue(unlinkAdrOption) ?? Array.Empty<string>();
                 var files = parseResult.GetValue(unlinkFileOption) ?? Array.Empty<string>();
                 var prs = parseResult.GetValue(unlinkPrOption) ?? Array.Empty<string>();
                 var issues = parseResult.GetValue(unlinkIssueOption) ?? Array.Empty<string>();
                 var dryRun = parseResult.GetValue(unlinkDryRunOption);
 
-                if (specs.Length + adrs.Length + files.Length + prs.Length + issues.Length == 0)
+                if (specs.Length + files.Length + prs.Length + issues.Length == 0)
                 {
                     Console.WriteLine("No links provided.");
                     SetExitCode(2);
@@ -1914,16 +1890,6 @@ public partial class Program
                 {
                     var normalized = NormalizeRepoLink(repoRoot, spec);
                     if (WorkItemService.RemoveRelatedLink(itemPath, "specs", normalized, apply: !dryRun))
-                    {
-                        updated = true;
-                    }
-                    DocService.TryUpdateDocWorkItemLink(repoRoot, config, normalized, id, add: false, apply: !dryRun);
-                }
-
-                foreach (var adr in adrs)
-                {
-                    var normalized = NormalizeRepoLink(repoRoot, adr);
-                    if (WorkItemService.RemoveRelatedLink(itemPath, "adrs", normalized, apply: !dryRun))
                     {
                         updated = true;
                     }
@@ -2069,7 +2035,7 @@ public partial class Program
         root.Subcommands.Add(normalizeCommand);
 
         var boardCommand = new Command("board", "Group: workboard commands.");
-        var boardRegenCommand = new Command("regen", "Regenerate only the workboard section in docs/70-work/README.md.");
+        var boardRegenCommand = new Command("regen", "Regenerate only the workboard section in work/README.md.");
         boardRegenCommand.SetAction(parseResult =>
         {
             try
@@ -2375,10 +2341,10 @@ public partial class Program
         var docNewCommand = new Command("new", "Create a documentation file with Workbench front matter.");
         var docTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: spec, adr, doc, runbook, guide",
+            Description = "Doc type: specification, architecture, guide, work_item, doc",
             Required = true
         };
-        docTypeOption.CompletionSources.Add("spec", "adr", "doc", "runbook", "guide");
+        docTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
         var docTitleOption = new Option<string>("--title")
         {
             Description = "Doc title",
@@ -2387,6 +2353,18 @@ public partial class Program
         var docPathOption = new Option<string?>("--path")
         {
             Description = "Destination path (defaults by type)."
+        };
+        var docArtifactIdOption = new Option<string?>("--artifact-id")
+        {
+            Description = "Artifact identifier for canonical specs, architecture docs, and work items."
+        };
+        var docDomainOption = new Option<string?>("--domain")
+        {
+            Description = "Document domain metadata used when generating canonical artifact IDs."
+        };
+        var docCapabilityOption = new Option<string?>("--capability")
+        {
+            Description = "Document capability metadata used when generating specification IDs."
         };
         var docWorkItemOption = new Option<string[]>("--work-item")
         {
@@ -2406,6 +2384,9 @@ public partial class Program
         docNewCommand.Options.Add(docTypeOption);
         docNewCommand.Options.Add(docTitleOption);
         docNewCommand.Options.Add(docPathOption);
+        docNewCommand.Options.Add(docArtifactIdOption);
+        docNewCommand.Options.Add(docDomainOption);
+        docNewCommand.Options.Add(docCapabilityOption);
         docNewCommand.Options.Add(docWorkItemOption);
         docNewCommand.Options.Add(docCodeRefOption);
         docNewCommand.Options.Add(docForceOption);
@@ -2416,20 +2397,113 @@ public partial class Program
             var type = parseResult.GetValue(docTypeOption) ?? string.Empty;
             var title = parseResult.GetValue(docTitleOption) ?? string.Empty;
             var path = parseResult.GetValue(docPathOption);
+            var artifactId = parseResult.GetValue(docArtifactIdOption);
+            var domain = parseResult.GetValue(docDomainOption);
+            var capability = parseResult.GetValue(docCapabilityOption);
             var workItems = parseResult.GetValue(docWorkItemOption) ?? Array.Empty<string>();
             var codeRefs = parseResult.GetValue(docCodeRefOption) ?? Array.Empty<string>();
             var force = parseResult.GetValue(docForceOption);
-            HandleDocCreate(repo, format, type, title, path, workItems, codeRefs, force);
+            HandleDocCreate(repo, format, type, title, path, artifactId, domain, capability, workItems, codeRefs, force);
         });
 
-        var docRegenHelpCommand = new Command("regen-help", "Regenerate docs/30-contracts/cli-help.md from the live command tree.");
+        var docShowCommand = new Command("show", "Show a documentation file by artifact ID or path.");
+        var docShowReferenceArg = new Argument<string>("reference")
+        {
+            Description = "Artifact ID or doc path."
+        };
+        docShowCommand.Arguments.Add(docShowReferenceArg);
+        docShowCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var reference = parseResult.GetValue(docShowReferenceArg) ?? string.Empty;
+            HandleDocShow(repo, format, reference);
+        });
+
+        var docEditCommand = new Command("edit", "Edit documentation metadata and body by artifact ID or path.");
+        var docEditReferenceArg = new Argument<string>("reference")
+        {
+            Description = "Artifact ID or doc path."
+        };
+        var docEditArtifactIdOption = new Option<string?>("--artifact-id")
+        {
+            Description = "Update the artifact identifier."
+        };
+        var docEditTitleOption = new Option<string?>("--title")
+        {
+            Description = "Update the doc title."
+        };
+        var docEditStatusOption = new Option<string?>("--status")
+        {
+            Description = "Update the doc status."
+        };
+        var docEditOwnerOption = new Option<string?>("--owner")
+        {
+            Description = "Update the doc owner."
+        };
+        var docEditDomainOption = new Option<string?>("--domain")
+        {
+            Description = "Update the document domain metadata."
+        };
+        var docEditCapabilityOption = new Option<string?>("--capability")
+        {
+            Description = "Update the document capability metadata."
+        };
+        var docEditBodyOption = new Option<string?>("--body")
+        {
+            Description = "Replace the Markdown body with the provided text."
+        };
+        var docEditBodyFileOption = new Option<string?>("--body-file")
+        {
+            Description = "Replace the Markdown body with file contents."
+        };
+        var docEditWorkItemOption = new Option<string[]>("--work-item")
+        {
+            AllowMultipleArgumentsPerToken = true,
+            Description = "Replace the linked work item list."
+        };
+        var docEditCodeRefOption = new Option<string[]>("--code-ref")
+        {
+            AllowMultipleArgumentsPerToken = true,
+            Description = "Replace the linked code ref list."
+        };
+        docEditCommand.Arguments.Add(docEditReferenceArg);
+        docEditCommand.Options.Add(docEditArtifactIdOption);
+        docEditCommand.Options.Add(docEditTitleOption);
+        docEditCommand.Options.Add(docEditStatusOption);
+        docEditCommand.Options.Add(docEditOwnerOption);
+        docEditCommand.Options.Add(docEditDomainOption);
+        docEditCommand.Options.Add(docEditCapabilityOption);
+        docEditCommand.Options.Add(docEditBodyOption);
+        docEditCommand.Options.Add(docEditBodyFileOption);
+        docEditCommand.Options.Add(docEditWorkItemOption);
+        docEditCommand.Options.Add(docEditCodeRefOption);
+        docEditCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var reference = parseResult.GetValue(docEditReferenceArg) ?? string.Empty;
+            var artifactId = parseResult.GetValue(docEditArtifactIdOption);
+            var title = parseResult.GetValue(docEditTitleOption);
+            var status = parseResult.GetValue(docEditStatusOption);
+            var owner = parseResult.GetValue(docEditOwnerOption);
+            var domain = parseResult.GetValue(docEditDomainOption);
+            var capability = parseResult.GetValue(docEditCapabilityOption);
+            var body = parseResult.GetValue(docEditBodyOption);
+            var bodyFile = parseResult.GetValue(docEditBodyFileOption);
+            var workItems = parseResult.GetValue(docEditWorkItemOption) ?? Array.Empty<string>();
+            var codeRefs = parseResult.GetValue(docEditCodeRefOption) ?? Array.Empty<string>();
+            HandleDocEdit(repo, format, reference, artifactId, title, status, owner, domain, capability, body, bodyFile, workItems, codeRefs);
+        });
+
+        var docRegenHelpCommand = new Command("regen-help", "Regenerate docs/commands.md from the live command tree.");
         var docRegenHelpCheckOption = new Option<bool>("--check")
         {
-            Description = "Fail if docs/30-contracts/cli-help.md is out of date."
+            Description = "Fail if docs/commands.md is out of date."
         };
         var docRegenHelpPathOption = new Option<string?>("--path")
         {
-            Description = "Output path (defaults to docs/30-contracts/cli-help.md)."
+            Description = "Output path (defaults to docs/commands.md)."
         };
         docRegenHelpCommand.Options.Add(docRegenHelpCheckOption);
         docRegenHelpCommand.Options.Add(docRegenHelpPathOption);
@@ -2444,7 +2518,7 @@ public partial class Program
         var docDeleteCommand = new Command("delete", "Delete a documentation file and update work item links.");
         var docDeletePathOption = new Option<string>("--path")
         {
-            Description = "Doc path or link.",
+            Description = "Doc path, link, or artifact ID.",
             Required = true
         };
         var docDeleteKeepLinksOption = new Option<bool>("--keep-links")
@@ -2455,104 +2529,23 @@ public partial class Program
         docDeleteCommand.Options.Add(docDeleteKeepLinksOption);
         docDeleteCommand.SetAction(parseResult =>
         {
-            try
-            {
-                var repo = parseResult.GetValue(repoOption);
-                var format = parseResult.GetValue(formatOption) ?? "table";
-                var link = parseResult.GetValue(docDeletePathOption) ?? string.Empty;
-                var keepLinks = parseResult.GetValue(docDeleteKeepLinksOption);
-                var repoRoot = ResolveRepo(repo);
-                var resolvedFormat = ResolveFormat(format);
-                var config = WorkbenchConfig.Load(repoRoot, out var configError);
-                if (configError is not null)
-                {
-                    Console.WriteLine($"Config error: {configError}");
-                    SetExitCode(2);
-                    return;
-                }
-
-                var docPath = DocService.ResolveDocPath(repoRoot, link);
-                var docFullPath = Path.GetFullPath(docPath);
-                if (!File.Exists(docFullPath))
-                {
-                    Console.WriteLine($"Doc not found: {docFullPath}");
-                    SetExitCode(2);
-                    return;
-                }
-
-                var itemsUpdated = 0;
-                if (!keepLinks)
-                {
-                    var items = WorkItemService.ListItems(repoRoot, config, includeDone: true).Items;
-                    foreach (var item in items)
-                    {
-                        var itemChanged = false;
-                        foreach (var spec in item.Related.Specs)
-                        {
-                            var specPath = Path.GetFullPath(DocService.ResolveDocPath(repoRoot, spec));
-                            if (specPath.Equals(docFullPath, StringComparison.OrdinalIgnoreCase)
-                                && WorkItemService.RemoveRelatedLink(item.Path, "specs", spec))
-                            {
-                                itemChanged = true;
-                            }
-                        }
-                        foreach (var adr in item.Related.Adrs)
-                        {
-                            var adrPath = Path.GetFullPath(DocService.ResolveDocPath(repoRoot, adr));
-                            if (adrPath.Equals(docFullPath, StringComparison.OrdinalIgnoreCase)
-                                && WorkItemService.RemoveRelatedLink(item.Path, "adrs", adr))
-                            {
-                                itemChanged = true;
-                            }
-                        }
-                        foreach (var file in item.Related.Files)
-                        {
-                            var filePath = Path.GetFullPath(DocService.ResolveDocPath(repoRoot, file));
-                            if (filePath.Equals(docFullPath, StringComparison.OrdinalIgnoreCase)
-                                && WorkItemService.RemoveRelatedLink(item.Path, "files", file))
-                            {
-                                itemChanged = true;
-                            }
-                        }
-                        if (itemChanged)
-                        {
-                            itemsUpdated++;
-                        }
-                    }
-                }
-
-                File.Delete(docFullPath);
-
-                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
-                {
-                    var payload = new DocDeleteOutput(
-                        true,
-                        new DocDeleteData(docFullPath, itemsUpdated));
-                    WriteJson(payload, Core.WorkbenchJsonContext.Default.DocDeleteOutput);
-                }
-                else
-                {
-                    Console.WriteLine($"Doc deleted: {docFullPath}");
-                }
-                SetExitCode(0);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex);
-                SetExitCode(2);
-            }
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var link = parseResult.GetValue(docDeletePathOption) ?? string.Empty;
+            var keepLinks = parseResult.GetValue(docDeleteKeepLinksOption);
+            HandleDocDelete(repo, format, link, keepLinks);
         });
 
         var docLinkCommand = new Command("link", "Link a doc to work items.");
         var docLinkTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: spec, adr",
+            Description = "Doc type: specification, architecture, guide, work_item, doc",
             Required = true
         };
-        docLinkTypeOption.CompletionSources.Add("spec", "adr");
+        docLinkTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
         var docLinkPathOption = new Option<string>("--path")
         {
-            Description = "Doc path.",
+            Description = "Doc path, link, or artifact ID.",
             Required = true
         };
         var docLinkWorkItemOption = new Option<string[]>("--work-item")
@@ -2575,7 +2568,7 @@ public partial class Program
             var type = parseResult.GetValue(docLinkTypeOption);
             if (!TryResolveDocLinkType(type, out var resolvedType))
             {
-                Console.WriteLine("Doc type must be spec or adr.");
+                Console.WriteLine("Doc type must be spec, specification, guide, architecture, work_item, or doc.");
                 SetExitCode(2);
                 return;
             }
@@ -2588,13 +2581,13 @@ public partial class Program
         var docUnlinkCommand = new Command("unlink", "Unlink a doc from work items.");
         var docUnlinkTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: spec, adr",
+            Description = "Doc type: specification, architecture, guide, work_item, doc",
             Required = true
         };
-        docUnlinkTypeOption.CompletionSources.Add("spec", "adr");
+        docUnlinkTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
         var docUnlinkPathOption = new Option<string>("--path")
         {
-            Description = "Doc path.",
+            Description = "Doc path, link, or artifact ID.",
             Required = true
         };
         var docUnlinkWorkItemOption = new Option<string[]>("--work-item")
@@ -2617,7 +2610,7 @@ public partial class Program
             var type = parseResult.GetValue(docUnlinkTypeOption);
             if (!TryResolveDocLinkType(type, out var resolvedType))
             {
-                Console.WriteLine("Doc type must be spec or adr.");
+                Console.WriteLine("Doc type must be spec, specification, guide, architecture, work_item, or doc.");
                 SetExitCode(2);
                 return;
             }
@@ -2822,6 +2815,8 @@ public partial class Program
         });
 
         docCommand.Subcommands.Add(docNewCommand);
+        docCommand.Subcommands.Add(docShowCommand);
+        docCommand.Subcommands.Add(docEditCommand);
         docCommand.Subcommands.Add(docRegenHelpCommand);
         docCommand.Subcommands.Add(docDeleteCommand);
         docCommand.Subcommands.Add(docLinkCommand);
@@ -2829,6 +2824,329 @@ public partial class Program
         docCommand.Subcommands.Add(docSyncCommand);
         docCommand.Subcommands.Add(docSummaryCommand);
         root.Subcommands.Add(docCommand);
+
+        var specCommand = new Command("spec", "Group: specification commands.");
+        var specNewCommand = new Command("new", "Create a specification file with canonical front matter.");
+        var specTitleOption = new Option<string>("--title")
+        {
+            Description = "Spec title",
+            Required = true
+        };
+        var specPathOption = new Option<string?>("--path")
+        {
+            Description = "Destination path (defaults under specs/requirements/)."
+        };
+        var specArtifactIdOption = new Option<string?>("--artifact-id")
+        {
+            Description = "Artifact identifier for the spec."
+        };
+        var specDomainOption = new Option<string?>("--domain")
+        {
+            Description = "Spec domain metadata used when generating IDs."
+        };
+        var specCapabilityOption = new Option<string?>("--capability")
+        {
+            Description = "Spec capability metadata used when generating IDs."
+        };
+        var specWorkItemOption = new Option<string[]>("--work-item")
+        {
+            AllowMultipleArgumentsPerToken = true
+        };
+        var specCodeRefOption = new Option<string[]>("--code-ref")
+        {
+            AllowMultipleArgumentsPerToken = true
+        };
+        specWorkItemOption.Description = "Link one or more work items.";
+        specCodeRefOption.Description = "Add code reference(s) (e.g., src/Foo.cs#L10-L20).";
+        var specForceOption = new Option<bool>("--force")
+        {
+            Description = "Overwrite existing file."
+        };
+        specNewCommand.Options.Add(specTitleOption);
+        specNewCommand.Options.Add(specPathOption);
+        specNewCommand.Options.Add(specArtifactIdOption);
+        specNewCommand.Options.Add(specDomainOption);
+        specNewCommand.Options.Add(specCapabilityOption);
+        specNewCommand.Options.Add(specWorkItemOption);
+        specNewCommand.Options.Add(specCodeRefOption);
+        specNewCommand.Options.Add(specForceOption);
+        specNewCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var title = parseResult.GetValue(specTitleOption) ?? string.Empty;
+            var path = parseResult.GetValue(specPathOption);
+            var artifactId = parseResult.GetValue(specArtifactIdOption);
+            var domain = parseResult.GetValue(specDomainOption);
+            var capability = parseResult.GetValue(specCapabilityOption);
+            var workItems = parseResult.GetValue(specWorkItemOption) ?? Array.Empty<string>();
+            var codeRefs = parseResult.GetValue(specCodeRefOption) ?? Array.Empty<string>();
+            var force = parseResult.GetValue(specForceOption);
+            HandleDocCreate(repo, format, "specification", title, path, artifactId, domain, capability, workItems, codeRefs, force, "Spec");
+        });
+
+        var specShowCommand = new Command("show", "Show a specification by artifact ID or path.");
+        var specShowReferenceArg = new Argument<string>("reference")
+        {
+            Description = "Artifact ID or spec path."
+        };
+        specShowCommand.Arguments.Add(specShowReferenceArg);
+        specShowCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var reference = parseResult.GetValue(specShowReferenceArg) ?? string.Empty;
+            HandleDocShow(repo, format, reference, "specification");
+        });
+
+        var specEditCommand = new Command("edit", "Edit specification metadata and body by artifact ID or path.");
+        var specEditReferenceArg = new Argument<string>("reference")
+        {
+            Description = "Artifact ID or spec path."
+        };
+        var specEditArtifactIdOption = new Option<string?>("--artifact-id")
+        {
+            Description = "Update the artifact identifier."
+        };
+        var specEditTitleOption = new Option<string?>("--title")
+        {
+            Description = "Update the spec title."
+        };
+        var specEditStatusOption = new Option<string?>("--status")
+        {
+            Description = "Update the spec status."
+        };
+        var specEditOwnerOption = new Option<string?>("--owner")
+        {
+            Description = "Update the spec owner."
+        };
+        var specEditDomainOption = new Option<string?>("--domain")
+        {
+            Description = "Update the spec domain metadata."
+        };
+        var specEditCapabilityOption = new Option<string?>("--capability")
+        {
+            Description = "Update the spec capability metadata."
+        };
+        var specEditBodyOption = new Option<string?>("--body")
+        {
+            Description = "Replace the Markdown body with the provided text."
+        };
+        var specEditBodyFileOption = new Option<string?>("--body-file")
+        {
+            Description = "Replace the Markdown body with file contents."
+        };
+        var specEditWorkItemOption = new Option<string[]>("--work-item")
+        {
+            AllowMultipleArgumentsPerToken = true,
+            Description = "Replace the linked work item list."
+        };
+        var specEditCodeRefOption = new Option<string[]>("--code-ref")
+        {
+            AllowMultipleArgumentsPerToken = true,
+            Description = "Replace the linked code ref list."
+        };
+        specEditCommand.Arguments.Add(specEditReferenceArg);
+        specEditCommand.Options.Add(specEditArtifactIdOption);
+        specEditCommand.Options.Add(specEditTitleOption);
+        specEditCommand.Options.Add(specEditStatusOption);
+        specEditCommand.Options.Add(specEditOwnerOption);
+        specEditCommand.Options.Add(specEditDomainOption);
+        specEditCommand.Options.Add(specEditCapabilityOption);
+        specEditCommand.Options.Add(specEditBodyOption);
+        specEditCommand.Options.Add(specEditBodyFileOption);
+        specEditCommand.Options.Add(specEditWorkItemOption);
+        specEditCommand.Options.Add(specEditCodeRefOption);
+        specEditCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var reference = parseResult.GetValue(specEditReferenceArg) ?? string.Empty;
+            var artifactId = parseResult.GetValue(specEditArtifactIdOption);
+            var title = parseResult.GetValue(specEditTitleOption);
+            var status = parseResult.GetValue(specEditStatusOption);
+            var owner = parseResult.GetValue(specEditOwnerOption);
+            var domain = parseResult.GetValue(specEditDomainOption);
+            var capability = parseResult.GetValue(specEditCapabilityOption);
+            var body = parseResult.GetValue(specEditBodyOption);
+            var bodyFile = parseResult.GetValue(specEditBodyFileOption);
+            var workItems = parseResult.GetValue(specEditWorkItemOption) ?? Array.Empty<string>();
+            var codeRefs = parseResult.GetValue(specEditCodeRefOption) ?? Array.Empty<string>();
+            HandleDocEdit(repo, format, reference, artifactId, title, status, owner, domain, capability, body, bodyFile, workItems, codeRefs, "specification", "Spec");
+        });
+
+        var specDeleteCommand = new Command("delete", "Delete a specification file and update work item links.");
+        var specDeletePathOption = new Option<string>("--path")
+        {
+            Description = "Spec path, link, or artifact ID.",
+            Required = true
+        };
+        var specDeleteKeepLinksOption = new Option<bool>("--keep-links")
+        {
+            Description = "Skip removing spec links from work items."
+        };
+        specDeleteCommand.Options.Add(specDeletePathOption);
+        specDeleteCommand.Options.Add(specDeleteKeepLinksOption);
+        specDeleteCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var link = parseResult.GetValue(specDeletePathOption) ?? string.Empty;
+            var keepLinks = parseResult.GetValue(specDeleteKeepLinksOption);
+            HandleDocDelete(repo, format, link, keepLinks, "specification", "Spec");
+        });
+
+        var specLinkCommand = new Command("link", "Link a specification to work items.");
+        var specLinkPathOption = new Option<string>("--path")
+        {
+            Description = "Spec path, link, or artifact ID.",
+            Required = true
+        };
+        var specLinkWorkItemOption = new Option<string[]>("--work-item")
+        {
+            Description = "Work item ID(s) to link.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var specLinkDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Report changes without writing files."
+        };
+        specLinkCommand.Options.Add(specLinkPathOption);
+        specLinkCommand.Options.Add(specLinkWorkItemOption);
+        specLinkCommand.Options.Add(specLinkDryRunOption);
+        specLinkCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var path = parseResult.GetValue(specLinkPathOption) ?? string.Empty;
+            var workItems = parseResult.GetValue(specLinkWorkItemOption) ?? Array.Empty<string>();
+            var dryRun = parseResult.GetValue(specLinkDryRunOption);
+            HandleDocLink(repo, format, "specification", path, workItems, add: true, dryRun: dryRun, expectedDocType: "specification", displayLabel: "Spec");
+        });
+
+        var specUnlinkCommand = new Command("unlink", "Unlink a specification from work items.");
+        var specUnlinkPathOption = new Option<string>("--path")
+        {
+            Description = "Spec path, link, or artifact ID.",
+            Required = true
+        };
+        var specUnlinkWorkItemOption = new Option<string[]>("--work-item")
+        {
+            Description = "Work item ID(s) to unlink.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var specUnlinkDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Report changes without writing files."
+        };
+        specUnlinkCommand.Options.Add(specUnlinkPathOption);
+        specUnlinkCommand.Options.Add(specUnlinkWorkItemOption);
+        specUnlinkCommand.Options.Add(specUnlinkDryRunOption);
+        specUnlinkCommand.SetAction(parseResult =>
+        {
+            var repo = parseResult.GetValue(repoOption);
+            var format = parseResult.GetValue(formatOption) ?? "table";
+            var path = parseResult.GetValue(specUnlinkPathOption) ?? string.Empty;
+            var workItems = parseResult.GetValue(specUnlinkWorkItemOption) ?? Array.Empty<string>();
+            var dryRun = parseResult.GetValue(specUnlinkDryRunOption);
+            HandleDocLink(repo, format, "specification", path, workItems, add: false, dryRun: dryRun, expectedDocType: "specification", displayLabel: "Spec");
+        });
+
+        var specSyncCommand = new Command("sync", "Repo metadata stage: sync spec/work-item backlinks and spec front matter. Does not regenerate indexes.");
+        var specSyncAllOption = new Option<bool>("--all")
+        {
+            Description = "Add or normalize Workbench front matter on all specs (default)."
+        };
+        var specSyncIssuesOption = new Option<bool>("--issues")
+        {
+            Description = "Sync GitHub issue links while updating spec/work-item backlinks."
+        };
+        var specSyncIncludeDoneOption = new Option<bool>("--include-done")
+        {
+            Description = "Include done/dropped work items."
+        };
+        var specSyncDryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Report changes without writing files."
+        };
+        specSyncCommand.Options.Add(specSyncAllOption);
+        specSyncCommand.Options.Add(specSyncIssuesOption);
+        specSyncCommand.Options.Add(specSyncIncludeDoneOption);
+        specSyncCommand.Options.Add(specSyncDryRunOption);
+        specSyncCommand.SetAction(async parseResult =>
+        {
+            try
+            {
+                var repo = parseResult.GetValue(repoOption);
+                var format = parseResult.GetValue(formatOption) ?? "table";
+                var all = parseResult.GetValue(specSyncAllOption);
+                if (parseResult.GetResult(specSyncAllOption) is null)
+                {
+                    all = true;
+                }
+                var syncIssues = parseResult.GetValue(specSyncIssuesOption);
+                var includeDone = parseResult.GetValue(specSyncIncludeDoneOption);
+                var dryRun = parseResult.GetValue(specSyncDryRunOption);
+                var repoRoot = ResolveRepo(repo);
+                var resolvedFormat = ResolveFormat(format);
+                var config = WorkbenchConfig.Load(repoRoot, out var configError);
+                if (configError is not null)
+                {
+                    Console.WriteLine($"Config error: {configError}");
+                    SetExitCode(2);
+                    return;
+                }
+
+                var result = await DocService.SyncLinksAsync(repoRoot, config, all, syncIssues, includeDone, dryRun).ConfigureAwait(false);
+                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var payload = new DocSyncOutput(
+                        true,
+                        new DocSyncData(
+                            result.DocsUpdated,
+                            result.ItemsUpdated,
+                            result.MissingDocs,
+                            result.MissingItems));
+                    WriteJson(payload, Core.WorkbenchJsonContext.Default.DocSyncOutput);
+                }
+                else
+                {
+                    Console.WriteLine($"Docs updated: {result.DocsUpdated}");
+                    Console.WriteLine($"Work items updated: {result.ItemsUpdated}");
+                    if (result.MissingDocs.Count > 0)
+                    {
+                        Console.WriteLine("Missing docs:");
+                        foreach (var entry in result.MissingDocs)
+                        {
+                            Console.WriteLine($"- {entry}");
+                        }
+                    }
+                    if (result.MissingItems.Count > 0)
+                    {
+                        Console.WriteLine("Missing work items:");
+                        foreach (var entry in result.MissingItems)
+                        {
+                            Console.WriteLine($"- {entry}");
+                        }
+                    }
+                }
+                SetExitCode(0);
+            }
+            catch (Exception ex)
+            {
+                ReportError(ex);
+                SetExitCode(2);
+            }
+        });
+
+        specCommand.Subcommands.Add(specNewCommand);
+        specCommand.Subcommands.Add(specShowCommand);
+        specCommand.Subcommands.Add(specEditCommand);
+        specCommand.Subcommands.Add(specDeleteCommand);
+        specCommand.Subcommands.Add(specLinkCommand);
+        specCommand.Subcommands.Add(specUnlinkCommand);
+        specCommand.Subcommands.Add(specSyncCommand);
+        root.Subcommands.Add(specCommand);
 
         var voiceCommand = new Command("voice", "Group: voice input commands.");
 
@@ -2917,10 +3235,10 @@ public partial class Program
         var voiceDocCommand = new Command("doc", "Create a documentation file from voice input.");
         var voiceDocTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: spec, adr, doc, runbook, guide",
+            Description = "Doc type: specification, architecture, guide, work_item, doc",
             Required = true
         };
-        voiceDocTypeOption.CompletionSources.Add("spec", "adr", "doc", "runbook", "guide");
+        voiceDocTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
         var voiceDocOutOption = new Option<string?>("--out")
         {
             Description = "Output path (defaults by type)."
@@ -3016,7 +3334,7 @@ public partial class Program
                 {
                     var payload = new DocCreateOutput(
                         true,
-                        new DocCreateData(created.Path, created.Type, created.WorkItems));
+                        new DocCreateData(created.Path, null, null, null, created.Type, created.WorkItems));
                     WriteJson(payload, Core.WorkbenchJsonContext.Default.DocCreateOutput);
                 }
                 else
@@ -3047,7 +3365,7 @@ public partial class Program
         };
         var navSyncWorkboardOption = new Option<bool>("--workboard")
         {
-            Description = "Regenerate the workboard section in docs/70-work/README.md.",
+            Description = "Regenerate the workboard section in work/README.md.",
             DefaultValueFactory = _ => true
         };
         var navSyncIncludeDoneOption = new Option<bool>("--include-done")

@@ -14,7 +14,7 @@ public class CommandSurfaceTests
         StringAssert.Contains(result.StdOut, "quality", StringComparison.Ordinal);
         Assert.IsFalse(result.StdOut.Contains("  run ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  tui ", StringComparison.Ordinal), result.StdOut);
-        Assert.IsFalse(result.StdOut.Contains("  spec ", StringComparison.Ordinal), result.StdOut);
+        Assert.IsTrue(result.StdOut.Contains("  spec ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  adr ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  pr ", StringComparison.Ordinal), result.StdOut);
     }

@@ -17,14 +17,37 @@ related:
   prs: []
   issues: []
   branches: []
+title: produce demo assets for public release
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0012-produce-demo-assets-for-public-release.md"
+  path: /docs/70-work/items/TASK-0012-produce-demo-assets-for-public-release.md
 ---
 
-# TASK-0012 - Produce demo assets for public release
+# TASK-0012 - produce demo assets for public release
 
 ## Summary
 
 Capture high-signal visuals and recordings that demonstrate the CLI flow,
 validation output, and work item lifecycle.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -33,3 +56,7 @@ validation output, and work item lifecycle.
 - At least 2 annotated screenshots or GIFs show the workboard and a work item
   file with front matter.
 - Assets are referenced from README and/or public release docs.
+
+## Notes
+
+-

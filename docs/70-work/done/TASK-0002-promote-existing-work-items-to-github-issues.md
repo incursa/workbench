@@ -9,13 +9,21 @@ updated: 2025-12-27
 tags: []
 related:
   specs:
-    - /docs/10-product/feature-spec-work-item-sync.md
+    - /docs/10-product/specs/feature-spec-work-item-sync.md
   adrs: []
   files: []
   prs: []
   issues: []
   branches: []
 title: Sync work items with GitHub issues and branches
+githubSynced: null
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/done/TASK-0002-promote-existing-work-items-to-github-issues.md"
+  path: /docs/70-work/done/TASK-0002-promote-existing-work-items-to-github-issues.md
 ---
 
 # TASK-0002 - Sync work items with GitHub issues and branches
@@ -26,7 +34,23 @@ Add a sync command that keeps local work items and GitHub issues aligned
 without deletes. Sync should create missing issues or local work items and
 optionally create branches for items that need them.
 
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
 - Sync is two-way and never deletes local work items or GitHub issues.
 - If a local work item is missing a GitHub issue, sync creates it.
 - If a GitHub issue is missing a local work item, sync creates it.
@@ -36,6 +60,10 @@ optionally create branches for items that need them.
 - GitHub issues always import into local work items, regardless of issue state.
 - ID-scoped sync supports a `--prefer` flag to pick local or GitHub as the source of truth.
 - Bulk sync defaults to pushing local content to GitHub when descriptions differ.
+
+## Notes
+
+-
 
 ## Proposed metadata layout
 

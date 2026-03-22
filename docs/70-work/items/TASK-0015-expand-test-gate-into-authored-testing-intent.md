@@ -13,7 +13,7 @@ tags:
   - phase-1
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -21,14 +21,37 @@ related:
   prs: []
   issues: []
   branches: []
+title: expand test gate into authored testing intent
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0015-expand-test-gate-into-authored-testing-intent.md"
+  path: /docs/70-work/items/TASK-0015-expand-test-gate-into-authored-testing-intent.md
 ---
 
-# TASK-0015 - Expand test gate into authored testing intent
+# TASK-0015 - expand test gate into authored testing intent
 
 ## Summary
 
 Evolve `docs/30-contracts/test-gate.contract.yaml` from a narrow threshold file
 into the authored testing-intent contract for the quality evidence subsystem.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -37,3 +60,7 @@ into the authored testing-intent contract for the quality evidence subsystem.
 - V1 remains compatible with the existing gate-style coverage fields.
 - The authored contract shape is documented clearly enough that humans and AI
   agents can distinguish it from generated observed evidence.
+
+## Notes
+
+-

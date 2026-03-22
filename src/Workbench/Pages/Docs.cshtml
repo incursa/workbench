@@ -7,12 +7,13 @@
 <section class="hero inc-card">
     <div class="hero-copy">
         <div class="eyebrow">Local document browser</div>
-        <h2>Inspect specs, ADRs, and repo docs without leaving the repo.</h2>
+        <h2>Inspect specifications, architecture docs, work items, and repo docs without leaving the repo.</h2>
         <p>
             This page scans the local markdown tree, renders a nested folder navigator, and lets you open the raw content with no login or external service.
         </p>
         <div class="hero-links">
             <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Index">Items</a>
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Specs">Specs</a>
             <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Create">Create item</a>
         </div>
     </div>
@@ -113,6 +114,18 @@
                     <div>
                         <div class="field-label">Excerpt</div>
                         <div class="muted">@Model.SelectedDoc.Summary.Excerpt</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Artifact ID</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.SelectedDoc.Summary.ArtifactId) ? "-" : Model.SelectedDoc.Summary.ArtifactId)</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Domain</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.SelectedDoc.Summary.Domain) ? "-" : Model.SelectedDoc.Summary.Domain)</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Capability</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.SelectedDoc.Summary.Capability) ? "-" : Model.SelectedDoc.Summary.Capability)</div>
                     </div>
                 </div>
             </section>

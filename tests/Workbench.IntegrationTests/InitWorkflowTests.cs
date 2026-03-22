@@ -23,8 +23,8 @@ public class InitWorkflowTests
         StringAssert.Contains(result.StdOut, "Scaffolded repo (", StringComparison.Ordinal);
 
         Assert.IsTrue(File.Exists(Path.Combine(repo.Path, ".workbench", "config.json")));
-        Assert.IsTrue(Directory.Exists(Path.Combine(repo.Path, "docs", "70-work", "items")));
-        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "docs", "70-work", "templates", "work-item.task.md")));
+        Assert.IsTrue(Directory.Exists(Path.Combine(repo.Path, "work", "items")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
     }
 
     [TestMethod]
@@ -57,7 +57,7 @@ public class InitWorkflowTests
 
         var content = File.ReadAllText(docPath);
         StringAssert.Contains(content, "workbench:", StringComparison.Ordinal);
-        StringAssert.Contains(content, "type: spec", StringComparison.Ordinal);
+        StringAssert.Contains(content, "type: doc", StringComparison.Ordinal);
         StringAssert.Contains(content, "path: /docs/10-product/init-front-matter.md", StringComparison.Ordinal);
         StringAssert.Contains(content, "# Existing doc", StringComparison.Ordinal);
     }

@@ -17,15 +17,38 @@ related:
   prs: []
   issues: []
   branches: []
+title: create public launch landing and messaging kit
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0010-create-public-launch-landing-and-messaging-kit.md"
+  path: /docs/70-work/items/TASK-0010-create-public-launch-landing-and-messaging-kit.md
 ---
 
-# TASK-0010 - Create public launch landing and messaging kit
+# TASK-0010 - create public launch landing and messaging kit
 
 ## Summary
 
 Create a public-facing landing narrative (copy + structure) that clearly
 communicates Workbench’s value, differentiators, and call to action for new
 users.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -34,3 +57,7 @@ users.
 - Messaging kit captures the top 3 positioning statements and 5 short
   feature/value soundbites for reuse in docs and release notes.
 - Content references the CLI install and first-run experience.
+
+## Notes
+
+-

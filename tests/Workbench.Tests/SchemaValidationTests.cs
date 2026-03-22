@@ -25,7 +25,7 @@ public class SchemaValidationTests
             """);
 
         var data = new Dictionary<string, object?>(StringComparer.InvariantCulture) { ["type"] = "task" };
-        var errors = SchemaValidationService.ValidateFrontMatter(repoRoot, "docs/70-work/items/TASK-0001-test.md", data);
+        var errors = SchemaValidationService.ValidateFrontMatter(repoRoot, "work/items/TASK-0001-test.md", data);
         Assert.IsNotEmpty(errors);
     }
 
@@ -87,6 +87,38 @@ public class SchemaValidationTests
             tempRepoRoot,
             "docs/30-contracts/error-codes.md",
             data);
+
+        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
+    }
+
+    [TestMethod]
+    public void ValidateWorkItemTraceFields_AllowsCanonicalLabels()
+    {
+        var tempRepoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempRepoRoot);
+        Directory.CreateDirectory(Path.Combine(tempRepoRoot, ".git"));
+
+        var schemaDir = Path.Combine(tempRepoRoot, "docs", "30-contracts");
+        Directory.CreateDirectory(schemaDir);
+
+        var sourceRepoRoot = Repository.FindRepoRoot(Directory.GetCurrentDirectory())
+            ?? throw new InvalidOperationException("Repo root not found for schema fixture.");
+        File.Copy(
+            Path.Combine(sourceRepoRoot, "docs", "30-contracts", "work-item-trace-fields.schema.json"),
+            Path.Combine(schemaDir, "work-item-trace-fields.schema.json"));
+
+        var trace = new Dictionary<string, object?>
+(StringComparer.Ordinal)
+        {
+            ["Addresses"] = new[] { "REQ-CLI-0001" },
+            ["Uses Design"] = new[] { "ARC-CLI-0001" },
+            ["Verified By"] = new[] { "VER-CLI-0001" }
+        };
+
+        var errors = SchemaValidationService.ValidateWorkItemTraceFields(
+            tempRepoRoot,
+            "work/items/TASK-0001-sample.md",
+            trace);
 
         Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
     }

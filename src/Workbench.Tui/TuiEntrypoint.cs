@@ -32,7 +32,7 @@ public static partial class TuiEntrypoint
         ColorScheme? defaultScheme = null;
         var workItemStatusOptions = new[] { "all", "draft", "ready", "in-progress", "blocked", "done", "dropped" };
         var workItemTypeOptions = new[] { "task", "bug", "spike" };
-        var docTypeOptions = new[] { "spec", "adr", "doc", "runbook", "guide" };
+        var docTypeOptions = new[] { "spec", "architecture", "doc", "work_item", "guide" };
         var context = new TuiContext(repoRoot, config, allItems, workItemStatusOptions, workItemTypeOptions, docTypeOptions)
         {
             StatusBar = statusBar,
@@ -2125,7 +2125,7 @@ public static partial class TuiEntrypoint
                 titleField.ColorScheme = inputScheme;
                 pathField.ColorScheme = inputScheme;
                 dialog.Add(
-                    new Label("Type (spec/adr/doc/runbook/guide):") { X = 1, Y = 1 },
+                    new Label("Type (spec/architecture/doc/work_item/guide):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Path (optional):") { X = 1, Y = 5 },
                     typeField, titleField, pathField, previewLabel, typePickButton);
@@ -2233,7 +2233,7 @@ public static partial class TuiEntrypoint
                 pathField.ColorScheme = inputScheme;
 
                 dialog.Add(
-                    new Label("Type (spec/adr/doc/runbook/guide):") { X = 1, Y = 1 },
+                    new Label("Type (spec/architecture/doc/work_item/guide):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Path (optional):") { X = 1, Y = 5 },
                     typeField, titleField, pathField, previewLabel, typePickButton);
@@ -2604,7 +2604,6 @@ public static partial class TuiEntrypoint
     }
 
 }
-
 
 
 

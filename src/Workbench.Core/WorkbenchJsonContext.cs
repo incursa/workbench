@@ -33,6 +33,8 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(PrOutput))]
 [JsonSerializable(typeof(ValidateOutput))]
 [JsonSerializable(typeof(DocCreateOutput))]
+[JsonSerializable(typeof(DocShowOutput))]
+[JsonSerializable(typeof(DocEditOutput))]
 [JsonSerializable(typeof(DocDeleteOutput))]
 [JsonSerializable(typeof(DocSyncOutput))]
 [JsonSerializable(typeof(DocLinkOutput))]

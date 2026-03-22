@@ -13,7 +13,7 @@ tags:
   - phase-1
 related:
   specs:
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
@@ -21,15 +21,38 @@ related:
   prs: []
   issues: []
   branches: []
+title: generate quality report json and markdown summary
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/items/TASK-0019-generate-quality-report-json-and-markdown-summary.md"
+  path: /docs/70-work/items/TASK-0019-generate-quality-report-json-and-markdown-summary.md
 ---
 
-# TASK-0019 - Generate quality report JSON and Markdown summary
+# TASK-0019 - generate quality report json and markdown summary
 
 ## Summary
 
 Generate the compared report layer that puts authored testing intent beside
 observed evidence and records evidence gaps without turning that report into a
 policy gate.
+
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
 
 ## Acceptance criteria
 
@@ -38,3 +61,7 @@ policy gate.
 - The report contains authored, observed, and assessment sections as separate
   structures.
 - Detectable gaps are explicit, structured, and grounded in current evidence.
+
+## Notes
+
+-

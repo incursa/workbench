@@ -10,7 +10,7 @@ githubSynced: "2025-12-30T22:16:24Z"
 tags: []
 related:
   specs:
-    - /docs/10-product/feature-spec-terminal-ui.md
+    - /docs/10-product/specs/feature-spec-terminal-ui.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files: []
@@ -20,15 +20,39 @@ related:
   branches:
     - work/TASK-0006-implement-shared-core-and-clitui-split
 title: Implement shared core and CLI/TUI split
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/done/TASK-0006-implement-shared-core-and-clitui-split.md"
+  path: /docs/70-work/done/TASK-0006-implement-shared-core-and-clitui-split.md
 ---
 
 # TASK-0006 - Implement shared core and CLI/TUI split
 
 ## Summary
+
 Split Workbench into core/CLI/TUI projects while preserving a single published
 executable and shared command logic.
 
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
 - Core project contains shared parsing, validation, and service logic used by CLI and TUI.
 - CLI entrypoint dispatches to CLI or TUI modes without duplicating handlers.
 - Publish output remains a single-file executable.

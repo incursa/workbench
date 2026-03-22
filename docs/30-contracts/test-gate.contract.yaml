@@ -55,7 +55,7 @@ intentionalGaps:
 related:
   docs:
     - /docs/30-contracts/quality-evidence-model.md
-    - /docs/10-product/feature-spec-quality-evidence-testing-v1.md
+    - /specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md
   files:
     - scripts/testing/run-quality-evidence.ps1
     - scripts/testing/run-quality-evidence.sh

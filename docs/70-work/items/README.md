@@ -3,7 +3,8 @@ workbench:
   type: doc
   workItems: []
   codeRefs: []
-  pathHistory: []
+  pathHistory:
+    - "C:/docs/70-work/items/README.md"
   path: /docs/70-work/items/README.md
 tags: []
 related:
@@ -22,6 +23,6 @@ Active work items live here as Markdown files named `<ID>-<slug>.md`.
 ## Suggested content
 
 - Brief summary and current status.
-- Scope, goals, and non-goals.
-- Links to relevant docs, contracts, or code refs.
-- Notes on blockers, risks, or decisions.
+- Context, traceability, and implementation notes.
+- Acceptance criteria and completion notes.
+- Links to relevant specs, architecture docs, contracts, or code refs.

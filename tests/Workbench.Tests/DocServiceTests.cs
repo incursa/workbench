@@ -13,9 +13,9 @@ public sealed class DocServiceTests
             "TASK-0001-spec-link.md",
             "TASK-0001",
             "Spec link target",
-            specs: new[] { "/docs/10-product/legacy-spec.md" });
+            specs: new[] { "/specs/requirements/legacy-spec.md" });
         var docPath = repo.WriteDoc(
-            "docs/10-product/legacy-spec.md",
+            "specs/requirements/legacy-spec.md",
             """
             # Legacy spec
 
@@ -39,9 +39,84 @@ public sealed class DocServiceTests
         StringAssert.Contains(content, "type: spec", StringComparison.Ordinal);
         StringAssert.Contains(content, "workItems:", StringComparison.Ordinal);
         StringAssert.Contains(content, "- TASK-0001", StringComparison.Ordinal);
-        StringAssert.Contains(content, "path: /docs/10-product/legacy-spec.md", StringComparison.Ordinal);
+        StringAssert.Contains(content, "path: /specs/requirements/legacy-spec.md", StringComparison.Ordinal);
         StringAssert.Contains(content, "# Legacy spec", StringComparison.Ordinal);
         StringAssert.Contains(content, "Existing body.", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void CreateDoc_PolicyDrivenSpecId_UsesDomainAndCapabilityMetadata()
+    {
+        using var repo = new TempDocRepoFixture();
+        File.WriteAllText(
+            Path.Combine(repo.Path, "artifact-id-policy.json"),
+            """
+            {
+              "sequence": { "minimum_digits": 4 },
+              "artifact_id_templates": {
+                "specification": "SPEC-{domain}{grouping}"
+              }
+            }
+            """);
+
+        var result = DocService.CreateDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            "spec",
+            "ACH duplicate batch handling",
+            null,
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            false,
+            artifactId: null,
+            domain: "PAY",
+            capability: "ACH");
+
+        Assert.AreEqual("SPEC-PAY-ACH", result.ArtifactId);
+
+        var content = File.ReadAllText(result.Path);
+        StringAssert.Contains(content, "artifact_id: SPEC-PAY-ACH", StringComparison.Ordinal);
+        StringAssert.Contains(content, "domain: PAY", StringComparison.Ordinal);
+        StringAssert.Contains(content, "capability: ACH", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void CreateDoc_DefaultPolicy_UsesCanonicalPathsInBareRepo()
+    {
+        var repoRoot = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(repoRoot);
+
+        try
+        {
+            var result = DocService.CreateDoc(
+                repoRoot,
+                WorkbenchConfig.Default,
+                "spec",
+                "CLI empty-directory smoke test",
+                null,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                false,
+                artifactId: null,
+                domain: "CLI",
+                capability: "SMOKE");
+
+            Assert.AreEqual("SPEC-CLI-SMOKE", result.ArtifactId);
+            Assert.AreEqual(
+                "specs/requirements/CLI/SPEC-CLI-SMOKE.md",
+                System.IO.Path.GetRelativePath(repoRoot, result.Path).Replace('\\', '/'));
+
+            var content = File.ReadAllText(result.Path);
+            StringAssert.Contains(content, "artifact_id: SPEC-CLI-SMOKE", StringComparison.Ordinal);
+            StringAssert.Contains(content, "artifact_type: specification", StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+            {
+                Directory.Delete(repoRoot, recursive: true);
+            }
+        }
     }
 
     [TestMethod]
@@ -52,9 +127,9 @@ public sealed class DocServiceTests
             "TASK-0002-renamed-spec.md",
             "TASK-0002",
             "Renamed spec target",
-            specs: new[] { "/docs/10-product/old-spec.md" });
+            specs: new[] { "/specs/requirements/old-spec.md" });
         var docPath = repo.WriteDoc(
-            "docs/10-product/new-spec.md",
+            "specs/requirements/new-spec.md",
             """
             ---
             workbench:
@@ -62,7 +137,7 @@ public sealed class DocServiceTests
               workItems:
                 - TASK-0002
               codeRefs: []
-              path: /docs/10-product/old-spec.md
+              path: /specs/requirements/old-spec.md
               pathHistory: []
             ---
 
@@ -82,13 +157,13 @@ public sealed class DocServiceTests
         Assert.IsEmpty(result.MissingItems);
 
         var docContent = await File.ReadAllTextAsync(docPath);
-        StringAssert.Contains(docContent, "path: /docs/10-product/new-spec.md", StringComparison.Ordinal);
+        StringAssert.Contains(docContent, "path: /specs/requirements/new-spec.md", StringComparison.Ordinal);
         StringAssert.Contains(docContent, "pathHistory:", StringComparison.Ordinal);
-        StringAssert.Contains(docContent, "- /docs/10-product/old-spec.md", StringComparison.Ordinal);
+        StringAssert.Contains(docContent, "- /specs/requirements/old-spec.md", StringComparison.Ordinal);
 
         var itemContent = await File.ReadAllTextAsync(itemPath);
-        StringAssert.Contains(itemContent, "/docs/10-product/new-spec.md", StringComparison.Ordinal);
-        Assert.IsFalse(itemContent.Contains("/docs/10-product/old-spec.md", StringComparison.Ordinal), itemContent);
+        StringAssert.Contains(itemContent, "/specs/requirements/new-spec.md", StringComparison.Ordinal);
+        Assert.IsFalse(itemContent.Contains("/specs/requirements/old-spec.md", StringComparison.Ordinal), itemContent);
     }
 
     [TestMethod]
@@ -99,9 +174,9 @@ public sealed class DocServiceTests
             "TASK-0003-dry-run.md",
             "TASK-0003",
             "Dry run target",
-            specs: new[] { "/docs/10-product/dry-run-old.md" });
+            specs: new[] { "/specs/requirements/dry-run-old.md" });
         var docPath = repo.WriteDoc(
-            "docs/10-product/dry-run-new.md",
+            "specs/requirements/dry-run-new.md",
             """
             ---
             workbench:
@@ -109,7 +184,7 @@ public sealed class DocServiceTests
               workItems:
                 - TASK-0003
               codeRefs: []
-              path: /docs/10-product/dry-run-old.md
+              path: /specs/requirements/dry-run-old.md
               pathHistory: []
             ---
 
@@ -130,12 +205,12 @@ public sealed class DocServiceTests
         Assert.IsEmpty(result.MissingItems);
 
         var docContent = await File.ReadAllTextAsync(docPath);
-        StringAssert.Contains(docContent, "path: /docs/10-product/dry-run-old.md", StringComparison.Ordinal);
-        Assert.IsFalse(docContent.Contains("- /docs/10-product/dry-run-old.md", StringComparison.Ordinal), docContent);
+        StringAssert.Contains(docContent, "path: /specs/requirements/dry-run-old.md", StringComparison.Ordinal);
+        Assert.IsFalse(docContent.Contains("- /specs/requirements/dry-run-old.md", StringComparison.Ordinal), docContent);
 
         var itemContent = await File.ReadAllTextAsync(itemPath);
-        StringAssert.Contains(itemContent, "/docs/10-product/dry-run-old.md", StringComparison.Ordinal);
-        Assert.IsFalse(itemContent.Contains("/docs/10-product/dry-run-new.md", StringComparison.Ordinal), itemContent);
+        StringAssert.Contains(itemContent, "/specs/requirements/dry-run-old.md", StringComparison.Ordinal);
+        Assert.IsFalse(itemContent.Contains("/specs/requirements/dry-run-new.md", StringComparison.Ordinal), itemContent);
     }
 
     [TestMethod]
@@ -143,7 +218,7 @@ public sealed class DocServiceTests
     {
         using var repo = new TempDocRepoFixture();
         var docPath = repo.WriteDoc(
-            "docs/10-product/link-target.md",
+            "specs/requirements/link-target.md",
             """
             # Link target
 
@@ -153,7 +228,7 @@ public sealed class DocServiceTests
         var added = DocService.TryUpdateDocWorkItemLink(
             repo.Path,
             WorkbenchConfig.Default,
-            "/docs/10-product/link-target.md",
+            "/specs/requirements/link-target.md",
             "TASK-0100",
             add: true,
             apply: true);
@@ -161,7 +236,7 @@ public sealed class DocServiceTests
         var addedAgain = DocService.TryUpdateDocWorkItemLink(
             repo.Path,
             WorkbenchConfig.Default,
-            "/docs/10-product/link-target.md",
+            "/specs/requirements/link-target.md",
             "TASK-0100",
             add: true,
             apply: true);
@@ -173,7 +248,7 @@ public sealed class DocServiceTests
         StringAssert.Contains(content, "type: spec", StringComparison.Ordinal);
         StringAssert.Contains(content, "workItems:", StringComparison.Ordinal);
         Assert.AreEqual(1, CountOccurrences(content, "- TASK-0100"));
-        StringAssert.Contains(content, "path: /docs/10-product/link-target.md", StringComparison.Ordinal);
+        StringAssert.Contains(content, "path: /specs/requirements/link-target.md", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -181,7 +256,7 @@ public sealed class DocServiceTests
     {
         using var repo = new TempDocRepoFixture();
         var docPath = repo.WriteDoc(
-            "docs/10-product/dry-run-link.md",
+            "specs/requirements/dry-run-link.md",
             """
             # Dry run link
             """);
@@ -190,7 +265,7 @@ public sealed class DocServiceTests
         var updated = DocService.TryUpdateDocWorkItemLink(
             repo.Path,
             WorkbenchConfig.Default,
-            "/docs/10-product/dry-run-link.md",
+            "/specs/requirements/dry-run-link.md",
             "TASK-0101",
             add: true,
             apply: false);
@@ -205,7 +280,7 @@ public sealed class DocServiceTests
     {
         using var repo = new TempDocRepoFixture();
         var docPath = repo.WriteDoc(
-            "docs/10-product/remove-link.md",
+            "specs/requirements/remove-link.md",
             """
             ---
             workbench:
@@ -214,7 +289,7 @@ public sealed class DocServiceTests
                 - TASK-0102
                 - TASK-0103
               codeRefs: []
-              path: /docs/10-product/remove-link.md
+              path: /specs/requirements/remove-link.md
               pathHistory: []
             ---
 
@@ -224,7 +299,7 @@ public sealed class DocServiceTests
         var updated = DocService.TryUpdateDocWorkItemLink(
             repo.Path,
             WorkbenchConfig.Default,
-            "/docs/10-product/remove-link.md",
+            "/specs/requirements/remove-link.md",
             "TASK-0102",
             add: false,
             apply: true);
@@ -241,7 +316,7 @@ public sealed class DocServiceTests
     {
         using var repo = new TempDocRepoFixture();
         repo.WriteDoc(
-            "docs/10-product/remove-missing.md",
+            "specs/requirements/remove-missing.md",
             """
             ---
             workbench:
@@ -249,7 +324,7 @@ public sealed class DocServiceTests
               workItems:
                 - TASK-0104
               codeRefs: []
-              path: /docs/10-product/remove-missing.md
+              path: /specs/requirements/remove-missing.md
               pathHistory: []
             ---
 
@@ -259,7 +334,7 @@ public sealed class DocServiceTests
         var updated = DocService.TryUpdateDocWorkItemLink(
             repo.Path,
             WorkbenchConfig.Default,
-            "/docs/10-product/remove-missing.md",
+            "/specs/requirements/remove-missing.md",
             "TASK-9999",
             add: false,
             apply: true);
@@ -268,11 +343,46 @@ public sealed class DocServiceTests
     }
 
     [TestMethod]
+    public void CreateDoc_ContractType_UsesContractsFolderAndLinksWorkItem()
+    {
+        using var repo = new TempDocRepoFixture();
+        var itemPath = repo.WriteItem(
+            "TASK-0105-contract-link.md",
+            "TASK-0105",
+            "Contract link target",
+            files: new[] { "/docs/30-contracts/api-contract.md" });
+
+        var result = DocService.CreateDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            "contract",
+            "API Contract",
+            null,
+            new List<string> { "TASK-0105" },
+            new List<string>(),
+            force: false);
+
+        Assert.AreEqual("contract", result.Type);
+        StringAssert.Contains(result.Path, $"{Path.DirectorySeparatorChar}docs{Path.DirectorySeparatorChar}30-contracts{Path.DirectorySeparatorChar}api-contract.md", StringComparison.OrdinalIgnoreCase);
+
+        var content = File.ReadAllText(result.Path);
+        StringAssert.Contains(content, "type: contract", StringComparison.Ordinal);
+        StringAssert.Contains(content, "workItems:", StringComparison.Ordinal);
+        StringAssert.Contains(content, "- TASK-0105", StringComparison.Ordinal);
+        StringAssert.Contains(content, "# API Contract", StringComparison.Ordinal);
+        StringAssert.Contains(content, "## Overview", StringComparison.Ordinal);
+        StringAssert.Contains(content, "## Related specs", StringComparison.Ordinal);
+
+        var updatedItem = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
+        CollectionAssert.Contains(updatedItem.Related.Files.ToArray(), "/docs/30-contracts/api-contract.md");
+    }
+
+    [TestMethod]
     public void TryUpdateDocWorkItemLink_WorkItemDocumentPath_ReturnsFalse()
     {
         using var repo = new TempDocRepoFixture();
         repo.WriteDoc(
-            "docs/70-work/items/TASK-9999-inline-doc.md",
+            "work/items/TASK-9999-inline-doc.md",
             """
             # Item doc
             """);
@@ -280,7 +390,7 @@ public sealed class DocServiceTests
         var updated = DocService.TryUpdateDocWorkItemLink(
             repo.Path,
             WorkbenchConfig.Default,
-            "/docs/70-work/items/TASK-9999-inline-doc.md",
+            "/work/items/TASK-9999-inline-doc.md",
             "TASK-9999",
             add: true,
             apply: true);
@@ -296,14 +406,14 @@ public sealed class DocServiceTests
             "TASK-0105-referenced-doc.md",
             "TASK-0105",
             "Referenced doc target",
-            specs: new[] { "/docs/10-product/referenced-only.md" });
+            specs: new[] { "/specs/requirements/referenced-only.md" });
         var referencedDocPath = repo.WriteDoc(
-            "docs/10-product/referenced-only.md",
+            "specs/requirements/referenced-only.md",
             """
             # Referenced only
             """);
         var unrelatedDocPath = repo.WriteDoc(
-            "docs/10-product/unrelated.md",
+            "specs/requirements/unrelated.md",
             """
             # Unrelated
             """);
@@ -318,7 +428,7 @@ public sealed class DocServiceTests
 
         var referencedContent = await File.ReadAllTextAsync(referencedDocPath);
         StringAssert.Contains(referencedContent, "workbench:", StringComparison.Ordinal);
-        StringAssert.Contains(referencedContent, "path: /docs/10-product/referenced-only.md", StringComparison.Ordinal);
+        StringAssert.Contains(referencedContent, "path: /specs/requirements/referenced-only.md", StringComparison.Ordinal);
 
         var unrelatedContent = await File.ReadAllTextAsync(unrelatedDocPath);
         Assert.IsFalse(unrelatedContent.Contains("workbench:", StringComparison.Ordinal), unrelatedContent);
@@ -346,7 +456,7 @@ public sealed class DocServiceTests
 
         var content = await File.ReadAllTextAsync(docPath);
         StringAssert.Contains(content, "workbench:", StringComparison.Ordinal);
-        StringAssert.Contains(content, "type: guide", StringComparison.Ordinal);
+        StringAssert.Contains(content, "type: architecture", StringComparison.Ordinal);
         StringAssert.Contains(content, "workItems: []", StringComparison.Ordinal);
         StringAssert.Contains(content, "codeRefs: []", StringComparison.Ordinal);
         StringAssert.Contains(content, "path: /docs/20-architecture/normalization-target.md", StringComparison.Ordinal);
@@ -382,10 +492,12 @@ public sealed class DocServiceTests
             Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path);
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "10-product"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "requirements"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "30-contracts"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "40-decisions"));
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "70-work", "items"));
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "70-work", "done"));
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "70-work", "templates"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "work", "items"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "work", "done"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "work", "templates"));
         }
 
         public string Path { get; }
@@ -398,12 +510,15 @@ public sealed class DocServiceTests
             return fullPath;
         }
 
-        public string WriteItem(string fileName, string id, string title, IList<string>? specs = null)
+        public string WriteItem(string fileName, string id, string title, IList<string>? specs = null, IList<string>? files = null)
         {
-            var itemPath = System.IO.Path.Combine(Path, "docs", "70-work", "items", fileName);
+            var itemPath = System.IO.Path.Combine(Path, "work", "items", fileName);
             var specLines = specs is { Count: > 0 }
-                ? string.Join("\n", specs.Select(link => $"    - {link}"))
-                : "    []";
+                ? "\n" + string.Join("\n", specs.Select(link => $"    - {link}"))
+                : " []";
+            var fileLines = files is { Count: > 0 }
+                ? "\n" + string.Join("\n", files.Select(link => $"    - {link}"))
+                : " []";
 
             File.WriteAllText(
                 itemPath,
@@ -420,10 +535,9 @@ public sealed class DocServiceTests
                 githubSynced: null
                 tags: []
                 related:
-                  specs:
-                {{specLines}}
+                  specs:{{specLines}}
                   adrs: []
-                  files: []
+                  files:{{fileLines}}
                   prs: []
                   issues: []
                   branches: []

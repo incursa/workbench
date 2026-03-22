@@ -25,7 +25,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0001-test.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0001-test.md"),
             """
             ---
             id: TASK-0001
@@ -60,7 +60,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "done", "TASK-0002-test.md"),
+            Path.Combine(repoRoot, "work", "done", "TASK-0002-test.md"),
             """
             ---
             id: TASK-0002
@@ -131,7 +131,7 @@ public class ValidationTests
         Directory.CreateDirectory(docsDir);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0003-test.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0003-test.md"),
             """
             ---
             id: TASK-0003
@@ -222,7 +222,7 @@ public class ValidationTests
         File.WriteAllText(notesPath, "# Notes without task backlink");
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0004-test.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0004-test.md"),
             """
             ---
             id: TASK-0004
@@ -258,7 +258,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "bad-name.md"),
+            Path.Combine(repoRoot, "work", "items", "bad-name.md"),
             """
             ---
             id: bad-id
@@ -297,7 +297,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0005-first.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0005-first.md"),
             """
             ---
             id: TASK-0005
@@ -317,7 +317,7 @@ public class ValidationTests
             """);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0005-second.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0005-second.md"),
             """
             ---
             id: TASK-0005
@@ -462,7 +462,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0007-bad.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0007-bad.md"),
             """
             ---
             id: TASK-0007
@@ -487,7 +487,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0008-missing-related.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0008-missing-related.md"),
             """
             ---
             id: TASK-0008
@@ -516,7 +516,7 @@ public class ValidationTests
         var repoRoot = CreateValidationRepo();
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0009-invalid-related.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0009-invalid-related.md"),
             """
             ---
             id: TASK-0009
@@ -650,7 +650,7 @@ public class ValidationTests
             """);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "TASK-0006-linked.md"),
+            Path.Combine(repoRoot, "work", "items", "TASK-0006-linked.md"),
             """
             ---
             id: TASK-0006
@@ -693,8 +693,8 @@ public class ValidationTests
     private static string CreateValidationRepo()
     {
         var repoRoot = CreateTempRepo();
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "70-work", "items"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "70-work", "done"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "work", "items"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "work", "done"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
 
         File.WriteAllText(

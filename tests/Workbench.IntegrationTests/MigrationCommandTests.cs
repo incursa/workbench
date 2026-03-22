@@ -22,8 +22,7 @@ public class MigrationCommandTests
 
         var doneFile = Path.Combine(
             repo.Path,
-            "docs",
-            "70-work",
+            "work",
             "done",
             Path.GetFileName(itemPath)!);
         Assert.IsFalse(File.Exists(doneFile), doneFile);
@@ -39,15 +38,14 @@ public class MigrationCommandTests
         RunScaffold(repo.Path);
         var itemPath = CreateDoneItemAndGetPath(repo.Path, "Migration target");
         var normalizedItemPath = itemPath!.Replace('\\', '/');
-        StringAssert.Contains(normalizedItemPath, "/docs/70-work/items/", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(normalizedItemPath, "/work/items/", StringComparison.OrdinalIgnoreCase);
 
         var movedToDone = RunMigration(repo.Path).GetProperty("data").GetProperty("movedToDone");
         Assert.IsGreaterThanOrEqualTo(movedToDone.GetArrayLength(), 1);
 
         var doneFile = Path.Combine(
             repo.Path,
-            "docs",
-            "70-work",
+            "work",
             "done",
             Path.GetFileName(itemPath)!);
         Assert.IsTrue(File.Exists(doneFile), doneFile);
@@ -65,8 +63,7 @@ public class MigrationCommandTests
 
         var donePath = Path.Combine(
             repo.Path,
-            "docs",
-            "70-work",
+            "work",
             "done",
             Path.GetFileName(itemPath)!);
         File.Move(itemPath, donePath, overwrite: false);
@@ -79,8 +76,7 @@ public class MigrationCommandTests
 
         var expectedItemsPath = Path.Combine(
             repo.Path,
-            "docs",
-            "70-work",
+            "work",
             "items",
             Path.GetFileName(itemPath)!);
         Assert.IsTrue(File.Exists(expectedItemsPath), expectedItemsPath);
@@ -98,23 +94,30 @@ public class MigrationCommandTests
 
     private static string CreateDoneItemAndGetPath(string repoPath, string title)
     {
-        var createdJson = TestAssertions.RunWorkbenchAndParseJson(
-            repoPath,
-            "--repo",
-            repoPath,
-            "--format",
-            "json",
-            "item",
-            "new",
-            "--type",
-            "task",
-            "--title",
-            title,
-            "--status",
-            "done");
-        var itemPath = createdJson.GetProperty("data").GetProperty("path").GetString();
-        Assert.IsFalse(string.IsNullOrWhiteSpace(itemPath));
-        Assert.IsTrue(File.Exists(itemPath!), itemPath);
+        var slug = title.ToLowerInvariant().Replace(' ', '-');
+        var itemPath = Path.Combine(repoPath, "work", "items", $"TASK-0001-{slug}.md");
+        Directory.CreateDirectory(Path.GetDirectoryName(itemPath)!);
+        File.WriteAllText(
+            itemPath,
+            $"""
+            ---
+            id: TASK-0001
+            type: task
+            status: done
+            created: 2025-01-01
+            title: {title}
+            related:
+              specs: []
+              adrs: []
+              files: []
+              prs: []
+              issues: []
+              branches: []
+            ---
+
+            # TASK-0001 - {title}
+            """);
+        Assert.IsTrue(File.Exists(itemPath), itemPath);
         return itemPath;
     }
 

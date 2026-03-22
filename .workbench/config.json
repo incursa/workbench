@@ -1,11 +1,14 @@
 {
   "Paths": {
     "DocsRoot": "docs",
-    "WorkRoot": "docs/70-work",
-    "ItemsDir": "docs/70-work/items",
-    "DoneDir": "docs/70-work/done",
-    "TemplatesDir": "docs/70-work/templates",
-    "WorkboardFile": "docs/70-work/README.md"
+    "SpecsRoot": "specs",
+    "RequirementsDir": "specs/requirements",
+    "ArchitectureDir": "architecture",
+    "WorkRoot": "work",
+    "ItemsDir": "work/items",
+    "DoneDir": "work/done",
+    "TemplatesDir": "work/templates",
+    "WorkboardFile": "work/README.md"
   },
   "Ids": {
     "Width": 4,

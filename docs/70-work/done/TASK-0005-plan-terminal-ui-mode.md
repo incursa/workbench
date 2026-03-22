@@ -10,7 +10,7 @@ githubSynced: "2025-12-30T22:08:02Z"
 tags: []
 related:
   specs:
-    - /docs/10-product/feature-spec-terminal-ui.md
+    - /docs/10-product/specs/feature-spec-terminal-ui.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files: []
@@ -20,15 +20,39 @@ related:
   branches:
     - work/TASK-0005-plan-terminal-ui-mode
 title: Plan terminal UI mode
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory:
+    - "C:/docs/70-work/done/TASK-0005-plan-terminal-ui-mode.md"
+  path: /docs/70-work/done/TASK-0005-plan-terminal-ui-mode.md
 ---
 
 # TASK-0005 - Plan terminal UI mode
 
 ## Summary
+
 Plan the embedded terminal UI mode for Workbench to improve command discoverability,
 with a visible command preview and a global dry-run toggle.
 
+## Context
+
+-
+
+## Traceability
+
+- Requirement IDs: []
+- Architecture docs: []
+- Verification docs: []
+- Related contracts or runbooks: []
+
+## Implementation notes
+
+-
+
 ## Acceptance criteria
+
 - Spec defines TUI scope, workflows, and UX requirements including command preview and dry-run mode.
 - ADR records the decision to embed TUI as a subcommand with a shared core and single executable.
 - Work item links to the spec and ADR.
