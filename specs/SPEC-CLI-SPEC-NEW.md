@@ -44,3 +44,13 @@ link any requested work items.
 
 `spec new` MUST populate required canonical traceability fields even when
 optional metadata is omitted.
+
+## REQ-CLI-SPEC-NEW-0006 Repository scope
+
+`spec new` MUST write the new specification beneath the configured specs root
+or the explicit path supplied by the caller.
+
+## REQ-CLI-SPEC-NEW-0007 Domain validation
+
+`spec new` MUST reject unsupported domains or capabilities before writing the
+file.

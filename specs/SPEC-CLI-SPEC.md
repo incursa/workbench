@@ -49,6 +49,11 @@ index keeps mutation behavior in the leaf specs.
 `spec` commands MUST preserve spec-to-work-item backlinks and spec front matter
 without touching unrelated docs.
 
+## REQ-CLI-SPEC-0005 Child exposure
+
+The `spec` index MUST expose `delete`, `edit`, `link`, `new`, `show`, `sync`,
+and `unlink` as its documented children.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-SPEC-DELETE](./SPEC-CLI-SPEC-DELETE.md)

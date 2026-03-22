@@ -38,3 +38,18 @@ being updated.
 
 `config credentials set` MUST write the credentials file atomically enough to
 avoid partial updates and leave the previous file intact on failure.
+
+## REQ-CLI-CONFIG-CREDENTIALS-SET-0004 Parent-directory creation
+
+`config credentials set` MUST create the parent directory before writing when
+it does not already exist.
+
+## REQ-CLI-CONFIG-CREDENTIALS-SET-0005 Key validation
+
+`config credentials set` MUST validate the credential key before writing the
+file.
+
+## REQ-CLI-CONFIG-CREDENTIALS-SET-0006 Value preservation
+
+`config credentials set` MUST preserve unrelated credential entries when it
+updates a single key.

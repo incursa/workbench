@@ -53,6 +53,25 @@ The `item` group root MUST route create, edit, delete, move, link, sync, and
 other write actions to leaf commands and leave direct mutation to those leaf
 commands.
 
+## REQ-CLI-ITEM-0004 Query boundary
+
+The `item` group root MUST keep lookup and listing behavior in the documented
+leaf commands instead of implementing item reads itself.
+
+## REQ-CLI-ITEM-0005 Child exposure
+
+The `item` index MUST expose only the documented work-item leaf commands.
+
+## REQ-CLI-ITEM-0006 Root boundary
+
+The `item` index MUST keep command behavior in leaf specs rather than
+defining item actions at the index level.
+
+## REQ-CLI-ITEM-0007 Family separation
+
+The `item` index MUST keep mutation commands separate from query and
+reconciliation commands.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-ITEM-CLOSE](./SPEC-CLI-ITEM-CLOSE.md)

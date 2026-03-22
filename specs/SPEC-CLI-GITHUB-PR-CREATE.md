@@ -48,3 +48,13 @@ leaving the work item in a partially linked state.
 
 `github pr create` MUST fail before updating backlinks when the configured
 provider cannot be reached or authenticated.
+
+## REQ-CLI-GITHUB-PR-CREATE-0006 Title handling
+
+`github pr create` MUST derive a PR title from the linked work item when the
+caller does not supply one.
+
+## REQ-CLI-GITHUB-PR-CREATE-0007 Backlink atomicity
+
+`github pr create` MUST leave the work item backlink unchanged if PR creation
+fails.

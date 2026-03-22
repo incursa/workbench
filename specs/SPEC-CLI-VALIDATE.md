@@ -37,3 +37,16 @@ and `--strict` is not set.
 
 `validate` MUST honor the link include and link exclude filters when checking
 repository links.
+
+## REQ-CLI-VALIDATE-0004 Error reporting
+
+`validate` MUST report each validation failure with enough context for the
+caller to locate the problem.
+
+## REQ-CLI-VALIDATE-0005 Read-only behavior
+
+`validate` MUST not write repository files or generated artifacts.
+
+## REQ-CLI-VALIDATE-0006 Machine-readable output
+
+`validate` MUST support machine-readable output when requested.

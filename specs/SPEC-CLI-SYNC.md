@@ -37,3 +37,17 @@ while preserving their documented stage-specific contracts.
 
 `sync` MUST report the combined stage changes without writing files when
 `--dry-run` is set.
+
+## REQ-CLI-SYNC-0004 Stage ordering
+
+`sync` MUST run the item, doc, and nav stages in the documented umbrella order
+when multiple stages are selected.
+
+## REQ-CLI-SYNC-0005 Source preservation
+
+`sync` MUST leave the underlying item, doc, and nav source files unchanged
+unless a selected stage explicitly mutates them.
+
+## REQ-CLI-SYNC-0006 Machine-readable output
+
+`sync` MUST support machine-readable output when requested.

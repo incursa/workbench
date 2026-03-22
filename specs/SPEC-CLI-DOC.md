@@ -51,6 +51,21 @@ tree and leave authored docs untouched.
 The `doc` family MUST keep front matter and work-item backlinks as leaf-command
 responsibilities rather than redefining those rules at the index level.
 
+## REQ-CLI-DOC-0005 Child exposure
+
+The `doc` index MUST expose the documented authoring, linking, syncing, and
+inspection commands as its children.
+
+## REQ-CLI-DOC-0006 Root boundary
+
+The `doc` group root MUST keep regeneration separate from authored document
+content.
+
+## REQ-CLI-DOC-0007 Family separation
+
+The `doc` index MUST keep authoring, inspection, and snapshot-generation
+commands in separate leaf families.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-DOC-DELETE](./SPEC-CLI-DOC-DELETE.md)

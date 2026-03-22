@@ -43,3 +43,16 @@ remote descriptions differ.
 
 `item sync` MUST report each reconciled item in its output so users can see
 what changed.
+
+## REQ-CLI-ITEM-SYNC-0005 Missing target handling
+
+`item sync` MUST fail clearly when an explicit item ID cannot be resolved.
+
+## REQ-CLI-ITEM-SYNC-0006 Branch-state reporting
+
+`item sync` MUST report the branch-state reconciliation result in its output.
+
+## REQ-CLI-ITEM-SYNC-0007 Source selection reporting
+
+`item sync` MUST report which source preference it applied when resolving a
+conflict.

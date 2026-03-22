@@ -40,3 +40,17 @@ or selected markdown files.
 ## REQ-CLI-DOC-SUMMARIZE-0004 Change-note scope
 
 `doc summarize` MUST append no more than one change note per invocation.
+
+## REQ-CLI-DOC-SUMMARIZE-0005 Failure behavior
+
+`doc summarize` MUST leave files unchanged when the AI summary step fails.
+
+## REQ-CLI-DOC-SUMMARIZE-0006 Context fidelity
+
+`doc summarize` MUST keep the generated note tied to the selected markdown
+changes.
+
+## REQ-CLI-DOC-SUMMARIZE-0007 Empty-diff handling
+
+`doc summarize` MUST make no changes when no markdown differences are
+selected.

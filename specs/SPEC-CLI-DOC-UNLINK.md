@@ -35,3 +35,19 @@ remove the backlinks for the selected work items, and preserve unrelated links.
 
 `doc unlink` MUST report backlink removals without writing files when
 `--dry-run` is set.
+
+## REQ-CLI-DOC-UNLINK-0004 Idempotence
+
+`doc unlink` MUST ignore backlinks that are already absent.
+
+## REQ-CLI-DOC-UNLINK-0005 Atomic removal
+
+`doc unlink` MUST leave the document unchanged if backlink removal fails.
+
+## REQ-CLI-DOC-UNLINK-0006 Link summary
+
+`doc unlink` MUST report which backlinks were removed from the document.
+
+## REQ-CLI-DOC-UNLINK-0007 Body preservation
+
+`doc unlink` MUST leave the document body unchanged while removing backlinks.

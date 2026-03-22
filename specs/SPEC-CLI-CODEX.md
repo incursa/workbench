@@ -43,6 +43,11 @@ documented AI entrypoints without changing repository content itself.
 The `codex` index MUST keep the documented `doctor` and `run` leaves visible
 and aligned with the live command tree.
 
+## REQ-CLI-CODEX-0005 Child exposure
+
+The `codex` index MUST expose `doctor` and `run` as its documented child
+commands.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-CODEX-DOCTOR](./SPEC-CLI-CODEX-DOCTOR.md)

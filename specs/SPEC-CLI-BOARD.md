@@ -41,6 +41,10 @@ out of the documented tree.
 `board regen` MUST preserve the rest of `work/README.md` unchanged except for
 the required workboard refresh.
 
+## REQ-CLI-BOARD-0005 Child exposure
+
+The `board` index MUST expose `regen` as its only documented child command.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-BOARD-REGEN](./SPEC-CLI-BOARD-REGEN.md)

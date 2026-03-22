@@ -35,3 +35,22 @@ and backlinks, and not regenerate derived indexes.
 ## REQ-CLI-DOC-SYNC-0003 Derived index protection
 
 `doc sync` MUST not rewrite help or navigation indexes.
+
+## REQ-CLI-DOC-SYNC-0004 Front-matter scope
+
+`doc sync` MUST keep its edits limited to documentation front matter and
+backlinks.
+
+## REQ-CLI-DOC-SYNC-0005 Body preservation
+
+`doc sync` MUST leave document bodies unchanged while normalizing metadata and
+backlinks.
+
+## REQ-CLI-DOC-SYNC-0006 Front-matter stability
+
+`doc sync` MUST preserve existing front matter keys that it does not need to
+change.
+
+## REQ-CLI-DOC-SYNC-0007 Change reporting
+
+`doc sync` MUST report the document paths it changed.

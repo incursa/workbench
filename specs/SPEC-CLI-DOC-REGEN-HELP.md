@@ -36,3 +36,23 @@ or to `contracts/commands.md` when no path is supplied.
 
 `doc regen-help` MUST leave files unchanged when `--check` is set and the
 snapshot is already current.
+
+## REQ-CLI-DOC-REGEN-HELP-0004 Snapshot parity
+
+`doc regen-help` MUST preserve the live command tree ordering and naming in
+the generated snapshot.
+
+## REQ-CLI-DOC-REGEN-HELP-0005 Complete coverage
+
+`doc regen-help` MUST include every exposed command and subcommand in the
+generated snapshot.
+
+## REQ-CLI-DOC-REGEN-HELP-0006 Change reporting
+
+`doc regen-help` MUST report whether the checked-in snapshot changed during the
+invocation.
+
+## REQ-CLI-DOC-REGEN-HELP-0007 Failure safety
+
+`doc regen-help` MUST leave the existing snapshot unchanged when generation
+fails.

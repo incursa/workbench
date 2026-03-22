@@ -46,3 +46,15 @@ slug and optional ticket in a deterministic way.
 
 `worktree start` MUST reuse an existing matching worktree when the derived
 path already exists.
+
+## REQ-CLI-WORKTREE-START-0006 Resolved path reporting
+
+`worktree start` MUST report the resolved branch and worktree path on success.
+
+## REQ-CLI-WORKTREE-START-0007 Parent-directory creation
+
+`worktree start` MUST create the worktree parent directory when it is missing.
+
+## REQ-CLI-WORKTREE-START-0008 Path reuse reporting
+
+`worktree start` MUST report when it reused an existing worktree path.

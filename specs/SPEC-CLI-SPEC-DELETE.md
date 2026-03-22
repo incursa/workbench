@@ -36,3 +36,15 @@ deleting it.
 ## REQ-CLI-SPEC-DELETE-0003 Missing target handling
 
 `spec delete` MUST fail clearly when the referenced spec cannot be found.
+
+## REQ-CLI-SPEC-DELETE-0004 Cleanup ordering
+
+`spec delete` MUST remove backlink references before deleting the spec file.
+
+## REQ-CLI-SPEC-DELETE-0005 Atomic deletion
+
+`spec delete` MUST leave the spec file intact if backlink cleanup fails.
+
+## REQ-CLI-SPEC-DELETE-0006 Removed-path reporting
+
+`spec delete` MUST report the resolved spec path that was removed.

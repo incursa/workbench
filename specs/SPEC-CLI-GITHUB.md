@@ -44,6 +44,11 @@ workflow.
 The `github` index MUST keep the documented pull-request surface explicit and
 limited to the `pr` branch and its leaf command.
 
+## REQ-CLI-GITHUB-0005 Child exposure
+
+The `github` index MUST expose `pr` and `pr create` as its documented child
+commands.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-GITHUB-PR](./SPEC-CLI-GITHUB-PR.md)

@@ -36,3 +36,22 @@ file.
 
 `item move` MUST update inbound links that reference the old path whenever it
 can do so safely.
+
+## REQ-CLI-ITEM-MOVE-0004 Atomic move
+
+`item move` MUST leave the source item intact if the destination cannot be
+written.
+
+## REQ-CLI-ITEM-MOVE-0005 Content preservation
+
+`item move` MUST preserve the work item body and front matter while moving the
+file.
+
+## REQ-CLI-ITEM-MOVE-0006 Parent-directory creation
+
+`item move` MUST create the destination parent directory when it does not
+already exist.
+
+## REQ-CLI-ITEM-MOVE-0007 Identity alignment
+
+`item move` MUST keep the work-item ID and slug aligned with the moved file.

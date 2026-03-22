@@ -37,3 +37,12 @@ and repository metadata always point at a real local item.
 
 `promote` MUST only create or draft a PR when `--pr` is supplied and respects
 the `--draft` and `--no-draft` intent explicitly.
+
+## REQ-CLI-PROMOTE-0004 Failure short-circuit
+
+`promote` MUST stop before branch or PR creation if work-item creation fails.
+
+## REQ-CLI-PROMOTE-0005 Branch rollback
+
+`promote` MUST leave the repository branch state unchanged if the branch setup
+step fails.

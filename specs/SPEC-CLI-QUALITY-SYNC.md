@@ -42,3 +42,16 @@ recursively when directories are supplied and ignores unrelated files.
 
 `quality sync` MUST write generated artifacts only beneath the requested
 output directory.
+
+## REQ-CLI-QUALITY-SYNC-0005 Raw evidence preservation
+
+`quality sync` MUST leave the raw test-result and coverage inputs unchanged.
+
+## REQ-CLI-QUALITY-SYNC-0006 Report provenance
+
+`quality sync` MUST include the source contract and evidence locations in the
+generated quality report.
+
+## REQ-CLI-QUALITY-SYNC-0007 Machine-readable output
+
+`quality sync` MUST support machine-readable output when requested.

@@ -36,3 +36,12 @@ environment without guessing.
 ## REQ-CLI-CODEX-DOCTOR-0003 Non-mutating behavior
 
 `codex doctor` MUST never mutate repository files or configuration state.
+
+## REQ-CLI-CODEX-DOCTOR-0004 Exit contract
+
+`codex doctor` MUST return success only when Codex is available and callable.
+
+## REQ-CLI-CODEX-DOCTOR-0005 Machine-readable status
+
+`codex doctor` MUST include the availability state in its machine-readable
+output when `--format json` is requested.

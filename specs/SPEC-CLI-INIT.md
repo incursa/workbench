@@ -41,3 +41,13 @@ scenarios and fails clearly when required flags are missing in that mode.
 
 `init` MUST leave the repository in a state where the user can immediately
 continue with the next command.
+
+## REQ-CLI-INIT-0005 Existing-state preservation
+
+`init` MUST preserve existing repo config and credential data that it does not
+need to rewrite.
+
+## REQ-CLI-INIT-0006 Ready-state reporting
+
+`init` MUST report the resulting setup state so the caller can continue with
+the next command.

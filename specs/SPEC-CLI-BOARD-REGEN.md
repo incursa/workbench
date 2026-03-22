@@ -38,3 +38,17 @@ current.
 
 `board regen` MUST fail clearly when the workboard cannot be derived from the
 current repository state and leaves unrelated files unchanged on failure.
+
+## REQ-CLI-BOARD-REGEN-0004 Output target
+
+`board regen` MUST write its derived output only to `work/README.md`.
+
+## REQ-CLI-BOARD-REGEN-0005 Current-state reporting
+
+`board regen` MUST report whether the workboard content changed during the
+invocation.
+
+## REQ-CLI-BOARD-REGEN-0006 Content parity
+
+`board regen` MUST keep the generated workboard content aligned with the live
+repository state.

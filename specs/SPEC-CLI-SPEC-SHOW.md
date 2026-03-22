@@ -35,3 +35,21 @@ without mutating the file.
 
 `spec show` MUST prefer the referenced artifact ID when both ID and path are
 available.
+
+## REQ-CLI-SPEC-SHOW-0004 Missing-target handling
+
+`spec show` MUST fail clearly when the referenced specification cannot be
+resolved.
+
+## REQ-CLI-SPEC-SHOW-0005 Output identity
+
+`spec show` MUST include the resolved specification path in its rendered
+output.
+
+## REQ-CLI-SPEC-SHOW-0006 Artifact identity output
+
+`spec show` MUST include the resolved artifact ID when one is available.
+
+## REQ-CLI-SPEC-SHOW-0007 Metadata completeness
+
+`spec show` MUST render the full specification metadata block before the body.

@@ -37,3 +37,21 @@ already present.
 
 `item link` MUST report the backlink changes without writing files when
 `--dry-run` is set.
+
+## REQ-CLI-ITEM-LINK-0004 Reference validation
+
+`item link` MUST reject unknown backlink references before writing changes.
+
+## REQ-CLI-ITEM-LINK-0005 Target validation
+
+`item link` MUST validate every requested backlink target before writing any
+changes.
+
+## REQ-CLI-ITEM-LINK-0006 Reference completeness
+
+`item link` MUST reject the request when any documented backlink target cannot
+be resolved.
+
+## REQ-CLI-ITEM-LINK-0007 Append position
+
+`item link` MUST append new backlinks after existing entries.

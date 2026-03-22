@@ -36,3 +36,12 @@ options and normalize the selected front matter without making unrelated edits.
 
 `normalize` MUST report all planned changes without writing files when
 `--dry-run` is set.
+
+## REQ-CLI-NORMALIZE-0004 Scope safety
+
+`normalize` MUST leave unsupported file types unchanged.
+
+## REQ-CLI-NORMALIZE-0005 Body preservation
+
+`normalize` MUST leave document and work-item bodies unchanged while updating
+front matter.

@@ -43,6 +43,11 @@ scoped to workspace bootstrap.
 The `worktree` family MUST not perform repo sync or work-item mutation beyond
 the `start` flow.
 
+## REQ-CLI-WORKTREE-0005 Non-mutating root
+
+The `worktree` group root MUST not mutate repository content outside the
+worktree creation flow.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-WORKTREE-START](./SPEC-CLI-WORKTREE-START.md)

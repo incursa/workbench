@@ -45,3 +45,13 @@ not set.
 ## REQ-CLI-ITEM-EDIT-0005 Keep-path behavior
 
 `item edit` MUST leave the file path unchanged when `--keep-path` is set.
+
+## REQ-CLI-ITEM-EDIT-0006 Reference resolution
+
+`item edit` MUST reject ambiguous work-item references before writing
+changes.
+
+## REQ-CLI-ITEM-EDIT-0007 Identity preservation
+
+`item edit` MUST keep the work-item ID unchanged when it rewrites the slug or
+file path.

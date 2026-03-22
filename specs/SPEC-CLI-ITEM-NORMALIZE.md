@@ -40,3 +40,16 @@ mode.
 
 `item normalize` MUST deduplicate and canonicalize list-valued front matter in a
 stable order.
+
+## REQ-CLI-ITEM-NORMALIZE-0005 Body preservation
+
+`item normalize` MUST leave the work-item body unchanged while normalizing
+front matter.
+
+## REQ-CLI-ITEM-NORMALIZE-0006 Change reporting
+
+`item normalize` MUST report the files it changed when it writes updates.
+
+## REQ-CLI-ITEM-NORMALIZE-0007 Path stability
+
+`item normalize` MUST keep the work-item file path unchanged.

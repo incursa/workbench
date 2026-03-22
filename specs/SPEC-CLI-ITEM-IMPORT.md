@@ -45,3 +45,13 @@ item metadata when those fields are available.
 
 `item import` MUST record the source issue number or URL in the imported work
 item metadata.
+
+## REQ-CLI-ITEM-IMPORT-0006 Duplicate import handling
+
+`item import` MUST avoid creating a second local item for a source issue that
+is already imported.
+
+## REQ-CLI-ITEM-IMPORT-0007 Creation scope
+
+`item import` MUST create imported work items beneath the active items
+directory.

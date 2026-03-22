@@ -44,6 +44,16 @@ children.
 Voice input MUST produce only the targeted artifact type and not create hidden
 persistence surfaces.
 
+## REQ-CLI-VOICE-0005 Read-only root behavior
+
+The `voice` family root MUST remain read-only and route mutations to the
+documented leaf commands.
+
+## REQ-CLI-VOICE-0006 Child exposure
+
+The `voice` index MUST expose only the documented `doc` and `workitem`
+children.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-VOICE-DOC](./SPEC-CLI-VOICE-DOC.md)

@@ -35,3 +35,20 @@ the output matches the file that would be edited or linked.
 ## REQ-CLI-ITEM-SHOW-0003 Read-only behavior
 
 `item show` MUST not mutate the work item file or its backlinks.
+
+## REQ-CLI-ITEM-SHOW-0004 Missing-target handling
+
+`item show` MUST fail clearly when the referenced work item cannot be resolved.
+
+## REQ-CLI-ITEM-SHOW-0005 Canonical path output
+
+`item show` MUST print the resolved canonical path alongside the work-item ID.
+
+## REQ-CLI-ITEM-SHOW-0006 Metadata completeness
+
+`item show` MUST render the resolved work-item metadata before the body or
+summary content.
+
+## REQ-CLI-ITEM-SHOW-0007 Stable field order
+
+`item show` MUST render metadata fields in a stable order.

@@ -41,3 +41,13 @@ set and leave files unchanged.
 
 `nav sync` MUST leave authored documents untouched outside the derived index
 and workboard outputs.
+
+## REQ-CLI-NAV-SYNC-0005 Stage order
+
+`nav sync` MUST reconcile links before regenerating the derived views when
+links are out of date.
+
+## REQ-CLI-NAV-SYNC-0006 Complete regeneration
+
+`nav sync` MUST regenerate both the indexes and the workboard when the caller
+selects the full nav sync path.

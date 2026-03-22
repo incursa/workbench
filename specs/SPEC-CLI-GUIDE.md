@@ -38,7 +38,16 @@ retired aliases or stubbed actions as available commands.
 `guide` MUST remain read-only until the user explicitly selects a command that
 performs a mutation.
 
+## REQ-CLI-GUIDE-0004 Exit behavior
+
+`guide` MUST return control to the shell after the user selects a command or
+dismisses the guide.
+
 ## REQ-CLI-GUIDE-0002 Command discovery
 
 `guide` MUST present the common repo actions in terms of the live command tree
 and not refer to stale aliases or retired entry points.
+
+## REQ-CLI-GUIDE-0005 Live tree parity
+
+`guide` MUST keep its recommended actions aligned with the live command tree.

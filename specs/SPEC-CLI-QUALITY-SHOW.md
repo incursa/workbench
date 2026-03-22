@@ -41,3 +41,12 @@ normalized quality report, inventory, results, and coverage outputs.
 
 `quality show` MUST fall back to the latest normalized artifact when no path
 is supplied.
+
+## REQ-CLI-QUALITY-SHOW-0005 Output identity
+
+`quality show` MUST include the selected artifact kind and path in its output
+when those values are available.
+
+## REQ-CLI-QUALITY-SHOW-0006 Machine-readable output
+
+`quality show` MUST support machine-readable output when requested.

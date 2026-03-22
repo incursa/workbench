@@ -42,3 +42,11 @@ configuration changes to display its help surface.
 
 `llm help` MUST mirror the live CLI tree ordering and naming so agents can use
 it as the authoritative entrypoint.
+
+## REQ-CLI-LLM-0005 Family coverage
+
+The `llm` help surface MUST include the documented top-level command families.
+
+## REQ-CLI-LLM-0005 Read-only surface
+
+The `llm` family MUST stay read-only and avoid repository mutation commands.

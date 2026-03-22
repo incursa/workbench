@@ -75,3 +75,8 @@ onboarding.
 
 After initialization, the CLI MUST preserve standard help behavior and stop
 forcing onboarding routes.
+
+## REQ-CLI-0005 Entry routing
+
+The onboarding flow MUST route users through `doctor`, `init`, and `guide`
+without introducing extra entrypoints.

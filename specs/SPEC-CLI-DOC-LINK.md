@@ -36,3 +36,20 @@ them.
 
 `doc link` MUST report backlink changes without writing files when `--dry-run`
 is set.
+
+## REQ-CLI-DOC-LINK-0004 Reference validation
+
+`doc link` MUST reject unknown backlink references before writing changes.
+
+## REQ-CLI-DOC-LINK-0005 Target validation
+
+`doc link` MUST validate every requested backlink target before writing any
+changes.
+
+## REQ-CLI-DOC-LINK-0006 Link ordering
+
+`doc link` MUST keep backlink ordering stable when it appends new links.
+
+## REQ-CLI-DOC-LINK-0007 Append position
+
+`doc link` MUST append new backlinks after existing entries.

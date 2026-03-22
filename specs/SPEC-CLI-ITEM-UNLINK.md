@@ -36,3 +36,20 @@ links.
 
 `item unlink` MUST report backlink removals without writing files when
 `--dry-run` is set.
+
+## REQ-CLI-ITEM-UNLINK-0004 Idempotence
+
+`item unlink` MUST ignore backlinks that are already absent.
+
+## REQ-CLI-ITEM-UNLINK-0005 Atomic removal
+
+`item unlink` MUST leave the item unchanged if backlink removal fails.
+
+## REQ-CLI-ITEM-UNLINK-0006 Link summary
+
+`item unlink` MUST report which backlinks were removed from the item.
+
+## REQ-CLI-ITEM-UNLINK-0007 Body preservation
+
+`item unlink` MUST leave the work-item body unchanged while removing
+backlinks.

@@ -38,3 +38,13 @@ explicitly owns.
 
 `scaffold` MUST create the same directory and template structure for the same
 repository state so bootstrap runs are repeatable.
+
+## REQ-CLI-SCAFFOLD-0004 Ownership boundary
+
+`scaffold` MUST only create files that belong to the standard scaffold
+structure unless `--force` is requested.
+
+## REQ-CLI-SCAFFOLD-0005 Missing-tree creation
+
+`scaffold` MUST create the default folder and template structure when those
+paths are absent.

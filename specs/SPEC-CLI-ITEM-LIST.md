@@ -39,3 +39,16 @@ visible.
 ## REQ-CLI-ITEM-LIST-0004 Non-mutating output
 
 `item list` MUST never write to work item files or backlinks.
+
+## REQ-CLI-ITEM-LIST-0005 Stable ordering
+
+`item list` MUST keep result ordering stable for the same repository state.
+
+## REQ-CLI-ITEM-LIST-0006 Machine-readable output
+
+`item list` MUST support machine-readable output when requested.
+
+## REQ-CLI-ITEM-LIST-0007 Record emission
+
+When machine-readable output is requested, `item list` MUST emit one record
+per returned work item.

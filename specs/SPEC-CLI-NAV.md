@@ -43,6 +43,14 @@ than editing authored content directly.
 `nav sync` MUST reconcile links before rebuilding derived views when link
 corrections are needed.
 
+## REQ-CLI-NAV-0005 Child exposure
+
+The `nav` index MUST expose `sync` as its only documented child command.
+
+## REQ-CLI-NAV-0006 Non-mutating root
+
+The `nav` group root MUST not mutate authored content outside derived outputs.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-NAV-SYNC](./SPEC-CLI-NAV-SYNC.md)

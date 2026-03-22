@@ -35,3 +35,16 @@ requested backlinks, and avoid duplicate links.
 
 `spec link` MUST report backlink changes without writing files when `--dry-run`
 is set.
+
+## REQ-CLI-SPEC-LINK-0004 Reference validation
+
+`spec link` MUST reject unknown backlink references before writing changes.
+
+## REQ-CLI-SPEC-LINK-0005 Target validation
+
+`spec link` MUST validate every requested work-item reference before writing
+any changes.
+
+## REQ-CLI-SPEC-LINK-0006 Link ordering
+
+`spec link` MUST keep backlink ordering stable when it appends new links.

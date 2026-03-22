@@ -42,3 +42,17 @@ same front matter and section structure as `workbench item new`.
 
 `item generate` MUST surface AI backend failures before creating a work item
 and leave the repository unchanged when generation fails.
+
+## REQ-CLI-ITEM-GENERATE-0005 Single-item output
+
+`item generate` MUST create exactly one work item per invocation.
+
+## REQ-CLI-ITEM-GENERATE-0006 Draft validation
+
+`item generate` MUST validate the generated draft against the canonical
+work-item structure before creating the file.
+
+## REQ-CLI-ITEM-GENERATE-0007 Output reporting
+
+`item generate` MUST report the created work-item ID and file path after a
+successful invocation.

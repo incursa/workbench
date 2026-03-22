@@ -45,3 +45,12 @@ domain and capability metadata when it generates one.
 
 `doc new` MUST populate required front matter fields even when optional
 metadata is omitted.
+
+## REQ-CLI-DOC-NEW-0006 Repository scope
+
+`doc new` MUST write the new document beneath the configured docs root or the
+explicit path supplied by the caller.
+
+## REQ-CLI-DOC-NEW-0007 Type validation
+
+`doc new` MUST reject unsupported document types before writing files.

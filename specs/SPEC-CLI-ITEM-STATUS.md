@@ -34,3 +34,21 @@ note, update the status and updated date, and append the note when provided.
 ## REQ-CLI-ITEM-STATUS-0003 Updated-date behavior
 
 `item status` MUST refresh the updated date whenever it changes the status.
+
+## REQ-CLI-ITEM-STATUS-0004 Content preservation
+
+`item status` MUST leave the item title and body unchanged while updating the
+status fields.
+
+## REQ-CLI-ITEM-STATUS-0005 Note handling
+
+`item status` MUST append the supplied note without rewriting unrelated body
+content.
+
+## REQ-CLI-ITEM-STATUS-0006 Status summary
+
+`item status` MUST report the resulting status after the update completes.
+
+## REQ-CLI-ITEM-STATUS-0007 Optional note handling
+
+`item status` MUST omit the note section when no note is provided.

@@ -42,3 +42,7 @@ must attach the requested title when supplied.
 
 `voice doc` MUST derive the output path from the selected doc type when
 `--out` is omitted.
+
+## REQ-CLI-VOICE-DOC-0005 Transcription failure handling
+
+`voice doc` MUST fail clearly when transcription cannot be captured.

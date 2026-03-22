@@ -37,3 +37,23 @@ does not reuse an existing item identifier.
 
 `item new` MUST fail if the target file already exists unless the caller has
 explicitly requested an overwrite path elsewhere in the command surface.
+
+## REQ-CLI-ITEM-NEW-0004 Template fidelity
+
+`item new` MUST initialize the file from the configured work-item template for
+the selected item type.
+
+## REQ-CLI-ITEM-NEW-0005 Body initialization
+
+`item new` MUST populate the standard body sections expected for a new work
+item.
+
+## REQ-CLI-ITEM-NEW-0006 Type validation
+
+`item new` MUST reject unsupported item types before allocating a new
+work-item ID.
+
+## REQ-CLI-ITEM-NEW-0007 Output reporting
+
+`item new` MUST report the created work-item ID and file path after a
+successful invocation.

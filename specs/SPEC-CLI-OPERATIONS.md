@@ -55,6 +55,11 @@ duplicating family-specific command contracts.
 The operations grouping MUST keep `sync`, `validate`, and `version` distinct
 from onboarding and from the dedicated command-family specs.
 
+## REQ-CLI-OPERATIONS-0005 Child exposure
+
+The operations index MUST expose only the documented top-level operational
+commands.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-MIGRATE](./SPEC-CLI-MIGRATE.md)

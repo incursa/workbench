@@ -36,3 +36,17 @@ and derived artifacts unchanged.
 
 `config show` MUST resolve values in the same precedence order used by the
 runtime CLI so the displayed configuration matches actual command behavior.
+
+## REQ-CLI-CONFIG-SHOW-0004 Output completeness
+
+`config show` MUST include the resolved values for all documented settings in
+the selected output format.
+
+## REQ-CLI-CONFIG-SHOW-0005 Help alignment
+
+`config show` MUST present the same setting names that the runtime CLI uses.
+
+## REQ-CLI-CONFIG-SHOW-0006 Stable ordering
+
+`config show` MUST keep the ordering of displayed settings stable for the
+same repository state.

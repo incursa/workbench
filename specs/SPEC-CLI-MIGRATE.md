@@ -37,3 +37,12 @@ reporting the actions that would have been applied.
 
 `migrate` MUST never perform migrations beyond the supported target set for the
 current tool version.
+
+## REQ-CLI-MIGRATE-0004 Unknown-target handling
+
+`migrate` MUST reject unsupported migration targets before changing files.
+
+## REQ-CLI-MIGRATE-0005 Idempotence
+
+`migrate` MUST be safe to rerun when the selected migration has already been
+applied.

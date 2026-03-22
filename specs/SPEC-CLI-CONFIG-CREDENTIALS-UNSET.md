@@ -36,3 +36,17 @@ not present and leaves the file unchanged in that case.
 
 `config credentials unset` MUST preserve comments, ordering, and unrelated
 entries when the credentials file format allows it.
+
+## REQ-CLI-CONFIG-CREDENTIALS-UNSET-0004 Idempotence
+
+`config credentials unset` MUST leave the file unchanged when the requested
+key is already absent and the command is configured to ignore missing keys.
+
+## REQ-CLI-CONFIG-CREDENTIALS-UNSET-0005 File syntax safety
+
+`config credentials unset` MUST leave the credentials file syntactically valid
+after removing an entry.
+
+## REQ-CLI-CONFIG-CREDENTIALS-UNSET-0006 Removal summary
+
+`config credentials unset` MUST report which credential key was removed.

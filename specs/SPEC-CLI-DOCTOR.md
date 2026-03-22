@@ -41,3 +41,12 @@ enough that automation can compare successive runs.
 
 `doctor` MUST keep its summary phrasing concise and deterministic enough for
 automation to parse when `--format json` is not selected.
+
+## REQ-CLI-DOCTOR-0004 Machine-readable output
+
+`doctor` MUST emit the repository readiness state in a structured format when
+machine-readable output is requested.
+
+## REQ-CLI-DOCTOR-0005 Check coverage summary
+
+`doctor` MUST summarize git, config, and path checks in its reported results.

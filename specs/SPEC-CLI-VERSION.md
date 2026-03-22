@@ -36,3 +36,15 @@ without needing repository context.
 
 `version` MUST not read or write any repository files beyond what is needed to
 load its own build metadata.
+
+## REQ-CLI-VERSION-0004 Parseable output
+
+`version` MUST emit a single parseable version line without extra banner text.
+
+## REQ-CLI-VERSION-0005 Repository independence
+
+`version` MUST not depend on repository contents to determine its output.
+
+## REQ-CLI-VERSION-0006 Machine-readable output
+
+`version` MUST support machine-readable output when requested.

@@ -36,3 +36,20 @@ the target document.
 ## REQ-CLI-DOC-DELETE-0003 Missing target handling
 
 `doc delete` MUST fail clearly when the referenced document cannot be found.
+
+## REQ-CLI-DOC-DELETE-0004 Cleanup ordering
+
+`doc delete` MUST remove backlink references before deleting the document file.
+
+## REQ-CLI-DOC-DELETE-0005 Atomic deletion
+
+`doc delete` MUST leave the document file intact if backlink cleanup fails.
+
+## REQ-CLI-DOC-DELETE-0006 Removed-path reporting
+
+`doc delete` MUST report the resolved document path that was removed.
+
+## REQ-CLI-DOC-DELETE-0007 Link retention
+
+When `--keep-links` is set, `doc delete` MUST leave backlink references in
+place.

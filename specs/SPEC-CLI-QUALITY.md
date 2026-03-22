@@ -44,6 +44,10 @@ quality evidence and the other ingests raw results.
 Generated quality evidence MUST remain advisory and not be treated as an
 enforced merge gate by the command family itself.
 
+## REQ-CLI-QUALITY-0005 Child exposure
+
+The `quality` index MUST expose `show` and `sync` as its documented children.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-QUALITY-SHOW](./SPEC-CLI-QUALITY-SHOW.md)

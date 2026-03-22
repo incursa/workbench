@@ -39,3 +39,8 @@ tree, even when the provider implementation changes.
 ## REQ-CLI-GITHUB-PR-0004 Non-mutating root
 
 `github pr` MUST not create or update pull requests directly.
+
+## REQ-CLI-GITHUB-PR-0005 Help-tree parity
+
+`github pr` MUST keep its help output aligned with the live provider-backed
+PR command tree.

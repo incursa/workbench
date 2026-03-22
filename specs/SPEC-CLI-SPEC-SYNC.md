@@ -36,3 +36,17 @@ untouched.
 
 `spec sync` MUST report planned changes without writing files when `--dry-run`
 is set.
+
+## REQ-CLI-SPEC-SYNC-0004 Front-matter scope
+
+`spec sync` MUST keep its edits limited to spec front matter and backlinks.
+
+## REQ-CLI-SPEC-SYNC-0005 Body preservation
+
+`spec sync` MUST leave specification bodies unchanged while normalizing
+metadata and backlinks.
+
+## REQ-CLI-SPEC-SYNC-0006 Front-matter stability
+
+`spec sync` MUST preserve existing front matter keys that it does not need to
+change.

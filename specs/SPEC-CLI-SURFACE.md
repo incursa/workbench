@@ -120,6 +120,11 @@ consistently across the command tree.
 `workbench` MUST preserve the standard exit codes `0`, `1`, and `2` for
 success, success with warnings, and failure.
 
+## REQ-CLI-SURFACE-0006 Command-tree coverage
+
+The root CLI catalog MUST keep every documented family spec linked from the
+surface index.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-BOARD](./SPEC-CLI-BOARD.md)

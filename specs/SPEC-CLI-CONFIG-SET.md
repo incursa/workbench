@@ -41,3 +41,13 @@ surfaces JSON parse errors before writing any changes.
 ## REQ-CLI-CONFIG-SET-0004 Unrelated key preservation
 
 `config set` MUST leave unrelated config keys unchanged.
+
+## REQ-CLI-CONFIG-SET-0005 File syntax safety
+
+`config set` MUST leave the configuration file syntactically valid after any
+successful update.
+
+## REQ-CLI-CONFIG-SET-0006 Dotted-path creation
+
+`config set` MUST create missing parent objects for a dotted config path
+before writing the new value.

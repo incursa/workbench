@@ -42,3 +42,17 @@ updating the requested document fields.
 
 `doc edit` MUST reject ambiguous artifact or path references before writing
 changes.
+
+## REQ-CLI-DOC-EDIT-0005 Body identity
+
+`doc edit` MUST keep the document's artifact identity aligned with the file it
+edits.
+
+## REQ-CLI-DOC-EDIT-0006 Missing-target handling
+
+`doc edit` MUST fail clearly when the referenced document cannot be resolved.
+
+## REQ-CLI-DOC-EDIT-0007 Identity preservation
+
+`doc edit` MUST keep the artifact ID unchanged when it edits non-identity
+fields.

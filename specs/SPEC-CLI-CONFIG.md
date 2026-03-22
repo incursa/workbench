@@ -48,6 +48,11 @@ the documented precedence order.
 `.workbench/config.json` or `credentials.env` as appropriate, leaving
 unrelated files untouched.
 
+## REQ-CLI-CONFIG-0005 Child exposure
+
+The `config` index MUST expose `credentials`, `set`, and `show` as its
+documented children.
+
 ## Command Family Catalog
 
 - [SPEC-CLI-CONFIG-CREDENTIALS](./SPEC-CLI-CONFIG-CREDENTIALS.md)

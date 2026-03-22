@@ -43,3 +43,7 @@ structure as `workbench item new`.
 
 `voice workitem` MUST allow the transcript to supply the title when one is not
 passed explicitly.
+
+## REQ-CLI-VOICE-WORKITEM-0005 Transcription failure handling
+
+`voice workitem` MUST fail clearly when transcription cannot be captured.

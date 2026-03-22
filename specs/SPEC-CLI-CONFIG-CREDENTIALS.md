@@ -41,3 +41,7 @@ repository config values unchanged.
 
 `config credentials set` and `config credentials unset` MUST remain the only
 documented children of this grouping command.
+
+## REQ-CLI-CONFIG-CREDENTIALS-0005 Help ordering
+
+The `config credentials` help output MUST list `set` before `unset`.

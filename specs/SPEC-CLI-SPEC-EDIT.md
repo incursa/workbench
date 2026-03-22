@@ -41,3 +41,13 @@ updating the selected spec fields.
 
 `spec edit` MUST reject ambiguous artifact or path references before writing
 changes.
+
+## REQ-CLI-SPEC-EDIT-0005 Artifact identity
+
+`spec edit` MUST keep the specification's artifact identity aligned with the
+file it edits.
+
+## REQ-CLI-SPEC-EDIT-0006 Missing-target handling
+
+`spec edit` MUST fail clearly when the referenced specification cannot be
+resolved.

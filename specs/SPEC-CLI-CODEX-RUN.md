@@ -43,3 +43,16 @@ changing modes.
 
 `codex run` MUST return Codex's exit status without translating failures into
 success.
+
+## REQ-CLI-CODEX-RUN-0005 Prompt visibility
+
+`codex run` MUST preserve the original prompt text in the forwarded request.
+
+## REQ-CLI-CODEX-RUN-0006 Mode reporting
+
+`codex run` MUST report the execution mode it selected when it starts Codex.
+
+## REQ-CLI-CODEX-RUN-0007 Machine-readable output
+
+`codex run` MUST support machine-readable output for the launch result when
+requested.
