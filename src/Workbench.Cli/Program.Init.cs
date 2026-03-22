@@ -10,34 +10,6 @@ namespace Workbench.Cli;
 
 public partial class Program
 {
-    static void TryMigrateLegacyWorkLayout(string repoRoot, WorkbenchConfig config, bool dryRun)
-    {
-        var legacyRoot = Path.Combine(repoRoot, "work");
-        var targetRoot = Path.Combine(repoRoot, config.Paths.WorkRoot);
-
-        if (!Directory.Exists(legacyRoot))
-        {
-            return;
-        }
-
-        if (Directory.Exists(targetRoot))
-        {
-            // Avoid destructive merges; legacy content must be reconciled manually.
-            Console.WriteLine($"Legacy work layout found at {legacyRoot} but {targetRoot} already exists; manual merge required.");
-            return;
-        }
-
-        if (dryRun)
-        {
-            Console.WriteLine($"Dry run: would move legacy work layout from {legacyRoot} to {targetRoot}.");
-            return;
-        }
-
-        Directory.CreateDirectory(Path.GetDirectoryName(targetRoot) ?? repoRoot);
-        Directory.Move(legacyRoot, targetRoot);
-        Console.WriteLine($"Moved legacy work layout from {legacyRoot} to {targetRoot}.");
-    }
-
     sealed record InitWorkflowOptions(
         bool Force,
         bool NonInteractive,
@@ -66,15 +38,15 @@ public partial class Program
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
         var expectedPaths = new[]
         {
-            config.Paths.DocsRoot,
-            "contracts",
-            "decisions",
             "runbooks",
             "tracking",
-            config.Paths.WorkRoot,
-            config.Paths.ItemsDir,
-            config.Paths.DoneDir,
-            config.Paths.TemplatesDir
+            Path.Combine(config.Paths.SpecsRoot, "requirements"),
+            Path.Combine(config.Paths.SpecsRoot, "architecture"),
+            Path.Combine(config.Paths.SpecsRoot, "verification"),
+            Path.Combine(config.Paths.SpecsRoot, "work-items"),
+            Path.Combine(config.Paths.SpecsRoot, "generated"),
+            Path.Combine(config.Paths.SpecsRoot, "templates"),
+            Path.Combine(config.Paths.SpecsRoot, "schemas")
         };
         var missingPaths = expectedPaths
             .Where(path => !Directory.Exists(Path.Combine(repoRoot, path)))
@@ -128,9 +100,6 @@ public partial class Program
         Console.WriteLine("Step 2: Front matter guidance");
         var docRoots = new[]
         {
-            Path.Combine(repoRoot, config.Paths.DocsRoot),
-            Path.Combine(repoRoot, "contracts"),
-            Path.Combine(repoRoot, "decisions"),
             Path.Combine(repoRoot, "runbooks"),
             Path.Combine(repoRoot, "tracking")
         };
@@ -161,7 +130,7 @@ public partial class Program
 
         if (docFiles.Count == 0)
         {
-            Console.WriteLine("- No docs found under the configured overview, contracts, decisions, runbooks, or tracking roots.");
+            Console.WriteLine("- No docs found under the configured runbooks or tracking roots.");
         }
         else
         {
@@ -177,7 +146,7 @@ public partial class Program
         if (!options.NonInteractive)
         {
             var defaultYes = missingFrontMatter > 0 || invalidFrontMatter > 0;
-            runFrontMatter = Confirm("Add Workbench front matter to docs now?", defaultYes: defaultYes);
+            runFrontMatter = Confirm("Add canonical front matter to docs now?", defaultYes: defaultYes);
         }
 
         if (runFrontMatter)
@@ -341,14 +310,13 @@ public partial class Program
         Console.WriteLine("Workbench guide");
         var options = new List<(string Label, string Description)>
         {
-            ("Create work item", "Guided creation of task, bug, or spike work items."),
+            ("Create work item", "Guided creation of canonical work items."),
             ("Create document", "Create a spec, architecture doc, or general doc."),
-            ("Regenerate workboard", "Refresh work/README.md from current items."),
             ("Exit", "Leave the guide.")
         };
 
         var selection = PromptSelection("Choose what you want to do", options);
-        if (selection == 3 || selection < 0)
+        if (selection == 2 || selection < 0)
         {
             Console.WriteLine("Guide exited.");
             return 0;
@@ -367,9 +335,7 @@ public partial class Program
             {
                 var itemTypes = new List<(string Label, string Description)>
                 {
-                    ("task", "Planned work with clear acceptance criteria."),
-                    ("bug", "Defect or regression to fix."),
-                    ("spike", "Research or investigation work.")
+                    ("work_item", "Canonical implementation work item.")
                 };
                 var itemSelection = PromptSelection("Work item type", itemTypes);
                 if (itemSelection < 0)
@@ -384,8 +350,7 @@ public partial class Program
                     Console.WriteLine("Title is required.");
                     return 2;
                 }
-                var status = Prompt("Status (draft/ready/in-progress/blocked/done/dropped)", "draft");
-                var priority = Prompt("Priority (low/medium/high/critical)", "medium");
+                var status = Prompt("Status (planned/in_progress/blocked/complete/cancelled/superseded)", "planned");
                 var owner = Prompt("Owner (optional)");
                 var itemResult = WorkItemService.CreateItem(
                     repoRoot,
@@ -393,7 +358,7 @@ public partial class Program
                     itemType,
                     title,
                     string.IsNullOrWhiteSpace(status) ? null : status,
-                    string.IsNullOrWhiteSpace(priority) ? null : priority,
+                    null,
                     string.IsNullOrWhiteSpace(owner) ? null : owner);
                 Console.WriteLine($"{itemResult.Id} created at {itemResult.Path}");
                 summary.Add($"Created work item {itemResult.Id}.");
@@ -405,7 +370,8 @@ public partial class Program
                 {
                     ("spec", "Product or feature specification."),
                     ("architecture", "Architecture or design document."),
-                    ("guide", "How-to or onboarding guide."),
+                    ("verification", "Verification or evidence document."),
+                    ("runbook", "Operational procedure or playbook."),
                     ("doc", "General documentation.")
                 };
                 var docSelection = PromptSelection("Document type", docTypes);
@@ -443,13 +409,6 @@ public partial class Program
                 Console.WriteLine($"Doc created at {docResult.Path}");
                 summary.Add($"Created {docResult.Type} doc at {docResult.Path}.");
                 Console.WriteLine("Next steps: edit the doc and link work items as needed.");
-            }
-            else if (selection == 2)
-            {
-                var result = WorkboardService.Regenerate(repoRoot, config);
-                Console.WriteLine($"Workboard regenerated: {result.Path}");
-                summary.Add("Regenerated workboard.");
-                Console.WriteLine("Next steps: review `work/README.md` for updated status.");
             }
         }
         catch (Exception ex)

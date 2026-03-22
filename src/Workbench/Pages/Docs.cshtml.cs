@@ -5,7 +5,7 @@ namespace Workbench.Pages;
 
 public class DocsModel : RepoPageModel
 {
-    private static readonly IReadOnlyList<string> documentTypes = ["all", "specification", "architecture", "work_item", "doc", "guide"];
+    private static readonly IReadOnlyList<string> documentTypes = ["all", "specification", "architecture", "verification", "doc"];
 
     public DocsModel(WorkbenchWorkspace workspace, WorkbenchUserProfileStore profileStore)
         : base(workspace, profileStore)

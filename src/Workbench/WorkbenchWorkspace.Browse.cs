@@ -9,36 +9,32 @@ public sealed partial class WorkbenchWorkspace
     public IReadOnlyList<RepoDocSummary> ListDocs(string? typeFilter, string? query)
     {
         var docsRoot = Path.Combine(RepoRoot, Config.Paths.DocsRoot);
-        var specsRoot = Path.Combine(RepoRoot, Config.Paths.SpecsRoot);
-        var architectureRoot = Path.Combine(RepoRoot, Config.Paths.ArchitectureDir);
-        var contractsRoot = Path.Combine(RepoRoot, "contracts");
-        var decisionsRoot = Path.Combine(RepoRoot, "decisions");
+        var requirementsRoot = Path.Combine(RepoRoot, SpecTraceLayout.RequirementsRoot);
+        var architectureRoot = Path.Combine(RepoRoot, SpecTraceLayout.ArchitectureRoot);
+        var verificationRoot = Path.Combine(RepoRoot, SpecTraceLayout.VerificationRoot);
+        var generatedRoot = Path.Combine(RepoRoot, SpecTraceLayout.GeneratedRoot);
         var runbooksRoot = Path.Combine(RepoRoot, "runbooks");
         var trackingRoot = Path.Combine(RepoRoot, "tracking");
         if (!Directory.Exists(docsRoot) &&
-            !Directory.Exists(contractsRoot) &&
-            !Directory.Exists(decisionsRoot) &&
             !Directory.Exists(runbooksRoot) &&
             !Directory.Exists(trackingRoot) &&
-            !Directory.Exists(specsRoot) &&
-            !Directory.Exists(architectureRoot))
+            !Directory.Exists(requirementsRoot) &&
+            !Directory.Exists(architectureRoot) &&
+            !Directory.Exists(verificationRoot) &&
+            !Directory.Exists(generatedRoot))
         {
             return Array.Empty<RepoDocSummary>();
         }
 
         var docs = new List<RepoDocSummary>();
-        foreach (var root in new[] { docsRoot, contractsRoot, decisionsRoot, runbooksRoot, trackingRoot, specsRoot, architectureRoot })
+        foreach (var root in new[] { docsRoot, runbooksRoot, trackingRoot, requirementsRoot, architectureRoot, verificationRoot, generatedRoot })
         {
             if (!Directory.Exists(root))
             {
                 continue;
             }
 
-            var searchOption = root.Equals(specsRoot, StringComparison.OrdinalIgnoreCase)
-                ? SearchOption.TopDirectoryOnly
-                : SearchOption.AllDirectories;
-
-            foreach (var file in Directory.EnumerateFiles(root, "*.md", searchOption))
+            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
             {
                 var relative = NormalizePath(Path.GetRelativePath(RepoRoot, file));
                 if (IsWorkItemArtifactDoc(relative) || IsDocTemplate(relative))
@@ -373,63 +369,51 @@ public sealed partial class WorkbenchWorkspace
     private static string GetDocSection(string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        foreach (var root in new[] { "overview/", "contracts/", "decisions/", "runbooks/", "tracking/", "architecture/", "specs/" })
+        return normalized switch
         {
-            if (!normalized.StartsWith(root, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var remainder = normalized[root.Length..];
-            var slashIndex = remainder.IndexOf('/', StringComparison.Ordinal);
-            if (slashIndex < 0)
-            {
-                return root.TrimEnd('/');
-            }
-
-            return remainder[..slashIndex];
-        }
-
-        return "repo";
+            var path when path.StartsWith("overview/", StringComparison.OrdinalIgnoreCase) => "Overview",
+            var path when path.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase) => "Runbooks",
+            var path when path.StartsWith("tracking/", StringComparison.OrdinalIgnoreCase) => "Tracking",
+            var path when path.StartsWith($"{SpecTraceLayout.RequirementsRoot}/", StringComparison.OrdinalIgnoreCase) => "Requirements",
+            var path when path.StartsWith($"{SpecTraceLayout.ArchitectureRoot}/", StringComparison.OrdinalIgnoreCase) => "Architecture",
+            var path when path.StartsWith($"{SpecTraceLayout.VerificationRoot}/", StringComparison.OrdinalIgnoreCase) => "Verification",
+            var path when path.StartsWith($"{SpecTraceLayout.GeneratedRoot}/", StringComparison.OrdinalIgnoreCase) => "Generated",
+            _ => "Repo"
+        };
     }
 
     private static string InferDocType(string relativePath)
     {
         var normalized = NormalizePath(relativePath).ToLowerInvariant();
-        if (normalized.StartsWith("architecture/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{SpecTraceLayout.ArchitectureRoot}/", StringComparison.OrdinalIgnoreCase))
         {
             return "architecture";
         }
 
-        if (normalized.StartsWith("specs/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{SpecTraceLayout.RequirementsRoot}/", StringComparison.OrdinalIgnoreCase))
         {
             return "specification";
         }
 
-        if (normalized.StartsWith("contracts/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{SpecTraceLayout.VerificationRoot}/", StringComparison.OrdinalIgnoreCase))
         {
-            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "contract";
+            return "verification";
         }
 
-        if (normalized.StartsWith("decisions/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{SpecTraceLayout.GeneratedRoot}/", StringComparison.OrdinalIgnoreCase))
         {
-            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "adr";
+            return "doc";
         }
 
         if (normalized.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase))
         {
-            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "runbook";
+            return "doc";
         }
 
         if (normalized.StartsWith("overview/", StringComparison.OrdinalIgnoreCase) ||
             normalized.StartsWith("tracking/", StringComparison.OrdinalIgnoreCase))
         {
             return "doc";
-        }
-
-        if (normalized.Contains("/work/items/") || normalized.Contains("/work/done/"))
-        {
-            return "work_item";
         }
 
         return "doc";
@@ -452,10 +436,10 @@ public sealed partial class WorkbenchWorkspace
                 string.Equals(docType, "specification", StringComparison.OrdinalIgnoreCase))
             || (string.Equals(typeFilter, "specification", StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(docType, "spec", StringComparison.OrdinalIgnoreCase))
-            || (string.Equals(typeFilter, "guide", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(docType, "architecture", StringComparison.OrdinalIgnoreCase))
             || (string.Equals(typeFilter, "architecture", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(docType, "guide", StringComparison.OrdinalIgnoreCase));
+                string.Equals(docType, "architecture", StringComparison.OrdinalIgnoreCase))
+            || (string.Equals(typeFilter, "verification", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(docType, "verification", StringComparison.OrdinalIgnoreCase));
     }
 
     private static Dictionary<string, object?> GetNestedMap(IDictionary<string, object?> data, string key)
@@ -527,15 +511,13 @@ public sealed partial class WorkbenchWorkspace
     private static bool IsWorkItemArtifactDoc(string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        return normalized.Contains("/work/items/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/work/done/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/work/templates/", StringComparison.OrdinalIgnoreCase);
+        return normalized.Contains("/specs/work-items/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsDocTemplate(string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        return normalized.Contains("/templates/", StringComparison.OrdinalIgnoreCase);
+        return normalized.Contains("/specs/templates/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string DetectFileType(string path, string extension, long sizeBytes)

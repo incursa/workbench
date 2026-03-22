@@ -1,16 +1,3 @@
----
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/tracking/workbench-readiness-follow-up-2026-03-22.md"
-  path: /tracking/workbench-readiness-follow-up-2026-03-22.md
-owner: platform
-status: active
-updated: 2026-03-22
----
-
 # Workbench readiness follow-up
 
 This note captures the concrete follow-up steps needed to move Workbench from
@@ -21,7 +8,7 @@ validation, and maintenance".
 
 1. Rebuild and republish the shipped `workbench` tool so the installed command
    surface matches the checked-in source tree.
-2. Regenerate `contracts/commands.md` from the live command tree and keep
+2. Regenerate `specs/generated/commands.md` from the live command tree and keep
    `workbench doc regen-help --check` green.
 3. Keep the source help, installed tool help, and AI help surface aligned so
    `workbench spec`, `workbench validate`, and `workbench nav sync` are all
@@ -42,7 +29,8 @@ validation, and maintenance".
    fixtures and config values that validation expects.
 2. Confirm that the scaffolded spec and README files use the same front-matter
    conventions that the validator and doc schemas accept.
-3. Keep `nav sync` and the workboard regeneration safe, repeatable, and dry-run
+3. Keep `nav sync` and the derived navigation regeneration safe, repeatable,
+   and dry-run
    friendly.
 
 ## Docs And AI Guidance

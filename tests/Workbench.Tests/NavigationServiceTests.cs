@@ -13,140 +13,49 @@ public class NavigationServiceTests
         ScaffoldService.Scaffold(repoRoot, force: true);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "work", "items", "README.md"),
+            Path.Combine(repoRoot, "specs", "work-items", "WB", "README.md"),
             """
             ---
-            workbench:
-              type: doc
-              workItems: []
-              codeRefs: []
+            artifact_id: WI-WB-0000
+            artifact_type: work_item
+            title: Helper readme
+            domain: WB
+            status: planned
+            owner: platform
+            addresses: []
+            design_links: []
+            verification_links: []
+            related_artifacts: []
             ---
 
             # Items
             """);
         File.WriteAllText(
-            Path.Combine(repoRoot, "work", "done", "README.md"),
+            Path.Combine(repoRoot, "specs", "work-items", "WB", "_index.md"),
             """
             ---
-            workbench:
-              type: doc
-              workItems: []
-              codeRefs: []
+            artifact_id: WI-WB-0000
+            artifact_type: work_item
+            title: Helper index
+            domain: WB
+            status: planned
+            owner: platform
+            addresses: []
+            design_links: []
+            verification_links: []
+            related_artifacts: []
             ---
 
-            # Done
+            # Index
             """);
 
-        var created = WorkItemService.CreateItem(repoRoot, WorkbenchConfig.Default, "task", "Keep indexes readable", "draft", null, null);
+        var created = WorkItemService.CreateItem(repoRoot, WorkbenchConfig.Default, "work_item", "Keep indexes readable", "planned", null, null);
 
         var items = WorkItemService.ListItems(repoRoot, WorkbenchConfig.Default, includeDone: true).Items;
 
         Assert.HasCount(1, items, string.Join(Environment.NewLine, items.Select(item => item.Path)));
         Assert.AreEqual(created.Id, items[0].Id);
         Assert.IsTrue(items[0].Id.StartsWith("WI-", StringComparison.Ordinal), items[0].Id);
-    }
-
-    [TestMethod]
-    public async Task SyncNavigation_OmitsWorkArtifactDocsFromDocsIndexAsync()
-    {
-        var repoRoot = CreateRepoRoot();
-        ScaffoldService.Scaffold(repoRoot, force: true);
-        var created = WorkItemService.CreateItem(repoRoot, WorkbenchConfig.Default, "task", "Keep docs index focused", "draft", null, null);
-
-        await NavigationService.SyncNavigationAsync(
-            repoRoot,
-            WorkbenchConfig.Default,
-            includeDone: true,
-            syncIssues: false,
-            force: false,
-            syncWorkboard: false,
-            dryRun: false,
-            syncDocs: false).ConfigureAwait(false);
-
-        var docsReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "docs", "README.md")).ConfigureAwait(false);
-        var workReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "work", "README.md")).ConfigureAwait(false);
-
-        Assert.IsTrue(docsReadme.Contains("# Docs", StringComparison.Ordinal), docsReadme);
-        Assert.IsTrue(docsReadme.Contains("_No docs found._", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("items/README.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("done/README.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("work-item.task.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains(created.Id, StringComparison.Ordinal), docsReadme);
-
-        Assert.IsFalse(workReadme.Contains("| [ - README](items/README.md)", StringComparison.Ordinal), workReadme);
-        Assert.IsFalse(workReadme.Contains("| [ - README](done/README.md)", StringComparison.Ordinal), workReadme);
-        Assert.IsTrue(workReadme.Contains("# Workboard", StringComparison.Ordinal), workReadme);
-    }
-
-    [TestMethod]
-    public async Task SyncNavigation_PopulatesSpecsIndexFromRootSpecsAsync()
-    {
-        var repoRoot = CreateRepoRoot();
-        ScaffoldService.Scaffold(repoRoot, force: true);
-
-        await File.WriteAllTextAsync(
-            Path.Combine(repoRoot, "specs", "README.md"),
-            """
-            ---
-            workbench:
-              type: doc
-              workItems: []
-              codeRefs: []
-            owner: platform
-            status: active
-            updated: 2026-03-21
-            ---
-
-            # Specs
-
-            Canonical specifications live here. Keep each spec as a single Markdown file
-            directly under `specs/`, use the full `SPEC-...` artifact ID in the filename,
-            and organize requirements as `## REQ-...` clauses beneath the spec. Use the
-            sibling top-level `architecture/` and `work/` roots for design and execution
-            artifacts.
-
-            ## Index
-
-            Generated by `workbench nav sync`.
-
-            <!-- workbench:specs-index:start -->
-            <!-- workbench:specs-index:end -->
-            """);
-
-        await File.WriteAllTextAsync(
-            Path.Combine(repoRoot, "specs", "SPEC-TEST-001.md"),
-            """
-            ---
-            artifact_id: SPEC-TEST-001
-            artifact_type: specification
-            status: active
-            owner: platform
-            title: Demo Spec
-            ---
-
-            # Demo Spec
-
-            ## REQ-TEST-0001 Demo requirement
-
-            This requirement is part of the canonical spec index.
-            """);
-
-        await NavigationService.SyncNavigationAsync(
-            repoRoot,
-            WorkbenchConfig.Default,
-            includeDone: true,
-            syncIssues: false,
-            force: false,
-            syncWorkboard: false,
-            dryRun: false,
-            syncDocs: false).ConfigureAwait(false);
-
-        var specsReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "specs", "README.md")).ConfigureAwait(false);
-
-        Assert.IsTrue(specsReadme.Contains("### Specs", StringComparison.Ordinal), specsReadme);
-        Assert.IsTrue(specsReadme.Contains("Demo Spec", StringComparison.Ordinal), specsReadme);
-        Assert.IsTrue(specsReadme.Contains("SPEC-TEST-001", StringComparison.Ordinal), specsReadme);
-        Assert.IsFalse(specsReadme.Contains("_No specs found._", StringComparison.Ordinal), specsReadme);
     }
 
     private static string CreateRepoRoot()

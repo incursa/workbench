@@ -13,7 +13,8 @@ public sealed record ArtifactIdPolicy(int MinimumDigits, IReadOnlyDictionary<str
         {
             ["specification"] = "SPEC-{domain}{grouping}",
             ["architecture"] = "ARC-{domain}{grouping}-{sequence}",
-            ["work_item"] = "WI-{domain}{grouping}-{sequence}"
+            ["work_item"] = "WI-{domain}{grouping}-{sequence}",
+            ["verification"] = "VER-{domain}{grouping}-{sequence}"
         });
 
     public static ArtifactIdPolicy Load(string repoRoot)
@@ -98,8 +99,9 @@ public sealed record ArtifactIdPolicy(int MinimumDigits, IReadOnlyDictionary<str
         return docType.Trim().ToLowerInvariant() switch
         {
             "spec" or "specification" => "specification",
-            "architecture" or "guide" => "architecture",
+            "architecture" => "architecture",
             "work_item" or "work-item" => "work_item",
+            "verification" => "verification",
             _ => null
         };
     }
@@ -203,8 +205,8 @@ public sealed record ArtifactIdPolicy(int MinimumDigits, IReadOnlyDictionary<str
     private string BuildArtifactIdPattern(string template)
     {
         var escaped = Regex.Escape(template);
-        escaped = escaped.Replace(@"\{domain\}", @"(?<domain>[A-Z0-9]+(?:-[A-Z0-9]+)*)", StringComparison.OrdinalIgnoreCase);
-        escaped = escaped.Replace(@"\{grouping\}", @"(?<grouping>(?:-[A-Z0-9]+)*)", StringComparison.OrdinalIgnoreCase);
+        escaped = escaped.Replace(@"\{domain\}", @"(?<domain>[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)", StringComparison.OrdinalIgnoreCase);
+        escaped = escaped.Replace(@"\{grouping\}", @"(?<grouping>(?:-[A-Z][A-Z0-9]*)*)", StringComparison.OrdinalIgnoreCase);
         escaped = escaped.Replace(@"\{sequence\}", $"(?<sequence>\\d{{{MinimumDigits},}})", StringComparison.OrdinalIgnoreCase);
         return $"^{escaped}$";
     }

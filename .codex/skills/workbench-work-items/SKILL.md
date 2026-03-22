@@ -24,17 +24,17 @@ workbench.ps1 item new --type task --title "Do the thing" --status draft --prior
 
 Update status:
 ```bash
-workbench.ps1 item status TASK-0001 in-progress --note "started implementation"
+workbench.ps1 item status WI-WB-0001 in-progress --note "started implementation"
 ```
 
 Close and move to done:
 ```bash
-workbench.ps1 item close TASK-0001
+workbench.ps1 item close WI-WB-0001
 ```
 
 Link docs or PRs:
 ```bash
-workbench.ps1 item link TASK-0001 --spec /overview/spec.md --adr /decisions/ADR-YYYY-MM-DD-title.md --pr https://github.com/org/repo/pull/1
+workbench.ps1 item link WI-WB-0001 --spec /overview/spec.md --adr /decisions/ADR-YYYY-MM-DD-title.md --pr https://github.com/org/repo/pull/1
 ```
 
 ## Output

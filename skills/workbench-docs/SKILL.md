@@ -1,6 +1,6 @@
 ---
 name: workbench-docs
-description: Documentation workflows for Workbench CLI. Use when creating or updating specs, ADRs, runbooks, guides, or general docs, and when syncing backlinks or change notes.
+description: Documentation workflows for Workbench CLI. Use when creating or updating specs, architecture docs, verification docs, runbooks, guides, or general docs, and when syncing backlinks or change notes.
 ---
 
 ## Key settings
@@ -19,32 +19,27 @@ description: Documentation workflows for Workbench CLI. Use when creating or upd
 
 Create a doc:
 ```bash
-workbench doc new --type doc --title "Title" --path overview/title.md --work-item TASK-0001
+workbench doc new --type doc --title "Title" --path docs/title.md --work-item WI-WB-0001
 ```
 
 Create a spec:
 ```bash
-workbench doc new --type spec --title "Title" --path overview/title.md --work-item TASK-0001
+workbench doc new --type spec --title "Title" --path specs/SPEC-EXAMPLE.md --work-item WI-WB-0001
 ```
 
 Create an architecture doc:
 ```bash
-workbench doc new --type doc --title "System design" --path architecture/system-design.md --work-item TASK-0001
+workbench doc new --type doc --title "System design" --path architecture/system-design.md --work-item WI-WB-0001
 ```
 
-Create an ADR:
+Create a verification doc:
 ```bash
-workbench doc new --type adr --title "Decision" --path decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
+workbench doc new --type verification --title "Proof" --path verification/proof.md --work-item WI-WB-0001
 ```
 
 Link a doc to work items:
 ```bash
-workbench doc link --type spec --path overview/title.md --work-item TASK-0001
-```
-
-Unlink a doc from work items:
-```bash
-workbench doc unlink --type adr --path decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
+workbench doc link --type spec --path specs/SPEC-EXAMPLE.md --work-item WI-WB-0001
 ```
 
 Sync front matter and backlinks:
@@ -65,8 +60,7 @@ workbench doc summarize --staged --update-index
 
 ## Guardrails
 
-- Keep doc types aligned with folder intent (product, architecture, decisions, runbooks).
+- Keep doc types aligned with folder intent (specs, architecture, verification, runbooks, and general docs).
 - Always link docs to relevant work items with `--work-item` or `workbench item link`.
 - For major changes, write a spec before implementation.
-- When decisions change, update or create the ADR.
 - Prefer `workbench doc` commands; `workbench spec` and `workbench adr` are deprecated.

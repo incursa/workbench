@@ -1,56 +1,65 @@
 # Workbench
 
-Workbench is a .NET CLI for repo-native work: specs, decisions, work items,
-validation, and generated navigation that all live in source control. Local
-Markdown plus JSON contracts are canonical; GitHub is an optional sync and
-mirror layer, not the primary system of record.
+Workbench is a .NET CLI for repo-native specifications, architecture, work
+items, verification, validation, and generated navigation that all live in
+source control. The canonical model for authored intent is Spec Trace:
+
+- specifications group related requirements
+- requirements are the atomic normative statements
+- architecture explains how requirements are satisfied
+- work items describe implementation work
+- verification artifacts record how requirements were proven
+
+GitHub remains an optional sync and mirror layer, not the primary system of
+record.
 
 ## Operating model
 
-- Hand-author overview, contracts, decisions, runbooks, and tracking docs
-  under their semantic roots, requirement specs under `specs/`, architecture
-  docs under `architecture/`, and work items under `work/`.
-- Let Workbench maintain front matter, backlinks, and the generated sections
-  inside the repo READMEs for `overview/`, `specs/`, `architecture/`, and
-  `work/`.
-- Use GitHub issues, branches, and PRs as linked execution artifacts around the
-  local Markdown record.
+- Keep canonical requirements in `specs/requirements/`.
+- Keep architecture docs in `specs/architecture/`.
+- Keep work items in `specs/work-items/`.
+- Keep verification artifacts in `specs/verification/`.
+- Keep generated repository views under `specs/generated/`.
+- Keep canonical templates under `specs/templates/`.
+- Keep canonical schemas under `specs/schemas/`.
+- Keep the quality intent contract in `quality/testing-intent.yaml`.
+- Treat `overview/`, `contracts/`, `decisions/`, `work/`, and the old root
+  template/schema copies as removed legacy surfaces.
 
 ## Happy path
 
-1. Use `workbench guide` for the human-friendly entry point, or go straight to
-   `workbench item new` / `workbench doc new`.
-2. Use `workbench item edit` for structured updates to work-item title,
-   summary, acceptance criteria, and notes; edit the Markdown directly when you
-   need broader freeform changes.
-3. Use `workbench item link` to connect specs, ADRs, files, PRs, or issues, and
-   `workbench promote` when you want branch + commit scaffolding in one step.
-4. Refresh generated views with `workbench nav sync` and run
+1. Use `workbench spec new` for requirement specifications.
+2. Use `workbench item new` for work items.
+3. Use `workbench doc new` for architecture and verification artifacts if you
+   need a generic path, or edit the Markdown directly when the artifact already
+   exists.
+4. Use `workbench item link` to connect work items to specs, architecture docs,
+   and verification artifacts.
+5. Refresh generated views with `workbench nav sync` and run
    `workbench validate` before review or automation.
-5. Agents should prefer `workbench llm help` and `--format json`.
+6. Agents should prefer `workbench llm help` and `--format json`.
 
 ## Sync model
 
-- Use `workbench sync` for the common repo-wide happy path. It is the umbrella command and runs the lower-level sync stages.
-- Use `workbench item sync` when you specifically need to reconcile local work items with GitHub issues or branch state.
-- Use `workbench doc sync` when you need to repair or refresh doc front matter and doc/work-item backlinks without rebuilding indexes.
-- Use `workbench nav sync` when you need to rebuild derived docs indexes, repo indexes, or the workboard. It also syncs links first unless that work already ran via `workbench sync --docs --nav`.
-- Use `workbench board regen` only when you want the narrowest workboard-only refresh.
+- Use `workbench sync` for the common repo-wide happy path. It runs the lower
+  level sync stages.
+- Use `workbench item sync` when you need to reconcile local work items with
+  GitHub issues or branch state.
+- Use `workbench doc sync` when you need to repair or refresh doc front matter
+  and backlinks.
+- Use `workbench nav sync` when you need to rebuild derived repo indexes.
 
 ## Repository map
 
 - `src/Workbench`: CLI source code.
 - `tests/`: automated tests.
-- `specs/`: canonical requirement specs.
-- `architecture/`: canonical architecture docs.
-- `overview/`: high-level documentation and standards.
-- `contracts/`: CLI, API, and schema contracts.
-- `decisions/`: ADRs and tradeoff history.
-- `runbooks/`: operational procedures and playbooks.
-- `tracking/`: milestones, progress, and delivery notes.
-- `templates/`: reusable document templates.
-- `schemas/`: JSON schemas for repo contracts.
-- `work/`: active and completed work items plus templates.
+- `specs/requirements/`: canonical requirement specs and generated Spec Trace outputs.
+- `specs/architecture/`: canonical architecture docs.
+- `specs/verification/`: canonical verification artifacts.
+- `specs/work-items/`: canonical work items and indexes.
+- `specs/templates/`: canonical copy-ready templates.
+- `specs/schemas/`: JSON schemas for canonical front matter and trace blocks.
+- `quality/`: local quality-intent inputs.
 - `assets/`: static assets used by docs or tooling.
 - `artifacts/`: build outputs and local artifacts.
 - `testdata/`: fixtures for parsing and validation tests.
@@ -136,14 +145,17 @@ Expected warnings:
 
 ## Documentation and contracts
 
-- Docs overview: `overview/README.md`
-- Specs: `specs/README.md`
-- Architecture: `architecture/README.md`
-- Work items: `work/README.md`
-- Operating model ADR: `decisions/ADR-2026-03-07-repo-native-operating-model.md`
-- CLI help: `contracts/cli-help.md`
-- Schemas: `contracts/`
-- Testing intent contract: `contracts/test-gate.contract.yaml`
+- Overview: `overview.md`
+- Authoring guide: `authoring.md`
+- Layout guide: `layout.md`
+- Requirements: `specs/requirements/`
+- Architecture: `specs/architecture/`
+- Verification artifacts: `specs/verification/`
+- Work items: `specs/work-items/`
+- Templates: `specs/templates/`
+- Schemas: `specs/schemas/`
+- Canonical CLI help snapshot: `specs/generated/commands.md`
+- Quality intent contract: `quality/testing-intent.yaml`
 
 ## Quality evidence
 
@@ -160,7 +172,7 @@ dotnet tool run workbench quality show
 
 Path conventions:
 
-- Authored intent: `contracts/test-gate.contract.yaml`
+- Authored intent: `quality/testing-intent.yaml`
 - Raw test evidence: `artifacts/quality/raw/test-results/*.trx`
 - Raw coverage evidence: `artifacts/quality/raw/coverage/*.cobertura.xml`
 - Generated quality artifacts: `artifacts/quality/testing/`
@@ -169,8 +181,9 @@ Generated artifacts under `artifacts/quality/testing/` are derived outputs. Do n
 
 ## Voice commands
 
-- `workbench voice workitem` records audio, transcribes it, and generates a work item.
-- `workbench voice doc --type <specification|architecture|guide|work_item|doc> [--out <path>] [--title "<...>"]` records audio, transcribes it, and generates a doc with YAML front matter.
+- `workbench voice workitem` records audio, transcribes it, and generates a
+  work item.
+- `workbench voice doc --type <specification|architecture|verification|work_item> [--out <path>] [--title "<...>"]` records audio, transcribes it, and generates a canonical artifact with front matter.
 - While recording, press ENTER to stop or ESC to cancel.
 
 Requirements:
@@ -195,40 +208,6 @@ Optional knobs (env vars):
 - `WORKBENCH_VOICE_VIZ_FFT_SIZE` (default: `1024`)
 - `WORKBENCH_VOICE_VIZ_LEVEL_BOOST` (default: `1.6`)
 - `WORKBENCH_VOICE_VIZ_SPECTRUM` (default: `true`)
-
-## Navigation
-
-Generated by `workbench nav sync`.
-
-<!-- workbench:root-index:start -->
-
-### Quick links
-- [Overview](overview/README.md)
-- [Specs index](specs/README.md)
-- [Architecture index](architecture/README.md)
-- [Contracts](contracts/README.md)
-- [Decisions](decisions/README.md)
-- [Runbooks](runbooks/README.md)
-- [Tracking](tracking/README.md)
-- [Work index](work/README.md)
-- [Templates](templates/README.md)
-
-### Work item stats
-| Metric | Count |
-| --- | --- |
-| Open | 18 |
-| Closed | 3 |
-| Total | 21 |
-
-| Status | Count |
-| --- | --- |
-| 🟡 draft | 17 |
-| 🟢 ready | 0 |
-| 🔵 in-progress | 1 |
-| 🟥 blocked | 0 |
-| ✅ done | 3 |
-| 🚫 dropped | 0 |
-<!-- workbench:root-index:end -->
 
 ## CI
 

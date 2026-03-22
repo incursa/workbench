@@ -363,15 +363,6 @@ public partial class Program
                             itemChanged = true;
                         }
                     }
-                    foreach (var adr in item.Related.Adrs)
-                    {
-                        var adrPath = Path.GetFullPath(DocService.ResolveDocPath(repoRoot, adr));
-                        if (adrPath.Equals(docFullPath, StringComparison.OrdinalIgnoreCase)
-                            && WorkItemService.RemoveRelatedLink(item.Path, "adrs", adr))
-                        {
-                            itemChanged = true;
-                        }
-                    }
                     foreach (var file in item.Related.Files)
                     {
                         var filePath = Path.GetFullPath(DocService.ResolveDocPath(repoRoot, file));
@@ -425,10 +416,8 @@ public partial class Program
              string.Equals(actual, "specification", StringComparison.OrdinalIgnoreCase)) ||
             (string.Equals(expected, "specification", StringComparison.OrdinalIgnoreCase) &&
              string.Equals(actual, "spec", StringComparison.OrdinalIgnoreCase)) ||
-            (string.Equals(expected, "guide", StringComparison.OrdinalIgnoreCase) &&
-             string.Equals(actual, "architecture", StringComparison.OrdinalIgnoreCase)) ||
             (string.Equals(expected, "architecture", StringComparison.OrdinalIgnoreCase) &&
-             string.Equals(actual, "guide", StringComparison.OrdinalIgnoreCase));
+             string.Equals(actual, "architecture", StringComparison.OrdinalIgnoreCase));
 
         if (!matches)
         {

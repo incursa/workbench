@@ -19,8 +19,8 @@ public class ScaffoldPromoteTests
         var configPath = scaffoldJson.GetProperty("data").GetProperty("configPath").GetString();
         Assert.IsFalse(string.IsNullOrWhiteSpace(configPath));
         Assert.IsTrue(File.Exists(configPath!));
-        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
-        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "README.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "specs", "work-items", "WB", "_index.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "specs", "requirements", "_index.md")));
 
         GitTestRepo.CommitAll(repo.Path, "Add scaffold");
 
@@ -29,7 +29,7 @@ public class ScaffoldPromoteTests
             repo.Path,
             "promote",
             "--type",
-            "task",
+            "work_item",
             "--title",
             Title,
             "--repo",
@@ -58,7 +58,7 @@ public class ScaffoldPromoteTests
         Assert.AreEqual(expectedBranch, branch);
         Assert.AreEqual($"Promote {itemId}: {Title}", commitMessage);
 
-        var expectedItemPath = Path.Combine(repo.Path, "work", "items", Path.GetFileName(repo.Path)!.ToUpperInvariant(), $"{slug}.md")
+        var expectedItemPath = Path.Combine(repo.Path, "specs", "work-items", "WB", $"{slug}.md")
             .Replace('\\', '/');
         Assert.AreEqual(expectedItemPath, itemPath!.Replace('\\', '/'));
         Assert.IsTrue(File.Exists(itemPath!));

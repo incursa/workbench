@@ -29,7 +29,7 @@ public class CliHelpContractTests
         using var repo = TempRepo.Create();
         Directory.CreateDirectory(Path.Combine(repo.Path, ".git"));
 
-        var cliHelpPath = Path.Combine(repo.Path, "docs", "commands.md");
+        var cliHelpPath = Path.Combine(repo.Path, "specs", "generated", "commands.md");
         Directory.CreateDirectory(Path.GetDirectoryName(cliHelpPath)!);
         File.WriteAllText(cliHelpPath, "# stale snapshot\n");
 

@@ -23,12 +23,12 @@ public static partial class TuiEntrypoint
         var roots = new[]
         {
             config.Paths.DocsRoot,
-            "contracts",
-            "decisions",
             "runbooks",
             "tracking",
-            config.Paths.SpecsRoot,
-            config.Paths.ArchitectureDir
+            SpecTraceLayout.RequirementsRoot,
+            SpecTraceLayout.ArchitectureRoot,
+            SpecTraceLayout.VerificationRoot,
+            SpecTraceLayout.GeneratedRoot
         };
 
         return roots
@@ -112,14 +112,14 @@ public static partial class TuiEntrypoint
             linkTargets.Add(link);
             linkLabels.Add($"spec: {link}");
         }
-        foreach (var link in item.Related.Adrs)
+        foreach (var link in item.DesignLinks)
         {
-            if (!ShouldIncludeLink("adr", filter))
+            if (!ShouldIncludeLink("design", filter))
             {
                 continue;
             }
             linkTargets.Add(link);
-            linkLabels.Add($"adr: {link}");
+            linkLabels.Add($"design: {link}");
         }
         foreach (var link in item.Related.Files)
         {
@@ -150,7 +150,7 @@ public static partial class TuiEntrypoint
         }
 
         linksList.SetSource(linkLabels);
-        var counts = $"spec {item.Related.Specs.Count}, adr {item.Related.Adrs.Count}, file {item.Related.Files.Count}, issue {item.Related.Issues.Count}, pr {item.Related.Prs.Count}";
+        var counts = $"spec {item.Related.Specs.Count}, design {item.DesignLinks.Count}, verification {item.VerificationLinks.Count}, file {item.Related.Files.Count}, issue {item.Related.Issues.Count}, pr {item.Related.Prs.Count}";
         if (linkLabels.Count > 0)
         {
             linksList.SelectedItem = 0;
@@ -211,12 +211,12 @@ public static partial class TuiEntrypoint
         var semanticRoots = new[]
         {
             config.Paths.DocsRoot.TrimEnd('/', '\\'),
-            "contracts",
-            "decisions",
             "runbooks",
             "tracking",
-            config.Paths.SpecsRoot.TrimEnd('/', '\\'),
-            config.Paths.ArchitectureDir.TrimEnd('/', '\\')
+            SpecTraceLayout.RequirementsRoot.TrimEnd('/', '\\'),
+            SpecTraceLayout.ArchitectureRoot.TrimEnd('/', '\\'),
+            SpecTraceLayout.VerificationRoot.TrimEnd('/', '\\'),
+            SpecTraceLayout.GeneratedRoot.TrimEnd('/', '\\')
         };
 
         if (semanticRoots.Any(root => normalized.StartsWith(root + "/", StringComparison.OrdinalIgnoreCase) ||

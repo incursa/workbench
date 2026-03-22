@@ -12,6 +12,7 @@ public static class WorkItemService
     private const int MaxSlugLength = 80;
     private const string CanonicalAddressesPlaceholder = "- REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>";
     private const string CanonicalDesignLinksPlaceholder = "- ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>";
+    private const string CanonicalVerificationLinksPlaceholder = "- VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>";
     private const string CanonicalRelatedArtifactsPlaceholder = "- SPEC-<DOMAIN>[-<GROUPING>...]";
 
     /// <summary>
@@ -56,127 +57,52 @@ public static class WorkItemService
         string? priority,
         string? owner)
     {
-        if (ShouldUseCanonicalWorkItems(repoRoot) || SpecTraceMarkdown.GetCanonicalArtifactType(type) is "work_item")
+        if (SpecTraceMarkdown.GetCanonicalArtifactType(type) is not "work_item")
         {
-            var normalizedTitle = title.Trim();
-            var domain = GetDefaultCanonicalDomain(repoRoot);
-            var artifactId = AllocateCanonicalId(repoRoot, config, domain);
-            var canonicalSlug = Slugify(normalizedTitle);
-            var canonicalCreated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            var canonicalStatus = NormalizeCanonicalStatus(status);
-            var canonicalOwner = string.IsNullOrWhiteSpace(owner) ? "platform" : owner.Trim();
-            var canonicalItemPath = SpecTraceLayout.GetWorkItemPath(repoRoot, domain, artifactId, normalizedTitle);
-
-            if (File.Exists(canonicalItemPath))
-            {
-                throw new InvalidOperationException($"Work item already exists: {canonicalItemPath}");
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(canonicalItemPath) ?? repoRoot);
-            var addresses = CanonicalAddressesPlaceholder;
-            var designLinks = CanonicalDesignLinksPlaceholder;
-            var relatedArtifacts = CanonicalRelatedArtifactsPlaceholder;
-            var body = SpecTraceMarkdown.BuildWorkItemBody(
-                normalizedTitle,
-                addresses,
-                designLinks,
-                artifactId: artifactId,
-                relatedArtifacts: relatedArtifacts);
-            body = AppendCompatibilityMetadata(
-                body,
-                BuildCompatibilityMetadata(
-                    type,
-                    priority,
-                    canonicalCreated,
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>())));
-
-            var data = new Dictionary<string, object?>(StringComparer.Ordinal)
-            {
-                ["artifact_id"] = artifactId,
-                ["artifact_type"] = "work_item",
-                ["title"] = normalizedTitle,
-                ["domain"] = domain,
-                ["status"] = canonicalStatus,
-                ["owner"] = canonicalOwner,
-                ["addresses"] = new List<string> { addresses },
-                ["design_links"] = new List<string> { designLinks },
-                ["related_artifacts"] = new List<string> { relatedArtifacts }
-            };
-
-            File.WriteAllText(canonicalItemPath, new FrontMatter(data, body).Serialize());
-            return new WorkItemResult(artifactId, canonicalSlug, canonicalItemPath);
+            throw new InvalidOperationException($"Unsupported work item type '{type}'.");
         }
 
-        var templatesDir = Path.Combine(repoRoot, config.Paths.TemplatesDir);
-        var templatePath = Path.Combine(templatesDir, $"work-item.{type}.md");
-        if (!File.Exists(templatePath))
+        var normalizedTitle = title.Trim();
+        var domain = GetDefaultCanonicalDomain(repoRoot);
+        var artifactId = AllocateCanonicalId(repoRoot, config, domain);
+        var canonicalSlug = Slugify(normalizedTitle);
+        var canonicalStatus = NormalizeCanonicalStatus(status);
+        var canonicalOwner = string.IsNullOrWhiteSpace(owner) ? "platform" : owner.Trim();
+        var canonicalItemPath = SpecTraceLayout.GetWorkItemPath(repoRoot, domain, artifactId, normalizedTitle);
+
+        if (File.Exists(canonicalItemPath))
         {
-            throw new InvalidOperationException($"Template not found: {templatePath}");
+            throw new InvalidOperationException($"Work item already exists: {canonicalItemPath}");
         }
 
-        var templateContent = File.ReadAllText(templatePath);
-        if (!FrontMatter.TryParse(templateContent, out var frontMatter, out var error))
+        Directory.CreateDirectory(Path.GetDirectoryName(canonicalItemPath) ?? repoRoot);
+        var addresses = CanonicalAddressesPlaceholder;
+        var designLinks = CanonicalDesignLinksPlaceholder;
+        var verificationLinks = CanonicalVerificationLinksPlaceholder;
+        var relatedArtifacts = CanonicalRelatedArtifactsPlaceholder;
+        var body = SpecTraceMarkdown.BuildWorkItemBody(
+            normalizedTitle,
+            addresses,
+            designLinks,
+            artifactId: artifactId,
+            relatedArtifacts: relatedArtifacts);
+
+        var data = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            throw new InvalidOperationException($"Template front matter error: {error}");
-        }
+            ["artifact_id"] = artifactId,
+            ["artifact_type"] = "work_item",
+            ["title"] = normalizedTitle,
+            ["domain"] = domain,
+            ["status"] = canonicalStatus,
+            ["owner"] = canonicalOwner,
+            ["addresses"] = new List<string> { addresses },
+            ["design_links"] = new List<string> { designLinks },
+            ["verification_links"] = new List<string> { verificationLinks },
+            ["related_artifacts"] = new List<string> { relatedArtifacts }
+        };
 
-        var id = AllocateId(repoRoot, config, type);
-        var slug = Slugify(title);
-        var created = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-        frontMatter!.Data["id"] = id;
-        frontMatter.Data["type"] = type;
-        frontMatter.Data["created"] = created;
-        frontMatter.Data["title"] = title;
-        frontMatter.Data["updated"] = null;
-
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            frontMatter.Data["status"] = status;
-        }
-
-        if (!string.IsNullOrWhiteSpace(priority))
-        {
-            frontMatter.Data["priority"] = priority;
-        }
-
-        if (owner is not null)
-        {
-            frontMatter.Data["owner"] = owner;
-        }
-
-        var related = GetRelatedMap(frontMatter.Data);
-        if (related is not null)
-        {
-            EnsureList(related, "files");
-            EnsureList(related, "branches");
-        }
-
-        frontMatter = NormalizeFrontMatter(frontMatter);
-
-        var fileName = $"{id}-{slug}.md";
-        var itemPath = Path.Combine(repoRoot, config.Paths.ItemsDir, fileName);
-        if (File.Exists(itemPath))
-        {
-            throw new InvalidOperationException($"Work item already exists: {itemPath}");
-        }
-
-        Directory.CreateDirectory(Path.GetDirectoryName(itemPath) ?? repoRoot);
-        var content = frontMatter.Serialize();
-        content = content.Replace("<title>", title).Replace("0000-00-00", created);
-        content = content.Replace("BUG-0000", id).Replace("TASK-0000", id).Replace("SPIKE-0000", id);
-        File.WriteAllText(itemPath, content);
-
-        return new WorkItemResult(id, slug, itemPath);
+        File.WriteAllText(canonicalItemPath, new FrontMatter(data, body).Serialize());
+        return new WorkItemResult(artifactId, canonicalSlug, canonicalItemPath);
     }
 
     public static WorkItem CreateItemFromGithubIssue(
@@ -188,48 +114,8 @@ public static class WorkItemService
         string? priority,
         string? owner)
     {
-        if (ShouldUseCanonicalWorkItems(repoRoot) || SpecTraceMarkdown.GetCanonicalArtifactType(type) is "work_item")
-        {
-            var canonicalCreated = CreateItem(repoRoot, config, type, issue.Title, status, priority, owner);
-            _ = UpdateItemFromGithubIssue(canonicalCreated.Path, issue, apply: true);
-            return LoadItem(canonicalCreated.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
-        }
-
-        var created = CreateItem(repoRoot, config, type, issue.Title, status, priority, owner);
-        var content = File.ReadAllText(created.Path);
-        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
-        {
-            throw new InvalidOperationException($"Front matter error: {error}");
-        }
-
-        var data = frontMatter!.Data;
-        data["githubSynced"] = FormatGithubSynced(DateTime.UtcNow);
-        if (issue.Labels.Count > 0)
-        {
-            data["tags"] = issue.Labels.ToList();
-        }
-
-        var related = GetRelatedMap(data);
-        if (related is not null)
-        {
-            var issues = EnsureList(related, "issues");
-            AddUniqueLink(issues, issue.Url);
-
-            var prs = EnsureList(related, "prs");
-            foreach (var pr in issue.PullRequests)
-            {
-                AddUniqueLink(prs, pr);
-            }
-
-            EnsureList(related, "branches");
-        }
-
-        var summary = BuildIssueSummary(issue);
-        var body = ReplaceSection(frontMatter.Body, "Summary", summary);
-        frontMatter = new FrontMatter(data, body);
-        File.WriteAllText(created.Path, frontMatter.Serialize());
-
-        return LoadItem(created.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
+        var canonicalCreated = CreateItem(repoRoot, config, type, issue.Title, status, priority, owner);
+        return LoadItem(canonicalCreated.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
     }
 
     public static WorkItem ApplyDraft(string path, WorkItemDraft draft)
@@ -251,45 +137,6 @@ public static class WorkItemService
 
             var canonicalBody = ReplaceSection(frontMatter.Body, "Summary", canonicalSummary);
             canonicalBody = ReplaceSection(canonicalBody, "Verification Plan", FormatAcceptanceCriteria(draft.AcceptanceCriteria));
-
-            var canonicalMetadata = TryParseCompatibilityMetadata(canonicalBody, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    draft.Type,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            if (draft.Tags is { Count: > 0 })
-            {
-                canonicalMetadata = canonicalMetadata with
-                {
-                    Tags = draft.Tags
-                        .Select(tag => tag.Trim())
-                        .Where(tag => tag.Length > 0)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList(),
-                    Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                };
-            }
-            else
-            {
-                canonicalMetadata = canonicalMetadata with
-                {
-                    Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                };
-            }
-
-            canonicalBody = AppendCompatibilityMetadata(canonicalBody, canonicalMetadata);
             frontMatter = new FrontMatter(data, canonicalBody);
             File.WriteAllText(path, frontMatter.Serialize());
             return LoadItem(path) ?? throw new InvalidOperationException("Failed to reload work item.");
@@ -351,45 +198,6 @@ public static class WorkItemService
 
             canonicalBody = ReplaceSection(canonicalBody, "Summary", canonicalSummary);
             canonicalBody = ReplaceSection(canonicalBody, "Verification Plan", FormatAcceptanceCriteria(draft.AcceptanceCriteria));
-
-            var canonicalMetadata = TryParseCompatibilityMetadata(canonicalBody, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    draft.Type,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            if (draft.Tags is { Count: > 0 })
-            {
-                canonicalMetadata = canonicalMetadata with
-                {
-                    Tags = draft.Tags
-                        .Select(tag => tag.Trim())
-                        .Where(tag => tag.Length > 0)
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList(),
-                    Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                };
-            }
-            else
-            {
-                canonicalMetadata = canonicalMetadata with
-                {
-                    Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                };
-            }
-
-            canonicalBody = AppendCompatibilityMetadata(canonicalBody, canonicalMetadata);
             frontMatter = new FrontMatter(data, canonicalBody);
             File.WriteAllText(path, frontMatter.Serialize());
             return LoadItem(path) ?? throw new InvalidOperationException("Failed to reload work item.");
@@ -435,58 +243,6 @@ public static class WorkItemService
             data["title"] = issue.Title;
             var canonicalBody = ReplaceTitleHeading(frontMatter.Body, GetString(data, "artifact_id") ?? string.Empty, issue.Title);
             canonicalBody = ReplaceSection(canonicalBody, "Summary", BuildIssueSummary(issue));
-
-            var canonicalMetadata = TryParseCompatibilityMetadata(canonicalBody, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    NormalizeCompatibilityType(GetString(data, "type")),
-                    GetString(data, "priority"),
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalTags = issue.Labels
-                .Select(label => label.Trim())
-                .Where(label => label.Length > 0)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-            if (canonicalTags.Count > 0)
-            {
-                canonicalMetadata = canonicalMetadata with { Tags = canonicalTags };
-            }
-
-            var canonicalIssues = canonicalMetadata.Related.Issues
-                .Concat(new[] { issue.Url })
-                .Where(link => !string.IsNullOrWhiteSpace(link))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-            var canonicalPrs = canonicalMetadata.Related.Prs
-                .Concat(issue.PullRequests)
-                .Where(link => !string.IsNullOrWhiteSpace(link))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            canonicalMetadata = canonicalMetadata with
-            {
-                Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                GithubSynced = FormatGithubSynced(DateTime.UtcNow),
-                Related = canonicalMetadata.Related with
-                {
-                    Issues = canonicalIssues,
-                    Prs = canonicalPrs,
-                    Branches = canonicalMetadata.Related.Branches.ToList()
-                }
-            };
-
-            canonicalBody = AppendCompatibilityMetadata(canonicalBody, canonicalMetadata);
             frontMatter = new FrontMatter(data, canonicalBody);
 
             if (apply)
@@ -664,42 +420,19 @@ public static class WorkItemService
             var data = frontMatter!.Data;
             if (IsCanonicalWorkItemFrontMatter(data))
             {
-                var canonicalBody = frontMatter.Body;
-                var canonicalMetadata = TryParseCompatibilityMetadata(canonicalBody, out var parsedMetadata)
-                    ? parsedMetadata
-                    : BuildCompatibilityMetadata(
-                        null,
-                        null,
-                        DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                        null,
-                        new List<string>(),
-                        null,
-                        new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
                 var canonicalChanged = false;
-                var canonicalRelated = canonicalMetadata.Related;
-                canonicalChanged |= NormalizeCompatibilityRelatedList(ref canonicalRelated, "specs");
-                canonicalChanged |= NormalizeCompatibilityRelatedList(ref canonicalRelated, "adrs");
-                canonicalChanged |= NormalizeCompatibilityRelatedList(ref canonicalRelated, "files");
-                canonicalChanged |= NormalizeCompatibilityRelatedList(ref canonicalRelated, "prs");
-                canonicalChanged |= NormalizeCompatibilityRelatedList(ref canonicalRelated, "issues");
-                canonicalChanged |= NormalizeCompatibilityRelatedList(ref canonicalRelated, "branches");
+                canonicalChanged |= NormalizeCanonicalList(data, "addresses", CanonicalAddressesPlaceholder);
+                canonicalChanged |= NormalizeCanonicalList(data, "design_links", CanonicalDesignLinksPlaceholder);
+                canonicalChanged |= NormalizeCanonicalList(data, "verification_links", CanonicalVerificationLinksPlaceholder);
+                canonicalChanged |= NormalizeCanonicalList(data, "related_artifacts", CanonicalRelatedArtifactsPlaceholder);
+
+                if (canonicalChanged)
+                {
+                    frontMatter = new FrontMatter(data, frontMatter.Body);
+                }
 
                 if (canonicalChanged && !dryRun)
                 {
-                    canonicalMetadata = canonicalMetadata with
-                    {
-                        Related = canonicalRelated,
-                        Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                    };
-                    canonicalBody = AppendCompatibilityMetadata(canonicalBody, canonicalMetadata);
-                    frontMatter = new FrontMatter(data, canonicalBody);
                     File.WriteAllText(item.Path, frontMatter.Serialize());
                     updated++;
                 }
@@ -715,7 +448,6 @@ public static class WorkItemService
 
             var changed = false;
             changed |= NormalizeList(related, "specs");
-            changed |= NormalizeList(related, "adrs");
             changed |= NormalizeList(related, "files");
             changed |= NormalizeList(related, "prs");
             changed |= NormalizeList(related, "issues");
@@ -786,6 +518,7 @@ public static class WorkItemService
 
                 canonicalChanged |= NormalizeCanonicalList(data, "addresses", "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
                 canonicalChanged |= NormalizeCanonicalList(data, "design_links", "ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
+                canonicalChanged |= NormalizeCanonicalList(data, "verification_links", "VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
                 canonicalChanged |= NormalizeCanonicalList(data, "related_artifacts", "SPEC-<DOMAIN>[-<GROUPING>...]");
 
                 var canonicalNormalizedBody = NormalizeBody(item.ArtifactId, item.Title, frontMatter.Body, out var canonicalBodyChanged);
@@ -831,7 +564,6 @@ public static class WorkItemService
             if (related is not null)
             {
                 changed |= NormalizeList(related, "specs");
-                changed |= NormalizeList(related, "adrs");
                 changed |= NormalizeList(related, "files");
                 changed |= NormalizeList(related, "prs");
                 changed |= NormalizeList(related, "issues");
@@ -1149,43 +881,26 @@ public static class WorkItemService
             {
                 return null;
             }
-
-            var canonicalCompatibility = TryParseCompatibilityMetadata(frontMatter.Body, out var parsedCompatibility)
-                ? parsedCompatibility
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalCreated = string.IsNullOrWhiteSpace(canonicalCompatibility.Created)
-                ? DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-                : canonicalCompatibility.Created;
-            var canonicalUpdated = canonicalCompatibility.Updated;
-            var canonicalTags = canonicalCompatibility.Tags.Count > 0 ? canonicalCompatibility.Tags : GetStringList(data, "tags");
-            var canonicalRelated = FromRelatedLinksPayload(canonicalCompatibility.Related);
             var canonicalSlug = DeriveSlugFromPath(path, canonicalArtifactId);
+            var canonicalCreated = File.GetCreationTimeUtc(path).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var canonicalUpdated = File.GetLastWriteTimeUtc(path).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
             return new WorkItem(
                 canonicalArtifactId,
-                canonicalCompatibility.Type,
+                "work_item",
                 canonicalStatus,
                 canonicalTitle,
-                canonicalCompatibility.Priority,
+                null,
                 canonicalOwner,
                 canonicalCreated,
                 canonicalUpdated,
-                canonicalTags,
-                canonicalRelated,
+                new List<string>(),
+                new RelatedLinks(
+                    new List<string>(),
+                    new List<string>(),
+                    new List<string>(),
+                    new List<string>(),
+                    new List<string>()),
                 canonicalSlug,
                 path,
                 frontMatter.Body)
@@ -1198,56 +913,11 @@ public static class WorkItemService
                 DesignLinks = canonicalDesignLinks,
                 VerificationLinks = canonicalVerificationLinks,
                 RelatedArtifacts = canonicalRelatedArtifacts,
-                GithubSynced = canonicalCompatibility.GithubSynced
+                GithubSynced = null
             };
         }
 
-        var id = GetString(data, "id") ?? "";
-        var type = GetString(data, "type") ?? "";
-        var status = GetString(data, "status") ?? "";
-        var title = GetString(data, "title") ?? DeriveTitleFromPath(path, id);
-        var priority = GetString(data, "priority");
-        var owner = GetString(data, "owner");
-        var created = GetString(data, "created") ?? "";
-        var updated = GetString(data, "updated");
-
-        if (string.IsNullOrWhiteSpace(id) ||
-            string.IsNullOrWhiteSpace(type) ||
-            string.IsNullOrWhiteSpace(status) ||
-            string.IsNullOrWhiteSpace(created))
-        {
-            return null;
-        }
-
-        var tags = GetStringList(data, "tags");
-        var related = GetRelated(data);
-        var slug = DeriveSlugFromPath(path, id);
-
-        return new WorkItem(
-            id,
-            type,
-            status,
-            title,
-            priority,
-            owner,
-            created,
-            updated,
-            tags,
-            related,
-            slug,
-            path,
-            frontMatter.Body)
-        {
-            ArtifactId = id,
-            ArtifactType = "work_item",
-            ArtifactStatus = status,
-            Domain = GetString(data, "domain") ?? string.Empty,
-            Addresses = new List<string>(),
-            DesignLinks = new List<string>(),
-            VerificationLinks = new List<string>(),
-            RelatedArtifacts = GetStringList(data, "related_artifacts"),
-            GithubSynced = GetString(data, "githubSynced")
-        };
+        return null;
     }
 
     public static WorkItem UpdateStatus(string path, string status, string? note)
@@ -1266,29 +936,6 @@ public static class WorkItemService
             {
                 canonicalBody = AppendNote(canonicalBody, note, "Completion Notes");
             }
-
-            var canonicalMetadata = TryParseCompatibilityMetadata(canonicalBody, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            canonicalMetadata = canonicalMetadata with
-            {
-                Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-            };
-            canonicalBody = AppendCompatibilityMetadata(canonicalBody, canonicalMetadata);
             frontMatter = new FrontMatter(frontMatter.Data, canonicalBody);
             File.WriteAllText(path, frontMatter.Serialize());
             return LoadItem(path) ?? throw new InvalidOperationException("Failed to reload work item.");
@@ -1306,26 +953,9 @@ public static class WorkItemService
         return LoadItem(path) ?? throw new InvalidOperationException("Failed to reload work item.");
     }
 
-    public static WorkItem Close(string path, bool move, WorkbenchConfig config, string repoRoot)
+    public static WorkItem Close(string path)
     {
-        var content = File.ReadAllText(path);
-        if (FrontMatter.TryParse(content, out var frontMatter, out _) &&
-            IsCanonicalWorkItemFrontMatter(frontMatter!.Data))
-        {
-            return UpdateStatus(path, "complete", null);
-        }
-
-        var updated = UpdateStatus(path, "done", null);
-        if (!move)
-        {
-            return updated;
-        }
-
-        var fileName = Path.GetFileName(path);
-        var dest = Path.Combine(repoRoot, config.Paths.DoneDir, fileName);
-        Directory.CreateDirectory(Path.GetDirectoryName(dest) ?? repoRoot);
-        File.Move(path, dest, overwrite: false);
-        return LoadItem(dest) ?? throw new InvalidOperationException("Failed to reload work item.");
+        return UpdateStatus(path, "complete", null);
     }
 
     public static WorkItem Move(string path, string destination, string repoRoot)
@@ -1355,21 +985,6 @@ public static class WorkItemService
         {
             frontMatter.Data["title"] = newTitle;
             var canonicalBody = ReplaceTitleHeading(frontMatter.Body, item.ArtifactId, newTitle);
-            var canonicalMetadata = TryParseCompatibilityMetadata(canonicalBody, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    item.Type,
-                    item.Priority,
-                    item.Created,
-                    item.Updated,
-                    item.Tags,
-                    item.GithubSynced,
-                    item.Related);
-            canonicalMetadata = canonicalMetadata with
-            {
-                Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-            };
-            canonicalBody = AppendCompatibilityMetadata(canonicalBody, canonicalMetadata);
             frontMatter = new FrontMatter(frontMatter.Data, canonicalBody);
             File.WriteAllText(path, frontMatter.Serialize());
 
@@ -1427,28 +1042,11 @@ public static class WorkItemService
             var canonicalArtifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId") ?? string.Empty;
             var canonicalTitle = GetString(data, "title") ?? string.Empty;
             var canonicalOwner = GetString(data, "owner");
-            var canonicalMetadata = TryParseCompatibilityMetadata(body, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    GetString(data, "priority"),
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
 
             var canonicalTitleUpdated = false;
             var canonicalSummaryUpdated = false;
             var canonicalAcceptanceCriteriaUpdated = false;
             var canonicalNotesAppended = false;
-            var canonicalMetadataUpdated = false;
 
             var canonicalNormalizedTitle = title?.Trim();
             if (!string.IsNullOrWhiteSpace(canonicalNormalizedTitle) &&
@@ -1467,17 +1065,6 @@ public static class WorkItemService
                 if (!string.Equals(currentStatus, canonicalStatus, StringComparison.Ordinal))
                 {
                     data["status"] = canonicalStatus;
-                    canonicalMetadataUpdated = true;
-                }
-            }
-
-            if (priority is not null)
-            {
-                var normalizedPriority = priority.Trim();
-                if (!string.Equals(canonicalMetadata.Priority ?? string.Empty, normalizedPriority, StringComparison.Ordinal))
-                {
-                    canonicalMetadata = canonicalMetadata with { Priority = string.IsNullOrWhiteSpace(normalizedPriority) ? null : normalizedPriority };
-                    canonicalMetadataUpdated = true;
                 }
             }
 
@@ -1488,7 +1075,6 @@ public static class WorkItemService
                     !string.Equals(canonicalOwner, normalizedOwner, StringComparison.Ordinal))
                 {
                     data["owner"] = normalizedOwner;
-                    canonicalMetadataUpdated = true;
                 }
             }
 
@@ -1516,16 +1102,10 @@ public static class WorkItemService
                 canonicalNotesAppended = true;
             }
 
-            if (!canonicalTitleUpdated && !canonicalSummaryUpdated && !canonicalAcceptanceCriteriaUpdated && !canonicalNotesAppended && !canonicalMetadataUpdated)
+            if (!canonicalTitleUpdated && !canonicalSummaryUpdated && !canonicalAcceptanceCriteriaUpdated && !canonicalNotesAppended)
             {
                 throw new InvalidOperationException("No work item edits were requested.");
             }
-
-            canonicalMetadata = canonicalMetadata with
-            {
-                Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-            };
-            body = AppendCompatibilityMetadata(body, canonicalMetadata);
             frontMatter = new FrontMatter(data, body);
             File.WriteAllText(path, frontMatter.Serialize());
 
@@ -1691,37 +1271,7 @@ public static class WorkItemService
 
         if (IsCanonicalWorkItemFrontMatter(frontMatter!.Data))
         {
-            var body = frontMatter.Body;
-            var metadata = TryParseCompatibilityMetadata(body, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalPrs = GetRelatedList(metadata.Related, "prs");
-            if (!canonicalPrs.Any(link => link.Equals(prUrl, StringComparison.OrdinalIgnoreCase)))
-            {
-                canonicalPrs.Add(prUrl);
-            }
-
-            metadata = metadata with
-            {
-                Related = SetRelatedList(metadata.Related, "prs", canonicalPrs)
-            };
-            body = AppendCompatibilityMetadata(body, metadata);
-            frontMatter = new FrontMatter(frontMatter.Data, body);
-            File.WriteAllText(path, frontMatter.Serialize());
+            _ = prUrl;
             return;
         }
 
@@ -1750,59 +1300,8 @@ public static class WorkItemService
 
         if (IsCanonicalWorkItemFrontMatter(frontMatter!.Data))
         {
-            var body = frontMatter.Body;
-            var metadata = TryParseCompatibilityMetadata(body, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalList = GetRelatedList(metadata.Related, key);
-            var canonicalNormalizedLink = NormalizeRelatedLink(link);
-            var canonicalAdded = false;
-            for (var index = 0; index < canonicalList.Count; index++)
-            {
-                var normalizedEntry = NormalizeRelatedLink(canonicalList[index]);
-                if (normalizedEntry.Equals(canonicalNormalizedLink, StringComparison.OrdinalIgnoreCase))
-                {
-                    if (!canonicalList[index].Equals(canonicalNormalizedLink, StringComparison.OrdinalIgnoreCase))
-                    {
-                        canonicalList[index] = canonicalNormalizedLink;
-                        canonicalAdded = true;
-                    }
-
-                    if (apply && canonicalAdded)
-                    {
-                        metadata = metadata with { Related = SetRelatedList(metadata.Related, key, canonicalList) };
-                        body = AppendCompatibilityMetadata(body, metadata);
-                        frontMatter = new FrontMatter(frontMatter.Data, body);
-                        File.WriteAllText(path, frontMatter.Serialize());
-                    }
-
-                    return canonicalAdded;
-                }
-            }
-
-            canonicalList.Add(canonicalNormalizedLink);
-            if (apply)
-            {
-                metadata = metadata with { Related = SetRelatedList(metadata.Related, key, canonicalList) };
-                body = AppendCompatibilityMetadata(body, metadata);
-                frontMatter = new FrontMatter(frontMatter.Data, body);
-                File.WriteAllText(path, frontMatter.Serialize());
-            }
-            return true;
+            _ = (key, link, apply);
+            return false;
         }
 
         var related = GetRelatedMap(frontMatter!.Data);
@@ -1855,46 +1354,7 @@ public static class WorkItemService
 
         if (IsCanonicalWorkItemFrontMatter(frontMatter!.Data))
         {
-            var body = frontMatter.Body;
-            var metadata = TryParseCompatibilityMetadata(body, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalList = GetRelatedList(metadata.Related, key);
-            var canonicalNormalizedLink = NormalizeRelatedLink(link);
-            var canonicalBefore = canonicalList.Count;
-            canonicalList.RemoveAll(entry =>
-            {
-                var canonicalValue = entry?.ToString();
-                return canonicalValue is not null &&
-                       NormalizeRelatedLink(canonicalValue).Equals(canonicalNormalizedLink, StringComparison.OrdinalIgnoreCase);
-            });
-
-            if (canonicalList.Count != canonicalBefore)
-            {
-                if (apply)
-                {
-                    metadata = metadata with { Related = SetRelatedList(metadata.Related, key, canonicalList) };
-                    body = AppendCompatibilityMetadata(body, metadata);
-                    frontMatter = new FrontMatter(frontMatter.Data, body);
-                    File.WriteAllText(path, frontMatter.Serialize());
-                }
-                return true;
-            }
-
+            _ = (key, link, apply);
             return false;
         }
 
@@ -1939,70 +1399,8 @@ public static class WorkItemService
 
         if (IsCanonicalWorkItemFrontMatter(frontMatter!.Data))
         {
-            var body = frontMatter.Body;
-            var metadata = TryParseCompatibilityMetadata(body, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalChanged = false;
-            var canonicalRelated = metadata.Related;
-            foreach (var key in new[] { "specs", "adrs", "files" })
-            {
-                var list = GetRelatedList(canonicalRelated, key);
-                for (var index = list.Count - 1; index >= 0; index--)
-                {
-                    var entry = list[index];
-                    if (string.IsNullOrWhiteSpace(entry))
-                    {
-                        continue;
-                    }
-
-                    var normalizedEntry = NormalizeRelatedLink(entry);
-                    if (!replacements.TryGetValue(normalizedEntry, out var replacement))
-                    {
-                        continue;
-                    }
-
-                    var normalizedReplacement = NormalizeRelatedLink(replacement);
-                    var alreadyPresent = list.Any(candidate =>
-                        NormalizeRelatedLink(candidate).Equals(normalizedReplacement, StringComparison.OrdinalIgnoreCase));
-
-                    if (alreadyPresent)
-                    {
-                        list.RemoveAt(index);
-                    }
-                    else
-                    {
-                        list[index] = normalizedReplacement;
-                    }
-
-                    canonicalRelated = SetRelatedList(canonicalRelated, key, list);
-                    canonicalChanged = true;
-                }
-            }
-
-            if (canonicalChanged && apply)
-            {
-                metadata = metadata with { Related = canonicalRelated };
-                body = AppendCompatibilityMetadata(body, metadata);
-                frontMatter = new FrontMatter(frontMatter.Data, body);
-                File.WriteAllText(path, frontMatter.Serialize());
-            }
-
-            return canonicalChanged;
+            _ = (replacements, apply);
+            return false;
         }
 
         var related = GetRelatedMap(frontMatter!.Data);
@@ -2012,7 +1410,7 @@ public static class WorkItemService
         }
 
         var changed = false;
-        foreach (var key in new[] { "specs", "adrs", "files" })
+        foreach (var key in new[] { "specs", "files" })
         {
             var list = EnsureList(related, key);
             for (var index = list.Count - 1; index >= 0; index--)
@@ -2066,44 +1464,8 @@ public static class WorkItemService
 
         if (IsCanonicalWorkItemFrontMatter(frontMatter!.Data))
         {
-            var body = frontMatter.Body;
-            var metadata = TryParseCompatibilityMetadata(body, out var parsedMetadata)
-                ? parsedMetadata
-                : BuildCompatibilityMetadata(
-                    null,
-                    null,
-                    DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    null,
-                    new List<string>(),
-                    null,
-                    new RelatedLinks(
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>(),
-                        new List<string>()));
-
-            var canonicalValue = FormatGithubSynced(timestamp);
-            if (string.Equals(metadata.GithubSynced, canonicalValue, StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            metadata = metadata with
-            {
-                GithubSynced = canonicalValue,
-                Updated = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-            };
-            body = AppendCompatibilityMetadata(body, metadata);
-
-            if (apply)
-            {
-                frontMatter = new FrontMatter(frontMatter.Data, body);
-                File.WriteAllText(path, frontMatter.Serialize());
-            }
-
-            return true;
+            _ = (timestamp, apply);
+            return false;
         }
 
         var data = frontMatter!.Data;
@@ -2133,40 +1495,6 @@ public static class WorkItemService
             }
         }
         throw new FileNotFoundException($"Work item not found: {id}");
-    }
-
-    private static FrontMatter NormalizeFrontMatter(FrontMatter frontMatter)
-    {
-        var normalized = frontMatter.Serialize();
-        if (!FrontMatter.TryParse(normalized, out var updated, out _))
-        {
-            return frontMatter;
-        }
-        return updated!;
-    }
-
-    private static string AllocateId(string repoRoot, WorkbenchConfig config, string type)
-    {
-        var prefix = config.GetPrefix(type);
-        var width = config.Ids.Width;
-        var pattern = new Regex($"^{Regex.Escape(prefix)}-(\\d+)$", RegexOptions.Compiled, TimeSpan.FromSeconds(1));
-        var max = 0;
-
-        foreach (var item in ListItems(repoRoot, config, includeDone: true).Items)
-        {
-            var match = pattern.Match(item.Id);
-            if (!match.Success)
-            {
-                continue;
-            }
-            if (int.TryParse(match.Groups[1].Value, CultureInfo.InvariantCulture, out var value))
-            {
-                max = Math.Max(max, value);
-            }
-        }
-
-        var next = max + 1;
-        return $"{prefix}-{next.ToString($"D{width}", CultureInfo.InvariantCulture)}";
     }
 
     private static string AllocateCanonicalId(string repoRoot, WorkbenchConfig config, string domain)
@@ -2211,30 +1539,10 @@ public static class WorkItemService
 
     private static IEnumerable<string> EnumerateItems(string repoRoot, WorkbenchConfig config, bool includeDone)
     {
-        var dirs = new List<string> { config.Paths.ItemsDir };
-        if (includeDone)
-        {
-            dirs.Add(config.Paths.DoneDir);
-        }
-        foreach (var dir in dirs)
-        {
-            var path = Path.Combine(repoRoot, dir);
-            if (!Directory.Exists(path))
-            {
-                continue;
-            }
-            foreach (var file in Directory.EnumerateFiles(path, "*.md", SearchOption.AllDirectories))
-            {
-                if (Path.GetFileName(file).Equals("README.md", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
+        _ = config;
+        _ = includeDone;
 
-                yield return file;
-            }
-        }
-
-        var canonicalRoot = Path.Combine(repoRoot, config.Paths.SpecsRoot, "work-items");
+        var canonicalRoot = Path.Combine(repoRoot, SpecTraceLayout.WorkItemsRoot);
         if (!Directory.Exists(canonicalRoot))
         {
             yield break;
@@ -2242,7 +1550,9 @@ public static class WorkItemService
 
         foreach (var file in Directory.EnumerateFiles(canonicalRoot, "*.md", SearchOption.AllDirectories))
         {
-            if (Path.GetFileName(file).Equals("README.md", StringComparison.OrdinalIgnoreCase))
+            var fileName = Path.GetFileName(file);
+            if (fileName.Equals("_index.md", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("README.md", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -2504,46 +1814,6 @@ public static class WorkItemService
         return reset;
     }
 
-    private static RelatedLinks GetRelated(IDictionary<string, object?> data)
-    {
-        var related = GetRelatedMap(data);
-        if (related is null)
-        {
-            return new RelatedLinks(
-                new List<string>(),
-                new List<string>(),
-                new List<string>(),
-                new List<string>(),
-                new List<string>(),
-                new List<string>());
-        }
-
-        List<string> Extract(string key)
-        {
-            if (!related.TryGetValue(key, out var value) || value is null)
-            {
-                return new List<string>();
-            }
-            if (value is IEnumerable<object> list)
-            {
-                return list.Select(item => item?.ToString() ?? string.Empty).Where(item => item.Length > 0).ToList();
-            }
-            if (value is IEnumerable<object?> nullableList)
-            {
-                return nullableList.Select(item => item?.ToString() ?? string.Empty).Where(item => item.Length > 0).ToList();
-            }
-            return new List<string>();
-        }
-
-        return new RelatedLinks(
-            Extract("specs"),
-            Extract("adrs"),
-            Extract("files"),
-            Extract("prs"),
-            Extract("issues"),
-            Extract("branches"));
-    }
-
     private static string NormalizeRelatedLink(string link)
     {
         var trimmed = link.Trim();
@@ -2561,19 +1831,6 @@ public static class WorkItemService
             .Where(value => value.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-    }
-
-    private static bool NormalizeCompatibilityRelatedList(ref RelatedLinksPayload related, string key)
-    {
-        var current = GetRelatedList(related, key);
-        var normalized = NormalizeRelatedValues(current);
-        if (ListsMatch(current, normalized))
-        {
-            return false;
-        }
-
-        related = SetRelatedList(related, key, normalized);
-        return true;
     }
 
     private static bool NormalizeCanonicalList(IDictionary<string, object?> data, string key, string placeholder)
@@ -2688,7 +1945,6 @@ public static class WorkItemService
         }
 
         changed |= EnsureListChanged(related, "specs");
-        changed |= EnsureListChanged(related, "adrs");
         changed |= EnsureListChanged(related, "files");
         changed |= EnsureListChanged(related, "prs");
         changed |= EnsureListChanged(related, "issues");
@@ -2704,12 +1960,6 @@ public static class WorkItemService
         var wasEnumerable = value is IEnumerable<object> && value is not List<object?>;
         _ = EnsureList(data, key);
         return !had || value is null || wasEnumerable || !wasList;
-    }
-
-    private static bool ShouldUseCanonicalWorkItems(string repoRoot)
-    {
-        return Directory.Exists(Path.Combine(repoRoot, SpecTraceLayout.SpecsRoot)) ||
-               File.Exists(Path.Combine(repoRoot, "artifact-id-policy.json"));
     }
 
     private static bool IsCanonicalWorkItemFrontMatter(IDictionary<string, object?> data)
@@ -2735,30 +1985,13 @@ public static class WorkItemService
 
         return normalized.ToLowerInvariant() switch
         {
-            "draft" or "planned" => "planned",
-            "ready" => "planned",
+            "planned" => "planned",
             "in-progress" or "in_progress" => "in_progress",
             "blocked" => "blocked",
-            "done" or "complete" => "complete",
-            "dropped" or "cancelled" => "cancelled",
+            "complete" => "complete",
+            "cancelled" => "cancelled",
             "superseded" => "superseded",
-            _ => normalized
-        };
-    }
-
-    private static string NormalizeCompatibilityType(string? type)
-    {
-        var normalized = type?.Trim();
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return "task";
-        }
-
-        return normalized.ToLowerInvariant() switch
-        {
-            "work_item" or "work-item" or "work item" => "task",
-            "bug" or "task" or "spike" => normalized.ToLowerInvariant(),
-            _ => normalized.ToLowerInvariant()
+            _ => throw new InvalidOperationException($"Unsupported work item status '{status}'.")
         };
     }
 
@@ -2766,150 +1999,6 @@ public static class WorkItemService
     {
         return SpecTraceLayout.GetDefaultDomain(repoRoot);
     }
-
-    private static RelatedLinksPayload ToRelatedLinksPayload(RelatedLinks related)
-    {
-        return new RelatedLinksPayload(
-            related.Specs.ToList(),
-            related.Adrs.ToList(),
-            related.Files.ToList(),
-            related.Prs.ToList(),
-            related.Issues.ToList(),
-            related.Branches.ToList());
-    }
-
-    private static RelatedLinks FromRelatedLinksPayload(RelatedLinksPayload related)
-    {
-        return new RelatedLinks(
-            related.Specs.ToList(),
-            related.Adrs.ToList(),
-            related.Files.ToList(),
-            related.Prs.ToList(),
-            related.Issues.ToList(),
-            related.Branches.ToList());
-    }
-
-    private static string BuildCompatibilityMetadataSection(WorkItemCompatibilityMetadata metadata)
-    {
-        var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
-
-        return string.Join(
-            "\n",
-            "```json",
-            json,
-            "```");
-    }
-
-    private static string AppendCompatibilityMetadata(string body, WorkItemCompatibilityMetadata metadata)
-    {
-        return ReplaceSection(body, "Compatibility Metadata", BuildCompatibilityMetadataSection(metadata));
-    }
-
-    private static bool TryParseCompatibilityMetadata(string body, out WorkItemCompatibilityMetadata metadata)
-    {
-        metadata = new WorkItemCompatibilityMetadata(
-            "task",
-            null,
-            string.Empty,
-            null,
-            new List<string>(),
-            null,
-            new RelatedLinksPayload(
-                new List<string>(),
-                new List<string>(),
-                new List<string>(),
-                new List<string>(),
-                new List<string>(),
-                new List<string>()));
-
-        var section = SpecTraceMarkdown.ExtractSection(body, "Compatibility Metadata");
-        if (string.IsNullOrWhiteSpace(section))
-        {
-            return false;
-        }
-
-        var lines = section.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').ToList();
-        var start = lines.FindIndex(line => line.TrimStart().StartsWith("```", StringComparison.Ordinal));
-        var end = lines.FindLastIndex(line => line.TrimStart().StartsWith("```", StringComparison.Ordinal));
-        var jsonText = start >= 0 && end > start
-            ? string.Join("\n", lines[(start + 1)..end])
-            : section;
-
-        try
-        {
-            var parsed = JsonSerializer.Deserialize<WorkItemCompatibilityMetadata>(jsonText);
-            if (parsed is null)
-            {
-                return false;
-            }
-
-            metadata = parsed;
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
-
-    private static WorkItemCompatibilityMetadata BuildCompatibilityMetadata(
-        string? type,
-        string? priority,
-        string created,
-        string? updated,
-        IList<string> tags,
-        string? githubSynced,
-        RelatedLinks related)
-    {
-        return new WorkItemCompatibilityMetadata(
-            NormalizeCompatibilityType(type),
-            string.IsNullOrWhiteSpace(priority) ? null : priority.Trim(),
-            created,
-            string.IsNullOrWhiteSpace(updated) ? null : updated.Trim(),
-            tags.ToList(),
-            githubSynced,
-            ToRelatedLinksPayload(related));
-    }
-
-    private static List<string> GetRelatedList(RelatedLinksPayload related, string key)
-    {
-        return key.ToLowerInvariant() switch
-        {
-            "specs" => related.Specs.ToList(),
-            "adrs" => related.Adrs.ToList(),
-            "files" => related.Files.ToList(),
-            "prs" => related.Prs.ToList(),
-            "issues" => related.Issues.ToList(),
-            "branches" => related.Branches.ToList(),
-            _ => new List<string>()
-        };
-    }
-
-    private static RelatedLinksPayload SetRelatedList(RelatedLinksPayload related, string key, IList<string> values)
-    {
-        return key.ToLowerInvariant() switch
-        {
-            "specs" => related with { Specs = values.ToList() },
-            "adrs" => related with { Adrs = values.ToList() },
-            "files" => related with { Files = values.ToList() },
-            "prs" => related with { Prs = values.ToList() },
-            "issues" => related with { Issues = values.ToList() },
-            "branches" => related with { Branches = values.ToList() },
-            _ => related
-        };
-    }
-
-    private sealed record WorkItemCompatibilityMetadata(
-        [property: JsonPropertyName("type")] string Type,
-        [property: JsonPropertyName("priority")] string? Priority,
-        [property: JsonPropertyName("created")] string Created,
-        [property: JsonPropertyName("updated")] string? Updated,
-        [property: JsonPropertyName("tags")] IList<string> Tags,
-        [property: JsonPropertyName("githubSynced")] string? GithubSynced,
-        [property: JsonPropertyName("related")] RelatedLinksPayload Related);
 
     private sealed record BodySection(string Heading, List<string> Lines);
 }

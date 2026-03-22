@@ -27,8 +27,6 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(ItemSyncConflictEntry))]
 [JsonSerializable(typeof(ItemSyncOutput))]
 [JsonSerializable(typeof(ItemNormalizeOutput))]
-[JsonSerializable(typeof(MigrationOutput))]
-[JsonSerializable(typeof(BoardOutput))]
 [JsonSerializable(typeof(PromoteOutput))]
 [JsonSerializable(typeof(PrOutput))]
 [JsonSerializable(typeof(ValidateOutput))]

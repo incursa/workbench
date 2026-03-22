@@ -99,13 +99,12 @@ public class IndexModel : RepoPageModel
 
             SetBanner(
                 "Navigation synced",
-                "Docs, work items, indexes, and workboard refreshed.",
+                "Docs, work items, and indexes refreshed.",
                 new[]
                 {
                     $"Docs updated: {result.DocsUpdated}",
                     $"Items updated: {result.ItemsUpdated}",
-                    $"Index files updated: {result.IndexFilesUpdated}",
-                    $"Workboard updated: {result.WorkboardUpdated}"
+                    $"Index files updated: {result.IndexFilesUpdated}"
                 }.Concat(details));
             return RedirectToPage(new
             {
@@ -185,41 +184,16 @@ public class IndexModel : RepoPageModel
         }
     }
 
-    public IActionResult OnPostRegenerateBoard()
-    {
-        try
-        {
-            var result = Workspace.RegenerateWorkboard();
-            SetBanner(
-                "Workboard regenerated",
-                $"Updated {result.Path}.",
-                result.Counts.Select(entry => $"{entry.Key}: {entry.Value}"));
-            return RedirectToPage(new
-            {
-                selectedId = SelectedId,
-                statusFilter = StatusFilter,
-                query = Query,
-                includeDone = IncludeDone
-            });
-        }
-        catch (Exception ex)
-        {
-            ModelState.AddModelError(string.Empty, FormatError(ex));
-            LoadPage(populateEditor: false);
-            return Page();
-        }
-    }
-
     public static string StatusLabel(string status)
     {
         return status.ToLowerInvariant() switch
         {
-            "in-progress" => "In progress",
-            "done" => "Done",
+            "planned" => "Planned",
+            "in_progress" => "In progress",
             "blocked" => "Blocked",
-            "ready" => "Ready",
-            "draft" => "Draft",
-            "dropped" => "Dropped",
+            "complete" => "Complete",
+            "cancelled" => "Cancelled",
+            "superseded" => "Superseded",
             _ => status
         };
     }
@@ -228,12 +202,12 @@ public class IndexModel : RepoPageModel
     {
         return status.ToLowerInvariant() switch
         {
-            "in-progress" => "status-progress",
-            "done" => "status-done",
+            "planned" => "status-planned",
+            "in_progress" => "status-progress",
             "blocked" => "status-blocked",
-            "ready" => "status-ready",
-            "draft" => "status-draft",
-            "dropped" => "status-dropped",
+            "complete" => "status-complete",
+            "cancelled" => "status-cancelled",
+            "superseded" => "status-superseded",
             _ => "status-default"
         };
     }
@@ -259,18 +233,21 @@ public class IndexModel : RepoPageModel
         }
 
         var normalized = trimmed.Replace('\\', '/').TrimStart('/');
-        if (normalized.StartsWith("work/items/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith("specs/work-items/", StringComparison.OrdinalIgnoreCase))
         {
             var id = Path.GetFileNameWithoutExtension(normalized);
             return Url.Page("/Index", new { selectedId = id }) ?? trimmed;
         }
 
         if (normalized.StartsWith("overview/", StringComparison.OrdinalIgnoreCase) ||
-            normalized.StartsWith("contracts/", StringComparison.OrdinalIgnoreCase) ||
-            normalized.StartsWith("decisions/", StringComparison.OrdinalIgnoreCase) ||
             normalized.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase) ||
             normalized.StartsWith("tracking/", StringComparison.OrdinalIgnoreCase) ||
-            normalized.StartsWith("specs/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/requirements/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/architecture/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/verification/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/generated/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/templates/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/schemas/", StringComparison.OrdinalIgnoreCase) ||
             normalized.StartsWith("architecture/", StringComparison.OrdinalIgnoreCase))
         {
             return Url.Page("/Docs", new { selectedPath = normalized }) ?? trimmed;

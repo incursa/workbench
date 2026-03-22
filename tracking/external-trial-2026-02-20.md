@@ -1,16 +1,3 @@
----
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/tracking/external-trial-2026-02-20.md"
-  path: /tracking/external-trial-2026-02-20.md
-owner: platform
-status: active
-updated: 2026-02-20
----
-
 # External Trial Report (2026-02-20)
 
 This report documents the two-repo external hardening trial required by
@@ -28,7 +15,7 @@ This report documents the two-repo external hardening trial required by
   - `migrate coherent-v1 --dry-run`
   - `sync --issues false`
   - `migrate coherent-v1`
-  - `nav sync --issues false --include-done --force`
+- `nav sync --issues false --include-terminal-items --force`
   - `validate --strict`
   - `doctor --json`
 
@@ -40,7 +27,7 @@ This report documents the two-repo external hardening trial required by
 ### Key results
 
 - `sync --issues false`: exit `0` after fix (no GitHub issue creation/update).
-- `migrate coherent-v1`: exit `0`; moved `42` terminal items to `work/done`.
+  - `migrate coherent-v1`: exit `0`; moved `42` terminal items into their terminal location.
 - Validation errors reduced from `155` to `129`.
 - No unhandled exceptions in normal command execution.
 
@@ -58,7 +45,7 @@ This report documents the two-repo external hardening trial required by
 ### Key results
 
 - `sync --issues false` dry-run/apply: exit `0`.
-- `migrate coherent-v1`: exit `0`; no item moves required (`moved to done: 0`).
+- `migrate coherent-v1`: exit `0`; no item moves required (`moved to terminal location: 0`).
 - `nav sync`: exit `0`.
 - No unhandled exceptions in normal command execution.
 

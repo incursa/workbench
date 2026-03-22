@@ -23,16 +23,16 @@
             <span class="stat-value">@Model.Items.Count</span>
         </div>
         <div class="inc-card stat-card">
+            <span class="stat-label">Planned</span>
+            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</span>
+        </div>
+        <div class="inc-card stat-card">
             <span class="stat-label">In progress</span>
-            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in-progress", StringComparison.OrdinalIgnoreCase))</span>
+            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</span>
         </div>
         <div class="inc-card stat-card">
-            <span class="stat-label">Ready</span>
-            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "ready", StringComparison.OrdinalIgnoreCase))</span>
-        </div>
-        <div class="inc-card stat-card">
-            <span class="stat-label">Blocked</span>
-            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "blocked", StringComparison.OrdinalIgnoreCase))</span>
+            <span class="stat-label">Complete</span>
+            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</span>
         </div>
     </div>
 </section>
@@ -76,7 +76,7 @@
                     </label>
                 <label class="inc-form__check checkbox-row">
                     <input class="inc-form__check__input" asp-for="IncludeDone" />
-                    <span class="inc-form__check__label">Include done</span>
+                    <span class="inc-form__check__label">Include terminal items</span>
                 </label>
                 <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
             </form>
@@ -223,7 +223,7 @@
                     <h4>Related links</h4>
                     <span class="muted">@Model.SelectedItem.Path</span>
                 </div>
-                <div class="link-grid">
+                    <div class="link-grid">
                     <div>
                     <div class="field-label">Specs</div>
                         @if (Model.SelectedItem.Related.Specs.Count == 0)
@@ -239,14 +239,28 @@
                         }
                     </div>
                     <div>
-                        <div class="field-label">ADRs</div>
-                        @if (Model.SelectedItem.Related.Adrs.Count == 0)
+                        <div class="field-label">Design links</div>
+                        @if (Model.SelectedItem.DesignLinks.Count == 0)
                         {
                             <div class="muted">None</div>
                         }
                         else
                         {
-                            foreach (var link in Model.SelectedItem.Related.Adrs)
+                            foreach (var link in Model.SelectedItem.DesignLinks)
+                            {
+                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                            }
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Verification links</div>
+                        @if (Model.SelectedItem.VerificationLinks.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var link in Model.SelectedItem.VerificationLinks)
                             {
                                 <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
                             }
@@ -303,7 +317,7 @@
                 </div>
                 <div class="inc-card action-tile">
                     <div class="action-title">Sync navigation</div>
-                    <div class="action-copy">Regenerate indexes, backlinks, and workboard entries from repo state.</div>
+                    <div class="action-copy">Regenerate indexes and backlinks from repo state.</div>
                     <form method="post" asp-page-handler="SyncNavigation">
                         <input type="hidden" asp-for="SelectedId" />
                         <input type="hidden" asp-for="StatusFilter" />
@@ -316,17 +330,6 @@
                     <div class="action-title">Validate repo</div>
                     <div class="action-copy">Check local docs, links, IDs, and work item structure.</div>
                     <form method="post" asp-page-handler="Validate">
-                        <input type="hidden" asp-for="SelectedId" />
-                        <input type="hidden" asp-for="StatusFilter" />
-                        <input type="hidden" asp-for="Query" />
-                        <input type="hidden" asp-for="IncludeDone" />
-                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
-                    </form>
-                </div>
-                <div class="inc-card action-tile">
-                    <div class="action-title">Regen workboard</div>
-                    <div class="action-copy">Rebuild the local workboard from current work item state.</div>
-                    <form method="post" asp-page-handler="RegenerateBoard">
                         <input type="hidden" asp-for="SelectedId" />
                         <input type="hidden" asp-for="StatusFilter" />
                         <input type="hidden" asp-for="Query" />

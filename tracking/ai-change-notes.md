@@ -1,17 +1,3 @@
----
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  changeNotes: []
-  pathHistory:
-    - "C:/tracking/ai-change-notes.md"
-  path: /tracking/ai-change-notes.md
-owner: platform
-status: draft
-updated: 2025-12-27
----
-
 # AI change notes for markdown docs
 
 Workbench can append AI-generated change notes to markdown documents so every

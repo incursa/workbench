@@ -52,7 +52,7 @@ public sealed record QualityAuthoredIntent(
 
 public static class QualityService
 {
-    public const string DefaultContractPath = "contracts/test-gate.contract.yaml";
+    public const string DefaultContractPath = "quality/testing-intent.yaml";
     public const string DefaultOutputDirectory = "artifacts/quality/testing";
     public const string DefaultInventoryArtifact = "test-inventory.json";
     public const string DefaultResultsArtifact = "test-run-summary.json";

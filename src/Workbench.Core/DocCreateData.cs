@@ -7,7 +7,7 @@ namespace Workbench.Core;
 /// <param name="ArtifactId">Artifact identifier when the document is tracked as an explicit spec or architecture artifact.</param>
 /// <param name="Domain">Document domain metadata when provided.</param>
 /// <param name="Capability">Document capability metadata when provided.</param>
-/// <param name="Type">Document type (spec, adr, runbook, guide, doc).</param>
+/// <param name="Type">Document type (spec, architecture, verification, work_item, doc, runbook).</param>
 /// <param name="WorkItems">Linked work item IDs.</param>
 public sealed record DocCreateData(
     [property: JsonPropertyName("path")] string Path,

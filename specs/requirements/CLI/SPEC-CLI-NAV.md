@@ -1,0 +1,55 @@
+---
+artifact_id: SPEC-CLI-NAV
+artifact_type: specification
+title: "CLI Navigation Commands Index"
+domain: CLI
+capability: command-surface
+status: draft
+owner: platform
+related_artifacts:
+  - SPEC-CLI-SURFACE
+  - SPEC-CLI-NAV-SYNC
+  - WI-WB-0024
+---
+
+# SPEC-CLI-NAV - CLI Navigation Commands Index
+
+## Purpose
+
+Define the navigation index for derived repo indexes and other generated views.
+
+## Scope
+
+- `workbench nav`
+
+## REQ-CLI-NAV-0001 Index coverage
+
+The `nav` index MUST point at the dedicated leaf spec for the exposed
+navigation sync command and stay in sync with the live command tree.
+
+## REQ-CLI-NAV-0002 Derived-output boundary
+
+The `nav` group root MUST only drive derived views and leaves canonical
+authored content unchanged.
+
+## REQ-CLI-NAV-0003 Derived-output scope
+
+`nav sync` MUST regenerate indexes and other derived views rather than editing
+authored content directly.
+
+## REQ-CLI-NAV-0004 Link-order boundary
+
+`nav sync` MUST reconcile links before rebuilding derived views when link
+corrections are needed.
+
+## REQ-CLI-NAV-0005 Child exposure
+
+The `nav` index MUST expose `sync` as its only documented child command.
+
+## REQ-CLI-NAV-0006 Non-mutating root
+
+The `nav` group root MUST not mutate authored content outside derived outputs.
+
+## Command Family Catalog
+
+- [SPEC-CLI-NAV-SYNC](./SPEC-CLI-NAV-SYNC.md)

@@ -82,20 +82,4 @@ public sealed record WorkbenchConfig(
         return Path.Combine(repoRoot, ".workbench", "config.json");
     }
 
-    /// <summary>
-    /// Returns the configured ID prefix for a work item type.
-    /// </summary>
-    /// <param name="type">Work item type (bug, task, spike).</param>
-    /// <returns>Prefix configured for the type.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown for unknown types.</exception>
-    public string GetPrefix(string type)
-    {
-        return type switch
-        {
-            "bug" => Ids.Prefixes.Bug,
-            "task" => Ids.Prefixes.Task,
-            "spike" => Ids.Prefixes.Spike,
-            _ => throw new ArgumentOutOfRangeException(nameof(type))
-        };
-    }
 }

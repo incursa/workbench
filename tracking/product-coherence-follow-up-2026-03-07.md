@@ -1,16 +1,3 @@
----
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/tracking/product-coherence-follow-up-2026-03-07.md"
-  path: /tracking/product-coherence-follow-up-2026-03-07.md
-owner: platform
-status: active
-updated: 2026-03-07
----
-
 # Product coherence follow-up (2026-03-07)
 
 This pass clarified the operating model, improved the work-item happy path, and
@@ -20,7 +7,7 @@ ergonomic gaps remain.
 ## Not solved tonight
 
 - The command surface still has overlapping entry points such as `sync`,
-  `item sync`, `doc sync`, `nav sync`, and `board regen`, which takes time to
+  `item sync`, `doc sync`, `nav sync`, and navigation regeneration, which takes time to
   learn even if each command is individually reasonable.
 - Human help, agent help, and the checked-in CLI help doc still duplicate the
   same surface in different formats, so drift is still possible.
@@ -31,7 +18,7 @@ ergonomic gaps remain.
 
 ## Larger redesign items
 
-- A single-source help/export system that can generate `contracts/cli-help.md`
+- A single-source help/export system that can generate `specs/generated/commands.md`
   from the live command tree.
 - A narrower top-level command model that distinguishes local authoring,
   derived-view refresh, and GitHub sync more explicitly.
@@ -56,4 +43,4 @@ ergonomic gaps remain.
 
 ## Related decisions
 
-- `/decisions/ADR-2026-03-07-repo-native-operating-model.md`
+- `/architecture/ARC-WB-0004-repo-native-operating-model.md`

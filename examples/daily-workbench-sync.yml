@@ -40,11 +40,11 @@ jobs:
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           workbench config set --path github.provider --value octokit
-          workbench sync --docs --nav --include-done --force --workboard true
+          workbench sync --docs --nav --include-terminal-items --force
 
       - name: Validate repo
         run: |
-          workbench item normalize --include-done
+          workbench item normalize --include-terminal-items
           workbench validate --strict \
             --skip-doc-schema \
             --link-exclude overview/tabler \

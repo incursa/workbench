@@ -1,6 +1,6 @@
 {
   "name": "incursa/workbench metadata catalog",
-  "version": 4,
+  "version": 6,
   "artifact_id_format": {
     "summary": "PREFIX-DOMAIN(-GROUPING...)",
     "grouping_segments": {
@@ -44,8 +44,7 @@
     "specification": "SPEC-{domain}{grouping}",
     "architecture": "ARC-{domain}{grouping}-{sequence}",
     "work_item": "WI-{domain}{grouping}-{sequence}",
-    "verification": "VER-{domain}{grouping}-{sequence}",
-    "decision_record": "ADR-{sequence}"
+    "verification": "VER-{domain}{grouping}-{sequence}"
   },
   "requirement_id_template": "REQ-{domain}{grouping}-{sequence}",
   "grouping_key_registry": [
@@ -65,6 +64,11 @@
       "description": "Repository layout and artifact placement"
     },
     {
+      "code": "PRF",
+      "name": "Profiles",
+      "description": "Conformance profiles and enforcement levels"
+    },
+    {
       "code": "TPL",
       "name": "Templates",
       "description": "Document templates and compact requirement grammar"
@@ -82,6 +86,7 @@
   ],
   "notes": [
     "specification identifiers use the SPEC-{domain}{grouping} template and stop after the optional grouping segments",
+    "architecture, work-item, and verification identifiers continue to use terminal sequences",
     "grouping expands to zero or more '-SEGMENT' tokens after the domain token",
     "grouping segments must start with a letter, so numeric-only grouping values are invalid",
     "the terminal sequence is zero-padded to at least four digits",

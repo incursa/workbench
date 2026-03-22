@@ -1,25 +1,14 @@
----
-workbench:
-  type: runbook
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/runbooks/cross-repo-migration-and-rollback.md"
-  path: /runbooks/cross-repo-migration-and-rollback.md
-owner: platform
-status: active
-updated: 2026-02-19
----
-
 # Runbook: Cross-Repo Migration and Rollback (coherent-v1)
 
 ## Purpose
 
-Migrate an existing repository to the Workbench documentation/work-item model with a safe, repeatable process and a clean rollback path.
+Migrate an existing repository to the canonical Spec Trace model with a safe,
+repeatable process and a clean rollback path.
 
 ## Scope
 
-Use for repositories that are adopting in-repo work tracking (`work`) and Workbench-managed semantic documentation/indexes.
+Use for repositories that are adopting canonical work items, architecture,
+verification, and derived navigation outputs.
 
 ## Preconditions
 
@@ -51,7 +40,7 @@ Use for repositories that are adopting in-repo work tracking (`work`) and Workbe
 5. Apply migration changes.
    - `workbench sync --issues false`
    - `workbench migrate coherent-v1`
-6. Rebuild navigation and workboard outputs.
+6. Rebuild navigation and derived outputs.
    - `workbench nav sync --issues false --force`
 7. Validate post-migration health.
    - `workbench validate --strict`
@@ -66,8 +55,8 @@ Use for repositories that are adopting in-repo work tracking (`work`) and Workbe
 
 - `workbench validate --strict` exits `0`.
 - `workbench doctor` reports checks without unhandled exceptions.
-- Work items are under `work/items` or `work/done` with coherent status/folder placement.
-- Docs index and workboard blocks are regenerated.
+- Work items are under `specs/work-items` with coherent status placement.
+- Docs index and derived navigation blocks are regenerated.
 - Migration report exists in `tracking/`.
 
 ## Rollback / recovery
@@ -84,7 +73,7 @@ Use for repositories that are adopting in-repo work tracking (`work`) and Workbe
 
 ## Related docs
 
-- `/contracts/cli-help.md`
-- `/contracts/commands.md`
+- `/specs/generated/commands.md`
+- `/specs/requirements/spec-trace/_index.md`
 - `/tracking/hardening-gate-2026-02-19.md`
 - `/tracking/migration-coherent-v1-2026-02-19.md`

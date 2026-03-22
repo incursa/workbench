@@ -107,10 +107,15 @@ public static class DocFrontMatterBuilder
         {
             data["satisfies"] = NormalizeCanonicalLinks(satisfies, "- REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
         }
+        else if (canonicalType.Equals("verification", StringComparison.OrdinalIgnoreCase))
+        {
+            data["verifies"] = NormalizeCanonicalLinks(verifies, "- REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
+        }
         else if (canonicalType.Equals("work_item", StringComparison.OrdinalIgnoreCase))
         {
             data["addresses"] = NormalizeCanonicalLinks(satisfies, "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
             data["design_links"] = NormalizeCanonicalLinks(verifies, "ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
+            data["verification_links"] = NormalizeCanonicalLinks(relatedArtifacts, "VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
 
             var relatedArtifactList = Deduplicate(relatedArtifacts ?? Array.Empty<string>());
             if (relatedArtifactList.Count == 0)
@@ -272,6 +277,7 @@ public static class DocFrontMatterBuilder
         return canonicalType.ToLowerInvariant() switch
         {
             "work_item" => "planned",
+            "verification" => "planned",
             _ => "draft"
         };
     }

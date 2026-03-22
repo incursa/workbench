@@ -1,16 +1,3 @@
----
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/tracking/migration-coherent-v1-2026-02-19.md"
-  path: /tracking/migration-coherent-v1-2026-02-19.md
-owner: platform
-status: active
-updated: 2026-02-19
----
-
 # Migration Report: coherent-v1
 
 ## Summary

@@ -2,24 +2,16 @@
   "Paths": {
     "DocsRoot": "overview",
     "SpecsRoot": "specs",
-    "ArchitectureDir": "architecture",
-    "WorkItemsSpecsDir": "work/items",
+    "ArchitectureDir": "specs/architecture",
+    "WorkItemsSpecsDir": "specs/work-items",
     "GeneratedDir": "specs/generated",
     "SpecsTemplatesDir": "specs/templates",
     "SpecsSchemasDir": "specs/schemas",
-    "WorkRoot": "work",
-    "ItemsDir": "work/items",
-    "DoneDir": "work/done",
-    "TemplatesDir": "work/templates",
-    "WorkboardFile": "work/README.md"
+    "WorkRoot": "specs/work-items",
+    "ItemsDir": "specs/work-items/WB"
   },
   "Ids": {
-    "Width": 4,
-    "Prefixes": {
-      "Bug": "BUG",
-      "Task": "TASK",
-      "Spike": "SPIKE"
-    }
+    "Width": 4
   },
   "Git": {
     "BranchPattern": "work/{id}-{slug}",

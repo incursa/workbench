@@ -1,5 +1,6 @@
 // Navigation and index synchronization for docs and work items.
 // Invariants: generated indexes are deterministic given the same inputs and ordering rules.
+#pragma warning disable S1144
 using System.Collections;
 using System.Text;
 
@@ -13,7 +14,6 @@ public static class NavigationService
     /// <param name="DocsUpdated">Number of docs updated.</param>
     /// <param name="ItemsUpdated">Number of work items updated.</param>
     /// <param name="IndexFilesUpdated">Number of index files updated.</param>
-    /// <param name="WorkboardUpdated">Number of workboards updated.</param>
     /// <param name="MissingDocs">Missing docs referenced in front matter.</param>
     /// <param name="MissingItems">Missing work items referenced in docs.</param>
     /// <param name="Warnings">Warnings emitted during sync.</param>
@@ -21,7 +21,6 @@ public static class NavigationService
         int DocsUpdated,
         int ItemsUpdated,
         int IndexFilesUpdated,
-        int WorkboardUpdated,
         IList<string> MissingDocs,
         IList<string> MissingItems,
         IList<string> Warnings);
@@ -47,7 +46,6 @@ public static class NavigationService
         bool includeDone,
         bool syncIssues,
         bool force,
-        bool syncWorkboard,
         bool dryRun,
         bool syncDocs = true)
     {
@@ -56,48 +54,10 @@ public static class NavigationService
 .ConfigureAwait(false) : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
         var normalizedItems = WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun);
         var warnings = new List<string>();
-        var docEntries = LoadDocEntries(repoRoot, config, warnings);
-        var docReadmePath = Path.Combine(repoRoot, config.Paths.DocsRoot, "README.md");
-        var specReadmePath = Path.Combine(repoRoot, config.Paths.SpecsRoot, "README.md");
-        var architectureReadmePath = Path.Combine(repoRoot, config.Paths.ArchitectureDir, "README.md");
-        var workReadmePath = Path.Combine(repoRoot, config.Paths.WorkRoot, "README.md");
-        var rootReadmePath = Path.Combine(repoRoot, "README.md");
-
-        var indexCreated = 0;
-        indexCreated += EnsureIndexFile(docReadmePath, BuildDocsReadmeTemplate(), dryRun);
-        indexCreated += EnsureIndexFile(specReadmePath, BuildSpecsReadmeTemplate(), dryRun);
-        indexCreated += EnsureIndexFile(architectureReadmePath, BuildArchitectureReadmeTemplate(), dryRun);
-        indexCreated += EnsureIndexFile(workReadmePath, BuildWorkReadmeTemplate(), dryRun);
-        indexCreated += EnsureIndexFile(rootReadmePath, BuildRootReadmeTemplate(), dryRun);
-
-        var docIndex = BuildDocsIndex(repoRoot, config, docReadmePath, docEntries);
-        var specIndex = BuildSpecsIndex(repoRoot, config, specReadmePath, docEntries);
-        var architectureIndex = BuildArchitectureIndex(repoRoot, config, architectureReadmePath, docEntries);
-        var workIndex = BuildWorkIndex(repoRoot, config, workReadmePath, docEntries, includeDone);
-        var rootIndex = BuildRootIndex(repoRoot, config);
-
-        var indexUpdated = indexCreated;
-        indexUpdated += UpdateIndexSection(docReadmePath, "workbench:overview-index", docIndex, force, dryRun);
-        indexUpdated += UpdateIndexSection(specReadmePath, "workbench:specs-index", specIndex, force, dryRun);
-        indexUpdated += UpdateIndexSection(architectureReadmePath, "workbench:architecture-index", architectureIndex, force, dryRun);
-        indexUpdated += UpdateIndexSection(workReadmePath, "workbench:work-index", workIndex, force, dryRun);
-        indexUpdated += UpdateIndexSection(rootReadmePath, "workbench:root-index", rootIndex, force, dryRun);
-
-        var workboardUpdated = 0;
-        if (syncWorkboard)
-        {
-            if (!dryRun)
-            {
-                WorkboardService.Regenerate(repoRoot, config);
-            }
-            workboardUpdated = 1;
-        }
-
         return new NavigationSyncResult(
             docSync.DocsUpdated,
             docSync.ItemsUpdated + normalizedItems,
-            indexUpdated,
-            workboardUpdated,
+            0,
             docSync.MissingDocs,
             docSync.MissingItems,
             warnings);
@@ -108,14 +68,13 @@ public static class NavigationService
         var entries = new List<DocEntry>();
         var roots = new[]
         {
-            Path.Combine(repoRoot, config.Paths.DocsRoot),
-            Path.Combine(repoRoot, "contracts"),
-            Path.Combine(repoRoot, "decisions"),
-            Path.Combine(repoRoot, "runbooks"),
-            Path.Combine(repoRoot, "tracking"),
-            Path.Combine(repoRoot, config.Paths.SpecsRoot),
-            Path.Combine(repoRoot, config.Paths.ArchitectureDir)
-        };
+                Path.Combine(repoRoot, "runbooks"),
+                Path.Combine(repoRoot, "tracking"),
+                Path.Combine(repoRoot, config.Paths.SpecsRoot),
+                Path.Combine(repoRoot, config.Paths.ArchitectureDir),
+                Path.Combine(repoRoot, Path.Combine(config.Paths.SpecsRoot, "verification")),
+                Path.Combine(repoRoot, Path.Combine(config.Paths.SpecsRoot, "work-items"))
+            };
 
         foreach (var root in roots)
         {
@@ -125,8 +84,8 @@ public static class NavigationService
             }
 
             var searchOption = root.Equals(Path.Combine(repoRoot, config.Paths.SpecsRoot), StringComparison.OrdinalIgnoreCase)
-                ? SearchOption.TopDirectoryOnly
-                : SearchOption.AllDirectories;
+            ? SearchOption.TopDirectoryOnly
+            : SearchOption.AllDirectories;
 
             foreach (var path in Directory.EnumerateFiles(root, "*.md", searchOption))
             {
@@ -233,19 +192,12 @@ public static class NavigationService
         string repoRoot,
         WorkbenchConfig config,
         string workReadmePath,
-        List<DocEntry> docs,
-        bool includeDone)
+        List<DocEntry> docs
+        )
     {
         var builder = new StringBuilder();
         var activeItems = LoadWorkItemEntries(repoRoot, config.Paths.ItemsDir, config);
         AppendWorkItemTable(builder, "Active items", activeItems, workReadmePath, docs, repoRoot, config);
-
-        if (includeDone)
-        {
-            var doneItems = LoadWorkItemEntries(repoRoot, config.Paths.DoneDir, config);
-            builder.AppendLine();
-            AppendWorkItemTable(builder, "Done items", doneItems, workReadmePath, docs, repoRoot, config);
-        }
 
         return builder.ToString().TrimEnd();
     }
@@ -293,15 +245,16 @@ public static class NavigationService
     {
         var builder = new StringBuilder();
         builder.AppendLine("### Quick links");
-        builder.AppendLine("- [Overview](overview/README.md)");
-        builder.AppendLine("- [Specs index](specs/README.md)");
-        builder.AppendLine("- [Architecture index](architecture/README.md)");
-        builder.AppendLine("- [Contracts](contracts/README.md)");
-        builder.AppendLine("- [Decisions](decisions/README.md)");
+        builder.AppendLine("- [Overview](README.md)");
+        builder.AppendLine("- [Requirements](specs/requirements/_index.md)");
+        builder.AppendLine("- [Architecture](specs/architecture/WB/_index.md)");
+        builder.AppendLine("- [Work items](specs/work-items/WB/_index.md)");
+        builder.AppendLine("- [Verification](specs/verification/WB/_index.md)");
+        builder.AppendLine("- [Generated](specs/generated)");
+        builder.AppendLine("- [Templates](specs/templates)");
+        builder.AppendLine("- [Schemas](specs/schemas)");
         builder.AppendLine("- [Runbooks](runbooks/README.md)");
         builder.AppendLine("- [Tracking](tracking/README.md)");
-        builder.AppendLine("- [Work index](work/README.md)");
-        builder.AppendLine("- [Templates](templates/README.md)");
         builder.AppendLine();
         builder.AppendLine("### Work item stats");
 
@@ -325,7 +278,7 @@ public static class NavigationService
 
             builder.AppendLine("| Status | Count |");
             builder.AppendLine("| --- | --- |");
-            foreach (var status in new[] { "draft", "ready", "in-progress", "blocked", "done", "dropped" })
+            foreach (var status in new[] { "planned", "in_progress", "blocked", "complete", "cancelled", "superseded" })
             {
                 counts.TryGetValue(status, out var count);
                 builder.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| {FormatWorkItemStatus(status)} | {count} |"));
@@ -460,7 +413,7 @@ public static class NavigationService
         string repoRoot)
     {
         var links = new List<string>();
-        foreach (var entry in item.Related.Specs.Concat(item.Related.Adrs).Concat(item.Related.Files))
+        foreach (var entry in item.Related.Specs.Concat(item.Related.Files))
         {
             var normalized = NormalizeLinkPath(repoRoot, entry);
             if (normalized is null)
@@ -613,61 +566,28 @@ public static class NavigationService
             "updated: 0000-00-00",
             "---",
             string.Empty,
-            "# Work",
+            "# Work Items",
             string.Empty,
-            "Work items and the day-to-day board for delivery.",
-            string.Empty,
-            "## Workboard",
-            string.Empty,
-            "Generated by `workbench nav sync --workboard`.",
-            string.Empty,
-            "<!-- workbench:workboard:start -->",
-            "## Now (in-progress)",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "## Next (ready)",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "## Blocked",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "<details>",
-            "<summary>Draft (backlog) (0)</summary>",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "</details>",
-            "<!-- workbench:workboard:end -->",
+            "Canonical work items live under `specs/work-items/`.",
             string.Empty,
             "## Layout",
             string.Empty,
             "- `overview`: high-level product, standard, and orientation docs.",
-            "- `contracts`: CLI, API, and schema contracts.",
-            "- `decisions`: ADRs and tradeoff history.",
             "- `runbooks`: operational procedures and playbooks.",
             "- `tracking`: milestone and delivery notes.",
-            "- `templates`: reusable document templates.",
-            string.Empty,
-            "- `specs`: canonical specification documents.",
-            "- `architecture`: architecture and design documents.",
-            "- `work/items`: active work items named `<ID>-<slug>.md`.",
-            "- `work/done`: closed items for reference and audit history.",
-            "- `work/templates`: templates used to create new work items.",
-            string.Empty,
-            "## Source of truth",
-            string.Empty,
-            "- Hand-author the individual work item files under `work/items` for canonical items.",
-            "- Treat the workboard and index sections between `workbench:` markers as generated views maintained by `workbench nav sync` or `workbench board regen`.",
-            "- Keep the `work` tree for work items and generated workboard views.",
+            "- `specs/requirements`: canonical requirement docs.",
+            "- `specs/architecture`: canonical architecture docs.",
+            "- `specs/work-items`: canonical work items.",
+            "- `specs/verification`: canonical verification artifacts.",
+            "- `specs/generated`: derived indexes, matrices, and reports.",
+            "- `specs/templates`: reusable document templates.",
+            "- `specs/schemas`: machine-readable validation contracts.",
             string.Empty,
             "## Workflow",
             string.Empty,
             "1. Create a work item with `workbench item new`, `workbench item generate`, or `workbench voice workitem`.",
             "2. Edit the Markdown file to tighten the summary, context, traceability, implementation notes, acceptance criteria, and notes.",
-            "3. Link specs, architecture docs, ADRs, files, PRs, or issues with `workbench item link`, and use `workbench promote` when you want branch + commit scaffolding.",
+            "3. Link specs, architecture docs, files, PRs, or issues with `workbench item link`, and use `workbench promote` when you want branch + commit scaffolding.",
             "4. Refresh the generated views with `workbench nav sync` and run `workbench validate` before review or automation.",
             string.Empty,
             "## Index",
@@ -793,7 +713,6 @@ public static class NavigationService
 
         var remainder = normalized[(workRoot.Length + 1)..];
         return remainder.StartsWith("items/", StringComparison.OrdinalIgnoreCase)
-            || remainder.StartsWith("done/", StringComparison.OrdinalIgnoreCase)
             || remainder.StartsWith("templates/", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -817,16 +736,6 @@ public static class NavigationService
         if (normalized.StartsWith($"{config.Paths.DocsRoot.TrimEnd('/')}/", StringComparison.OrdinalIgnoreCase))
         {
             return "Overview";
-        }
-
-        if (normalized.StartsWith("contracts/", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Contracts";
-        }
-
-        if (normalized.StartsWith("decisions/", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Decisions";
         }
 
         if (normalized.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase))
@@ -875,14 +784,6 @@ public static class NavigationService
             !normalized.Contains("/specs/generated/", StringComparison.OrdinalIgnoreCase))
         {
             return "specification";
-        }
-        if (normalized.Contains("/contracts/"))
-        {
-            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "contract";
-        }
-        if (normalized.Contains("/decisions/"))
-        {
-            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "adr";
         }
         if (normalized.Contains("/runbooks/"))
         {
@@ -986,14 +887,10 @@ public static class NavigationService
             "in_progress" => 1,
             "in-progress" => 1,
             "blocked" => 2,
-            "ready" => 3,
-            "draft" => 4,
-            "complete" => 5,
-            "done" => 5,
-            "cancelled" => 6,
-            "dropped" => 6,
-            "superseded" => 7,
-            _ => 8
+            "complete" => 3,
+            "cancelled" => 4,
+            "superseded" => 5,
+            _ => 6
         };
     }
 
@@ -1023,14 +920,11 @@ public static class NavigationService
             "planned" => "🟦 planned",
             "in_progress" => "🔵 in-progress",
             "draft" => "🟡 draft",
-            "ready" => "🟢 ready",
             "active" => "🟢 active",
             "accepted" => "✅ accepted",
             "blocked" => "🟥 blocked",
             "complete" => "✅ complete",
-            "done" => "✅ done",
             "cancelled" => "🚫 cancelled",
-            "dropped" => "🚫 dropped",
             "superseded" => "↩ superseded",
             "template" => "🧱 template",
             _ => EscapeTableCell(status)
@@ -1048,14 +942,10 @@ public static class NavigationService
         {
             "planned" => "🟦 planned",
             "in_progress" => "🔵 in-progress",
-            "draft" => "🟡 draft",
-            "ready" => "🟢 ready",
             "in-progress" => "🔵 in-progress",
             "blocked" => "🟥 blocked",
             "complete" => "✅ complete",
-            "done" => "✅ done",
             "cancelled" => "🚫 cancelled",
-            "dropped" => "🚫 dropped",
             "superseded" => "↩ superseded",
             _ => EscapeTableCell(status)
         };
@@ -1063,9 +953,7 @@ public static class NavigationService
 
     private static bool IsTerminalStatus(string status)
     {
-        return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
+        return string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
             || string.Equals(status, "cancelled", StringComparison.OrdinalIgnoreCase)
             || string.Equals(status, "superseded", StringComparison.OrdinalIgnoreCase);
     }

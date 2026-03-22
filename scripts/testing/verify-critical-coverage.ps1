@@ -1,5 +1,5 @@
 param(
-    [string]$ContractPath = "contracts/test-gate.contract.yaml",
+    [string]$ContractPath = "quality/testing-intent.yaml",
     [string]$CoverageSearchRoot = "tests",
     [string]$CoverageFileName = "*.cobertura.xml"
 )

@@ -1,16 +1,3 @@
----
-workbench:
-  type: runbook
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/runbooks/spec-cli-workflow.md"
-  path: /runbooks/spec-cli-workflow.md
-owner: platform
-status: active
-updated: 2026-03-20
----
-
 # Runbook: Spec CLI Workflow
 
 ## Purpose
@@ -31,8 +18,9 @@ This runbook covers repository-native spec authoring in Workbench:
 - `workbench spec unlink`
 - `workbench spec sync`
 
-It also explains when to use the compatibility `workbench doc` surface and how
-policy-driven spec IDs work.
+It also explains when to use the `workbench doc` surface for project-specific
+documents outside the canonical Spec Trace families and how policy-driven spec
+IDs work.
 
 ## Preconditions
 
@@ -69,12 +57,12 @@ policy-driven spec IDs work.
      link or a repo path that Workbench can resolve into one on save.
 5. Link the spec to work items when delivery work starts.
    ```bash
-   workbench spec link --path specs/SPEC-CLI-ONBOARDING.md --work-item TASK-0001
+   workbench spec link --path specs/SPEC-CLI-ONBOARDING.md --work-item WI-WB-0001
    ```
 6. Update or remove traceability later if the scope changes.
    ```bash
    workbench spec edit SPEC-CLI-ONBOARDING --status approved
-   workbench spec unlink --path specs/SPEC-CLI-ONBOARDING.md --work-item TASK-0001
+   workbench spec unlink --path specs/SPEC-CLI-ONBOARDING.md --work-item WI-WB-0001
    ```
 7. Sync backlinks and front matter after larger edits or file moves.
    ```bash
@@ -93,12 +81,13 @@ policy-driven spec IDs work.
 - Related work items point back to the spec file or artifact ID.
 - If a repo policy is active, the generated artifact ID matches the configured
   template.
-- Specs, architecture docs, and ADRs should render clickable repository links
-  wherever they refer to another local document.
+- Specs, architecture docs, work items, and verification artifacts should
+  render clickable repository links wherever they refer to another local
+  document.
 
 ## Related docs
 
-- [Specification and traceability standard](/overview/specification-and-traceability-standard.md)
-- [Workbench repo spec](/overview/workbench-spec.md)
-- [Requirements README](/specs/README.md)
-- [Requirement spec template](/templates/requirement-spec.md)
+- [README](../README.md)
+- [Overview](../overview.md)
+- [Layout](../layout.md)
+- [Authoring guide](../authoring.md)

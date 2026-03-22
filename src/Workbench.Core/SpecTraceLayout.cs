@@ -6,14 +6,41 @@ namespace Workbench.Core;
 public static class SpecTraceLayout
 {
     public const string SpecsRoot = "specs";
-    public const string ArchitectureRoot = "architecture";
-    public const string WorkItemsRoot = "work/items";
+    public const string RequirementsRoot = "specs/requirements";
+    public const string ArchitectureRoot = "specs/architecture";
+    public const string VerificationRoot = "specs/verification";
+    public const string WorkItemsRoot = "specs/work-items";
     public const string GeneratedRoot = "specs/generated";
     public const string TemplatesRoot = "specs/templates";
     public const string SchemasRoot = "specs/schemas";
 
     public static string GetDefaultDomain(string repoRoot)
     {
+        var canonicalRoots = new[]
+        {
+            Path.Combine(repoRoot, WorkItemsRoot),
+            Path.Combine(repoRoot, ArchitectureRoot),
+            Path.Combine(repoRoot, VerificationRoot),
+            Path.Combine(repoRoot, RequirementsRoot)
+        };
+
+        foreach (var root in canonicalRoots)
+        {
+            if (!Directory.Exists(root))
+            {
+                continue;
+            }
+
+            var firstDomain = Directory.EnumerateDirectories(root)
+                .Select(Path.GetFileName)
+                .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name));
+
+            if (!string.IsNullOrWhiteSpace(firstDomain))
+            {
+                return ArtifactIdPolicy.NormalizeToken(firstDomain);
+            }
+        }
+
         var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(repoRoot));
         var normalized = ArtifactIdPolicy.NormalizeToken(name);
         return string.IsNullOrWhiteSpace(normalized) ? "WORKBENCH" : normalized;
@@ -21,7 +48,7 @@ public static class SpecTraceLayout
 
     public static string GetSpecificationDirectory(string repoRoot)
     {
-        return Path.Combine(repoRoot, SpecsRoot);
+        return Path.Combine(repoRoot, RequirementsRoot);
     }
 
     public static string GetArchitectureDirectory(string repoRoot, string domain)
@@ -34,15 +61,19 @@ public static class SpecTraceLayout
         return Path.Combine(repoRoot, WorkItemsRoot, ArtifactIdPolicy.NormalizeToken(domain));
     }
 
+    public static string GetVerificationDirectory(string repoRoot, string domain)
+    {
+        return Path.Combine(repoRoot, VerificationRoot, ArtifactIdPolicy.NormalizeToken(domain));
+    }
+
     public static string GetSpecificationPath(string repoRoot, string artifactId)
     {
-        return Path.Combine(GetSpecificationDirectory(repoRoot), $"{artifactId.Trim()}.md");
+        return Path.Combine(GetSpecificationDirectory(repoRoot), GetDefaultDomain(repoRoot), $"{artifactId.Trim()}.md");
     }
 
     public static string GetSpecificationPath(string repoRoot, string domain, string artifactId)
     {
-        _ = domain;
-        return GetSpecificationPath(repoRoot, artifactId);
+        return Path.Combine(GetSpecificationDirectory(repoRoot), ArtifactIdPolicy.NormalizeToken(domain), $"{artifactId.Trim()}.md");
     }
 
     public static string GetArchitecturePath(string repoRoot, string domain, string artifactId, string title)
@@ -58,7 +89,13 @@ public static class SpecTraceLayout
     public static bool IsCanonicalPath(string repoRelativePath)
     {
         var normalized = NormalizePath(repoRelativePath);
-        return normalized.StartsWith($"{SpecsRoot}/", StringComparison.OrdinalIgnoreCase);
+        return normalized.StartsWith($"{RequirementsRoot}/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith($"{ArchitectureRoot}/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith($"{VerificationRoot}/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith($"{WorkItemsRoot}/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith($"{GeneratedRoot}/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith($"{TemplatesRoot}/", StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith($"{SchemasRoot}/", StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool IsCanonicalSpecificationPath(string repoRelativePath)
@@ -72,6 +109,12 @@ public static class SpecTraceLayout
         return normalized.StartsWith($"{ArchitectureRoot}/", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static bool IsCanonicalVerificationPath(string repoRelativePath)
+    {
+        var normalized = NormalizePath(repoRelativePath);
+        return normalized.StartsWith($"{VerificationRoot}/", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static bool IsCanonicalWorkItemPath(string repoRelativePath)
     {
         var normalized = NormalizePath(repoRelativePath);
@@ -81,18 +124,20 @@ public static class SpecTraceLayout
     public static bool IsSpecificationRootFile(string repoRelativePath)
     {
         var normalized = NormalizePath(repoRelativePath);
-        if (!normalized.StartsWith($"{SpecsRoot}/", StringComparison.OrdinalIgnoreCase))
+        if (!normalized.StartsWith($"{RequirementsRoot}/", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        var remainder = normalized[(SpecsRoot.Length + 1)..];
-        if (remainder.Contains('/', StringComparison.Ordinal))
+        var remainder = normalized[(RequirementsRoot.Length + 1)..];
+        var segments = remainder.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length != 2)
         {
             return false;
         }
 
-        return !Path.GetFileName(normalized).Equals("README.md", StringComparison.OrdinalIgnoreCase);
+        return segments[1].StartsWith("SPEC-", StringComparison.OrdinalIgnoreCase)
+            && !Path.GetFileName(normalized).Equals("_index.md", StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool IsDirectChildPath(string path, string root)
@@ -112,14 +157,19 @@ public static class SpecTraceLayout
     public static string? GetCanonicalSection(string repoRelativePath)
     {
         var normalized = NormalizePath(repoRelativePath);
-        if (normalized.StartsWith($"{SpecsRoot}/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{RequirementsRoot}/", StringComparison.OrdinalIgnoreCase))
         {
-            return "specs";
+            return "requirements";
         }
 
         if (normalized.StartsWith($"{ArchitectureRoot}/", StringComparison.OrdinalIgnoreCase))
         {
             return "architecture";
+        }
+
+        if (normalized.StartsWith($"{VerificationRoot}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "verification";
         }
 
         if (normalized.StartsWith($"{WorkItemsRoot}/", StringComparison.OrdinalIgnoreCase))

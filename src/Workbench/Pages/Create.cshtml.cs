@@ -49,9 +49,15 @@ public class CreateModel : RepoPageModel
 
     private void LoadDefaults()
     {
+        Create.Type = "work_item";
         if (string.IsNullOrWhiteSpace(Create.Owner))
         {
             Create.Owner = Profile.DefaultOwner ?? Profile.EffectiveAuthor;
+        }
+
+        if (string.IsNullOrWhiteSpace(Create.Status))
+        {
+            Create.Status = "planned";
         }
     }
 

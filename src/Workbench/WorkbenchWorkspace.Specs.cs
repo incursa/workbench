@@ -51,7 +51,6 @@ public sealed partial class WorkbenchWorkspace
             RelatedArtifacts = string.Join(Environment.NewLine, relatedArtifacts),
             RelatedArchitectureDocs = string.Join(Environment.NewLine, relatedArtifacts),
             RelatedWorkItems = string.Join(Environment.NewLine, relatedArtifacts),
-            RelatedAdrs = string.Join(Environment.NewLine, relatedArtifacts),
             OpenQuestions = ExtractSection(doc.Body, "Open Questions"),
             CodeRefs = string.Join(Environment.NewLine, GetDocStringList(workbench, "codeRefs"))
         };
@@ -176,7 +175,6 @@ public sealed partial class WorkbenchWorkspace
         {
             AddLines(candidates, input.RelatedWorkItems);
             AddLines(candidates, input.RelatedArchitectureDocs);
-            AddLines(candidates, input.RelatedAdrs);
         }
 
         return candidates

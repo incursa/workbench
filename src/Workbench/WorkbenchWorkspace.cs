@@ -5,9 +5,9 @@ namespace Workbench;
 
 public sealed partial class WorkbenchWorkspace
 {
-    private static readonly string[] statusOrder = ["in-progress", "ready", "blocked", "draft", "done", "dropped"];
-    private static readonly string[] allowedStatuses = ["draft", "ready", "in-progress", "blocked", "done", "dropped"];
-    private static readonly string[] allowedTypes = ["task", "bug", "spike"];
+    private static readonly string[] statusOrder = ["planned", "in_progress", "blocked", "complete", "cancelled", "superseded"];
+    private static readonly string[] allowedStatuses = ["planned", "in_progress", "blocked", "complete", "cancelled", "superseded"];
+    private static readonly string[] allowedTypes = ["work_item"];
 
     public WorkbenchWorkspace(string repoRoot, WorkbenchConfig config)
     {
@@ -122,7 +122,6 @@ public sealed partial class WorkbenchWorkspace
             includeDone,
             syncIssues: true,
             force: true,
-            syncWorkboard: true,
             dryRun,
             syncDocs: true).ConfigureAwait(false);
     }
@@ -148,11 +147,6 @@ public sealed partial class WorkbenchWorkspace
         return result;
     }
 
-    public WorkboardService.WorkboardResult RegenerateWorkboard()
-    {
-        return WorkboardService.Regenerate(RepoRoot, Config);
-    }
-
     private static bool MatchesQuery(WorkItem item, string query)
     {
         return item.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
@@ -161,7 +155,9 @@ public sealed partial class WorkbenchWorkspace
             || (!string.IsNullOrWhiteSpace(item.Priority) && item.Priority.Contains(query, StringComparison.OrdinalIgnoreCase))
             || item.Body.Contains(query, StringComparison.OrdinalIgnoreCase)
             || item.Related.Specs.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
-            || item.Related.Adrs.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || item.DesignLinks.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || item.VerificationLinks.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || item.RelatedArtifacts.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
             || item.Related.Files.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
             || item.Related.Prs.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase))
             || item.Related.Issues.Any(link => link.Contains(query, StringComparison.OrdinalIgnoreCase));

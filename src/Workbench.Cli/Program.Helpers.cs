@@ -235,9 +235,7 @@ public partial class Program
 
     static bool IsTerminalStatus(string status)
     {
-        return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
+        return string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
             || string.Equals(status, "cancelled", StringComparison.OrdinalIgnoreCase)
             || string.Equals(status, "superseded", StringComparison.OrdinalIgnoreCase);
     }
@@ -272,7 +270,7 @@ public partial class Program
     static bool TryResolveDocLinkType(string? type, out string resolved)
     {
         resolved = (type ?? string.Empty).Trim().ToLowerInvariant();
-        if (resolved is "spec" or "specification" or "guide" or "architecture" or "doc" or "work_item")
+        if (resolved is "spec" or "specification" or "architecture" or "verification" or "doc" or "work_item")
         {
             return true;
         }
@@ -311,18 +309,9 @@ public partial class Program
 
     static string ResolveWorkItemType(string? overrideType, string? generatedType)
     {
-        var candidate = overrideType ?? generatedType;
-        if (string.IsNullOrWhiteSpace(candidate))
-        {
-            return "task";
-        }
-        return candidate.Trim().ToLowerInvariant() switch
-        {
-            "bug" => "bug",
-            "task" => "task",
-            "spike" => "spike",
-            _ => "task"
-        };
+        _ = overrideType;
+        _ = generatedType;
+        return "work_item";
     }
 
     static void CleanupTempFiles(IEnumerable<string> paths)
@@ -377,7 +366,6 @@ public partial class Program
             item.Tags,
             new RelatedLinksPayload(
                 item.Related.Specs,
-                item.Related.Adrs,
                 item.Related.Files,
                 item.Related.Prs,
                 item.Related.Issues,
@@ -521,35 +509,30 @@ public partial class Program
     {
         if (!string.IsNullOrWhiteSpace(overrideType))
         {
-            return overrideType;
+            return ResolveWorkItemType(overrideType, null);
         }
 
-        bool HasLabel(string token)
-        {
-            return issue.Labels.Any(label =>
-                label.Equals(token, StringComparison.OrdinalIgnoreCase)
-                || label.Contains(token, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (HasLabel("bug"))
-        {
-            return "bug";
-        }
-        if (HasLabel("spike"))
-        {
-            return "spike";
-        }
-        return "task";
+        _ = issue;
+        return "work_item";
     }
 
     static string ResolveIssueStatus(GithubIssue issue, string? overrideStatus)
     {
         if (!string.IsNullOrWhiteSpace(overrideStatus))
         {
-            return overrideStatus;
+            return overrideStatus.Trim().ToLowerInvariant() switch
+            {
+                "planned" => "planned",
+                "in-progress" or "in_progress" => "in_progress",
+                "blocked" => "blocked",
+                "complete" => "complete",
+                "cancelled" => "cancelled",
+                "superseded" => "superseded",
+                _ => throw new InvalidOperationException($"Unsupported work item status '{overrideStatus}'.")
+            };
         }
 
-        return string.Equals(issue.State, "closed", StringComparison.OrdinalIgnoreCase) ? "done" : "ready";
+        return string.Equals(issue.State, "closed", StringComparison.OrdinalIgnoreCase) ? "complete" : "planned";
     }
 
     static string? ReadOptionalInputText(string repoRoot, string? inlineValue, string? filePath)

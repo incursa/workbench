@@ -4,15 +4,15 @@ namespace Workbench.Core;
 /// Parsed work item model loaded from front matter and body content.
 /// </summary>
 /// <param name="Id">Stable work item identifier.</param>
-/// <param name="Type">Compatibility type label used by legacy views (bug, task, spike, or work_item).</param>
-/// <param name="Status">Compatibility workflow status string.</param>
+/// <param name="Type">Canonical work item artifact type.</param>
+/// <param name="Status">Canonical work item workflow status.</param>
 /// <param name="Title">Human-readable title.</param>
-/// <param name="Priority">Optional compatibility priority label.</param>
+/// <param name="Priority">Optional priority label.</param>
 /// <param name="Owner">Optional owner or assignee.</param>
-/// <param name="Created">Compatibility created date string.</param>
-/// <param name="Updated">Optional compatibility last-updated date string.</param>
-/// <param name="Tags">Compatibility tag labels.</param>
-/// <param name="Related">Compatibility related links.</param>
+/// <param name="Created">Created date string.</param>
+/// <param name="Updated">Optional last-updated date string.</param>
+/// <param name="Tags">Tag labels.</param>
+/// <param name="Related">Related links.</param>
 /// <param name="Slug">Slugified title used for filenames.</param>
 /// <param name="Path">Absolute path to the work item file.</param>
 /// <param name="Body">Markdown body content (without front matter).</param>
@@ -55,12 +55,6 @@ public sealed record WorkItem(
     /// <summary>Additional related artifact identifiers carried alongside the canonical trace model.</summary>
     public IList<string> RelatedArtifacts { get; init; } = new List<string>();
 
-    /// <summary>Optional GitHub sync timestamp retained for compatibility.</summary>
+    /// <summary>Optional GitHub sync timestamp.</summary>
     public string? GithubSynced { get; init; }
-
-    /// <summary>Compatibility work-item type retained for legacy UI and sync behavior.</summary>
-    public string CompatibilityType => Type;
-
-    /// <summary>Compatibility workflow status retained for legacy UI and sync behavior.</summary>
-    public string CompatibilityStatus => Status;
 }

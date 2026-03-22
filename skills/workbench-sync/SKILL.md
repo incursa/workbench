@@ -24,7 +24,7 @@ workbench sync --dry-run
 
 Sync a specific item and prefer GitHub content:
 ```bash
-workbench item sync --id TASK-0001 --prefer github
+workbench item sync --id WI-WB-0001 --prefer github
 ```
 
 Bulk sync (local wins on conflicts):
@@ -37,10 +37,10 @@ Import unlinked GitHub issues (slower):
 workbench sync --items --import-issues
 ```
 
-Sync doc backlinks (include done items when needed):
+Sync doc backlinks (include terminal items when needed):
 ```bash
 workbench doc sync --all
-workbench doc sync --all --include-done
+workbench doc sync --all --include-terminal-items
 ```
 
 ## Output
@@ -53,5 +53,7 @@ workbench doc sync --all --include-done
 
 - Use `--dry-run` before creating issues or branches.
 - `workbench sync` defaults to linked work items only; use `--import-issues` to pull unlinked GitHub issues.
-- Terminal items (done/dropped) do not create issues or branches by default.
-- Sync is not a replacement for specs/ADRs; create or update them during planning.
+- Terminal items (complete/cancelled/superseded) do not create issues or
+  branches by default.
+- Sync is not a replacement for specifications or architecture artifacts;
+  create or update them during planning.

@@ -177,7 +177,8 @@ public class QualityServiceTests
                 Path.Combine(repoRoot, "schemas", schema));
         }
 
-        File.WriteAllText(Path.Combine(repoRoot, "contracts", "test-gate.contract.yaml"), contractContent ?? """
+        Directory.CreateDirectory(Path.Combine(repoRoot, "quality"));
+        File.WriteAllText(Path.Combine(repoRoot, "quality", "testing-intent.yaml"), contractContent ?? """
             version: 2
             domain: testing
 

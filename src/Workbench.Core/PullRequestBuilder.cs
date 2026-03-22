@@ -115,7 +115,6 @@ public static class PullRequestBuilder
         }
 
         AddLinks(item.Related.Specs, "Specs");
-        AddLinks(item.Related.Adrs, "ADRs");
         AddLinks(item.Related.Files, "Files");
         AddLinks(item.Related.Prs, "PRs");
         AddLinks(item.Related.Issues, "Issues");
@@ -141,7 +140,6 @@ public static class PullRequestBuilder
         }
 
         AddLinks(item.Related.Specs, "Specs", linkToRepo: true);
-        AddLinks(item.Related.Adrs, "ADRs", linkToRepo: true);
         AddLinks(item.Related.Files, "Files", linkToRepo: true);
         AddLinks(item.Related.Prs, "PRs");
         return list;

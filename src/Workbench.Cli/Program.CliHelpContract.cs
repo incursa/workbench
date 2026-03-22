@@ -5,7 +5,7 @@ namespace Workbench.Cli;
 
 public partial class Program
 {
-    private const string CliHelpContractPath = "contracts/commands.md";
+    private const string CliHelpContractPath = "specs/generated/commands.md";
 
     static void HandleCliHelpRegeneration(RootCommand root, string? repo, bool check, string? outputPath)
     {
@@ -27,7 +27,7 @@ public partial class Program
                 }
 
                 Console.WriteLine($"CLI help drift detected: {path}");
-                Console.WriteLine("Run `workbench doc regen-help` to regenerate contracts/commands.md.");
+                Console.WriteLine("Run `workbench doc regen-help` to regenerate specs/generated/commands.md.");
                 SetExitCode(2);
                 return;
             }
@@ -49,26 +49,13 @@ public partial class Program
     static string BuildCliHelpContract(RootCommand root)
     {
         var builder = new StringBuilder();
-        AppendLine(builder, "---");
-        AppendLine(builder, "workbench:");
-        AppendLine(builder, "  type: doc");
-        AppendLine(builder, "  workItems: []");
-        AppendLine(builder, "  codeRefs: []");
-        AppendLine(builder, "  pathHistory:");
-        AppendLine(builder, "    - \"C:/contracts/commands.md\"");
-        AppendLine(builder, "  path: /contracts/commands.md");
-        AppendLine(builder, "owner: platform");
-        AppendLine(builder, "status: active");
-        AppendLine(builder, "updated: 2025-12-27");
-        AppendLine(builder, "---");
-        AppendLine(builder);
         AppendLine(builder, "# Workbench CLI Help");
         AppendLine(builder);
         AppendLine(builder, "Generated from the live `System.CommandLine` tree.");
         AppendLine(builder, "Regenerate with `workbench doc regen-help`.");
         AppendLine(builder, "Verify drift with `workbench doc regen-help --check`.");
         AppendLine(builder);
-        AppendLine(builder, "Machine-readable command output details remain documented in `contracts/commands.md`.");
+        AppendLine(builder, "The generated snapshot lives at `specs/generated/commands.md`.");
         AppendLine(builder);
         AppendLine(builder, "## Usage");
         AppendLine(builder, "```text");
@@ -83,8 +70,7 @@ public partial class Program
         AppendLine(builder, "- `workbench item sync`: external sync stage for GitHub issues, imports, and branch state.");
         AppendLine(builder, "- `workbench doc sync`: repo metadata stage for doc/work-item backlinks and doc front matter.");
         AppendLine(builder, "- `workbench spec`: dedicated requirement-spec workflow for creation, inspection, editing, linking, unlinking, deletion, and sync.");
-        AppendLine(builder, "- `workbench nav sync`: derived view stage for docs indexes, repo indexes, and the workboard.");
-        AppendLine(builder, "- `workbench board regen`: narrow workboard-only regeneration when you do not need the broader nav stage.");
+        AppendLine(builder, "- `workbench nav sync`: derived view stage for canonical indexes and backlink maintenance.");
         AppendLine(builder);
         AppendLine(builder, "## Config");
         AppendLine(builder, "- Repo config path: `.workbench/config.json`.");

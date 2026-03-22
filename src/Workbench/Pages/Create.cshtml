@@ -19,11 +19,11 @@
     <div class="hero-stats">
         <div class="inc-card stat-card accent">
             <span class="stat-label">Type</span>
-            <span class="stat-value">task</span>
+            <span class="stat-value">work_item</span>
         </div>
         <div class="inc-card stat-card">
             <span class="stat-label">Default status</span>
-            <span class="stat-value">draft</span>
+            <span class="stat-value">planned</span>
         </div>
         <div class="inc-card stat-card">
             <span class="stat-label">Owner</span>
@@ -50,14 +50,10 @@
                 <span class="muted">New item metadata and ownership.</span>
             </div>
             <div class="editor-grid editor-grid-two">
+                <input type="hidden" asp-for="Create.Type" />
                 <label class="inc-form__group">
                     <span class="field-label">Type</span>
-                    <select class="inc-form__select" asp-for="Create.Type">
-                        @foreach (var type in TypeOptions)
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
+                    <div class="readonly-field">work_item</div>
                 </label>
                 <label class="inc-form__group">
                     <span class="field-label">Owner / team</span>

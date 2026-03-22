@@ -23,8 +23,11 @@ public class InitWorkflowTests
         StringAssert.Contains(result.StdOut, "Scaffolded repo (", StringComparison.Ordinal);
 
         Assert.IsTrue(File.Exists(Path.Combine(repo.Path, ".workbench", "config.json")));
-        Assert.IsTrue(Directory.Exists(Path.Combine(repo.Path, "work", "items")));
-        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "work", "templates", "work-item.task.md")));
+        Assert.IsTrue(Directory.Exists(Path.Combine(repo.Path, "specs", "work-items", "WB")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "specs", "work-items", "WB", "_index.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "specs", "requirements", "_index.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "specs", "architecture", "WB", "_index.md")));
+        Assert.IsTrue(File.Exists(Path.Combine(repo.Path, "specs", "verification", "WB", "_index.md")));
     }
 
     [TestMethod]
@@ -32,8 +35,8 @@ public class InitWorkflowTests
     {
         using var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
-        Directory.CreateDirectory(Path.Combine(repo.Path, "overview"));
-        var docPath = Path.Combine(repo.Path, "overview", "init-front-matter.md");
+        Directory.CreateDirectory(Path.Combine(repo.Path, "runbooks"));
+        var docPath = Path.Combine(repo.Path, "runbooks", "init-front-matter.md");
         File.WriteAllText(
             docPath,
             """
@@ -57,8 +60,8 @@ public class InitWorkflowTests
 
         var content = File.ReadAllText(docPath);
         StringAssert.Contains(content, "workbench:", StringComparison.Ordinal);
-        StringAssert.Contains(content, "type: doc", StringComparison.Ordinal);
-        StringAssert.Contains(content, "path: /overview/init-front-matter.md", StringComparison.Ordinal);
+        StringAssert.Contains(content, "type: runbook", StringComparison.Ordinal);
+        StringAssert.Contains(content, "path: /runbooks/init-front-matter.md", StringComparison.Ordinal);
         StringAssert.Contains(content, "# Existing doc", StringComparison.Ordinal);
     }
 

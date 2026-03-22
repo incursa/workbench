@@ -11,20 +11,19 @@ public class FrontMatterTests
     {
         var content = """
             ---
-            id: TASK-0001
-            type: task
-            status: draft
-            created: 2025-01-01
-            related:
-              specs: []
-              adrs: []
-              files: []
-              prs: []
-              issues: []
-              branches: []
+            artifact_id: WI-WB-0001
+            artifact_type: work_item
+            title: Sample
+            domain: WB
+            status: planned
+            owner: platform
+            addresses: []
+            design_links: []
+            verification_links: []
+            related_artifacts: []
             ---
 
-            # TASK-0001 - Sample
+            # WI-WB-0001 - Sample
 
             ## Summary
             Hello
@@ -33,7 +32,7 @@ public class FrontMatterTests
         var ok = FrontMatter.TryParse(content, out var frontMatter, out var error);
         Assert.IsTrue(ok, error);
         Assert.IsNotNull(frontMatter);
-        Assert.Contains("TASK-0001", frontMatter!.Serialize(), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("WI-WB-0001", frontMatter!.Serialize(), StringComparison.OrdinalIgnoreCase);
         Assert.Contains("## Summary", frontMatter.Serialize(), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -45,11 +44,10 @@ public class FrontMatterTests
             title: "Spec: sync"
             empty: ""
             optional: null
-            workbench:
-              type: contract
+            metadata:
               workItems:
-                - TASK-0001
-                - TASK-0002
+                - WI-WB-0001
+                - WI-WB-0002
               codeRefs:
                 - src/Workbench.Core/ValidationService.cs
             ---
@@ -65,9 +63,9 @@ public class FrontMatterTests
         Assert.AreEqual(string.Empty, frontMatter.Data["empty"]);
         Assert.IsNull(frontMatter.Data["optional"]);
 
-        var workbench = Assert.IsInstanceOfType<Dictionary<string, object?>>(frontMatter.Data["workbench"]);
-        CollectionAssert.AreEqual(new object?[] { "TASK-0001", "TASK-0002" }, Assert.IsInstanceOfType<List<object?>>(workbench["workItems"]));
-        CollectionAssert.AreEqual(new object?[] { "src/Workbench.Core/ValidationService.cs" }, Assert.IsInstanceOfType<List<object?>>(workbench["codeRefs"]));
+        var metadata = Assert.IsInstanceOfType<Dictionary<string, object?>>(frontMatter.Data["metadata"]);
+        CollectionAssert.AreEqual(new object?[] { "WI-WB-0001", "WI-WB-0002" }, Assert.IsInstanceOfType<List<object?>>(metadata["workItems"]));
+        CollectionAssert.AreEqual(new object?[] { "src/Workbench.Core/ValidationService.cs" }, Assert.IsInstanceOfType<List<object?>>(metadata["codeRefs"]));
 
         var serialized = frontMatter.Serialize();
         Assert.IsTrue(FrontMatter.TryParse(serialized, out var reparsed, out var reparseError), reparseError);
@@ -125,10 +123,9 @@ public class FrontMatterTests
                 ["title"] = "Needs: quoting",
                 ["enabled"] = true,
                 ["count"] = 3,
-                ["workbench"] = new Dictionary<string, object?>(StringComparer.Ordinal)
+                ["metadata"] = new Dictionary<string, object?>(StringComparer.Ordinal)
                 {
-                    ["type"] = "contract",
-                    ["workItems"] = new List<object?> { "TASK-0001" },
+                    ["workItems"] = new List<object?> { "WI-WB-0001" },
                     ["codeRefs"] = new List<object?>()
                 },
             },

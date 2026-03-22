@@ -8,16 +8,16 @@ public class GithubIssueLinkerTests
     [TestMethod]
     public void BuildBody_WithGithubContext_AppendsWorkbenchItemMarker()
     {
-        var item = CreateItem(id: "TASK-0001", title: "Track sync marker");
+        var item = CreateItem(id: "WI-WB-0001", title: "Track sync marker");
 
         var body = PullRequestBuilder.BuildBody(
             item,
             new GithubRepoRef("github.com", "octo", "demo"),
             "main");
 
-        StringAssert.Contains(body, "<!-- workbench:item TASK-0001 -->", StringComparison.Ordinal);
+        StringAssert.Contains(body, "<!-- workbench:item WI-WB-0001 -->", StringComparison.Ordinal);
         Assert.IsTrue(GithubIssueLinker.TryExtractWorkbenchItemId(body, out var itemId));
-        Assert.AreEqual("TASK-0001", itemId);
+        Assert.AreEqual("WI-WB-0001", itemId);
     }
 
     [TestMethod]
@@ -61,8 +61,8 @@ public class GithubIssueLinkerTests
     {
         return new WorkItem(
             id,
-            "task",
-            "ready",
+            "work_item",
+            "planned",
             title,
             null,
             null,
@@ -70,7 +70,6 @@ public class GithubIssueLinkerTests
             null,
             new List<string>(),
             new RelatedLinks(
-                new List<string>(),
                 new List<string>(),
                 new List<string>(),
                 new List<string>(),

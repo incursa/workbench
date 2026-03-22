@@ -44,11 +44,11 @@ dotnet tool run workbench quality sync --results artifacts/quality/raw/test-resu
 dotnet tool run workbench quality show
 ```
 
-The authored contract is `contracts/test-gate.contract.yaml`.
+The authored quality intent is `quality/testing-intent.yaml`.
 Raw test and coverage inputs belong under `artifacts/quality/raw/`.
 Generated quality artifacts under `artifacts/quality/testing/` are derived and should not be edited by hand.
 
-Verify the checked-in CLI help contract matches the live command tree:
+Verify the checked-in CLI help snapshot matches the live command tree:
 
 ```bash
 dotnet run --project src/Workbench/Workbench.csproj -- doc regen-help --check

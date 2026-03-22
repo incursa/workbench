@@ -10,11 +10,11 @@ public class CommandSurfaceTests
         Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
 
         StringAssert.Contains(result.StdOut, "guide", StringComparison.Ordinal);
-        StringAssert.Contains(result.StdOut, "migrate <target>", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "quality", StringComparison.Ordinal);
         Assert.IsFalse(result.StdOut.Contains("  run ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  tui ", StringComparison.Ordinal), result.StdOut);
         Assert.IsTrue(result.StdOut.Contains("  spec ", StringComparison.Ordinal), result.StdOut);
+        Assert.IsFalse(result.StdOut.Contains("  migrate ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  adr ", StringComparison.Ordinal), result.StdOut);
         Assert.IsFalse(result.StdOut.Contains("  pr ", StringComparison.Ordinal), result.StdOut);
     }
@@ -41,10 +41,7 @@ public class CommandSurfaceTests
         Assert.AreEqual(0, navSyncHelp.ExitCode, $"stderr: {navSyncHelp.StdErr}\nstdout: {navSyncHelp.StdOut}");
         StringAssert.Contains(navSyncHelp.StdOut, "Derived view stage", StringComparison.Ordinal);
         StringAssert.Contains(navSyncHelp.StdOut, "syncing links first by default", StringComparison.Ordinal);
-
-        var boardRegenHelp = WorkbenchCli.Run(Environment.CurrentDirectory, "board", "regen", "--help");
-        Assert.AreEqual(0, boardRegenHelp.ExitCode, $"stderr: {boardRegenHelp.StdErr}\nstdout: {boardRegenHelp.StdOut}");
-        StringAssert.Contains(boardRegenHelp.StdOut, "only the workboard section", StringComparison.Ordinal);
+        Assert.IsFalse(syncHelp.StdOut.Contains("  board ", StringComparison.Ordinal), syncHelp.StdOut);
 
         var qualityHelp = WorkbenchCli.Run(Environment.CurrentDirectory, "quality", "--help");
         Assert.AreEqual(0, qualityHelp.ExitCode, $"stderr: {qualityHelp.StdErr}\nstdout: {qualityHelp.StdOut}");

@@ -32,8 +32,6 @@ public sealed class SpecEditorInput
 
     public string RelatedWorkItems { get; set; } = string.Empty;
 
-    public string RelatedAdrs { get; set; } = string.Empty;
-
     public string OpenQuestions { get; set; } = string.Empty;
 
     public string CodeRefs { get; set; } = string.Empty;

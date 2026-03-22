@@ -93,7 +93,7 @@ public partial class Program
             config.Paths.DocsRoot,
             config.Paths.WorkRoot,
             config.Paths.ItemsDir,
-            config.Paths.TemplatesDir
+            config.Paths.SpecsTemplatesDir
                 };
                 var missing = paths.Where(p => !Directory.Exists(Path.Combine(repoRoot, p))).ToList();
                 var checks = new List<DoctorCheck>();
@@ -669,10 +669,10 @@ public partial class Program
 
         var itemTypeOption = new Option<string>("--type")
         {
-            Description = "Work item type: bug, task, spike",
+            Description = "Work item type: work_item",
             Required = true
         };
-        itemTypeOption.CompletionSources.Add("bug", "task", "spike");
+        itemTypeOption.CompletionSources.Add("work_item");
 
         static Option<string> CreateTitleOption()
         {
@@ -687,9 +687,9 @@ public partial class Program
         {
             var option = new Option<string?>("--status")
             {
-                Description = "Work item status: draft, ready, in-progress, blocked, done, dropped"
+                Description = "Work item status: planned, in_progress, blocked, complete, cancelled, superseded"
             };
-            option.CompletionSources.Add("draft", "ready", "in-progress", "blocked", "done", "dropped");
+            option.CompletionSources.Add("planned", "in_progress", "blocked", "complete", "cancelled", "superseded");
             return option;
         }
 
@@ -711,7 +711,7 @@ public partial class Program
             };
         }
 
-        var itemNewCommand = new Command("new", "Create a new work item in work/items using templates and ID allocation.");
+        var itemNewCommand = new Command("new", "Create a new work item in specs/work-items using templates and ID allocation.");
         var itemTitleOption = CreateTitleOption();
         var itemStatusOption = CreateStatusOption();
         var itemPriorityOption = CreatePriorityOption();
@@ -766,9 +766,9 @@ public partial class Program
         var itemGenerateCommand = new Command("generate", "Generate a work item draft with AI and create it.");
         var itemGenerateTypeOption = new Option<string?>("--type")
         {
-            Description = "Work item type: bug, task, spike (defaults to AI choice)."
+            Description = "Work item type: work_item (defaults to AI choice)."
         };
-        itemGenerateTypeOption.CompletionSources.Add("bug", "task", "spike");
+        itemGenerateTypeOption.CompletionSources.Add("work_item");
         var itemGeneratePromptOption = new Option<string[]>("--prompt")
         {
             Description = "Freeform description for the AI-generated work item.",
@@ -861,9 +861,9 @@ public partial class Program
         };
         var importTypeOption = new Option<string?>("--type")
         {
-            Description = "Work item type: bug, task, spike (defaults based on labels)."
+            Description = "Work item type: work_item (defaults based on labels)."
         };
-        importTypeOption.CompletionSources.Add("bug", "task", "spike");
+        importTypeOption.CompletionSources.Add("work_item");
         var importStatusOption = CreateStatusOption();
         var importPriorityOption = CreatePriorityOption();
         var importOwnerOption = CreateOwnerOption();
@@ -1063,17 +1063,17 @@ public partial class Program
         var itemListCommand = new Command("list", "List work items.");
         var listTypeOption = new Option<string>("--type")
         {
-            Description = "Filter by type"
+            Description = "Filter by type: work_item"
         };
-        listTypeOption.CompletionSources.Add("bug", "task", "spike");
+        listTypeOption.CompletionSources.Add("work_item");
         var listStatusOption = new Option<string>("--status")
         {
-            Description = "Filter by status: draft, ready, in-progress, blocked, done, dropped"
+            Description = "Filter by status: planned, in_progress, blocked, complete, cancelled, superseded"
         };
-        listStatusOption.CompletionSources.Add("draft", "ready", "in-progress", "blocked", "done", "dropped");
-        var includeDoneOption = new Option<bool>("--include-done")
+        listStatusOption.CompletionSources.Add("planned", "in_progress", "blocked", "complete", "cancelled", "superseded");
+        var includeDoneOption = new Option<bool>("--include-terminal-items")
         {
-            Description = "Include items from work/done."
+            Description = "Include terminal items."
         };
         itemListCommand.Options.Add(listTypeOption);
         itemListCommand.Options.Add(listStatusOption);
@@ -1172,7 +1172,6 @@ public partial class Program
                     Console.WriteLine($"Status: {item.Status}");
                     Console.WriteLine($"Path: {item.Path}");
                     PrintRelatedLinks("Specs", item.Related.Specs);
-                    PrintRelatedLinks("ADRs", item.Related.Adrs);
                     PrintRelatedLinks("Files", item.Related.Files);
                     PrintRelatedLinks("PRs", item.Related.Prs);
                     PrintRelatedLinks("Issues", item.Related.Issues);
@@ -1195,7 +1194,7 @@ public partial class Program
         };
         var statusValueArg = new Argument<string>("status")
         {
-            Description = "New status: draft, ready, in-progress, blocked, done, dropped."
+            Description = "New status: planned, in_progress, blocked, complete, cancelled, superseded."
         };
         var noteOption = new Option<string?>("--note")
         {
@@ -1398,17 +1397,12 @@ public partial class Program
         });
         itemCommand.Subcommands.Add(itemEditCommand);
 
-        var itemCloseCommand = new Command("close", "Set status to done and move to work/done.");
+        var itemCloseCommand = new Command("close", "Set status to complete.");
         var closeIdArg = new Argument<string>("id")
         {
             Description = "Work item ID."
         };
-        var noMoveOption = new Option<bool>("--no-move")
-        {
-            Description = "Do not move the item to work/done."
-        };
         itemCloseCommand.Arguments.Add(closeIdArg);
-        itemCloseCommand.Options.Add(noMoveOption);
         itemCloseCommand.SetAction(parseResult =>
         {
             try
@@ -1416,7 +1410,6 @@ public partial class Program
                 var repo = parseResult.GetValue(repoOption);
                 var format = parseResult.GetValue(formatOption) ?? "table";
                 var id = parseResult.GetValue(closeIdArg) ?? string.Empty;
-                var move = !parseResult.GetValue(noMoveOption);
                 var repoRoot = ResolveRepo(repo);
                 var resolvedFormat = ResolveFormat(format);
                 var config = WorkbenchConfig.Load(repoRoot, out var configError);
@@ -1427,21 +1420,12 @@ public partial class Program
                     return;
                 }
                 var path = WorkItemService.GetItemPathById(repoRoot, config, id);
-                var updated = WorkItemService.Close(path, move, config, repoRoot);
-                if (move)
-                {
-                    var oldPath = path;
-                    var newPath = updated.Path;
-                    if (!string.Equals(oldPath, newPath, StringComparison.OrdinalIgnoreCase))
-                    {
-                        LinkUpdater.UpdateLinks(repoRoot, oldPath, newPath);
-                    }
-                }
+                var updated = WorkItemService.Close(path);
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
                     var payload = new ItemCloseOutput(
                         true,
-                        new ItemCloseData(ItemToPayload(updated), move));
+                        new ItemCloseData(ItemToPayload(updated)));
                     WriteJson(payload, Core.WorkbenchJsonContext.Default.ItemCloseOutput);
                 }
                 else
@@ -1565,9 +1549,9 @@ public partial class Program
         itemCommand.Subcommands.Add(itemRenameCommand);
 
         var itemNormalizeCommand = new Command("normalize", "Normalize work item front matter lists.");
-        var normalizeItemsIncludeDoneOption = new Option<bool>("--include-done")
+        var normalizeItemsIncludeDoneOption = new Option<bool>("--include-terminal-items")
         {
-            Description = "Include work/done items."
+            Description = "Include terminal items."
         };
         var normalizeAllDryRunOption = new Option<bool>("--dry-run")
         {
@@ -1593,7 +1577,6 @@ public partial class Program
                     return;
                 }
 
-                TryMigrateLegacyWorkLayout(repoRoot, config, dryRun);
                 var updated = WorkItemService.NormalizeItems(repoRoot, config, includeDone, dryRun);
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -1652,13 +1635,6 @@ public partial class Program
                 if (!keepLinks)
                 {
                     foreach (var link in item.Related.Specs)
-                    {
-                        if (DocService.TryUpdateDocWorkItemLink(repoRoot, config, link, item.Id, add: false, apply: true))
-                        {
-                            docsUpdated++;
-                        }
-                    }
-                    foreach (var link in item.Related.Adrs)
                     {
                         if (DocService.TryUpdateDocWorkItemLink(repoRoot, config, link, item.Id, add: false, apply: true))
                         {
@@ -1997,7 +1973,6 @@ public partial class Program
                     return;
                 }
 
-                TryMigrateLegacyWorkLayout(repoRoot, config, dryRun);
                 var itemsUpdated = normalizeItems
                     ? WorkItemService.NormalizeItems(repoRoot, config, includeDone, dryRun)
                     : 0;
@@ -2034,53 +2009,13 @@ public partial class Program
         });
         root.Subcommands.Add(normalizeCommand);
 
-        var boardCommand = new Command("board", "Group: workboard commands.");
-        var boardRegenCommand = new Command("regen", "Regenerate only the workboard section in work/README.md.");
-        boardRegenCommand.SetAction(parseResult =>
-        {
-            try
-            {
-                var repo = parseResult.GetValue(repoOption);
-                var format = parseResult.GetValue(formatOption) ?? "table";
-                var repoRoot = ResolveRepo(repo);
-                var resolvedFormat = ResolveFormat(format);
-                var config = WorkbenchConfig.Load(repoRoot, out var configError);
-                if (configError is not null)
-                {
-                    Console.WriteLine($"Config error: {configError}");
-                    SetExitCode(2);
-                    return;
-                }
-                var result = WorkboardService.Regenerate(repoRoot, config);
-                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
-                {
-                    var payload = new BoardOutput(
-                        true,
-                        new BoardData(result.Path, result.Counts));
-                    WriteJson(payload, Core.WorkbenchJsonContext.Default.BoardOutput);
-                }
-                else
-                {
-                    Console.WriteLine($"Workboard regenerated: {result.Path}");
-                }
-                SetExitCode(0);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex);
-                SetExitCode(2);
-            }
-        });
-        boardCommand.Subcommands.Add(boardRegenCommand);
-        root.Subcommands.Add(boardCommand);
-
         var promoteCommand = new Command("promote", "Create a work item, branch, and commit in one step.");
         var promoteTypeOption = new Option<string>("--type")
         {
-            Description = "Work item type: bug, task, spike",
+            Description = "Work item type: work_item",
             Required = true
         };
-        promoteTypeOption.CompletionSources.Add("bug", "task", "spike");
+        promoteTypeOption.CompletionSources.Add("work_item");
         var promoteTitleOption = new Option<string>("--title")
         {
             Description = "Work item title",
@@ -2341,10 +2276,10 @@ public partial class Program
         var docNewCommand = new Command("new", "Create a documentation file with Workbench front matter.");
         var docTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: specification, architecture, guide, contract, adr, runbook, work_item, doc",
+            Description = "Doc type: specification, architecture, verification, work_item, doc",
             Required = true
         };
-        docTypeOption.CompletionSources.Add("specification", "architecture", "guide", "contract", "adr", "runbook", "work_item", "doc", "spec");
+        docTypeOption.CompletionSources.Add("specification", "architecture", "verification", "work_item", "doc", "spec");
         var docTitleOption = new Option<string>("--title")
         {
             Description = "Doc title",
@@ -2356,7 +2291,7 @@ public partial class Program
         };
         var docArtifactIdOption = new Option<string?>("--artifact-id")
         {
-            Description = "Artifact identifier for canonical specs, architecture docs, and work items."
+            Description = "Artifact identifier for canonical specs, architecture docs, verification docs, and work items."
         };
         var docDomainOption = new Option<string?>("--domain")
         {
@@ -2496,14 +2431,14 @@ public partial class Program
             HandleDocEdit(repo, format, reference, artifactId, title, status, owner, domain, capability, body, bodyFile, workItems, codeRefs);
         });
 
-        var docRegenHelpCommand = new Command("regen-help", "Regenerate contracts/commands.md from the live command tree.");
+        var docRegenHelpCommand = new Command("regen-help", "Regenerate specs/generated/commands.md from the live command tree.");
         var docRegenHelpCheckOption = new Option<bool>("--check")
         {
-            Description = "Fail if contracts/commands.md is out of date."
+            Description = "Fail if specs/generated/commands.md is out of date."
         };
         var docRegenHelpPathOption = new Option<string?>("--path")
         {
-            Description = "Output path (defaults to contracts/commands.md)."
+            Description = "Output path (defaults to specs/generated/commands.md)."
         };
         docRegenHelpCommand.Options.Add(docRegenHelpCheckOption);
         docRegenHelpCommand.Options.Add(docRegenHelpPathOption);
@@ -2539,10 +2474,10 @@ public partial class Program
         var docLinkCommand = new Command("link", "Link a doc to work items.");
         var docLinkTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: specification, architecture, guide, work_item, doc",
+            Description = "Doc type: specification, architecture, verification, work_item, doc",
             Required = true
         };
-        docLinkTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
+        docLinkTypeOption.CompletionSources.Add("specification", "architecture", "verification", "work_item", "doc", "spec");
         var docLinkPathOption = new Option<string>("--path")
         {
             Description = "Doc path, link, or artifact ID.",
@@ -2568,7 +2503,7 @@ public partial class Program
             var type = parseResult.GetValue(docLinkTypeOption);
             if (!TryResolveDocLinkType(type, out var resolvedType))
             {
-                Console.WriteLine("Doc type must be spec, specification, guide, architecture, work_item, or doc.");
+                Console.WriteLine("Doc type must be spec, specification, architecture, verification, work_item, or doc.");
                 SetExitCode(2);
                 return;
             }
@@ -2581,10 +2516,10 @@ public partial class Program
         var docUnlinkCommand = new Command("unlink", "Unlink a doc from work items.");
         var docUnlinkTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: specification, architecture, guide, work_item, doc",
+            Description = "Doc type: specification, architecture, verification, work_item, doc",
             Required = true
         };
-        docUnlinkTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
+        docUnlinkTypeOption.CompletionSources.Add("specification", "architecture", "verification", "work_item", "doc", "spec");
         var docUnlinkPathOption = new Option<string>("--path")
         {
             Description = "Doc path, link, or artifact ID.",
@@ -2610,7 +2545,7 @@ public partial class Program
             var type = parseResult.GetValue(docUnlinkTypeOption);
             if (!TryResolveDocLinkType(type, out var resolvedType))
             {
-                Console.WriteLine("Doc type must be spec, specification, guide, architecture, work_item, or doc.");
+                Console.WriteLine("Doc type must be spec, specification, architecture, verification, work_item, or doc.");
                 SetExitCode(2);
                 return;
             }
@@ -2629,9 +2564,9 @@ public partial class Program
         {
             Description = "Sync GitHub issue links while updating doc/work-item backlinks."
         };
-        var docSyncIncludeDoneOption = new Option<bool>("--include-done")
+        var docSyncIncludeDoneOption = new Option<bool>("--include-terminal-items")
         {
-            Description = "Include done/dropped work items."
+            Description = "Include terminal work items."
         };
         var docSyncDryRunOption = new Option<bool>("--dry-run")
         {
@@ -3061,9 +2996,9 @@ public partial class Program
         {
             Description = "Sync GitHub issue links while updating spec/work-item backlinks."
         };
-        var specSyncIncludeDoneOption = new Option<bool>("--include-done")
+        var specSyncIncludeDoneOption = new Option<bool>("--include-terminal-items")
         {
-            Description = "Include done/dropped work items."
+            Description = "Include terminal work items."
         };
         var specSyncDryRunOption = new Option<bool>("--dry-run")
         {
@@ -3153,9 +3088,9 @@ public partial class Program
         var voiceWorkItemCommand = new Command("workitem", "Create a work item from voice input.");
         var voiceWorkItemTypeOption = new Option<string?>("--type")
         {
-            Description = "Work item type: bug, task, spike (defaults to AI choice)."
+            Description = "Work item type: work_item (defaults to AI choice)."
         };
-        voiceWorkItemTypeOption.CompletionSources.Add("bug", "task", "spike");
+        voiceWorkItemTypeOption.CompletionSources.Add("work_item");
         var voiceWorkItemStatusOption = CreateStatusOption();
         var voiceWorkItemPriorityOption = CreatePriorityOption();
         var voiceWorkItemOwnerOption = CreateOwnerOption();
@@ -3235,10 +3170,10 @@ public partial class Program
         var voiceDocCommand = new Command("doc", "Create a documentation file from voice input.");
         var voiceDocTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: specification, architecture, guide, work_item, doc",
+            Description = "Doc type: specification, architecture, verification, work_item, doc",
             Required = true
         };
-        voiceDocTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
+        voiceDocTypeOption.CompletionSources.Add("specification", "architecture", "verification", "work_item", "doc", "spec");
         var voiceDocOutOption = new Option<string?>("--out")
         {
             Description = "Output path (defaults by type)."
@@ -3353,7 +3288,7 @@ public partial class Program
         root.Subcommands.Add(voiceCommand);
 
         var navCommand = new Command("nav", "Group: navigation/index commands.");
-        var navSyncCommand = new Command("sync", "Derived view stage: regenerate indexes and the workboard, syncing links first by default.");
+        var navSyncCommand = new Command("sync", "Derived view stage: regenerate canonical indexes, syncing links first by default.");
         var navSyncIssuesOption = new Option<bool>("--issues")
         {
             Description = "Sync GitHub issue links while rebuilding derived navigation views.",
@@ -3363,14 +3298,9 @@ public partial class Program
         {
             Description = "Rewrite derived index sections even if content is unchanged."
         };
-        var navSyncWorkboardOption = new Option<bool>("--workboard")
+        var navSyncIncludeDoneOption = new Option<bool>("--include-terminal-items")
         {
-            Description = "Regenerate the workboard section in work/README.md.",
-            DefaultValueFactory = _ => true
-        };
-        var navSyncIncludeDoneOption = new Option<bool>("--include-done")
-        {
-            Description = "Include done/dropped work items in derived indexes and the workboard."
+            Description = "Include terminal-status work items in derived indexes."
         };
         var navSyncDryRunOption = new Option<bool>("--dry-run")
         {
@@ -3378,7 +3308,6 @@ public partial class Program
         };
         navSyncCommand.Options.Add(navSyncIssuesOption);
         navSyncCommand.Options.Add(navSyncForceOption);
-        navSyncCommand.Options.Add(navSyncWorkboardOption);
         navSyncCommand.Options.Add(navSyncIncludeDoneOption);
         navSyncCommand.Options.Add(navSyncDryRunOption);
         navSyncCommand.SetAction(async parseResult =>
@@ -3390,7 +3319,6 @@ public partial class Program
                 var includeDone = parseResult.GetValue(navSyncIncludeDoneOption);
                 var syncIssues = parseResult.GetValue(navSyncIssuesOption);
                 var force = parseResult.GetValue(navSyncForceOption);
-                var syncWorkboard = parseResult.GetValue(navSyncWorkboardOption);
                 var dryRun = parseResult.GetValue(navSyncDryRunOption);
                 var repoRoot = ResolveRepo(repo);
                 var resolvedFormat = ResolveFormat(format);
@@ -3402,7 +3330,7 @@ public partial class Program
                     return;
                 }
 
-                var result = await NavigationService.SyncNavigationAsync(repoRoot, config, includeDone, syncIssues, force, syncWorkboard, dryRun).ConfigureAwait(false);
+                var result = await NavigationService.SyncNavigationAsync(repoRoot, config, includeDone, syncIssues, force, dryRun).ConfigureAwait(false);
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
                     var payload = new NavSyncOutput(
@@ -3411,7 +3339,6 @@ public partial class Program
                             result.DocsUpdated,
                             result.ItemsUpdated,
                             result.IndexFilesUpdated,
-                            result.WorkboardUpdated,
                             result.MissingDocs,
                             result.MissingItems,
                             result.Warnings));
@@ -3422,7 +3349,6 @@ public partial class Program
                     Console.WriteLine($"Docs updated: {result.DocsUpdated}");
                     Console.WriteLine($"Work items updated: {result.ItemsUpdated}");
                     Console.WriteLine($"Index files updated: {result.IndexFilesUpdated}");
-                    Console.WriteLine($"Workboard updated: {result.WorkboardUpdated}");
                     if (result.Warnings.Count > 0)
                     {
                         Console.WriteLine("Warnings:");
@@ -3471,7 +3397,7 @@ public partial class Program
         };
         var syncNavOption = new Option<bool>("--nav")
         {
-            Description = "Run the `nav sync` stage (derived indexes + workboard)."
+            Description = "Run the `nav sync` stage (derived indexes)."
         };
         var syncIssuesOption = new Option<bool>("--issues")
         {
@@ -3482,18 +3408,13 @@ public partial class Program
         {
             Description = "Pass through to the item sync stage to import unlinked GitHub issues (slower)."
         };
-        var syncIncludeDoneOption = new Option<bool>("--include-done")
+        var syncIncludeDoneOption = new Option<bool>("--include-terminal-items")
         {
-            Description = "Include done/dropped work items in the doc and nav stages."
+            Description = "Include terminal work items in the doc and nav stages."
         };
         var syncForceOption = new Option<bool>("--force")
         {
             Description = "Pass through to the nav sync stage to rewrite derived sections even if unchanged."
-        };
-        var syncWorkboardOption = new Option<bool>("--workboard")
-        {
-            Description = "Pass through to the nav sync stage to regenerate the workboard.",
-            DefaultValueFactory = _ => true
         };
         var repoSyncDryRunOption = new Option<bool>("--dry-run")
         {
@@ -3511,7 +3432,6 @@ public partial class Program
         syncCommand.Options.Add(syncImportIssuesOption);
         syncCommand.Options.Add(syncIncludeDoneOption);
         syncCommand.Options.Add(syncForceOption);
-        syncCommand.Options.Add(syncWorkboardOption);
         syncCommand.Options.Add(repoSyncDryRunOption);
         syncCommand.Options.Add(repoSyncPreferOption);
         syncCommand.SetAction(async parseResult =>
@@ -3527,7 +3447,6 @@ public partial class Program
                 var importIssues = parseResult.GetValue(syncImportIssuesOption);
                 var includeDone = parseResult.GetValue(syncIncludeDoneOption);
                 var force = parseResult.GetValue(syncForceOption);
-                var syncWorkboard = parseResult.GetValue(syncWorkboardOption);
                 var dryRun = parseResult.GetValue(repoSyncDryRunOption);
                 var prefer = parseResult.GetValue(repoSyncPreferOption);
 
@@ -3577,14 +3496,12 @@ public partial class Program
                         includeDone,
                         syncIssues,
                         force,
-                        syncWorkboard,
                         dryRun,
                         syncDocs: !runDocs).ConfigureAwait(false);
                     navData = new NavSyncData(
                         result.DocsUpdated,
                         result.ItemsUpdated,
                         result.IndexFilesUpdated,
-                        result.WorkboardUpdated,
                         result.MissingDocs,
                         result.MissingItems,
                         result.Warnings);
@@ -3648,7 +3565,6 @@ public partial class Program
                         Console.WriteLine($"Docs updated: {navData.DocsUpdated}");
                         Console.WriteLine($"Work items updated: {navData.ItemsUpdated}");
                         Console.WriteLine($"Index files updated: {navData.IndexFilesUpdated}");
-                        Console.WriteLine($"Workboard updated: {navData.WorkboardUpdated}");
                         if (navData.Warnings.Count > 0)
                         {
                             Console.WriteLine("Warnings:");
@@ -3703,74 +3619,6 @@ public partial class Program
             }
         });
         root.Subcommands.Add(guideCommand);
-
-        var migrateCommand = new Command("migrate", "Run repository migrations.");
-        var migrateTargetArg = new Argument<string>("target")
-        {
-            Description = "Migration target (coherent-v1)."
-        };
-        var migrateDryRunOption = new Option<bool>("--dry-run")
-        {
-            Description = "Report migration changes without writing files."
-        };
-        migrateCommand.Arguments.Add(migrateTargetArg);
-        migrateCommand.Options.Add(migrateDryRunOption);
-        migrateCommand.SetAction(async parseResult =>
-        {
-            try
-            {
-                var repo = parseResult.GetValue(repoOption);
-                var format = parseResult.GetValue(formatOption) ?? "table";
-                var target = parseResult.GetValue(migrateTargetArg) ?? string.Empty;
-                var dryRun = parseResult.GetValue(migrateDryRunOption);
-                if (!string.Equals(target, "coherent-v1", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"Unknown migration target '{target}'. Supported targets: coherent-v1.");
-                    SetExitCode(2);
-                    return;
-                }
-
-                var repoRoot = ResolveRepo(repo);
-                var resolvedFormat = ResolveFormat(format);
-                var config = WorkbenchConfig.Load(repoRoot, out var configError);
-                if (configError is not null)
-                {
-                    Console.WriteLine($"Config error: {configError}");
-                    SetExitCode(2);
-                    return;
-                }
-
-                var data = await RunCoherentMigrationAsync(repoRoot, config, dryRun).ConfigureAwait(false);
-                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
-                {
-                    var payload = new MigrationOutput(true, data);
-                    WriteJson(payload, Core.WorkbenchJsonContext.Default.MigrationOutput);
-                }
-                else
-                {
-                    Console.WriteLine("Migration coherent-v1 complete.");
-                    Console.WriteLine($"Moved to done: {data.MovedToDone.Count}");
-                    Console.WriteLine($"Moved to items: {data.MovedToItems.Count}");
-                    Console.WriteLine($"Items normalized: {data.ItemsNormalized}");
-                    Console.WriteLine($"Docs updated: {data.DocsUpdated}");
-                    Console.WriteLine($"Item links updated: {data.ItemLinksUpdated}");
-                    Console.WriteLine($"Index files updated: {data.IndexFilesUpdated}");
-                    Console.WriteLine($"Workboard updated: {data.WorkboardUpdated}");
-                    if (!string.IsNullOrWhiteSpace(data.ReportPath))
-                    {
-                        Console.WriteLine($"Report: {data.ReportPath}");
-                    }
-                }
-
-                SetExitCode(0);
-            }
-            catch (Exception ex)
-            {
-                ReportError(ex);
-                SetExitCode(2);
-            }
-        });
-        root.Subcommands.Add(migrateCommand);
 
         var validateCommand = new Command("validate", "Validate work items, links, and schemas.");
         var strictOption = new Option<bool>("--strict")

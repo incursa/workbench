@@ -1,17 +1,3 @@
----
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  changeNotes: []
-  pathHistory:
-    - "C:/tracking/ai-work-item-generation.md"
-  path: /tracking/ai-work-item-generation.md
-owner: platform
-status: draft
-updated: 2025-12-27
----
-
 # AI work item generation
 
 Workbench can draft work items from a freeform description using an AI model.
@@ -22,7 +8,7 @@ and acceptance criteria, then creates the work item file from the templates.
 
 - Requires `WORKBENCH_AI_PROVIDER` and API credentials (same as doc summaries).
 - Uses a dedicated model override for work item generation when provided.
-- Creates a standard work item file under `work/items` using the selected type.
+- Creates a standard work item file under `specs/work-items/` using the selected type.
 
 ## Configuration
 

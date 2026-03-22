@@ -10,7 +10,7 @@ public static class SpecTraceMarkdown
         TimeSpan.FromSeconds(1));
 
     private static readonly Regex requirementKeywordRegex = new(
-        @"\b(?:MUST NOT|SHALL NOT|MUST|SHALL|SHOULD|MAY)\b",
+        @"\b(?:MUST NOT|SHALL NOT|SHOULD NOT|MUST|SHALL|SHOULD|MAY)\b",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture,
         TimeSpan.FromSeconds(1));
 
@@ -25,6 +25,9 @@ public static class SpecTraceMarkdown
             "Satisfied By",
             "Implemented By",
             "Verified By",
+            "Derived From",
+            "Supersedes",
+            "Source Refs",
             "Test Refs",
             "Code Refs",
             "Related"
@@ -209,6 +212,10 @@ public static class SpecTraceMarkdown
             string.Empty,
             NormalizeListOrPlaceholder(outOfScope ?? string.Empty, "- <item>"),
             string.Empty,
+            "## Verification Plan",
+            string.Empty,
+            "State how the work will be proven and link the verification artifact.",
+            string.Empty,
             "## Completion Notes",
             string.Empty,
             completionNotesText,
@@ -229,16 +236,6 @@ public static class SpecTraceMarkdown
             string.Empty
         };
 
-        if (!string.IsNullOrWhiteSpace(relatedArtifacts))
-        {
-            blocks.AddRange([
-                string.Empty,
-                "## Related Artifacts",
-                string.Empty,
-            NormalizeListOrPlaceholder(relatedArtifacts, "- SPEC-<DOMAIN>[-<GROUPING>...]")
-        ]);
-        }
-
         return JoinBlocks(blocks);
     }
 
@@ -256,6 +253,12 @@ public static class SpecTraceMarkdown
             "  - WI-EXAMPLE-0001",
             "- Verified By:",
             "  - VER-EXAMPLE-0001",
+            "- Derived From:",
+            "  - REQ-EXAMPLE-0000",
+            "- Supersedes:",
+            "  - REQ-EXAMPLE-0002",
+            "- Source Refs:",
+            "  - <external reference>",
             "- Test Refs:",
             "  - tests/Example",
             "- Code Refs:",
@@ -269,17 +272,49 @@ public static class SpecTraceMarkdown
 
     public static string BuildSpecTemplateBody()
     {
-        return BuildSpecificationBody(
-            "<Specification Title>",
+        return string.Join(
+            "\n",
+            BuildHeading("<Specification Title>", "SPEC-<DOMAIN>[-<GROUPING>...]"),
+            string.Empty,
+            "## Purpose",
+            string.Empty,
             "State the purpose of the specification in one or two direct paragraphs.",
+            string.Empty,
+            "## Scope",
+            string.Empty,
             "Optional. State what is in scope and, if useful, what is out of scope.",
+            string.Empty,
+            "## Context",
+            string.Empty,
             "Optional. Capture the business or technical context shared by the grouped requirements.",
-            BuildRequirementSkeleton());
+            string.Empty,
+            BuildRequirementSkeleton(),
+            string.Empty,
+            "## Open Questions",
+            string.Empty,
+            "- <question>",
+            string.Empty,
+            "## Authoring Rules",
+            string.Empty,
+            "- Every requirement clause must contain exactly one approved normative keyword in all caps: `MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, or `MAY`.",
+            "- The standard uses BCP 14-style uppercase requirement language inspired by RFC 2119 and RFC 8174; only uppercase approved forms carry normative meaning, and lowercase forms are plain English.",
+            "- The keyword does not need to be the first word, but it must appear in the clause and it must be the only approved keyword in that clause.",
+            "- The clause should express one obligation, rule, or constraint and should usually be a single sentence.",
+            "- Each specification Markdown file contains one specification and one or more related requirement clauses.",
+            "- `Trace` and `Notes` are optional.",
+            "- `Derived From` and `Supersedes` capture requirement lineage; `Source Refs` captures external upstream material.",
+            "- The clause is the normative content. Do not bury it under a required metadata block.",
+            "- If you add richer local metadata, keep it clearly optional and do not place it between the requirement heading and the clause.",
+            "- Front matter describes the document as a whole, not individual requirements.",
+            "- `Test Refs` and `Code Refs` stay implementation-specific. The standard does not prescribe a framework or comment syntax.");
     }
 
     public static string BuildArchitectureTemplateBody()
     {
-        return BuildArchitectureBody("<Architecture or Design Title>", "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
+        return BuildArchitectureBody(
+            "<Architecture or Design Title>",
+            "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            "ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
     }
 
     public static string BuildWorkItemTemplateBody()
@@ -289,6 +324,69 @@ public static class SpecTraceMarkdown
             "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
             "ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
             artifactId: "WI-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
+    }
+
+    public static string BuildVerificationBody(
+        string title,
+        string verifies,
+        string? artifactId = null)
+    {
+        var blocks = new List<string>
+        {
+            BuildHeading(title, artifactId),
+            string.Empty,
+            "Use one of the approved verification statuses: `planned`, `passed`, `failed`, `blocked`, `waived`, or `obsolete`.",
+            string.Empty,
+            "## Scope",
+            string.Empty,
+            "State what is being verified.",
+            string.Empty,
+            "## Requirements Verified",
+            string.Empty,
+            NormalizeListOrPlaceholder(verifies ?? string.Empty, "- REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"),
+            string.Empty,
+            "## Verification Method",
+            string.Empty,
+            "Describe the method in tooling-agnostic terms, such as execution, inspection, analysis, or manual review.",
+            string.Empty,
+            "## Preconditions",
+            string.Empty,
+            "- <precondition>",
+            string.Empty,
+            "## Procedure or Approach",
+            string.Empty,
+            "Describe the steps or approach used to verify the requirement set.",
+            string.Empty,
+            "## Expected Result",
+            string.Empty,
+            "Describe the expected outcome in plain language.",
+            string.Empty,
+            "## Evidence",
+            string.Empty,
+            "- <evidence or test reference>",
+            string.Empty,
+            "## Status",
+            string.Empty,
+            "The status below applies to every requirement listed in `verifies`. If the requirements do not share one outcome, split them into separate verification artifacts.",
+            string.Empty,
+            "planned",
+            string.Empty,
+            "## Related Artifacts",
+            string.Empty,
+            "- SPEC-<DOMAIN>[-<GROUPING>...]",
+            "- ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            "- WI-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"
+        };
+
+        return JoinBlocks(blocks);
+    }
+
+    public static string BuildVerificationTemplateBody()
+    {
+        return BuildVerificationBody(
+            "<Verification Title>",
+            "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            artifactId: "VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>");
     }
 
     public static string ExtractSection(string body, string heading)
@@ -481,8 +579,9 @@ public static class SpecTraceMarkdown
         return docType.Trim().ToLowerInvariant() switch
         {
             "spec" or "specification" => "specification",
-            "guide" or "architecture" => "architecture",
+            "architecture" => "architecture",
             "work_item" or "work-item" or "work item" => "work_item",
+            "verification" => "verification",
             _ => null
         };
     }

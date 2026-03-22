@@ -1,34 +1,29 @@
 ---
 name: workbench-architecture
-description: Architecture and ADR workflows for Workbench CLI. Use when documenting system design, decisions, tradeoffs, or rationale that must be tracked over time.
+description: Architecture workflows for Workbench CLI. Use when documenting system design, tradeoffs, or rationale in canonical architecture artifacts.
 ---
 
 ## Key settings
 
-- `.workbench/config.json`: paths.docsRoot, git.defaultBaseBranch.
+- `.workbench/config.json`: paths.architectureDir, paths.specsRoot, git.defaultBaseBranch.
 - Use `workbench config show --format json` to confirm defaults.
 
 ## Core workflows
 
 1. Planning phase: create architecture docs for design intent and scope.
-2. When a decision is made or changes, create or update an ADR.
-3. Link ADRs and architecture docs to work items and specs.
+2. When a decision affects the design, capture it in an architecture doc instead of a separate decision record.
+3. Link architecture docs to work items and specs.
 
 ## Commands
 
 Create an architecture doc:
 ```bash
-workbench doc new --type doc --title "Subsystem overview" --path architecture/subsystem-overview.md --work-item TASK-0001
+workbench doc new --type architecture --title "Subsystem overview" --path specs/architecture/WB/ARC-WB-0001-subsystem-overview.md --work-item WI-WB-0001
 ```
 
-Create an ADR:
+Link an architecture doc to a work item:
 ```bash
-workbench doc new --type adr --title "Decision title" --path decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
-```
-
-Link existing docs to a work item:
-```bash
-workbench item link TASK-0001 --spec /overview/spec.md --adr /decisions/ADR-YYYY-MM-DD-title.md
+workbench doc link --type architecture --path specs/architecture/WB/ARC-WB-0001-subsystem-overview.md --work-item WI-WB-0001
 ```
 
 Sync backlinks:
@@ -38,11 +33,13 @@ workbench doc sync --all
 
 ## Output
 
-- Architecture docs and ADRs with consistent front matter.
-- Work items that reference related specs and ADRs.
+- Architecture docs with consistent canonical front matter.
+- Work items that reference related specs and architecture docs.
 
 ## Guardrails
 
-- Use ADRs for decisions, architecture docs for structure and flows.
-- Keep ADR status updated (proposed, accepted, superseded, deprecated).
-- If an ADR does not exist for a significant decision, create one.
+- Use architecture docs for structure, flows, and design rationale.
+- Keep architecture status aligned with the current design state.
+- If a significant decision changes the design, update the relevant
+  architecture artifact and linked spec rather than creating a separate
+  decision record.

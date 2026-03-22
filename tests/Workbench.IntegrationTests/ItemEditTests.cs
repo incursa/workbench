@@ -17,7 +17,7 @@ public class ItemEditTests
             "item",
             "new",
             "--type",
-            "task",
+            "work_item",
             "--title",
             "Original title",
             "--format",
