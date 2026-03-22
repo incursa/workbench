@@ -223,7 +223,7 @@ public class WorkItemEditTests
     public void ListDocs_AndGetDoc_BrowseLocalMarkdown()
     {
         using var repo = new TempRepoFixture();
-        var docsRoot = Path.Combine(repo.Path, "specs", "requirements");
+        var docsRoot = Path.Combine(repo.Path, "specs");
         Directory.CreateDirectory(docsRoot);
 
         var docPath = Path.Combine(docsRoot, "feature-spec-local-web-ui.md");
@@ -251,7 +251,7 @@ public class WorkItemEditTests
         Assert.AreEqual("spec", docs[0].Type);
         StringAssert.Contains(docs[0].Excerpt, "browser-based local UI", StringComparison.Ordinal);
 
-        var detail = workspace.GetDoc("specs/requirements/feature-spec-local-web-ui.md");
+        var detail = workspace.GetDoc("specs/feature-spec-local-web-ui.md");
         Assert.IsNotNull(detail);
         Assert.AreEqual("Requirement Spec: Local Web UI Mode", detail!.Summary.Title);
         StringAssert.Contains(detail.Body, "browser-based local UI", StringComparison.Ordinal);
@@ -406,7 +406,7 @@ public class WorkItemEditTests
     public void ListFiles_AndGetFile_BrowseLocalRepoFiles()
     {
         using var repo = new TempRepoFixture();
-        var docsRoot = Path.Combine(repo.Path, "specs", "requirements");
+        var docsRoot = Path.Combine(repo.Path, "specs");
         var srcRoot = Path.Combine(repo.Path, "src", "Workbench");
         Directory.CreateDirectory(docsRoot);
         Directory.CreateDirectory(srcRoot);
@@ -429,11 +429,11 @@ public class WorkItemEditTests
         var workspace = new WorkbenchWorkspace(repo.Path, WorkbenchConfig.Default);
         var files = workspace.ListFiles("all", null);
 
-        Assert.IsTrue(files.Any(file => file.Path.Equals("specs/requirements/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(files.Any(file => file.Path.Equals("specs/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase)));
         Assert.IsTrue(files.Any(file => file.Path.Equals("src/Workbench/notes.txt", StringComparison.OrdinalIgnoreCase)));
         Assert.IsTrue(files.Any(file => file.Path.Equals("assets.bin", StringComparison.OrdinalIgnoreCase)));
 
-        var markdown = files.First(file => file.Path.Equals("specs/requirements/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase));
+        var markdown = files.First(file => file.Path.Equals("specs/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase));
         Assert.AreEqual("markdown", markdown.FileType);
         StringAssert.Contains(markdown.Excerpt, "browser-based local UI", StringComparison.Ordinal);
 
@@ -444,7 +444,7 @@ public class WorkItemEditTests
         var binary = files.First(file => file.Path.Equals("assets.bin", StringComparison.OrdinalIgnoreCase));
         Assert.AreEqual("binary", binary.FileType);
 
-        var detail = workspace.GetFile("specs/requirements/feature-spec-local-web-ui.md");
+        var detail = workspace.GetFile("specs/feature-spec-local-web-ui.md");
         Assert.IsNotNull(detail);
         Assert.IsTrue(detail!.IsMarkdown);
         StringAssert.Contains(detail.Body, "browser-based local UI", StringComparison.Ordinal);
@@ -459,7 +459,7 @@ public class WorkItemEditTests
     {
         using var repo = new TempRepoFixture();
         var docsRoot = Path.Combine(repo.Path, "docs");
-        var docsProductRoot = Path.Combine(repo.Path, "specs", "requirements");
+        var docsProductRoot = Path.Combine(repo.Path, "specs");
         var srcPagesRoot = Path.Combine(repo.Path, "src", "Workbench", "Pages");
         Directory.CreateDirectory(docsRoot);
         Directory.CreateDirectory(docsProductRoot);
@@ -488,14 +488,12 @@ public class WorkItemEditTests
         var docTree = WorkbenchWorkspace.BuildDocTree(
             workspace.ListDocs("all", null),
             doc => $"/Docs?selectedPath={Uri.EscapeDataString(doc.Path)}",
-            "specs/requirements/feature-spec-local-web-ui.md");
+            "specs/feature-spec-local-web-ui.md");
 
         var specsBranch = docTree.Children.First(child => child.Name.Equals("specs", StringComparison.OrdinalIgnoreCase));
-        Assert.IsTrue(specsBranch.Children.Any(child => child.Name.Equals("requirements", StringComparison.OrdinalIgnoreCase)));
-
-        var requirementsBranch = specsBranch.Children.First(child => child.Name.Equals("requirements", StringComparison.OrdinalIgnoreCase));
-        Assert.HasCount(1, requirementsBranch.Entries);
-        Assert.IsTrue(requirementsBranch.Entries[0].IsSelected);
+        Assert.HasCount(1, specsBranch.Entries);
+        Assert.AreEqual("specs/feature-spec-local-web-ui.md", specsBranch.Entries[0].Path);
+        Assert.IsTrue(specsBranch.Entries[0].IsSelected);
 
         var fileTree = WorkbenchWorkspace.BuildFileTree(
             workspace.ListFiles("all", null),
@@ -753,8 +751,8 @@ public class WorkItemEditTests
             tags: existing
             related:
               specs:
-                - </specs/requirements/spec-a.md>
-                - /specs/requirements/spec-a.md
+                - </specs/spec-a.md>
+                - /specs/spec-a.md
               prs:
                 - https://github.com/octo/demo/pull/1
                 - https://github.com/octo/demo/pull/1
@@ -773,7 +771,7 @@ public class WorkItemEditTests
         Assert.AreEqual(1, updated);
         var normalized = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
         Assert.IsEmpty(normalized.Tags);
-        CollectionAssert.AreEqual(new[] { "/specs/requirements/spec-a.md" }, normalized.Related.Specs.ToArray());
+        CollectionAssert.AreEqual(new[] { "/specs/spec-a.md" }, normalized.Related.Specs.ToArray());
         CollectionAssert.AreEqual(new[] { "https://github.com/octo/demo/pull/1" }, normalized.Related.Prs.ToArray());
         Assert.IsEmpty(normalized.Related.Branches);
         Assert.IsEmpty(normalized.Related.Adrs);
@@ -782,7 +780,7 @@ public class WorkItemEditTests
 
         var content = File.ReadAllText(itemPath);
         StringAssert.Contains(content, "tags: []", StringComparison.Ordinal);
-        StringAssert.Contains(content, "- /specs/requirements/spec-a.md", StringComparison.Ordinal);
+        StringAssert.Contains(content, "- /specs/spec-a.md", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -841,7 +839,7 @@ public class WorkItemEditTests
             created: 2026-03-07
             related:
               specs:
-                - </specs/requirements/spec-a.md>
+                - </specs/spec-a.md>
               adrs: []
               files: []
               prs: []
@@ -856,17 +854,17 @@ public class WorkItemEditTests
             Related links
             """);
 
-        var normalized = WorkItemService.AddRelatedLink(itemPath, "specs", "/specs/requirements/spec-a.md");
-        var duplicate = WorkItemService.AddRelatedLink(itemPath, "specs", "/specs/requirements/spec-a.md");
-        var removed = WorkItemService.RemoveRelatedLink(itemPath, "specs", "/SPECS/REQUIREMENTS/SPEC-A.MD");
+        var normalized = WorkItemService.AddRelatedLink(itemPath, "specs", "/specs/spec-a.md");
+        var duplicate = WorkItemService.AddRelatedLink(itemPath, "specs", "/specs/spec-a.md");
+        var removed = WorkItemService.RemoveRelatedLink(itemPath, "specs", "/SPECS/SPEC-A.MD");
 
         Assert.IsTrue(normalized);
         Assert.IsFalse(duplicate);
         Assert.IsTrue(removed);
 
         var content = File.ReadAllText(itemPath);
-        Assert.IsFalse(content.Contains("</specs/requirements/spec-a.md>", StringComparison.Ordinal), content);
-        Assert.IsFalse(content.Contains("/specs/requirements/spec-a.md", StringComparison.Ordinal), content);
+        Assert.IsFalse(content.Contains("</specs/spec-a.md>", StringComparison.Ordinal), content);
+        Assert.IsFalse(content.Contains("/specs/spec-a.md", StringComparison.Ordinal), content);
     }
 
     [TestMethod]
@@ -883,8 +881,8 @@ public class WorkItemEditTests
             created: 2026-03-07
             related:
               specs:
-                - /specs/requirements/spec-a.md
-                - /specs/requirements/spec-b.md
+                - /specs/spec-a.md
+                - /specs/spec-b.md
               adrs: []
               files:
                 - /docs/20-architecture/file-a.md
@@ -904,13 +902,13 @@ public class WorkItemEditTests
             itemPath,
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["/specs/requirements/spec-b.md"] = "/specs/requirements/spec-a.md",
+                ["/specs/spec-b.md"] = "/specs/spec-a.md",
                 ["/docs/20-architecture/file-a.md"] = "/docs/20-architecture/file-b.md"
             });
 
         Assert.IsTrue(changed);
         var updated = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
-        CollectionAssert.AreEqual(new[] { "/specs/requirements/spec-a.md" }, updated.Related.Specs.ToArray());
+        CollectionAssert.AreEqual(new[] { "/specs/spec-a.md" }, updated.Related.Specs.ToArray());
         CollectionAssert.AreEqual(new[] { "/docs/20-architecture/file-b.md" }, updated.Related.Files.ToArray());
     }
 
@@ -928,8 +926,8 @@ public class WorkItemEditTests
             created: 2026-03-07
             related:
               specs:
-                - </specs/requirements/spec-a.md>
-                - /specs/requirements/spec-a.md
+                - </specs/spec-a.md>
+                - /specs/spec-a.md
               adrs:
                 - </docs/40-decisions/adr-a.md>
               files: []
@@ -959,7 +957,7 @@ public class WorkItemEditTests
 
         Assert.AreEqual(1, updated);
         var normalized = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
-        CollectionAssert.AreEqual(new[] { "/specs/requirements/spec-a.md" }, normalized.Related.Specs.ToArray());
+        CollectionAssert.AreEqual(new[] { "/specs/spec-a.md" }, normalized.Related.Specs.ToArray());
         CollectionAssert.AreEqual(new[] { "/docs/40-decisions/adr-a.md" }, normalized.Related.Adrs.ToArray());
         CollectionAssert.AreEqual(new[] { "https://github.com/octo/demo/pull/1" }, normalized.Related.Prs.ToArray());
         CollectionAssert.AreEqual(new[] { "https://github.com/octo/demo/issues/7" }, normalized.Related.Issues.ToArray());

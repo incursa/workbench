@@ -36,7 +36,7 @@ updated: 0000-00-00
 ## Change management
 
 ## Related specs
-- [Quality Evidence v1 (Testing First)](/specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [Quality Evidence v1 (Testing First)](/specs/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Related ADRs
 - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)

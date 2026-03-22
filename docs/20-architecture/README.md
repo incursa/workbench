@@ -16,7 +16,7 @@ updated: 2026-03-20
 System architecture, design guidance, data flows, and major components.
 
 Architecture docs live here as `guide` documents. They explain how the
-requirements in `specs/requirements` are satisfied by the implementation.
+requirements in `specs` are satisfied by the implementation.
 If a repository uses `artifact-id-policy.json`, architecture docs should carry
 the matching `artifact_id` and `domain` metadata so Workbench can generate and
 validate IDs consistently. The legacy `docs/20-architecture` tree remains only

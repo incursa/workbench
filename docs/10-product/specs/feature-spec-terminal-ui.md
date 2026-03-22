@@ -18,4 +18,4 @@ updated: 2026-03-21
 # Legacy Requirement Spec: Terminal UI Mode
 
 This legacy product-spec entry has been superseded by
-[SPEC-TUI-TERMINAL-UI](/specs/requirements/TUI/SPEC-TUI-TERMINAL-UI.md).
+[SPEC-TUI-TERMINAL-UI](/specs/SPEC-TUI-TERMINAL-UI.md).

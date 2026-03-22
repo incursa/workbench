@@ -25,4 +25,4 @@ updated: 2026-03-21
 # Legacy Requirement Spec: Quality Evidence v1 (Testing First)
 
 This legacy product-spec entry has been superseded by
-[SPEC-QA-QUALITY-EVIDENCE](/specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md).
+[SPEC-QA-QUALITY-EVIDENCE](/specs/SPEC-QA-QUALITY-EVIDENCE.md).

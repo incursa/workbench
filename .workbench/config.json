@@ -2,7 +2,6 @@
   "Paths": {
     "DocsRoot": "docs",
     "SpecsRoot": "specs",
-    "RequirementsDir": "specs/requirements",
     "ArchitectureDir": "architecture",
     "WorkRoot": "work",
     "ItemsDir": "work/items",

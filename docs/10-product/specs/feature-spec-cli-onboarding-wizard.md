@@ -16,4 +16,4 @@ updated: 2026-03-21
 # Legacy Requirement Spec: CLI Onboarding, Init Walkthrough, and Wizard Mode
 
 This legacy product-spec entry has been superseded by
-[SPEC-CLI-ONBOARDING](/specs/requirements/CLI/SPEC-CLI-ONBOARDING.md).
+[SPEC-CLI-ONBOARDING](/specs/SPEC-CLI-ONBOARDING.md).

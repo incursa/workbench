@@ -89,7 +89,7 @@
                 <div>
                     <div class="eyebrow">@(Model.IsCreateMode ? "Create spec" : "Selected spec")</div>
                     <h3>@(Model.IsCreateMode ? "Create a new specification" : Model.Edit.Title)</h3>
-                    <p>@(Model.IsCreateMode ? "Workbench will save the new specification under specs/requirements/<domain>/ unless you choose a path." : Model.SelectedSpec!.Summary.Path)</p>
+                    <p>@(Model.IsCreateMode ? "Workbench will save the new specification under specs/<domain>/ unless you choose a path." : Model.SelectedSpec!.Summary.Path)</p>
                 </div>
                 <div class="detail-badges">
                     @if (Model.IsCreateMode)
@@ -150,7 +150,7 @@
                     </div>
                     <div>
                         <div class="field-label">Path</div>
-                        <div class="mono">@(Model.IsCreateMode ? "specs/requirements/CLI/SPEC-CLI-....md" : Model.SelectedSpec!.Summary.Path)</div>
+                        <div class="mono">@(Model.IsCreateMode ? "specs/CLI/SPEC-CLI-....md" : Model.SelectedSpec!.Summary.Path)</div>
                     </div>
                     @if (!Model.IsCreateMode)
                     {
@@ -167,7 +167,7 @@
                     <h4>@(Model.IsCreateMode ? "Create spec" : "Edit spec")</h4>
                     <span class="muted">Sections are saved back as Markdown with clickable repository links.</span>
                 </div>
-                <div class="muted">@(Model.IsCreateMode ? "Leave Artifact ID blank to use the repository policy. Workbench will choose the default specs/requirements path from the title when you leave Path empty." : "The editor keeps the structured body and traceability links in sync with the file on disk. Repo doc paths and artifact IDs are converted into clickable links when possible.")</div>
+                <div class="muted">@(Model.IsCreateMode ? "Leave Artifact ID blank to use the repository policy. Workbench will choose the default specs path from the title when you leave Path empty." : "The editor keeps the structured body and traceability links in sync with the file on disk. Repo doc paths and artifact IDs are converted into clickable links when possible.")</div>
 
                 <form method="post" asp-page-handler="Save" class="editor-stack">
                     <div asp-validation-summary="All" class="validation-summary"></div>

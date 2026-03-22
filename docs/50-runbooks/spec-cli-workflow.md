@@ -37,7 +37,7 @@ policy-driven spec IDs work.
 ## Preconditions
 
 - You are inside a Workbench repository.
-- The repo has the canonical `specs/requirements` tree and a Workbench config file.
+- The repo has the canonical `specs` tree and a Workbench config file.
 - If the repo defines `artifact-id-policy.json`, you know the domain and
   capability metadata that should be used for the spec ID pattern.
 
@@ -52,7 +52,7 @@ policy-driven spec IDs work.
 1. Inspect the current spec or the spec list.
    ```bash
    workbench spec show SPEC-CLI-ONBOARDING
-   workbench spec show specs/requirements/CLI/SPEC-CLI-ONBOARDING.md
+   workbench spec show specs/SPEC-CLI-ONBOARDING.md
    ```
 2. Create a new spec.
    ```bash
@@ -69,12 +69,12 @@ policy-driven spec IDs work.
      link or a repo path that Workbench can resolve into one on save.
 5. Link the spec to work items when delivery work starts.
    ```bash
-   workbench spec link --path specs/requirements/CLI/SPEC-CLI-ONBOARDING.md --work-item TASK-0001
+   workbench spec link --path specs/SPEC-CLI-ONBOARDING.md --work-item TASK-0001
    ```
 6. Update or remove traceability later if the scope changes.
    ```bash
    workbench spec edit SPEC-CLI-ONBOARDING --status approved
-   workbench spec unlink --path specs/requirements/CLI/SPEC-CLI-ONBOARDING.md --work-item TASK-0001
+   workbench spec unlink --path specs/SPEC-CLI-ONBOARDING.md --work-item TASK-0001
    ```
 7. Sync backlinks and front matter after larger edits or file moves.
    ```bash
@@ -88,7 +88,7 @@ policy-driven spec IDs work.
 
 ## Validation
 
-- The spec file exists under `specs/requirements`.
+- The spec file exists under `specs`.
 - `workbench validate` passes with no broken links or schema errors.
 - Related work items point back to the spec file or artifact ID.
 - If a repo policy is active, the generated artifact ID matches the configured
@@ -100,5 +100,5 @@ policy-driven spec IDs work.
 
 - [Specification and traceability standard](/docs/00-overview/specification-and-traceability-standard.md)
 - [Workbench repo spec](/docs/00-overview/workbench-spec.md)
-- [Requirements README](/specs/requirements/README.md)
+- [Requirements README](/specs/README.md)
 - [Requirement spec template](/docs/templates/requirement-spec.md)

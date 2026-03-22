@@ -10,7 +10,7 @@ githubSynced: null
 tags: []
 related:
   specs:
-    - /specs/requirements/WEB/SPEC-WEB-LOCAL-UI.md
+    - /specs/SPEC-WEB-LOCAL-UI.md
     - /docs/10-product/specs/feature-spec-local-web-ui.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md

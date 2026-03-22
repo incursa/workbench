@@ -13,8 +13,9 @@ workbench:
   type: spec
   workItems:
     - TASK-0001
-  pathHistory: []
-  path: /specs/requirements/CLI/SPEC-CLI-ONBOARDING.md
+  pathHistory:
+    - "C:/specs/SPEC-CLI-ONBOARDING.md"
+  path: /specs/SPEC-CLI-ONBOARDING.md
 ---
 
 # SPEC-CLI-ONBOARDING - CLI Onboarding, Init Walkthrough, and Wizard Mode

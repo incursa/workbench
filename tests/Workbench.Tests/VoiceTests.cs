@@ -104,8 +104,7 @@ public sealed class VoiceTests
             source: null,
             force: false);
 
-        var normalizedPath = created.Path.Replace('/', '\\');
-        StringAssert.Contains(normalizedPath, Path.Combine("specs", "requirements"), StringComparison.OrdinalIgnoreCase);
+        Assert.AreEqual(Path.Combine(repoRoot, "specs"), Path.GetDirectoryName(created.Path));
         var createdFileName = Path.GetFileName(created.Path);
         Assert.IsTrue(createdFileName.StartsWith("SPEC-", StringComparison.Ordinal), created.Path);
         Assert.IsTrue(createdFileName.EndsWith(".md", StringComparison.Ordinal), created.Path);

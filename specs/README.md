@@ -10,8 +10,9 @@ updated: 2026-03-21
 
 # Specs
 
-Canonical requirements live here. Use the sibling top-level `architecture/`
-and `work/` roots for design and execution artifacts.
+Canonical specifications live here. Keep each spec as a single Markdown file
+directly under `specs/`, and use the sibling top-level `architecture/` and
+`work/` roots for design and execution artifacts.
 
 ## Index
 

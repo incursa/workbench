@@ -66,7 +66,8 @@ public class NavigationServiceTests
         var docsReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "docs", "README.md")).ConfigureAwait(false);
         var workReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "work", "README.md")).ConfigureAwait(false);
 
-        Assert.IsTrue(docsReadme.Contains("specs/requirements/README.md", StringComparison.Ordinal), docsReadme);
+        Assert.IsTrue(docsReadme.Contains("# Docs", StringComparison.Ordinal), docsReadme);
+        Assert.IsTrue(docsReadme.Contains("_No docs found._", StringComparison.Ordinal), docsReadme);
         Assert.IsFalse(docsReadme.Contains("items/README.md", StringComparison.Ordinal), docsReadme);
         Assert.IsFalse(docsReadme.Contains("done/README.md", StringComparison.Ordinal), docsReadme);
         Assert.IsFalse(docsReadme.Contains("work-item.task.md", StringComparison.Ordinal), docsReadme);

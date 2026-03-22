@@ -87,7 +87,7 @@ while still allowing external systems as intake.
 - Workspace: a git repo (detected automatically).
 - Work item: a Markdown file representing a unit of work (bug/task/spike).
 - Promotion: creating the work item on a new branch with an initial commit.
-- Spec: documentation in `specs/requirements` that describes behavior/requirements.
+- Spec: documentation in `specs` that describes behavior/requirements.
 - ADR: architecture decision record, stored in /docs/40-decisions.
 
 ---
@@ -109,13 +109,7 @@ Workbench supports configurable paths, but defaults to:
 
 specs/
   README.md
-  requirements/
-    README.md
-    CLI/
-    QA/
-    SYNC/
-    TUI/
-    WEB/
+  SPEC-*.md
 
 architecture/
   README.md
@@ -215,7 +209,7 @@ updated: null
 tags: [docs, workflow]
 related:
   specs:
-    - /specs/requirements/CLI/SPEC-CLI-ONBOARDING.md
+    - /specs/SPEC-CLI-ONBOARDING.md
   adrs: []
   files: []
   prs: []
@@ -242,7 +236,7 @@ Docs use YAML front matter aligned with `/docs/30-contracts/doc.schema.json`. Wo
 - workbench.type: spec | adr | doc | runbook | guide | contract
 - workbench.workItems: linked work item IDs
 - workbench.codeRefs: related code references
-- workbench.path: current repo-relative path (e.g. /specs/requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- workbench.path: current repo-relative path (e.g. /specs/SPEC-CLI-ONBOARDING.md)
 - workbench.pathHistory: prior repo-relative paths used to repair links after moves
 - status: active | draft | legacy (recommended for imported docs)
 
@@ -274,7 +268,6 @@ Workbench works without config (defaults applied), but writes config on scaffold
   "paths": {
     "docsRoot": "docs",
     "specsRoot": "specs",
-    "requirementsDir": "specs/requirements",
     "architectureDir": "architecture",
     "workRoot": "work",
     "itemsDir": "work/items",
@@ -388,7 +381,7 @@ Sets status to done and moves file to the done dir unless `--no-move` is set.
 Deletes a work item file and removes doc backlinks unless `--keep-links` is set.
 
 #### workbench spec new --title "<...>" [--path <...>] [--artifact-id <...>] [--domain <...>] [--capability <...>] [--work-item <ID...>] [--code-ref <ref...>] [--force]
-Creates a requirement specification in /specs/requirements using the spec template and policy-driven ID rules.
+Creates a requirement specification in /specs using the spec template and policy-driven ID rules.
 
 #### workbench spec show <reference>
 Prints the resolved file path and renders key spec metadata.
@@ -531,7 +524,7 @@ Examples:
 - Markdown link: `[TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)`
 
 Doc cross-link rules:
-- ADRs in `/docs/40-decisions` must include a "Related specs" section with at least one link to a spec in `/specs/requirements` or `/architecture`.
+- ADRs in `/docs/40-decisions` must include a "Related specs" section with at least one link to a spec in `/specs` or `/architecture`.
 - Specs referenced in `related.specs` must include a backlink to the work item ID (plain text or markdown link).
 
 ### Errors (must fail)

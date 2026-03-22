@@ -8,11 +8,10 @@
     "Paths": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["DocsRoot", "SpecsRoot", "RequirementsDir", "ArchitectureDir", "WorkRoot", "ItemsDir", "DoneDir", "TemplatesDir", "WorkboardFile"],
+      "required": ["DocsRoot", "SpecsRoot", "ArchitectureDir", "WorkRoot", "ItemsDir", "DoneDir", "TemplatesDir", "WorkboardFile"],
       "properties": {
         "DocsRoot": { "type": "string", "minLength": 1 },
         "SpecsRoot": { "type": "string", "minLength": 1 },
-        "RequirementsDir": { "type": "string", "minLength": 1 },
         "ArchitectureDir": { "type": "string", "minLength": 1 },
         "WorkRoot": { "type": "string", "minLength": 1 },
         "ItemsDir": { "type": "string", "minLength": 1 },

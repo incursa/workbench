@@ -64,7 +64,7 @@ The important rule is not the label itself but the role:
 
 ## Folder layout
 
-The repository now treats `specs/requirements` as the canonical home for
+The repository now treats `specs` as the canonical home for
 requirements, `architecture/` as the canonical home for design docs, and
 `work/` as the canonical home for work items and templates, while the numbered
 docs tree remains a compatibility and orientation layer:
@@ -113,7 +113,7 @@ work/
 
 Guidance:
 
-- keep requirements specs under `specs/requirements`
+- keep requirements specs under `specs`
 - keep architecture/design docs under `architecture`
 - keep decision records under `docs/40-decisions`
 - keep contracts and verification docs under `docs/30-contracts`
@@ -231,7 +231,7 @@ updated: 0000-00-00
 ## Purpose
 
 ## Requirements satisfied
-- REQ-<CODE>-0001 ([CLI Onboarding, Init Walkthrough, and Wizard Mode](/specs/requirements/CLI/SPEC-CLI-ONBOARDING.md))
+- REQ-<CODE>-0001 ([CLI Onboarding, Init Walkthrough, and Wizard Mode](/specs/SPEC-CLI-ONBOARDING.md))
 
 ## Design summary
 
@@ -248,7 +248,7 @@ updated: 0000-00-00
 -
 
 ## Related specs
-- [CLI Onboarding, Init Walkthrough, and Wizard Mode](/specs/requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [CLI Onboarding, Init Walkthrough, and Wizard Mode](/specs/SPEC-CLI-ONBOARDING.md)
 
 ## Related work items
 - [TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)

@@ -22,7 +22,7 @@ Product requirements, explicit specs, and user-facing behavior.
 
 ## Requirements specs
 
-- Canonical home: [specs/requirements](/specs/requirements/README.md)
+- Canonical home: [specs](/specs/README.md)
 - Use [docs/templates/requirement-spec.md](/docs/templates/requirement-spec.md)
 - Policy-driven spec IDs live in the spec front matter as `artifact_id`,
   `domain`, and `capability`. If a repository adds `artifact-id-policy.json`,
@@ -33,7 +33,7 @@ Product requirements, explicit specs, and user-facing behavior.
 ## Feature-level notes
 
 - User journeys, UX notes, capability summaries, and other prose that supports a spec.
-- If the document states a requirement, it belongs in `specs/requirements`.
+- If the document states a requirement, it belongs in `specs`.
 
 ## Include
 

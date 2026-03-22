@@ -118,7 +118,11 @@ public static class NavigationService
                 continue;
             }
 
-            foreach (var path in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
+            var searchOption = root.Equals(Path.Combine(repoRoot, config.Paths.SpecsRoot), StringComparison.OrdinalIgnoreCase)
+                ? SearchOption.TopDirectoryOnly
+                : SearchOption.AllDirectories;
+
+            foreach (var path in Directory.EnumerateFiles(root, "*.md", searchOption))
             {
                 var relative = NormalizePath(Path.GetRelativePath(repoRoot, path));
                 if (IsDocsIndexFile(config, relative) ||
@@ -556,7 +560,7 @@ public static class NavigationService
             "\n",
             "# Specs",
             string.Empty,
-            "Canonical requirements live here. Use the sibling top-level `architecture/` and `work/` roots for design and execution artifacts.",
+            "Canonical specifications live here. Keep them directly under `specs/` and use the sibling top-level `architecture/` and `work/` roots for design and execution artifacts.",
             string.Empty,
             "## Index",
             string.Empty,
@@ -629,7 +633,7 @@ public static class NavigationService
             string.Empty,
             "## Layout",
             string.Empty,
-            "- `specs/requirements`: canonical requirement specifications.",
+            "- `specs`: canonical specification documents.",
             "- `architecture`: architecture and design documents.",
             "- `work/items`: active work items named `<ID>-<slug>.md`.",
             "- `work/done`: closed items for reference and audit history.",
@@ -788,15 +792,7 @@ public static class NavigationService
 
         if (normalized.StartsWith($"{config.Paths.SpecsRoot.TrimEnd('/')}/", StringComparison.OrdinalIgnoreCase))
         {
-            var specPrefix = $"{config.Paths.SpecsRoot.TrimEnd('/')}/";
-            var specRemainder = normalized[specPrefix.Length..];
-            var specSegments = specRemainder.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (specSegments.Length == 0)
-            {
-                return "Specs";
-            }
-
-            return specSegments[0];
+            return "Specs";
         }
 
         var prefix = $"{config.Paths.DocsRoot.TrimEnd('/')}/";
@@ -825,7 +821,8 @@ public static class NavigationService
         }
 
         var specsRoot = config.Paths.SpecsRoot.TrimEnd('/').ToLowerInvariant();
-        if (normalized.Contains($"{specsRoot}/requirements/"))
+        if (normalized.StartsWith($"{specsRoot}/", StringComparison.OrdinalIgnoreCase) &&
+            !normalized.Contains("/10-product/specs/", StringComparison.OrdinalIgnoreCase))
         {
             return "specification";
         }

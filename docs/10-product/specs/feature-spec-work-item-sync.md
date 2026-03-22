@@ -16,4 +16,4 @@ updated: 2026-03-21
 # Legacy Requirement Spec: Work Item Sync (GitHub Issues + Branches)
 
 This legacy product-spec entry has been superseded by
-[SPEC-SYNC-WORK-ITEM-SYNC](/specs/requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md).
+[SPEC-SYNC-WORK-ITEM-SYNC](/specs/SPEC-SYNC-WORK-ITEM-SYNC.md).

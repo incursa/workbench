@@ -13,8 +13,9 @@ workbench:
   type: spec
   workItems:
     - TASK-0023
-  pathHistory: []
-  path: /specs/requirements/WEB/SPEC-WEB-LOCAL-UI.md
+  pathHistory:
+    - "C:/specs/SPEC-WEB-LOCAL-UI.md"
+  path: /specs/SPEC-WEB-LOCAL-UI.md
 ---
 
 # SPEC-WEB-LOCAL-UI - Local Web UI Mode

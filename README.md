@@ -7,7 +7,7 @@ mirror layer, not the primary system of record.
 
 ## Operating model
 
-- Hand-author requirement specs under `specs/requirements/`, architecture docs
+- Hand-author requirement specs under `specs/`, architecture docs
   under `architecture/`, and work items under `work/`.
 - Let Workbench maintain front matter, backlinks, and the generated sections
   inside the repo READMEs for `specs/`, `architecture/`, and `work/`.

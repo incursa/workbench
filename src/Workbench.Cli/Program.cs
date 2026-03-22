@@ -2834,7 +2834,7 @@ public partial class Program
         };
         var specPathOption = new Option<string?>("--path")
         {
-            Description = "Destination path (defaults under specs/requirements/)."
+            Description = "Destination path (defaults under specs/)."
         };
         var specArtifactIdOption = new Option<string?>("--artifact-id")
         {

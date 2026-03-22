@@ -12,12 +12,12 @@ public class ValidationServiceDocTests
         var repoRoot = CreateTempRepo();
         SeedValidationSchemas(repoRoot);
 
-        var docPath = "/specs/requirements/sample-spec.md";
+        var docPath = "/docs/10-product/sample-spec.md";
         WriteCodeFile(repoRoot, "src/Workbench.Core/SampleCode.cs", "// TASK-0001 backlink\npublic static class SampleCode { }\n");
         WriteWorkItem(repoRoot, "TASK-0001", "task", "draft", specs: new[] { docPath }, files: new[] { "/src/Workbench.Core/SampleCode.cs" });
         WriteDoc(
             repoRoot,
-            "specs/requirements/sample-spec.md",
+            "docs/10-product/sample-spec.md",
             "spec",
             new[] { "TASK-0001" },
             new[] { "src/Workbench.Core/SampleCode.cs#L1" },
@@ -38,7 +38,7 @@ public class ValidationServiceDocTests
         SeedCanonicalSchemas(repoRoot);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "specs", "requirements", "canonical-spec.md"),
+            Path.Combine(repoRoot, "specs", "SPEC-CLI-ONBOARDING.md"),
             """
             ---
             artifact_id: SPEC-CLI-ONBOARDING
@@ -104,13 +104,13 @@ public class ValidationServiceDocTests
 
         WriteDoc(
             repoRoot,
-            "specs/requirements/sample-spec.md",
+            "specs/SPEC-OPS-0001.md",
             "spec",
             new[] { "TASK-0001" },
             new[] { "src/Workbench.Core/SampleCode.cs#L1" },
             artifactId: "SPEC-OPS-0001");
         WriteCodeFile(repoRoot, "src/Workbench.Core/SampleCode.cs", "// TASK-0001 backlink\npublic static class SampleCode { }\n");
-        WriteWorkItem(repoRoot, "TASK-0001", "task", "draft", specs: new[] { "/specs/requirements/sample-spec.md" }, files: new[] { "/src/Workbench.Core/SampleCode.cs" });
+        WriteWorkItem(repoRoot, "TASK-0001", "task", "draft", specs: new[] { "/specs/SPEC-OPS-0001.md" }, files: new[] { "/src/Workbench.Core/SampleCode.cs" });
 
         var result = ValidationService.ValidateRepo(
             repoRoot,
@@ -132,7 +132,7 @@ public class ValidationServiceDocTests
         WriteWorkItem(repoRoot, "TASK-0001", "task", "draft");
         WriteDoc(
             repoRoot,
-            "specs/requirements/sample-spec.md",
+            "docs/10-product/sample-spec.md",
             "spec",
             new[] { "TASK-0001", "TASK-9999" },
             new[]
@@ -164,7 +164,7 @@ public class ValidationServiceDocTests
             "TASK-0002",
             "task",
             "draft",
-            specs: new[] { "/specs/requirements/missing-spec.md" },
+            specs: new[] { "/specs/missing-spec.md" },
             adrs: new[] { "/docs/40-decisions/missing-adr.md" },
             files: new[] { "/src/Workbench.Core/NoBacklink.cs" });
 
@@ -274,7 +274,7 @@ public class ValidationServiceDocTests
         SeedValidationSchemas(repoRoot);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "specs", "requirements", "bad-doc.md"),
+            Path.Combine(repoRoot, "docs", "10-product", "bad-doc.md"),
             """
             ---
             workbench:
@@ -298,7 +298,7 @@ public class ValidationServiceDocTests
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "10-product"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "specs"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "40-decisions"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "work", "items"));
@@ -380,7 +380,41 @@ public class ValidationServiceDocTests
     {
         var fullPath = Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-        var artifactLine = string.IsNullOrWhiteSpace(artifactId) ? string.Empty : $"artifact_id: {artifactId}\n";
+        var normalizedRelativePath = relativePath.Replace('\\', '/');
+        var isCanonicalSpec = string.Equals(docType, "spec", StringComparison.OrdinalIgnoreCase) &&
+                               SpecTraceLayout.IsSpecificationRootFile(normalizedRelativePath);
+        var resolvedArtifactId = artifactId;
+        if (string.Equals(docType, "spec", StringComparison.OrdinalIgnoreCase) &&
+            string.IsNullOrWhiteSpace(resolvedArtifactId))
+        {
+            var slug = ArtifactIdPolicy.NormalizeToken(Path.GetFileNameWithoutExtension(relativePath));
+            resolvedArtifactId = string.IsNullOrWhiteSpace(slug) ? "SPEC-TEST" : $"SPEC-{slug}";
+        }
+
+        if (isCanonicalSpec)
+        {
+            File.WriteAllText(
+                fullPath,
+                $$"""
+                ---
+                artifact_id: {{resolvedArtifactId}}
+                artifact_type: specification
+                title: Sample specification
+                domain: TEST
+                capability: sample
+                status: draft
+                owner: platform
+                ---
+
+                # Sample specification
+
+                ## REQ-TEST-0001 Sample requirement
+                The system MUST preserve sample behavior.
+                """);
+            return;
+        }
+
+        var artifactLine = string.IsNullOrWhiteSpace(resolvedArtifactId) ? string.Empty : $"artifact_id: {resolvedArtifactId}\n";
         File.WriteAllText(
             fullPath,
             $$"""

@@ -15,8 +15,9 @@ workbench:
   type: spec
   workItems:
     - TASK-0007
-  pathHistory: []
-  path: /specs/requirements/TUI/SPEC-TUI-TERMINAL-UI.md
+  pathHistory:
+    - "C:/specs/SPEC-TUI-TERMINAL-UI.md"
+  path: /specs/SPEC-TUI-TERMINAL-UI.md
 ---
 
 # SPEC-TUI-TERMINAL-UI - Terminal UI Mode

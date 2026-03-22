@@ -6,7 +6,6 @@ namespace Workbench.Core;
 public static class SpecTraceLayout
 {
     public const string SpecsRoot = "specs";
-    public const string RequirementsRoot = "specs/requirements";
     public const string ArchitectureRoot = "architecture";
     public const string WorkItemsRoot = "work/items";
     public const string GeneratedRoot = "specs/generated";
@@ -20,9 +19,9 @@ public static class SpecTraceLayout
         return string.IsNullOrWhiteSpace(normalized) ? "WORKBENCH" : normalized;
     }
 
-    public static string GetRequirementDirectory(string repoRoot, string domain)
+    public static string GetSpecificationDirectory(string repoRoot)
     {
-        return Path.Combine(repoRoot, RequirementsRoot, ArtifactIdPolicy.NormalizeToken(domain));
+        return Path.Combine(repoRoot, SpecsRoot);
     }
 
     public static string GetArchitectureDirectory(string repoRoot, string domain)
@@ -35,9 +34,15 @@ public static class SpecTraceLayout
         return Path.Combine(repoRoot, WorkItemsRoot, ArtifactIdPolicy.NormalizeToken(domain));
     }
 
+    public static string GetSpecificationPath(string repoRoot, string artifactId)
+    {
+        return Path.Combine(GetSpecificationDirectory(repoRoot), $"{artifactId.Trim()}.md");
+    }
+
     public static string GetSpecificationPath(string repoRoot, string domain, string artifactId)
     {
-        return Path.Combine(GetRequirementDirectory(repoRoot, domain), $"{artifactId.Trim()}.md");
+        _ = domain;
+        return GetSpecificationPath(repoRoot, artifactId);
     }
 
     public static string GetArchitecturePath(string repoRoot, string domain, string artifactId, string title)
@@ -56,10 +61,9 @@ public static class SpecTraceLayout
         return normalized.StartsWith($"{SpecsRoot}/", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static bool IsCanonicalRequirementPath(string repoRelativePath)
+    public static bool IsCanonicalSpecificationPath(string repoRelativePath)
     {
-        var normalized = NormalizePath(repoRelativePath);
-        return normalized.StartsWith($"{RequirementsRoot}/", StringComparison.OrdinalIgnoreCase);
+        return IsSpecificationRootFile(repoRelativePath);
     }
 
     public static bool IsCanonicalArchitecturePath(string repoRelativePath)
@@ -74,12 +78,43 @@ public static class SpecTraceLayout
         return normalized.StartsWith($"{WorkItemsRoot}/", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static bool IsSpecificationRootFile(string repoRelativePath)
+    {
+        var normalized = NormalizePath(repoRelativePath);
+        if (!normalized.StartsWith($"{SpecsRoot}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var remainder = normalized[(SpecsRoot.Length + 1)..];
+        if (remainder.Contains('/', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return !Path.GetFileName(normalized).Equals("README.md", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsDirectChildPath(string path, string root)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var parent = Path.GetDirectoryName(fullPath);
+        if (parent is null)
+        {
+            return false;
+        }
+
+        var normalizedParent = Path.GetFullPath(parent).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return string.Equals(normalizedParent, fullRoot, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static string? GetCanonicalSection(string repoRelativePath)
     {
         var normalized = NormalizePath(repoRelativePath);
-        if (normalized.StartsWith($"{RequirementsRoot}/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{SpecsRoot}/", StringComparison.OrdinalIgnoreCase))
         {
-            return "requirements";
+            return "specs";
         }
 
         if (normalized.StartsWith($"{ArchitectureRoot}/", StringComparison.OrdinalIgnoreCase))

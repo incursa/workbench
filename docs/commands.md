@@ -647,7 +647,7 @@ Create a specification file with canonical front matter.
 
 Options:
 - `--title <title>` (required): Spec title
-- `--path <path>`: Destination path (defaults under specs/requirements/).
+- `--path <path>`: Destination path (defaults under specs/).
 - `--artifact-id <artifact-id>`: Artifact identifier for the spec.
 - `--domain <domain>`: Spec domain metadata used when generating IDs.
 - `--capability <capability>`: Spec capability metadata used when generating IDs.

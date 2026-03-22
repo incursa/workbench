@@ -568,24 +568,24 @@ public static class DocService
 
         var docsRoots = new[]
         {
-            Path.Combine(repoRoot, config.Paths.DocsRoot),
-            Path.Combine(repoRoot, config.Paths.SpecsRoot),
-            Path.Combine(repoRoot, config.Paths.ArchitectureDir)
+            (Root: Path.Combine(repoRoot, config.Paths.DocsRoot), Search: SearchOption.AllDirectories),
+            (Root: Path.Combine(repoRoot, config.Paths.SpecsRoot), Search: SearchOption.TopDirectoryOnly),
+            (Root: Path.Combine(repoRoot, config.Paths.ArchitectureDir), Search: SearchOption.AllDirectories)
         };
 
-        if (!docsRoots.Any(Directory.Exists))
+        if (!docsRoots.Any(root => Directory.Exists(root.Root)))
         {
             return new DocSyncResult(0, 0, missingDocs, missingItems);
         }
 
         foreach (var docsRoot in docsRoots)
         {
-            if (!Directory.Exists(docsRoot))
+            if (!Directory.Exists(docsRoot.Root))
             {
                 continue;
             }
 
-            foreach (var docPath in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
+            foreach (var docPath in Directory.EnumerateFiles(docsRoot.Root, "*.md", docsRoot.Search))
             {
                 if (IsWorkItemDocumentPath(repoRoot, config, docPath))
                 {
@@ -1005,20 +1005,20 @@ public static class DocService
             return false;
         }
 
-        foreach (var root in new[]
+        foreach (var rootInfo in new[]
                  {
-                      Path.Combine(repoRoot, config.Paths.DocsRoot),
-                      Path.Combine(repoRoot, config.Paths.SpecsRoot),
-                      Path.Combine(repoRoot, config.Paths.ArchitectureDir),
-                      Path.Combine(repoRoot, config.Paths.WorkRoot)
+                      (Root: Path.Combine(repoRoot, config.Paths.SpecsRoot), Search: SearchOption.TopDirectoryOnly),
+                      (Root: Path.Combine(repoRoot, config.Paths.DocsRoot), Search: SearchOption.AllDirectories),
+                      (Root: Path.Combine(repoRoot, config.Paths.ArchitectureDir), Search: SearchOption.AllDirectories),
+                      (Root: Path.Combine(repoRoot, config.Paths.WorkRoot), Search: SearchOption.AllDirectories)
                   })
         {
-            if (!Directory.Exists(root))
+            if (!Directory.Exists(rootInfo.Root))
             {
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
+            foreach (var file in Directory.EnumerateFiles(rootInfo.Root, "*.md", rootInfo.Search))
             {
                 if (IsWorkItemDocumentPath(repoRoot, config, file))
                 {
@@ -1485,6 +1485,9 @@ public static class DocService
         string? artifactId = null,
         string? domain = null)
     {
+        var slug = WorkItemService.Slugify(title);
+        var canonicalType = SpecTraceMarkdown.GetCanonicalArtifactType(type);
+
         if (!string.IsNullOrWhiteSpace(path))
         {
             var target = Path.IsPathRooted(path) ? path : Path.Combine(repoRoot, path);
@@ -1492,11 +1495,19 @@ public static class DocService
             {
                 target += ".md";
             }
+            if (string.Equals(canonicalType, "specification", StringComparison.OrdinalIgnoreCase))
+            {
+                var specsRoot = Path.GetFullPath(Path.Combine(repoRoot, config.Paths.SpecsRoot));
+                target = Path.GetFullPath(target);
+                if (!SpecTraceLayout.IsDirectChildPath(target, specsRoot) ||
+                    Path.GetFileName(target).Equals("README.md", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException("Specification paths must live directly under specs/.");
+                }
+            }
             return target;
         }
 
-        var slug = WorkItemService.Slugify(title);
-        var canonicalType = SpecTraceMarkdown.GetCanonicalArtifactType(type);
         var normalizedDomain = ArtifactIdPolicy.NormalizeToken(domain);
         if (string.IsNullOrWhiteSpace(normalizedDomain))
         {
@@ -1504,12 +1515,12 @@ public static class DocService
         }
         var dir = canonicalType switch
         {
-            "specification" => SpecTraceLayout.GetRequirementDirectory(repoRoot, normalizedDomain),
+            "specification" => SpecTraceLayout.GetSpecificationDirectory(repoRoot),
             "architecture" => SpecTraceLayout.GetArchitectureDirectory(repoRoot, normalizedDomain),
             "work_item" => SpecTraceLayout.GetWorkItemDirectory(repoRoot, normalizedDomain),
             _ => type.ToLowerInvariant() switch
             {
-                "spec" => Path.Combine(repoRoot, config.Paths.SpecsRoot, "requirements"),
+                "spec" => Path.Combine(repoRoot, config.Paths.SpecsRoot),
                 "guide" => Path.Combine(repoRoot, config.Paths.ArchitectureDir),
                 "architecture" => Path.Combine(repoRoot, config.Paths.ArchitectureDir),
                 "contract" => Path.Combine(repoRoot, config.Paths.DocsRoot, "30-contracts"),
@@ -1587,7 +1598,8 @@ public static class DocService
         {
             return "architecture";
         }
-        if (normalized.Contains("/specs/requirements/") || normalized.Contains("/10-product/specs/"))
+        if (normalized.Contains("/specs/", StringComparison.OrdinalIgnoreCase) &&
+            !normalized.Contains("/10-product/specs/", StringComparison.OrdinalIgnoreCase))
         {
             return "specification";
         }

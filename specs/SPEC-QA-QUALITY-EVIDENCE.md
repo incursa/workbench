@@ -28,8 +28,8 @@ workbench:
     - TASK-0021
     - TASK-0022
   pathHistory:
-    - "C:/specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md"
-  path: /specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md
+    - "C:/specs/SPEC-QA-QUALITY-EVIDENCE.md"
+  path: /specs/SPEC-QA-QUALITY-EVIDENCE.md
 ---
 
 # SPEC-QA-QUALITY-EVIDENCE - Quality Evidence v1 (Testing First)

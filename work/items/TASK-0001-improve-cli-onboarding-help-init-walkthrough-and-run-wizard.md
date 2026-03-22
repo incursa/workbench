@@ -9,7 +9,7 @@ updated: null
 tags: []
 related:
   specs:
-    - /specs/requirements/CLI/SPEC-CLI-ONBOARDING.md
+    - /specs/SPEC-CLI-ONBOARDING.md
     - /docs/10-product/specs/feature-spec-cli-onboarding-wizard.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md

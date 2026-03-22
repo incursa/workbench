@@ -308,8 +308,19 @@ public static class ValidationService
 
                 var data = frontMatter!.Data;
                 var artifactType = GetString(data, "artifact_type");
+                var repoRelativeSpecs = NormalizeRepoRelative(repoRoot, file);
+                var isSpecsRootFile = repoRelativeSpecs.StartsWith($"{config.Paths.SpecsRoot}/", StringComparison.OrdinalIgnoreCase) &&
+                                      !repoRelativeSpecs.Equals($"{config.Paths.SpecsRoot}/README.md", StringComparison.OrdinalIgnoreCase);
+
                 if (!string.IsNullOrWhiteSpace(artifactType))
                 {
+                    if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase) &&
+                        !SpecTraceLayout.IsSpecificationRootFile(repoRelativeSpecs))
+                    {
+                        result.Errors.Add($"{file}: specifications must live directly under '{config.Paths.SpecsRoot}' with no nested folders.");
+                        continue;
+                    }
+
                     ValidateCanonicalDoc(
                         repoRoot,
                         file,
@@ -320,6 +331,12 @@ public static class ValidationService
                         artifactIdPolicy,
                         seenArtifactIds,
                         result);
+                    continue;
+                }
+
+                if (isSpecsRootFile)
+                {
+                    result.Errors.Add($"{file}: specification files must be stored directly under '{config.Paths.SpecsRoot}' and use canonical specification front matter.");
                     continue;
                 }
 

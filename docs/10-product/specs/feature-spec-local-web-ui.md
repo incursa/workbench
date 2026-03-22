@@ -16,4 +16,4 @@ updated: 2026-03-21
 # Legacy Requirement Spec: Local Web UI Mode
 
 This legacy product-spec entry has been superseded by
-[SPEC-WEB-LOCAL-UI](/specs/requirements/WEB/SPEC-WEB-LOCAL-UI.md).
+[SPEC-WEB-LOCAL-UI](/specs/SPEC-WEB-LOCAL-UI.md).

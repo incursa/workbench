@@ -26,7 +26,11 @@ public sealed partial class WorkbenchWorkspace
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
+            var searchOption = root.Equals(specsRoot, StringComparison.OrdinalIgnoreCase)
+                ? SearchOption.TopDirectoryOnly
+                : SearchOption.AllDirectories;
+
+            foreach (var file in Directory.EnumerateFiles(root, "*.md", searchOption))
             {
                 var relative = NormalizePath(Path.GetRelativePath(RepoRoot, file));
                 if (IsWorkItemArtifactDoc(relative) || IsDocTemplate(relative))
@@ -402,11 +406,6 @@ public sealed partial class WorkbenchWorkspace
         if (normalized.Contains("/work/items/") || normalized.Contains("/work/done/"))
         {
             return "work_item";
-        }
-
-        if (normalized.Contains("/10-product/specs/"))
-        {
-            return "specification";
         }
 
         return "doc";

@@ -22,7 +22,7 @@ This overview describes how the documentation is organized, who each category se
 | --- | --- | --- | --- |
 | Overview | `/docs/00-overview/` | Everyone | Vision, scope, and cross-cutting standards (e.g., [specification-and-traceability-standard](/docs/00-overview/specification-and-traceability-standard.md)). |
 | Product | `/docs/10-product/` | Product, design, engineering | Feature specs, requirements, user journeys, and product notes (see [Product README](/docs/10-product/README.md)). |
-| Requirements | `/specs/requirements/` | Product, engineering | Canonical requirement specifications and related spec indexes (see [Requirements README](/specs/requirements/README.md)). |
+| Requirements | `/specs/` | Product, engineering | Canonical requirement specifications and related spec indexes (see [Requirements README](/specs/README.md)). |
 | Architecture | `/architecture/` | Engineering | System design, data flow, component boundaries, and design guidance (see [Architecture README](/architecture/README.md)). |
 | Work | `/work/` | Delivery, engineering | Active and closed work items plus templates (see [Work README](/work/README.md)). |
 | Contracts | `/docs/30-contracts/` | Engineering, integrators | Schemas, CLI/API contracts, interface docs (see [Contracts README](/docs/30-contracts/README.md)). |
@@ -46,7 +46,7 @@ This overview describes how the documentation is organized, who each category se
 ### `/docs/10-product`
 **Audience:** product, design, engineering
 
-**Purpose:** User-facing requirements and feature-level behavior. Requirement specs live under [specs/requirements](/specs/requirements/README.md), and the category is anchored by [Product README](/docs/10-product/README.md).
+**Purpose:** User-facing requirements and feature-level behavior. Requirement specs live under [specs](/specs/README.md), and the category is anchored by [Product README](/docs/10-product/README.md).
 
 **Belongs here:**
 - Feature specs and acceptance criteria

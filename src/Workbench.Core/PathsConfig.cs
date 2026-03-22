@@ -9,8 +9,6 @@ public sealed record PathsConfig
     public string DocsRoot { get; init; } = "docs";
     /// <summary>Root folder for canonical SpecTrace content.</summary>
     public string SpecsRoot { get; init; } = "specs";
-    /// <summary>Directory for canonical requirement specifications.</summary>
-    public string RequirementsDir { get; init; } = "specs/requirements";
     /// <summary>Directory for canonical architecture artifacts.</summary>
     public string ArchitectureDir { get; init; } = "architecture";
     /// <summary>Directory for canonical work-item artifacts.</summary>

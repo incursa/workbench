@@ -90,7 +90,7 @@ intentionalGaps:
 
 related:
   docs:
-    - /specs/requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md
+    - /specs/SPEC-QA-QUALITY-EVIDENCE.md
   workItems:
     - TASK-0015
   codeRefs:

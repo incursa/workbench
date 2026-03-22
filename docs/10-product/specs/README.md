@@ -14,7 +14,7 @@ updated: 2026-03-21
 # Product Specs (Legacy)
 
 This legacy folder has been superseded by
-[specs/requirements](/specs/requirements/README.md).
+[specs](/specs/README.md).
 
 Keep the old links only as compatibility references while the repository moves
-to the canonical top-level `specs/requirements` tree.
+to the canonical top-level `specs` tree.

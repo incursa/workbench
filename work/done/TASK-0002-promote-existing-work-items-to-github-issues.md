@@ -9,7 +9,7 @@ updated: 2025-12-27
 tags: []
 related:
   specs:
-    - /specs/requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md
+    - /specs/SPEC-SYNC-WORK-ITEM-SYNC.md
     - /docs/10-product/specs/feature-spec-work-item-sync.md
   adrs: []
   files:
