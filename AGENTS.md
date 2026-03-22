@@ -5,7 +5,9 @@
 - `src/Workbench`: tool entry point packaged as the `workbench` .NET tool.
 - `src/Workbench.Core`, `src/Workbench.Cli`, `src/Workbench.Tui`: shared implementation and command surface.
 - `tests/Workbench.Tests`, `tests/Workbench.IntegrationTests`: unit and integration coverage.
-- `docs/`: canonical specs, contracts, ADRs, runbooks, and work items.
+- `overview/`, `contracts/`, `decisions/`, `runbooks/`, `tracking/`, `templates/`, `schemas/`: canonical documentation roots.
+- `specs/`: canonical specs.
+- `work/`: canonical work items and workboard artifacts.
 - `artifacts/`: generated outputs only. Do not hand-edit files there.
 
 ## Build, Test, and Quality Commands
@@ -19,7 +21,7 @@
 
 ## Quality Evidence Workflow
 
-- Canonical authored intent lives in `docs/30-contracts/test-gate.contract.yaml`.
+- Canonical authored intent lives in `contracts/test-gate.contract.yaml`.
 - Raw observed evidence lives in `artifacts/quality/raw/test-results/*.trx` and `artifacts/quality/raw/coverage/*.cobertura.xml`.
 - Generated quality artifacts live in `artifacts/quality/testing/` and are derived outputs from Workbench. Do not edit them by hand.
 - Treat the quality report as advisory evidence for humans and agents. Do not add merge-blocking behavior based on the generated report in this repo.
@@ -27,7 +29,7 @@
 
 ## Agent-Specific Instructions
 
-- If you change test scope, thresholds, or critical areas, update `docs/30-contracts/test-gate.contract.yaml`.
+- If you change test scope, thresholds, or critical areas, update `contracts/test-gate.contract.yaml`.
 - If you change the quality workflow, keep the artifact paths above stable unless you also update the docs and agent guidance.
 - When summarizing repo quality state, rely on `workbench quality show` or the generated files in `artifacts/quality/testing/`, not on ad hoc TRX or Cobertura parsing.
 

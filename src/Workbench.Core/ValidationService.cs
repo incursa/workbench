@@ -259,14 +259,24 @@ public static class ValidationService
             result.Errors.Add(artifactIdPolicyError);
         }
         var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
+        var contractsRoot = Path.Combine(repoRoot, "contracts");
+        var decisionsRoot = Path.Combine(repoRoot, "decisions");
+        var runbooksRoot = Path.Combine(repoRoot, "runbooks");
+        var trackingRoot = Path.Combine(repoRoot, "tracking");
         var specsRoot = Path.Combine(repoRoot, config.Paths.SpecsRoot);
         var architectureRoot = Path.Combine(repoRoot, config.Paths.ArchitectureDir);
-        if (!Directory.Exists(docsRoot) && !Directory.Exists(specsRoot) && !Directory.Exists(architectureRoot))
+        if (!Directory.Exists(docsRoot) &&
+            !Directory.Exists(contractsRoot) &&
+            !Directory.Exists(decisionsRoot) &&
+            !Directory.Exists(runbooksRoot) &&
+            !Directory.Exists(trackingRoot) &&
+            !Directory.Exists(specsRoot) &&
+            !Directory.Exists(architectureRoot))
         {
             return;
         }
 
-        foreach (var root in new[] { docsRoot, specsRoot, architectureRoot })
+        foreach (var root in new[] { docsRoot, contractsRoot, decisionsRoot, runbooksRoot, trackingRoot, specsRoot, architectureRoot })
         {
             if (!Directory.Exists(root))
             {
@@ -281,7 +291,8 @@ public static class ValidationService
                     continue;
                 }
 
-                if (repoRelative.StartsWith($"{config.Paths.DocsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
+                if (repoRelative.StartsWith("templates/", StringComparison.OrdinalIgnoreCase) ||
+                    repoRelative.StartsWith($"{config.Paths.DocsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
                     repoRelative.StartsWith($"{config.Paths.SpecsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
                     repoRelative.StartsWith($"{config.Paths.ArchitectureDir}/templates/", StringComparison.OrdinalIgnoreCase) ||
                     repoRelative.StartsWith($"{config.Paths.WorkRoot}/templates/", StringComparison.OrdinalIgnoreCase))

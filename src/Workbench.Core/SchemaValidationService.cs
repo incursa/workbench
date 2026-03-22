@@ -1,5 +1,5 @@
 // JSON schema validation for config and front matter.
-// Assumes schemas live under docs/30-contracts in the repo.
+// Assumes schemas live under schemas/ in the repo.
 using System.Collections;
 using Json.Schema;
 
@@ -14,7 +14,7 @@ public static class SchemaValidationService
         {
             return new List<string>();
         }
-        var schemaPath = Path.Combine(repoRoot, "docs", "30-contracts", "workbench-config.schema.json");
+        var schemaPath = Path.Combine(repoRoot, "schemas", "workbench-config.schema.json");
         if (!File.Exists(schemaPath))
         {
             return new List<string> { $"config: workbench config schema not found at {schemaPath}" };
@@ -29,8 +29,8 @@ public static class SchemaValidationService
         var isCanonical = string.Equals(artifactType, "work_item", StringComparison.OrdinalIgnoreCase) ||
                           (!string.IsNullOrWhiteSpace(artifactId) && artifactId.StartsWith("WI-", StringComparison.OrdinalIgnoreCase));
         var schemaPath = isCanonical
-            ? Path.Combine(repoRoot, "docs", "30-contracts", "artifact-frontmatter.schema.json")
-            : Path.Combine(repoRoot, "docs", "30-contracts", "work-item.schema.json");
+            ? Path.Combine(repoRoot, "schemas", "artifact-frontmatter.schema.json")
+            : Path.Combine(repoRoot, "schemas", "work-item.schema.json");
         if (!File.Exists(schemaPath))
         {
             return new List<string> { $"{itemPath}: work item schema not found at {schemaPath}" };
@@ -41,7 +41,7 @@ public static class SchemaValidationService
 
     public static IList<string> ValidateArtifactFrontMatter(string repoRoot, string artifactPath, IDictionary<string, object?> data)
     {
-        var schemaPath = Path.Combine(repoRoot, "docs", "30-contracts", "artifact-frontmatter.schema.json");
+        var schemaPath = Path.Combine(repoRoot, "schemas", "artifact-frontmatter.schema.json");
         if (!File.Exists(schemaPath))
         {
             return new List<string> { $"{artifactPath}: artifact front matter schema not found at {schemaPath}" };
@@ -52,7 +52,7 @@ public static class SchemaValidationService
 
     public static IList<string> ValidateDocFrontMatter(string repoRoot, string docPath, IDictionary<string, object?> data)
     {
-        var schemaPath = Path.Combine(repoRoot, "docs", "30-contracts", "doc.schema.json");
+        var schemaPath = Path.Combine(repoRoot, "schemas", "doc.schema.json");
         if (!File.Exists(schemaPath))
         {
             return new List<string> { $"{docPath}: doc schema not found at {schemaPath}" };
@@ -156,7 +156,7 @@ public static class SchemaValidationService
 
     public static IList<string> ValidateWorkItemTraceFields(string repoRoot, string context, IDictionary<string, object?> trace)
     {
-        var schemaPath = Path.Combine(repoRoot, "docs", "30-contracts", "work-item-trace-fields.schema.json");
+        var schemaPath = Path.Combine(repoRoot, "schemas", "work-item-trace-fields.schema.json");
         if (!File.Exists(schemaPath))
         {
             return new List<string>();

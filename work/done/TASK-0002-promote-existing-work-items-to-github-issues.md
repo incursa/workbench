@@ -13,6 +13,7 @@ related:
   adrs: []
   files:
     - /specs/SPEC-SYNC-WORK-ITEM-SYNC.md
+    - /specs/SPEC-SYNC-WORK-ITEM-SYNC.md
   prs: []
   issues: []
   branches: []

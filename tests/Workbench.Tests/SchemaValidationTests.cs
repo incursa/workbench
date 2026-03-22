@@ -14,7 +14,7 @@ public class SchemaValidationTests
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
 
-        var schemaDir = Path.Combine(repoRoot, "docs", "30-contracts");
+        var schemaDir = Path.Combine(repoRoot, "schemas");
         Directory.CreateDirectory(schemaDir);
         File.WriteAllText(Path.Combine(schemaDir, "work-item.schema.json"), """
             {
@@ -36,7 +36,7 @@ public class SchemaValidationTests
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
 
-        var schemaDir = Path.Combine(repoRoot, "docs", "30-contracts");
+        var schemaDir = Path.Combine(repoRoot, "schemas");
         Directory.CreateDirectory(schemaDir);
         File.WriteAllText(Path.Combine(schemaDir, "workbench-config.schema.json"), """
             {
@@ -61,12 +61,12 @@ public class SchemaValidationTests
         Directory.CreateDirectory(tempRepoRoot);
         Directory.CreateDirectory(Path.Combine(tempRepoRoot, ".git"));
 
-        var schemaDir = Path.Combine(tempRepoRoot, "docs", "30-contracts");
+        var schemaDir = Path.Combine(tempRepoRoot, "schemas");
         Directory.CreateDirectory(schemaDir);
 
         var sourceRepoRoot = Repository.FindRepoRoot(Directory.GetCurrentDirectory())
             ?? throw new InvalidOperationException("Repo root not found for schema fixture.");
-        var sourceSchemaPath = Path.Combine(sourceRepoRoot, "docs", "30-contracts", "doc.schema.json");
+        var sourceSchemaPath = Path.Combine(sourceRepoRoot, "schemas", "doc.schema.json");
         File.Copy(sourceSchemaPath, Path.Combine(schemaDir, "doc.schema.json"));
 
         var data = new Dictionary<string, object?>(StringComparer.InvariantCulture)
@@ -85,7 +85,7 @@ public class SchemaValidationTests
 
         var errors = SchemaValidationService.ValidateDocFrontMatter(
             tempRepoRoot,
-            "docs/30-contracts/error-codes.md",
+            "contracts/error-codes.md",
             data);
 
         Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
@@ -98,13 +98,13 @@ public class SchemaValidationTests
         Directory.CreateDirectory(tempRepoRoot);
         Directory.CreateDirectory(Path.Combine(tempRepoRoot, ".git"));
 
-        var schemaDir = Path.Combine(tempRepoRoot, "docs", "30-contracts");
+        var schemaDir = Path.Combine(tempRepoRoot, "schemas");
         Directory.CreateDirectory(schemaDir);
 
         var sourceRepoRoot = Repository.FindRepoRoot(Directory.GetCurrentDirectory())
             ?? throw new InvalidOperationException("Repo root not found for schema fixture.");
         File.Copy(
-            Path.Combine(sourceRepoRoot, "docs", "30-contracts", "work-item-trace-fields.schema.json"),
+            Path.Combine(sourceRepoRoot, "schemas", "work-item-trace-fields.schema.json"),
             Path.Combine(schemaDir, "work-item-trace-fields.schema.json"));
 
         var trace = new Dictionary<string, object?>

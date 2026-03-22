@@ -19,32 +19,32 @@ description: Documentation workflows for Workbench CLI. Use when creating or upd
 
 Create a doc:
 ```bash
-workbench doc new --type doc --title "Title" --path docs/10-product/title.md --work-item TASK-0001
+workbench doc new --type doc --title "Title" --path overview/title.md --work-item TASK-0001
 ```
 
 Create a spec:
 ```bash
-workbench doc new --type spec --title "Title" --path docs/10-product/title.md --work-item TASK-0001
+workbench doc new --type spec --title "Title" --path overview/title.md --work-item TASK-0001
 ```
 
 Create an architecture doc:
 ```bash
-workbench doc new --type doc --title "System design" --path docs/20-architecture/system-design.md --work-item TASK-0001
+workbench doc new --type doc --title "System design" --path architecture/system-design.md --work-item TASK-0001
 ```
 
 Create an ADR:
 ```bash
-workbench doc new --type adr --title "Decision" --path docs/40-decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
+workbench doc new --type adr --title "Decision" --path decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
 ```
 
 Link a doc to work items:
 ```bash
-workbench doc link --type spec --path docs/10-product/title.md --work-item TASK-0001
+workbench doc link --type spec --path overview/title.md --work-item TASK-0001
 ```
 
 Unlink a doc from work items:
 ```bash
-workbench doc unlink --type adr --path docs/40-decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
+workbench doc unlink --type adr --path decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
 ```
 
 Sync front matter and backlinks:

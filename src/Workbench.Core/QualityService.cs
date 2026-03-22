@@ -52,7 +52,7 @@ public sealed record QualityAuthoredIntent(
 
 public static class QualityService
 {
-    public const string DefaultContractPath = "docs/30-contracts/test-gate.contract.yaml";
+    public const string DefaultContractPath = "contracts/test-gate.contract.yaml";
     public const string DefaultOutputDirectory = "artifacts/quality/testing";
     public const string DefaultInventoryArtifact = "test-inventory.json";
     public const string DefaultResultsArtifact = "test-run-summary.json";
@@ -117,10 +117,10 @@ public static class QualityService
         if (!options.DryRun)
         {
             Directory.CreateDirectory(outputDirectory);
-            WriteArtifact(repoRoot, inventoryPath, inventory, WorkbenchJsonContext.Default.TestInventory, "docs/30-contracts/test-inventory.schema.json");
-            WriteArtifact(repoRoot, resultsPath, results, WorkbenchJsonContext.Default.TestRunSummary, "docs/30-contracts/test-run-summary.schema.json");
-            WriteArtifact(repoRoot, coveragePath, coverage, WorkbenchJsonContext.Default.CoverageSummary, "docs/30-contracts/coverage-summary.schema.json");
-            WriteArtifact(repoRoot, reportPath, report, WorkbenchJsonContext.Default.QualityReport, "docs/30-contracts/quality-report.schema.json");
+            WriteArtifact(repoRoot, inventoryPath, inventory, WorkbenchJsonContext.Default.TestInventory, "schemas/test-inventory.schema.json");
+            WriteArtifact(repoRoot, resultsPath, results, WorkbenchJsonContext.Default.TestRunSummary, "schemas/test-run-summary.schema.json");
+            WriteArtifact(repoRoot, coveragePath, coverage, WorkbenchJsonContext.Default.CoverageSummary, "schemas/coverage-summary.schema.json");
+            WriteArtifact(repoRoot, reportPath, report, WorkbenchJsonContext.Default.QualityReport, "schemas/quality-report.schema.json");
             File.WriteAllText(markdownPath, markdown);
         }
 

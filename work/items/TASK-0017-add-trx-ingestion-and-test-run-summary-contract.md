@@ -15,11 +15,11 @@ related:
   specs:
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
   adrs:
-    - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
+    - /decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
-    - /docs/30-contracts/quality-evidence-model.md
+    - /contracts/quality-evidence-model.md
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
-    - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
+    - /decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   prs: []
   issues: []
   branches: []
@@ -60,7 +60,7 @@ what passed, what failed, and what was skipped.
   `artifacts/quality/testing/test-run-summary.json`.
 - The summary retains enough per-test identity to compare run results against
   inventory and required tests.
-- The output matches `docs/30-contracts/test-run-summary.schema.json`.
+- The output matches `schemas/test-run-summary.schema.json`.
 
 ## Notes
 

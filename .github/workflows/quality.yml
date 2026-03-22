@@ -70,7 +70,7 @@ jobs:
       - name: Verify critical coverage contract
         id: coverage_verify
         shell: pwsh
-        run: ./scripts/testing/verify-critical-coverage.ps1 -ContractPath docs/30-contracts/test-gate.contract.yaml -CoverageSearchRoot artifacts/quality/raw/coverage
+        run: ./scripts/testing/verify-critical-coverage.ps1 -ContractPath contracts/test-gate.contract.yaml -CoverageSearchRoot artifacts/quality/raw/coverage
 
       - name: Workbench quality sync
         id: quality_sync
@@ -297,8 +297,8 @@ jobs:
             branch_rate="$(awk 'match($0, /branch-rate="([0-9.]+)"/, parts) { print parts[1]; exit }' "$coverage_file")"
           fi
 
-          line_min="$(awk '/lineMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
-          branch_min="$(awk '/branchMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
+          line_min="$(awk '/lineMin:/{print $2; exit}' contracts/test-gate.contract.yaml || true)"
+          branch_min="$(awk '/branchMin:/{print $2; exit}' contracts/test-gate.contract.yaml || true)"
 
           line_pct="n/a"
           branch_pct="n/a"
@@ -442,8 +442,8 @@ jobs:
             branch_rate="$(awk 'match($0, /branch-rate="([0-9.]+)"/, parts) { print parts[1]; exit }' "$coverage_file")"
           fi
 
-          line_min="$(awk '/lineMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
-          branch_min="$(awk '/branchMin:/{print $2; exit}' docs/30-contracts/test-gate.contract.yaml || true)"
+          line_min="$(awk '/lineMin:/{print $2; exit}' contracts/test-gate.contract.yaml || true)"
+          branch_min="$(awk '/branchMin:/{print $2; exit}' contracts/test-gate.contract.yaml || true)"
 
           line_pct="n/a"
           branch_pct="n/a"
@@ -546,7 +546,7 @@ jobs:
               echo ""
               echo "## 📝 Action Required"
               echo "- Start from the first ❌ gate above."
-              echo "- For coverage failures, inspect `coverage-cobertura` and `docs/30-contracts/test-gate.contract.yaml`."
+              echo "- For coverage failures, inspect `coverage-cobertura` and `contracts/test-gate.contract.yaml`."
               echo "- For package determinism failures, open `nupkg-normalized-diffs`."
             } >> "$GITHUB_STEP_SUMMARY"
           fi

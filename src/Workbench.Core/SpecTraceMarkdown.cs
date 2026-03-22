@@ -246,25 +246,25 @@ public static class SpecTraceMarkdown
     {
         return string.Join(
             "\n",
-            "## REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+> <Requirement Title>",
-            "The system MUST <direct, testable behavior>.",
+            "## REQ-EXAMPLE-0001 Example requirement",
+            "The system MUST replace this example with a concrete, testable requirement.",
             string.Empty,
             "Trace:",
             "- Satisfied By:",
-            "  - ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            "  - ARC-EXAMPLE-0001",
             "- Implemented By:",
-            "  - WI-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            "  - WI-EXAMPLE-0001",
             "- Verified By:",
-            "  - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            "  - VER-EXAMPLE-0001",
             "- Test Refs:",
-            "  - <test reference>",
+            "  - tests/Example",
             "- Code Refs:",
-            "  - <code reference>",
+            "  - src/Example.cs",
             "- Related:",
-            "  - <artifact or requirement ID>",
+            "  - SPEC-EXAMPLE",
             string.Empty,
             "Notes:",
-            "- Optional clarification that narrows interpretation without changing the requirement.");
+            "- Replace this example with the real requirement before review.");
     }
 
     public static string BuildSpecTemplateBody()

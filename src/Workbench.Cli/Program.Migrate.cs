@@ -217,7 +217,7 @@ public partial class Program
         DocService.DocSyncResult docSync,
         NavigationService.NavigationSyncResult navSync)
     {
-        var reportDir = Path.Combine(repoRoot, "docs", "60-tracking");
+        var reportDir = Path.Combine(repoRoot, "tracking");
         Directory.CreateDirectory(reportDir);
         var fileName = $"migration-coherent-v1-{DateTime.UtcNow:yyyy-MM-dd}.md";
         var reportPath = Path.Combine(reportDir, fileName);

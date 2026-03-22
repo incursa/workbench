@@ -6,7 +6,16 @@ on:
       - main
     paths-ignore:
       - ".github/**"
-      - "docs/**"
+      - "overview/**"
+      - "contracts/**"
+      - "decisions/**"
+      - "runbooks/**"
+      - "tracking/**"
+      - "templates/**"
+      - "schemas/**"
+      - "specs/**"
+      - "architecture/**"
+      - "work/**"
       - "assets/**"
       - "examples/**"
       - "testdata/**"

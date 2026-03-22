@@ -34,12 +34,12 @@ workbench item close TASK-0001 --move
 
 Link docs or PRs:
 ```bash
-workbench item link TASK-0001 --spec /docs/10-product/spec.md --adr /docs/40-decisions/ADR-YYYY-MM-DD-title.md --pr https://github.com/org/repo/pull/1
+workbench item link TASK-0001 --spec /overview/spec.md --adr /decisions/ADR-YYYY-MM-DD-title.md --pr https://github.com/org/repo/pull/1
 ```
 
 ## Output
 
-- Work items in `docs/70-work/items` (active) and `docs/70-work/done` (closed).
+- Work items in `work/items` (active) and `work/done` (closed).
 - Linked docs and external artifacts tracked in front matter.
 
 ## Guardrails

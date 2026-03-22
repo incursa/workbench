@@ -44,7 +44,7 @@ dotnet tool run workbench quality sync --results artifacts/quality/raw/test-resu
 dotnet tool run workbench quality show
 ```
 
-The authored contract is `docs/30-contracts/test-gate.contract.yaml`.
+The authored contract is `contracts/test-gate.contract.yaml`.
 Raw test and coverage inputs belong under `artifacts/quality/raw/`.
 Generated quality artifacts under `artifacts/quality/testing/` are derived and should not be edited by hand.
 

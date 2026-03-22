@@ -1,8 +1,12 @@
 {
   "Paths": {
-    "DocsRoot": "docs",
+    "DocsRoot": "overview",
     "SpecsRoot": "specs",
     "ArchitectureDir": "architecture",
+    "WorkItemsSpecsDir": "work/items",
+    "GeneratedDir": "specs/generated",
+    "SpecsTemplatesDir": "specs/templates",
+    "SpecsSchemasDir": "specs/schemas",
     "WorkRoot": "work",
     "ItemsDir": "work/items",
     "DoneDir": "work/done",
@@ -24,11 +28,11 @@
     "RequireCleanWorkingTree": true
   },
   "Github": {
-    "Provider": "gh",
-    "DefaultDraft": true,
-    "Host": "",
-    "Owner": "incursa",
-    "Repository": "workbench",
+    "Provider": "octokit",
+    "DefaultDraft": false,
+    "Host": "github.com",
+    "Owner": null,
+    "Repository": null,
     "Sync": {
       "Mode": "generate",
       "ConflictDefault": "fail",
@@ -40,8 +44,8 @@
     "DocExclude": []
   },
   "Tui": {
-    "Theme": "dark",
-    "UseEmoji": false,
-    "AutoRefreshSeconds": 0
+    "Theme": "powershell",
+    "UseEmoji": true,
+    "AutoRefreshSeconds": 60
   }
 }

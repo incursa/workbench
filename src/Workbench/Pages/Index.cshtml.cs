@@ -259,13 +259,19 @@ public class IndexModel : RepoPageModel
         }
 
         var normalized = trimmed.Replace('\\', '/').TrimStart('/');
-        if (normalized.StartsWith("docs/70-work/items/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith("work/items/", StringComparison.OrdinalIgnoreCase))
         {
             var id = Path.GetFileNameWithoutExtension(normalized);
             return Url.Page("/Index", new { selectedId = id }) ?? trimmed;
         }
 
-        if (normalized.StartsWith("docs/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith("overview/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("contracts/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("decisions/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("tracking/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("specs/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("architecture/", StringComparison.OrdinalIgnoreCase))
         {
             return Url.Page("/Docs", new { selectedPath = normalized }) ?? trimmed;
         }

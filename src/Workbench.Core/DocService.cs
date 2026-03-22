@@ -35,7 +35,9 @@ public static class DocService
         "specification",
         "architecture",
         "contract",
+        "adr",
         "guide",
+        "runbook",
         "doc",
         "work_item"
     };
@@ -569,6 +571,10 @@ public static class DocService
         var docsRoots = new[]
         {
             (Root: Path.Combine(repoRoot, config.Paths.DocsRoot), Search: SearchOption.AllDirectories),
+            (Root: Path.Combine(repoRoot, "contracts"), Search: SearchOption.AllDirectories),
+            (Root: Path.Combine(repoRoot, "decisions"), Search: SearchOption.AllDirectories),
+            (Root: Path.Combine(repoRoot, "runbooks"), Search: SearchOption.AllDirectories),
+            (Root: Path.Combine(repoRoot, "tracking"), Search: SearchOption.AllDirectories),
             (Root: Path.Combine(repoRoot, config.Paths.SpecsRoot), Search: SearchOption.TopDirectoryOnly),
             (Root: Path.Combine(repoRoot, config.Paths.ArchitectureDir), Search: SearchOption.AllDirectories)
         };
@@ -702,6 +708,10 @@ public static class DocService
         var allowedRoots = new[]
         {
             Path.GetFullPath(Path.Combine(repoRoot, config.Paths.DocsRoot)),
+            Path.GetFullPath(Path.Combine(repoRoot, "contracts")),
+            Path.GetFullPath(Path.Combine(repoRoot, "decisions")),
+            Path.GetFullPath(Path.Combine(repoRoot, "runbooks")),
+            Path.GetFullPath(Path.Combine(repoRoot, "tracking")),
             Path.GetFullPath(Path.Combine(repoRoot, config.Paths.SpecsRoot)),
             Path.GetFullPath(Path.Combine(repoRoot, config.Paths.ArchitectureDir))
         };
@@ -806,6 +816,10 @@ public static class DocService
         var docsRoots = new[]
         {
             Path.Combine(repoRoot, config.Paths.DocsRoot),
+            Path.Combine(repoRoot, "contracts"),
+            Path.Combine(repoRoot, "decisions"),
+            Path.Combine(repoRoot, "runbooks"),
+            Path.Combine(repoRoot, "tracking"),
             Path.Combine(repoRoot, config.Paths.SpecsRoot),
             Path.Combine(repoRoot, config.Paths.ArchitectureDir)
         };
@@ -969,12 +983,18 @@ public static class DocService
         {
             return "specs";
         }
+        if (docType.Equals("adr", StringComparison.OrdinalIgnoreCase))
+        {
+            return "adrs";
+        }
         if (canonicalType is "architecture" or "work_item")
         {
             return "files";
         }
         if (docType.Equals("architecture", StringComparison.OrdinalIgnoreCase) ||
             docType.Equals("guide", StringComparison.OrdinalIgnoreCase) ||
+            docType.Equals("contract", StringComparison.OrdinalIgnoreCase) ||
+            docType.Equals("runbook", StringComparison.OrdinalIgnoreCase) ||
             docType.Equals("doc", StringComparison.OrdinalIgnoreCase))
         {
             return "files";
@@ -1009,6 +1029,10 @@ public static class DocService
                  {
                       (Root: Path.Combine(repoRoot, config.Paths.SpecsRoot), Search: SearchOption.TopDirectoryOnly),
                       (Root: Path.Combine(repoRoot, config.Paths.DocsRoot), Search: SearchOption.AllDirectories),
+                      (Root: Path.Combine(repoRoot, "contracts"), Search: SearchOption.AllDirectories),
+                      (Root: Path.Combine(repoRoot, "decisions"), Search: SearchOption.AllDirectories),
+                      (Root: Path.Combine(repoRoot, "runbooks"), Search: SearchOption.AllDirectories),
+                      (Root: Path.Combine(repoRoot, "tracking"), Search: SearchOption.AllDirectories),
                       (Root: Path.Combine(repoRoot, config.Paths.ArchitectureDir), Search: SearchOption.AllDirectories),
                       (Root: Path.Combine(repoRoot, config.Paths.WorkRoot), Search: SearchOption.AllDirectories)
                   })
@@ -1174,6 +1198,10 @@ public static class DocService
         foreach (var configuredRoot in new[]
                  {
                       config.Paths.DocsRoot,
+                      "contracts",
+                      "decisions",
+                      "runbooks",
+                      "tracking",
                       config.Paths.SpecsRoot,
                       config.Paths.ArchitectureDir,
                       config.Paths.WorkRoot
@@ -1523,7 +1551,9 @@ public static class DocService
                 "spec" => Path.Combine(repoRoot, config.Paths.SpecsRoot),
                 "guide" => Path.Combine(repoRoot, config.Paths.ArchitectureDir),
                 "architecture" => Path.Combine(repoRoot, config.Paths.ArchitectureDir),
-                "contract" => Path.Combine(repoRoot, config.Paths.DocsRoot, "30-contracts"),
+                "contract" => Path.Combine(repoRoot, "contracts"),
+                "adr" => Path.Combine(repoRoot, "decisions"),
+                "runbook" => Path.Combine(repoRoot, "runbooks"),
                 "doc" => Path.Combine(repoRoot, config.Paths.DocsRoot),
                 _ => Path.Combine(repoRoot, config.Paths.DocsRoot)
             }
@@ -1594,28 +1624,25 @@ public static class DocService
         {
             return "architecture";
         }
-        if (normalized.Contains("/20-architecture/"))
-        {
-            return "architecture";
-        }
-        if (normalized.Contains("/specs/", StringComparison.OrdinalIgnoreCase) &&
-            !normalized.Contains("/10-product/specs/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.Contains("/specs/"))
         {
             return "specification";
         }
-        if (normalized.Contains("/40-decisions/") ||
-            normalized.Contains("/50-runbooks/") ||
-            normalized.Contains("/30-contracts/") ||
-            normalized.Contains("/30-contracts/verification/") ||
-            normalized.Contains("/specs/verification/") ||
-            normalized.Contains("/specs/decisions/") ||
-            normalized.Contains("/specs/schemas/"))
+        if (normalized.Contains("/contracts/"))
         {
-            return "doc";
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "contract";
         }
-        if (normalized.Contains("/10-product/") ||
-            normalized.Contains("/00-overview/") ||
-            normalized.Contains("/docs/"))
+        if (normalized.Contains("/decisions/"))
+        {
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "adr";
+        }
+        if (normalized.Contains("/runbooks/"))
+        {
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "runbook";
+        }
+        if (normalized.Contains("/overview/") ||
+            normalized.Contains("/tracking/") ||
+            normalized.Contains("/templates/"))
         {
             return "doc";
         }

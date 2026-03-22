@@ -116,7 +116,7 @@ navigability without changing behavior.
   - `nav sync` (readme/workboard generation)
   - `item sync` (issue updates, branch behavior)
   - `doc sync` (front matter update)
-- Document manual verification steps in `docs/60-tracking/ai-change-notes.md`
+- Document manual verification steps in `tracking/ai-change-notes.md`
   or a dedicated checklist file.
 
 ### Phase 5: Documentation updates

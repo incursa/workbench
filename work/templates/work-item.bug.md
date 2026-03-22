@@ -1,13 +1,11 @@
 ---
 id: BUG-0000
 type: bug
-title: "<short actionable title>"
 status: draft
 priority: medium
 owner: null
 created: 0000-00-00
 updated: null
-githubSynced: null
 tags: []
 related:
   specs: []
@@ -16,23 +14,15 @@ related:
   prs: []
   issues: []
   branches: []
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory: []
-  path: /work/templates/work-item.bug.md
 ---
 
-# BUG-0000 - <short actionable title>
+# BUG-0000 - <title>
 
 ## Summary
 
 ## Context
 
--
-
-## Traceability
+## Trace Links
 
 Addresses:
 
@@ -47,13 +37,12 @@ Verified By:
 - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
 
 ## Implementation notes
-
 - Steps to reproduce:
 - Expected behavior:
 - Actual behavior:
 
 ## Acceptance criteria
+-
 
 ## Notes
-
 -

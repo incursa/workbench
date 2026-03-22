@@ -291,7 +291,8 @@ public class QualityCommandTests
         var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
 
-        Directory.CreateDirectory(Path.Combine(repo.Path, "docs", "30-contracts"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "schemas"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "contracts"));
         Directory.CreateDirectory(Path.Combine(repo.Path, "artifacts", "raw", "test-results"));
         Directory.CreateDirectory(Path.Combine(repo.Path, "artifacts", "raw", "coverage"));
         Directory.CreateDirectory(Path.Combine(repo.Path, "src", "Sample"));
@@ -307,11 +308,11 @@ public class QualityCommandTests
         })
         {
             File.Copy(
-                Path.Combine(sourceRepoRoot, "docs", "30-contracts", schema),
-                Path.Combine(repo.Path, "docs", "30-contracts", schema));
+                Path.Combine(sourceRepoRoot, "schemas", schema),
+                Path.Combine(repo.Path, "schemas", schema));
         }
 
-        File.WriteAllText(Path.Combine(repo.Path, "docs", "30-contracts", "test-gate.contract.yaml"), contractContent ?? """
+        File.WriteAllText(Path.Combine(repo.Path, "contracts", "test-gate.contract.yaml"), contractContent ?? """
             version: 2
             domain: testing
 

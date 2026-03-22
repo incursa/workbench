@@ -4,9 +4,9 @@ Incursa Workbench is a .NET CLI tool for teams that manage engineering work in-r
 
 It provides commands to:
 
-- scaffold and maintain Workbench docs/work item structure
+- scaffold and maintain Workbench overview/specs/contracts/decisions/runbooks/tracking/work item structure
 - create, update, and sync work items
-- link docs, architecture decisions, and work items
+- link repository docs, architecture decisions, and work items
 - run repository validation and consistency checks
 - open a local browser UI for browsing and editing work items
 
@@ -80,5 +80,5 @@ workbench doc sync --all
 
 Project documentation and contracts are available in the repository:
 
-- `docs/README.md`
-- `docs/30-contracts/cli-help.md`
+- `overview/README.md`
+- `contracts/cli-help.md`

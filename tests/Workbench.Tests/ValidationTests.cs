@@ -11,7 +11,7 @@ public class ValidationTests
     {
         var repoRoot = CreateTempRepo();
 
-        var docPath = Path.Combine(repoRoot, "docs");
+        var docPath = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(docPath);
         File.WriteAllText(Path.Combine(docPath, "README.md"), "See [missing](missing.md).");
 
@@ -93,7 +93,7 @@ public class ValidationTests
     public void ValidateRepo_DocReferencingUnknownWorkItem_ReturnsError()
     {
         var repoRoot = CreateValidationRepo();
-        var docsDir = Path.Combine(repoRoot, "docs", "10-product");
+        var docsDir = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(docsDir);
 
         File.WriteAllText(
@@ -127,7 +127,7 @@ public class ValidationTests
     public void ValidateRepo_DocWithoutBacklinkOnLinkedWorkItem_ReturnsError()
     {
         var repoRoot = CreateValidationRepo();
-        var docsDir = Path.Combine(repoRoot, "docs", "10-product");
+        var docsDir = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(docsDir);
 
         File.WriteAllText(
@@ -181,7 +181,7 @@ public class ValidationTests
     public void ValidateRepo_InvalidCodeRefAnchor_ReturnsError()
     {
         var repoRoot = CreateValidationRepo();
-        var docsDir = Path.Combine(repoRoot, "docs", "10-product");
+        var docsDir = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(docsDir);
         var sourceDir = Path.Combine(repoRoot, "src", "Workbench.Core");
         Directory.CreateDirectory(sourceDir);
@@ -218,7 +218,7 @@ public class ValidationTests
     public void ValidateRepo_RelatedFileWithoutBacklink_ReturnsError()
     {
         var repoRoot = CreateValidationRepo();
-        var notesPath = Path.Combine(repoRoot, "docs", "notes.md");
+        var notesPath = Path.Combine(repoRoot, "overview", "notes.md");
         File.WriteAllText(notesPath, "# Notes without task backlink");
 
         File.WriteAllText(
@@ -233,7 +233,7 @@ public class ValidationTests
               specs: []
               adrs: []
               files:
-                - /docs/notes.md
+                - /overview/notes.md
               prs: []
               issues: []
               branches: []
@@ -342,7 +342,7 @@ public class ValidationTests
     public void ValidateRepo_MarkdownLinkValidation_RespectsIncludeExcludeAndIgnoresExternalLinks()
     {
         var repoRoot = CreateTempRepo();
-        var docsRoot = Path.Combine(repoRoot, "docs");
+        var docsRoot = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(Path.Combine(docsRoot, "include"));
         Directory.CreateDirectory(Path.Combine(docsRoot, "skip"));
 
@@ -363,8 +363,8 @@ public class ValidationTests
             repoRoot,
             WorkbenchConfig.Default,
             new ValidationOptions(
-                LinkInclude: new[] { "docs/include" },
-                LinkExclude: new[] { "docs/skip" },
+                LinkInclude: new[] { "overview/include" },
+                LinkExclude: new[] { "overview/skip" },
                 SkipDocSchema: true));
 
         Assert.AreEqual(2, result.MarkdownFileCount);
@@ -376,7 +376,7 @@ public class ValidationTests
     public void ValidateRepo_ConfiguredLinkExclude_SkipsBrokenLinksUnderExcludedPrefix()
     {
         var repoRoot = CreateTempRepo();
-        var docsRoot = Path.Combine(repoRoot, "docs");
+        var docsRoot = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(Path.Combine(docsRoot, "included"));
         Directory.CreateDirectory(Path.Combine(docsRoot, "generated"));
         File.WriteAllText(Path.Combine(docsRoot, "included", "bad.md"), "[bad](missing.md)");
@@ -384,7 +384,7 @@ public class ValidationTests
 
         var config = WorkbenchConfig.Default with
         {
-            Validation = new ValidationConfig(new[] { "docs/generated" }, Array.Empty<string>())
+            Validation = new ValidationConfig(new[] { "overview/generated" }, Array.Empty<string>())
         };
 
         var result = ValidationService.ValidateRepo(
@@ -401,10 +401,10 @@ public class ValidationTests
     public void ValidateRepo_MissingDocSchema_IsReported_WhenDocValidationRuns()
     {
         var repoRoot = CreateTempRepo();
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "10-product"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "overview"));
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "10-product", "sample.md"),
+            Path.Combine(repoRoot, "overview", "sample.md"),
             """
             ---
             workbench:
@@ -437,7 +437,7 @@ public class ValidationTests
             """);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "30-contracts", "workbench-config.schema.json"),
+            Path.Combine(repoRoot, "schemas", "workbench-config.schema.json"),
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -552,7 +552,7 @@ public class ValidationTests
     public void ValidateRepo_CodeRefValidation_CoversMissingPathAndInvalidLineRanges()
     {
         var repoRoot = CreateValidationRepo();
-        var docsDir = Path.Combine(repoRoot, "docs", "10-product");
+        var docsDir = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(docsDir);
         var sourceDir = Path.Combine(repoRoot, "src", "Workbench.Core");
         Directory.CreateDirectory(sourceDir);
@@ -592,7 +592,7 @@ public class ValidationTests
     public void ValidateRepo_DocExclude_SkipsDocValidationButStillChecksMarkdownLinks()
     {
         var repoRoot = CreateValidationRepo();
-        var docsRoot = Path.Combine(repoRoot, "docs");
+        var docsRoot = Path.Combine(repoRoot, "overview");
         Directory.CreateDirectory(Path.Combine(docsRoot, "skip"));
         Directory.CreateDirectory(Path.Combine(docsRoot, "check"));
 
@@ -618,7 +618,7 @@ public class ValidationTests
 
         var config = WorkbenchConfig.Default with
         {
-            Validation = new ValidationConfig(Array.Empty<string>(), new[] { "docs/skip" })
+            Validation = new ValidationConfig(Array.Empty<string>(), new[] { "overview/skip" })
         };
 
         var result = ValidationService.ValidateRepo(
@@ -636,16 +636,16 @@ public class ValidationTests
     public void ValidateRepo_RelatedPathsAndMarkdownLinks_HandleRelativeAndRootRelativeTargets()
     {
         var repoRoot = CreateValidationRepo();
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "10-product"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "40-decisions"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "overview"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "decisions"));
 
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "10-product", "spec.md"), "# TASK-0006\n");
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "40-decisions", "adr.md"), "# TASK-0006\n");
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "linked.md"), "# linked");
+        File.WriteAllText(Path.Combine(repoRoot, "overview", "spec.md"), "# TASK-0006\n");
+        File.WriteAllText(Path.Combine(repoRoot, "decisions", "adr.md"), "# TASK-0006\n");
+        File.WriteAllText(Path.Combine(repoRoot, "overview", "linked.md"), "# linked");
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "README.md"),
+            Path.Combine(repoRoot, "overview", "README.md"),
             """
-            [root](/docs/linked.md)
+            [root](/overview/linked.md)
             [relative](linked.md#section)
             """);
 
@@ -659,11 +659,11 @@ public class ValidationTests
             created: 2026-03-08
             related:
               specs:
-                - /docs/10-product/spec.md
+                - /overview/spec.md
               adrs:
-                - /docs/40-decisions/adr.md
+                - /decisions/adr.md
               files:
-                - /docs/10-product/spec.md
+                - /overview/spec.md
               prs: []
               issues: []
               branches: []
@@ -679,7 +679,7 @@ public class ValidationTests
 
         Assert.IsFalse(result.Errors.Any(error => error.Contains("TASK-0006-linked.md: related.specs missing file", StringComparison.Ordinal)), string.Join(Environment.NewLine, result.Errors));
         Assert.IsFalse(result.Errors.Any(error => error.Contains("TASK-0006-linked.md: related.adrs missing file", StringComparison.Ordinal)), string.Join(Environment.NewLine, result.Errors));
-        Assert.IsFalse(result.Errors.Any(error => error.Contains("docs\\README.md: broken local link", StringComparison.OrdinalIgnoreCase) || error.Contains("docs/README.md: broken local link", StringComparison.OrdinalIgnoreCase)), string.Join(Environment.NewLine, result.Errors));
+        Assert.IsFalse(result.Errors.Any(error => error.Contains("overview/README.md: broken local link", StringComparison.OrdinalIgnoreCase)), string.Join(Environment.NewLine, result.Errors));
     }
 
     private static string CreateTempRepo()
@@ -693,12 +693,13 @@ public class ValidationTests
     private static string CreateValidationRepo()
     {
         var repoRoot = CreateTempRepo();
+        Directory.CreateDirectory(Path.Combine(repoRoot, "overview"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "work", "items"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "work", "done"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "schemas"));
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "30-contracts", "work-item.schema.json"),
+            Path.Combine(repoRoot, "schemas", "work-item.schema.json"),
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",

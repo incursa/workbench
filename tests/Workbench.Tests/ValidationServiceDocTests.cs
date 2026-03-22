@@ -12,12 +12,12 @@ public class ValidationServiceDocTests
         var repoRoot = CreateTempRepo();
         SeedValidationSchemas(repoRoot);
 
-        var docPath = "/docs/10-product/sample-spec.md";
+        var docPath = "/overview/sample-spec.md";
         WriteCodeFile(repoRoot, "src/Workbench.Core/SampleCode.cs", "// TASK-0001 backlink\npublic static class SampleCode { }\n");
         WriteWorkItem(repoRoot, "TASK-0001", "task", "draft", specs: new[] { docPath }, files: new[] { "/src/Workbench.Core/SampleCode.cs" });
         WriteDoc(
             repoRoot,
-            "docs/10-product/sample-spec.md",
+            "overview/sample-spec.md",
             "spec",
             new[] { "TASK-0001" },
             new[] { "src/Workbench.Core/SampleCode.cs#L1" },
@@ -134,7 +134,7 @@ public class ValidationServiceDocTests
         WriteWorkItem(repoRoot, "TASK-0001", "task", "draft");
         WriteDoc(
             repoRoot,
-            "docs/10-product/sample-spec.md",
+            "overview/sample-spec.md",
             "spec",
             new[] { "TASK-0001", "TASK-9999" },
             new[]
@@ -167,7 +167,7 @@ public class ValidationServiceDocTests
             "task",
             "draft",
             specs: new[] { "/specs/missing-spec.md" },
-            adrs: new[] { "/docs/40-decisions/missing-adr.md" },
+            adrs: new[] { "/decisions/missing-adr.md" },
             files: new[] { "/src/Workbench.Core/NoBacklink.cs" });
 
         var result = ValidationService.ValidateRepo(
@@ -186,9 +186,9 @@ public class ValidationServiceDocTests
         var repoRoot = CreateTempRepo();
         SeedValidationSchemas(repoRoot);
 
-        var docPath = "/docs/40-decisions/sample-adr.md";
+        var docPath = "/decisions/sample-adr.md";
         WriteWorkItem(repoRoot, "TASK-0003", "task", "draft", adrs: new[] { docPath });
-        WriteDoc(repoRoot, "docs/40-decisions/sample-adr.md", "adr", new[] { "TASK-0003" }, Array.Empty<string>());
+        WriteDoc(repoRoot, "decisions/sample-adr.md", "adr", new[] { "TASK-0003" }, Array.Empty<string>());
 
         var result = ValidationService.ValidateRepo(
             repoRoot,
@@ -204,9 +204,9 @@ public class ValidationServiceDocTests
         var repoRoot = CreateTempRepo();
         SeedValidationSchemas(repoRoot);
 
-        var docPath = "/docs/10-product/general-doc.md";
+        var docPath = "/overview/general-doc.md";
         WriteWorkItem(repoRoot, "TASK-0004", "task", "draft", files: new[] { docPath });
-        WriteDoc(repoRoot, "docs/10-product/general-doc.md", "doc", new[] { "TASK-0004" }, Array.Empty<string>());
+        WriteDoc(repoRoot, "overview/general-doc.md", "doc", new[] { "TASK-0004" }, Array.Empty<string>());
 
         var result = ValidationService.ValidateRepo(
             repoRoot,
@@ -225,7 +225,7 @@ public class ValidationServiceDocTests
         WriteCodeFile(repoRoot, "src/Workbench.Core/SampleCode.cs", "public static class SampleCode { }\n");
         WriteDoc(
             repoRoot,
-            "docs/10-product/code-refs.md",
+            "overview/code-refs.md",
             "doc",
             Array.Empty<string>(),
             new[]
@@ -251,7 +251,7 @@ public class ValidationServiceDocTests
         SeedValidationSchemas(repoRoot);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "30-contracts", "doc.schema.json"),
+            Path.Combine(repoRoot, "schemas", "doc.schema.json"),
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -260,7 +260,7 @@ public class ValidationServiceDocTests
             }
             """);
 
-        WriteDoc(repoRoot, "docs/10-product/schema-miss.md", "doc", Array.Empty<string>(), Array.Empty<string>());
+        WriteDoc(repoRoot, "overview/schema-miss.md", "doc", Array.Empty<string>(), Array.Empty<string>());
 
         var result = ValidationService.ValidateRepo(repoRoot, WorkbenchConfig.Default);
 
@@ -276,7 +276,7 @@ public class ValidationServiceDocTests
         SeedValidationSchemas(repoRoot);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "10-product", "bad-doc.md"),
+            Path.Combine(repoRoot, "overview", "bad-doc.md"),
             """
             ---
             workbench:
@@ -299,10 +299,10 @@ public class ValidationServiceDocTests
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "10-product"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "overview"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "specs"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "40-decisions"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "schemas"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "decisions"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "work", "items"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "work", "done"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "src", "Workbench.Core"));
@@ -312,7 +312,7 @@ public class ValidationServiceDocTests
     private static void SeedValidationSchemas(string repoRoot)
     {
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "30-contracts", "work-item.schema.json"),
+            Path.Combine(repoRoot, "schemas", "work-item.schema.json"),
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -334,8 +334,8 @@ public class ValidationServiceDocTests
     private static void CopySchemaFile(string sourceRepoRoot, string targetRepoRoot, string schemaName)
     {
         File.Copy(
-            Path.Combine(sourceRepoRoot, "docs", "30-contracts", schemaName),
-            Path.Combine(targetRepoRoot, "docs", "30-contracts", schemaName));
+            Path.Combine(sourceRepoRoot, "schemas", schemaName),
+            Path.Combine(targetRepoRoot, "schemas", schemaName));
     }
 
     private static void WriteWorkItem(

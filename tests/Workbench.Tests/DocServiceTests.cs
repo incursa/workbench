@@ -120,6 +120,34 @@ public sealed class DocServiceTests
     }
 
     [TestMethod]
+    public void CreateDoc_SpecificationStarterBody_IsParseable()
+    {
+        using var repo = new TempDocRepoFixture();
+
+        var result = DocService.CreateDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            "spec",
+            "Smoke spec",
+            null,
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            false,
+            artifactId: null,
+            domain: "CLI",
+            capability: "SMOKE");
+
+        var content = File.ReadAllText(result.Path);
+        Assert.IsTrue(FrontMatter.TryParse(content, out var frontMatter, out var error), error);
+        Assert.IsNotNull(frontMatter);
+
+        var requirementClauses = SpecTraceMarkdown.ParseRequirementClauses(frontMatter.Body, out var parseErrors);
+        Assert.IsEmpty(parseErrors, string.Join(Environment.NewLine, parseErrors));
+        Assert.HasCount(1, requirementClauses);
+        Assert.AreEqual("REQ-EXAMPLE-0001", requirementClauses[0].RequirementId);
+    }
+
+    [TestMethod]
     public async Task SyncLinksAsync_PathHistory_RewritesItemLinksToCurrentDocPathAsync()
     {
         using var repo = new TempDocRepoFixture();
@@ -350,7 +378,7 @@ public sealed class DocServiceTests
             "TASK-0105-contract-link.md",
             "TASK-0105",
             "Contract link target",
-            files: new[] { "/docs/30-contracts/api-contract.md" });
+            files: new[] { "/contracts/api-contract.md" });
 
         var result = DocService.CreateDoc(
             repo.Path,
@@ -363,7 +391,7 @@ public sealed class DocServiceTests
             force: false);
 
         Assert.AreEqual("contract", result.Type);
-        StringAssert.Contains(result.Path, $"{Path.DirectorySeparatorChar}docs{Path.DirectorySeparatorChar}30-contracts{Path.DirectorySeparatorChar}api-contract.md", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(result.Path, $"{Path.DirectorySeparatorChar}contracts{Path.DirectorySeparatorChar}api-contract.md", StringComparison.OrdinalIgnoreCase);
 
         var content = File.ReadAllText(result.Path);
         StringAssert.Contains(content, "type: contract", StringComparison.Ordinal);
@@ -374,7 +402,7 @@ public sealed class DocServiceTests
         StringAssert.Contains(content, "## Related specs", StringComparison.Ordinal);
 
         var updatedItem = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
-        CollectionAssert.Contains(updatedItem.Related.Files.ToArray(), "/docs/30-contracts/api-contract.md");
+        CollectionAssert.Contains(updatedItem.Related.Files.ToArray(), "/contracts/api-contract.md");
     }
 
     [TestMethod]
@@ -439,7 +467,7 @@ public sealed class DocServiceTests
     {
         using var repo = new TempDocRepoFixture();
         var docPath = repo.WriteDoc(
-            "docs/20-architecture/normalization-target.md",
+            "architecture/normalization-target.md",
             """
             # Normalization target
 
@@ -459,7 +487,7 @@ public sealed class DocServiceTests
         StringAssert.Contains(content, "type: architecture", StringComparison.Ordinal);
         StringAssert.Contains(content, "workItems: []", StringComparison.Ordinal);
         StringAssert.Contains(content, "codeRefs: []", StringComparison.Ordinal);
-        StringAssert.Contains(content, "path: /docs/20-architecture/normalization-target.md", StringComparison.Ordinal);
+        StringAssert.Contains(content, "path: /architecture/normalization-target.md", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -467,7 +495,7 @@ public sealed class DocServiceTests
     {
         using var repo = new TempDocRepoFixture();
         var docPath = repo.WriteDoc(
-            "docs/20-architecture/dry-run-normalize.md",
+            "architecture/dry-run-normalize.md",
             """
             # Dry run normalization
             """);
@@ -491,10 +519,13 @@ public sealed class DocServiceTests
         {
             Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path);
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "10-product"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "overview"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "requirements"));
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "30-contracts"));
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "docs", "40-decisions"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "contracts"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "schemas"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "decisions"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "runbooks"));
+            Directory.CreateDirectory(System.IO.Path.Combine(Path, "tracking"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "work", "items"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "work", "done"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "work", "templates"));

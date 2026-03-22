@@ -11,7 +11,15 @@ public sealed partial class WorkbenchWorkspace
         var docsRoot = Path.Combine(RepoRoot, Config.Paths.DocsRoot);
         var specsRoot = Path.Combine(RepoRoot, Config.Paths.SpecsRoot);
         var architectureRoot = Path.Combine(RepoRoot, Config.Paths.ArchitectureDir);
+        var contractsRoot = Path.Combine(RepoRoot, "contracts");
+        var decisionsRoot = Path.Combine(RepoRoot, "decisions");
+        var runbooksRoot = Path.Combine(RepoRoot, "runbooks");
+        var trackingRoot = Path.Combine(RepoRoot, "tracking");
         if (!Directory.Exists(docsRoot) &&
+            !Directory.Exists(contractsRoot) &&
+            !Directory.Exists(decisionsRoot) &&
+            !Directory.Exists(runbooksRoot) &&
+            !Directory.Exists(trackingRoot) &&
             !Directory.Exists(specsRoot) &&
             !Directory.Exists(architectureRoot))
         {
@@ -19,7 +27,7 @@ public sealed partial class WorkbenchWorkspace
         }
 
         var docs = new List<RepoDocSummary>();
-        foreach (var root in new[] { docsRoot, specsRoot, architectureRoot })
+        foreach (var root in new[] { docsRoot, contractsRoot, decisionsRoot, runbooksRoot, trackingRoot, specsRoot, architectureRoot })
         {
             if (!Directory.Exists(root))
             {
@@ -365,7 +373,7 @@ public sealed partial class WorkbenchWorkspace
     private static string GetDocSection(string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        foreach (var root in new[] { "architecture/", "specs/", "docs/" })
+        foreach (var root in new[] { "overview/", "contracts/", "decisions/", "runbooks/", "tracking/", "architecture/", "specs/" })
         {
             if (!normalized.StartsWith(root, StringComparison.OrdinalIgnoreCase))
             {
@@ -398,7 +406,23 @@ public sealed partial class WorkbenchWorkspace
             return "specification";
         }
 
-        if (normalized.StartsWith("docs/", StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith("contracts/", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "contract";
+        }
+
+        if (normalized.StartsWith("decisions/", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "adr";
+        }
+
+        if (normalized.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "runbook";
+        }
+
+        if (normalized.StartsWith("overview/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.StartsWith("tracking/", StringComparison.OrdinalIgnoreCase))
         {
             return "doc";
         }
@@ -505,10 +529,7 @@ public sealed partial class WorkbenchWorkspace
         var normalized = NormalizePath(relativePath);
         return normalized.Contains("/work/items/", StringComparison.OrdinalIgnoreCase)
             || normalized.Contains("/work/done/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/work/templates/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/70-work/items/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/70-work/done/", StringComparison.OrdinalIgnoreCase)
-            || normalized.Contains("/70-work/templates/", StringComparison.OrdinalIgnoreCase);
+            || normalized.Contains("/work/templates/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsDocTemplate(string relativePath)

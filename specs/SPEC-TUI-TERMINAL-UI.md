@@ -42,7 +42,7 @@ Trace:
   - [TASK-0006](/work/done/TASK-0006-implement-shared-core-and-clitui-split.md)
   - [TASK-0007](/work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
+  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep the entrypoint repo-native
@@ -56,7 +56,7 @@ Trace:
   - [TASK-0006](/work/done/TASK-0006-implement-shared-core-and-clitui-split.md)
   - [TASK-0007](/work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
+  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep mutation logic in shared code
@@ -71,7 +71,7 @@ Trace:
   - [TASK-0006](/work/done/TASK-0006-implement-shared-core-and-clitui-split.md)
   - [TASK-0007](/work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
+  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep the command preview visible for mutations
@@ -86,7 +86,7 @@ Trace:
   - [TASK-0006](/work/done/TASK-0006-implement-shared-core-and-clitui-split.md)
   - [TASK-0007](/work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
+  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep the layout compact
@@ -101,7 +101,7 @@ Trace:
   - [TASK-0006](/work/done/TASK-0006-implement-shared-core-and-clitui-split.md)
   - [TASK-0007](/work/items/TASK-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
+  - [ADR-2025-12-30-terminal-ui-mode-in-cli-executable](/decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep command previews visible across views

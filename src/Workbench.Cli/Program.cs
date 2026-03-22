@@ -2341,10 +2341,10 @@ public partial class Program
         var docNewCommand = new Command("new", "Create a documentation file with Workbench front matter.");
         var docTypeOption = new Option<string>("--type")
         {
-            Description = "Doc type: specification, architecture, guide, work_item, doc",
+            Description = "Doc type: specification, architecture, guide, contract, adr, runbook, work_item, doc",
             Required = true
         };
-        docTypeOption.CompletionSources.Add("specification", "architecture", "guide", "work_item", "doc", "spec");
+        docTypeOption.CompletionSources.Add("specification", "architecture", "guide", "contract", "adr", "runbook", "work_item", "doc", "spec");
         var docTitleOption = new Option<string>("--title")
         {
             Description = "Doc title",
@@ -2496,14 +2496,14 @@ public partial class Program
             HandleDocEdit(repo, format, reference, artifactId, title, status, owner, domain, capability, body, bodyFile, workItems, codeRefs);
         });
 
-        var docRegenHelpCommand = new Command("regen-help", "Regenerate docs/commands.md from the live command tree.");
+        var docRegenHelpCommand = new Command("regen-help", "Regenerate contracts/commands.md from the live command tree.");
         var docRegenHelpCheckOption = new Option<bool>("--check")
         {
-            Description = "Fail if docs/commands.md is out of date."
+            Description = "Fail if contracts/commands.md is out of date."
         };
         var docRegenHelpPathOption = new Option<string?>("--path")
         {
-            Description = "Output path (defaults to docs/commands.md)."
+            Description = "Output path (defaults to contracts/commands.md)."
         };
         docRegenHelpCommand.Options.Add(docRegenHelpCheckOption);
         docRegenHelpCommand.Options.Add(docRegenHelpPathOption);

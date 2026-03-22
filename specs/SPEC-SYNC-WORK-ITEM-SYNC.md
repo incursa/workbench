@@ -40,8 +40,8 @@ Trace:
 - Implemented By:
   - [TASK-0002](/work/done/TASK-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ADR-2026-03-07-repo-native-operating-model](/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md)
-  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/docs/40-decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
+  - [ADR-2026-03-07-repo-native-operating-model](/decisions/ADR-2026-03-07-repo-native-operating-model.md)
+  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
 
 Notes:
 - preserve content on both sides
@@ -54,8 +54,8 @@ Trace:
 - Implemented By:
   - [TASK-0002](/work/done/TASK-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ADR-2026-03-07-repo-native-operating-model](/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md)
-  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/docs/40-decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
+  - [ADR-2026-03-07-repo-native-operating-model](/decisions/ADR-2026-03-07-repo-native-operating-model.md)
+  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
 
 Notes:
 - record the branch name in work-item metadata
@@ -68,8 +68,8 @@ Trace:
 - Implemented By:
   - [TASK-0002](/work/done/TASK-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ADR-2026-03-07-repo-native-operating-model](/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md)
-  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/docs/40-decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
+  - [ADR-2026-03-07-repo-native-operating-model](/decisions/ADR-2026-03-07-repo-native-operating-model.md)
+  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
 
 Notes:
 - preserve issue URLs and branch links
@@ -82,8 +82,8 @@ Trace:
 - Implemented By:
   - [TASK-0002](/work/done/TASK-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ADR-2026-03-07-repo-native-operating-model](/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md)
-  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/docs/40-decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
+  - [ADR-2026-03-07-repo-native-operating-model](/decisions/ADR-2026-03-07-repo-native-operating-model.md)
+  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
 
 Notes:
 - prefer local content when bulk-updating existing GitHub issues
@@ -96,8 +96,8 @@ Trace:
 - Implemented By:
   - [TASK-0002](/work/done/TASK-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ADR-2026-03-07-repo-native-operating-model](/docs/40-decisions/ADR-2026-03-07-repo-native-operating-model.md)
-  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/docs/40-decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
+  - [ADR-2026-03-07-repo-native-operating-model](/decisions/ADR-2026-03-07-repo-native-operating-model.md)
+  - [ADR-2025-12-28-github-provider-abstraction-and-octokit](/decisions/ADR-2025-12-28-github-provider-abstraction-and-octokit.md)
 
 Notes:
 - skip creating GitHub records for local items in terminal states

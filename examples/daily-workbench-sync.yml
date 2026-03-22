@@ -47,7 +47,7 @@ jobs:
           workbench item normalize --include-done
           workbench validate --strict \
             --skip-doc-schema \
-            --link-exclude docs/tabler \
+            --link-exclude overview/tabler \
             --link-exclude _reference \
             --link-exclude src/app/Incursa.Platform/Help/Content
 

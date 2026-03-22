@@ -5,7 +5,7 @@ namespace Workbench.Cli;
 
 public partial class Program
 {
-    private const string CliHelpContractPath = "docs/commands.md";
+    private const string CliHelpContractPath = "contracts/commands.md";
 
     static void HandleCliHelpRegeneration(RootCommand root, string? repo, bool check, string? outputPath)
     {
@@ -27,7 +27,7 @@ public partial class Program
                 }
 
                 Console.WriteLine($"CLI help drift detected: {path}");
-                Console.WriteLine("Run `workbench doc regen-help` to regenerate docs/commands.md.");
+                Console.WriteLine("Run `workbench doc regen-help` to regenerate contracts/commands.md.");
                 SetExitCode(2);
                 return;
             }
@@ -55,8 +55,8 @@ public partial class Program
         AppendLine(builder, "  workItems: []");
         AppendLine(builder, "  codeRefs: []");
         AppendLine(builder, "  pathHistory:");
-        AppendLine(builder, "    - \"C:/docs/commands.md\"");
-        AppendLine(builder, "  path: /docs/commands.md");
+        AppendLine(builder, "    - \"C:/contracts/commands.md\"");
+        AppendLine(builder, "  path: /contracts/commands.md");
         AppendLine(builder, "owner: platform");
         AppendLine(builder, "status: active");
         AppendLine(builder, "updated: 2025-12-27");
@@ -68,7 +68,7 @@ public partial class Program
         AppendLine(builder, "Regenerate with `workbench doc regen-help`.");
         AppendLine(builder, "Verify drift with `workbench doc regen-help --check`.");
         AppendLine(builder);
-        AppendLine(builder, "Machine-readable command output details remain documented in `docs/commands.md`.");
+        AppendLine(builder, "Machine-readable command output details remain documented in `contracts/commands.md`.");
         AppendLine(builder);
         AppendLine(builder, "## Usage");
         AppendLine(builder, "```text");

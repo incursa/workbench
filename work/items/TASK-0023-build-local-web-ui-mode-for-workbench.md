@@ -12,10 +12,10 @@ related:
   specs:
     - /specs/SPEC-WEB-LOCAL-UI.md
   adrs:
-    - /docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md
+    - /decisions/ADR-2026-03-20-local-web-ui-mode.md
   files:
     - /specs/SPEC-WEB-LOCAL-UI.md
-    - /docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md
+    - /decisions/ADR-2026-03-20-local-web-ui-mode.md
   prs: []
   issues: []
   branches: []

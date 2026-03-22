@@ -41,7 +41,7 @@ Trace:
 - Implemented By:
   - [TASK-0023](/work/items/TASK-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ADR-2026-03-20-local-web-ui-mode](/docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md)
+  - [ADR-2026-03-20-local-web-ui-mode](/decisions/ADR-2026-03-20-local-web-ui-mode.md)
 
 Notes:
 - keep the host single-file friendly
@@ -53,7 +53,7 @@ Trace:
 - Implemented By:
   - [TASK-0023](/work/items/TASK-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ADR-2026-03-20-local-web-ui-mode](/docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md)
+  - [ADR-2026-03-20-local-web-ui-mode](/decisions/ADR-2026-03-20-local-web-ui-mode.md)
 
 Notes:
 - avoid duplicating parsing or mutation logic in the UI layer
@@ -65,7 +65,7 @@ Trace:
 - Implemented By:
   - [TASK-0023](/work/items/TASK-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ADR-2026-03-20-local-web-ui-mode](/docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md)
+  - [ADR-2026-03-20-local-web-ui-mode](/decisions/ADR-2026-03-20-local-web-ui-mode.md)
 
 Notes:
 - keep docs browsing tree-oriented instead of flat
@@ -78,7 +78,7 @@ Trace:
 - Implemented By:
   - [TASK-0023](/work/items/TASK-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ADR-2026-03-20-local-web-ui-mode](/docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md)
+  - [ADR-2026-03-20-local-web-ui-mode](/decisions/ADR-2026-03-20-local-web-ui-mode.md)
 
 Notes:
 - keep GitHub issues as the coordination surface, not the canonical store
@@ -90,7 +90,7 @@ Trace:
 - Implemented By:
   - [TASK-0023](/work/items/TASK-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ADR-2026-03-20-local-web-ui-mode](/docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md)
+  - [ADR-2026-03-20-local-web-ui-mode](/decisions/ADR-2026-03-20-local-web-ui-mode.md)
 
 Notes:
 - keep the author profile machine-local

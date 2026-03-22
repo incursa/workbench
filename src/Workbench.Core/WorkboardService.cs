@@ -1,4 +1,4 @@
-// Workboard generation logic for docs/70-work/README.md.
+// Workboard generation logic for work/README.md.
 // Invariants: only sections between the workbench markers are rewritten.
 namespace Workbench.Core;
 

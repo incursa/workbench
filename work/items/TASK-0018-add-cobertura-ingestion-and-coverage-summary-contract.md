@@ -15,11 +15,11 @@ related:
   specs:
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
   adrs:
-    - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
+    - /decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
-    - /docs/30-contracts/quality-evidence-model.md
+    - /contracts/quality-evidence-model.md
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
-    - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
+    - /decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   prs: []
   issues: []
   branches: []
@@ -59,7 +59,7 @@ compare authored thresholds and critical files against observed coverage.
 - Workbench ingests Cobertura-compatible coverage files and emits
   `artifacts/quality/testing/coverage-summary.json`.
 - The summary includes overall coverage plus per-file and critical-file views.
-- The output matches `docs/30-contracts/coverage-summary.schema.json`.
+- The output matches `schemas/coverage-summary.schema.json`.
 
 ## Notes
 

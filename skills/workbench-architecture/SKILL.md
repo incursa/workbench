@@ -18,17 +18,17 @@ description: Architecture and ADR workflows for Workbench CLI. Use when document
 
 Create an architecture doc:
 ```bash
-workbench doc new --type doc --title "Subsystem overview" --path docs/20-architecture/subsystem-overview.md --work-item TASK-0001
+workbench doc new --type doc --title "Subsystem overview" --path architecture/subsystem-overview.md --work-item TASK-0001
 ```
 
 Create an ADR:
 ```bash
-workbench doc new --type adr --title "Decision title" --path docs/40-decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
+workbench doc new --type adr --title "Decision title" --path decisions/ADR-YYYY-MM-DD-title.md --work-item TASK-0001
 ```
 
 Link existing docs to a work item:
 ```bash
-workbench item link TASK-0001 --spec /docs/10-product/spec.md --adr /docs/40-decisions/ADR-YYYY-MM-DD-title.md
+workbench item link TASK-0001 --spec /overview/spec.md --adr /decisions/ADR-YYYY-MM-DD-title.md
 ```
 
 Sync backlinks:

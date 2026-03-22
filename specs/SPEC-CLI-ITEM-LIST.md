@@ -1,0 +1,41 @@
+---
+artifact_id: SPEC-CLI-ITEM-LIST
+artifact_type: specification
+title: "CLI Item List Command"
+domain: CLI
+capability: command-surface
+status: draft
+owner: platform
+related_artifacts:
+  - SPEC-CLI-ITEM
+  - SPEC-CLI-SURFACE
+  - TASK-0024
+---
+
+# SPEC-CLI-ITEM-LIST - CLI Item List Command
+
+## Purpose
+
+Define the contract for listing work items.
+
+## Scope
+
+- `workbench item list`
+
+## REQ-CLI-ITEM-LIST-0001 `workbench item list`
+
+`item list` MUST accept the documented type, status, and `--include-done`
+options and list work items without mutating any files.
+
+## REQ-CLI-ITEM-LIST-0002 Filtering behavior
+
+`item list` MUST apply type and status filters before rendering output.
+
+## REQ-CLI-ITEM-LIST-0003 Done-item visibility
+
+`item list` MUST honor `--include-done` when deciding whether done items are
+visible.
+
+## REQ-CLI-ITEM-LIST-0004 Non-mutating output
+
+`item list` MUST never write to work item files or backlinks.

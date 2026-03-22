@@ -27,7 +27,7 @@ state of a repository understandable from local artifacts alone.
 
 V1 stays narrow:
 
-- authored testing intent remains a local contract under `docs/30-contracts/`
+- authored testing intent remains a local contract under `contracts/`
 - observed testing evidence is normalized into JSON and Markdown under
   `artifacts/quality/testing/`
 - Workbench exposes a small command surface centered on `quality sync` and
@@ -54,10 +54,10 @@ Trace:
 - Implemented By:
   - [TASK-0015](/work/items/TASK-0015-expand-test-gate-into-authored-testing-intent.md)
 - Related:
-  - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
+  - [ADR-2026-03-07-quality-evidence-operating-model](/decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
 
 Notes:
-- keep `docs/30-contracts/test-gate.contract.yaml` as the compatibility anchor
+- keep `contracts/test-gate.contract.yaml` as the compatibility anchor
 - link related docs, work items, and files where practical
 
 ## REQ-QE-0002 Normalize observed evidence
@@ -71,7 +71,7 @@ Trace:
   - [TASK-0019](/work/items/TASK-0019-generate-quality-report-json-and-markdown-summary.md)
   - [TASK-0020](/work/items/TASK-0020-add-quality-sync-and-show-command-surface.md)
 - Related:
-  - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
+  - [ADR-2026-03-07-quality-evidence-operating-model](/decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
 
 Notes:
 - keep raw TRX and Cobertura files as inputs, not the canonical record
@@ -84,7 +84,7 @@ Trace:
 - Implemented By:
   - [TASK-0020](/work/items/TASK-0020-add-quality-sync-and-show-command-surface.md)
 - Related:
-  - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
+  - [ADR-2026-03-07-quality-evidence-operating-model](/decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
 
 Notes:
 - default to the report view
@@ -99,7 +99,7 @@ Trace:
   - [TASK-0021](/work/items/TASK-0021-add-analyzer-evidence-and-changed-file-heuristics.md)
   - [TASK-0022](/work/items/TASK-0022-add-advanced-evidence-extension-points.md)
 - Related:
-  - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
+  - [ADR-2026-03-07-quality-evidence-operating-model](/decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
 
 Notes:
 - report missing evidence and thresholds explicitly
@@ -112,7 +112,7 @@ Trace:
 - Implemented By:
   - [TASK-0020](/work/items/TASK-0020-add-quality-sync-and-show-command-surface.md)
 - Related:
-  - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
+  - [ADR-2026-03-07-quality-evidence-operating-model](/decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
 
 Notes:
 - keep the quality report as evidence for humans and agents
@@ -129,7 +129,7 @@ Trace:
   - [TASK-0021](/work/items/TASK-0021-add-analyzer-evidence-and-changed-file-heuristics.md)
   - [TASK-0022](/work/items/TASK-0022-add-advanced-evidence-extension-points.md)
 - Related:
-  - [ADR-2026-03-07-quality-evidence-operating-model](/docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
+  - [ADR-2026-03-07-quality-evidence-operating-model](/decisions/ADR-2026-03-07-quality-evidence-operating-model.md)
 
 Notes:
 - prefer local repo links where possible

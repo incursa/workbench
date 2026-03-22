@@ -67,6 +67,10 @@ public partial class Program
         var expectedPaths = new[]
         {
             config.Paths.DocsRoot,
+            "contracts",
+            "decisions",
+            "runbooks",
+            "tracking",
             config.Paths.WorkRoot,
             config.Paths.ItemsDir,
             config.Paths.DoneDir,
@@ -122,10 +126,18 @@ public partial class Program
         }
 
         Console.WriteLine("Step 2: Front matter guidance");
-        var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
-        var docFiles = Directory.Exists(docsRoot)
-            ? Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories).ToList()
-            : new List<string>();
+        var docRoots = new[]
+        {
+            Path.Combine(repoRoot, config.Paths.DocsRoot),
+            Path.Combine(repoRoot, "contracts"),
+            Path.Combine(repoRoot, "decisions"),
+            Path.Combine(repoRoot, "runbooks"),
+            Path.Combine(repoRoot, "tracking")
+        };
+        var docFiles = docRoots
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
+            .ToList();
         var missingFrontMatter = 0;
         var invalidFrontMatter = 0;
         foreach (var file in docFiles)
@@ -149,7 +161,7 @@ public partial class Program
 
         if (docFiles.Count == 0)
         {
-            Console.WriteLine("- No docs found under docs/.");
+            Console.WriteLine("- No docs found under the configured overview, contracts, decisions, runbooks, or tracking roots.");
         }
         else
         {

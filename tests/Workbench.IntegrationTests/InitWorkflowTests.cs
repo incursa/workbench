@@ -32,8 +32,8 @@ public class InitWorkflowTests
     {
         using var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
-        Directory.CreateDirectory(Path.Combine(repo.Path, "docs", "10-product"));
-        var docPath = Path.Combine(repo.Path, "docs", "10-product", "init-front-matter.md");
+        Directory.CreateDirectory(Path.Combine(repo.Path, "overview"));
+        var docPath = Path.Combine(repo.Path, "overview", "init-front-matter.md");
         File.WriteAllText(
             docPath,
             """
@@ -58,7 +58,7 @@ public class InitWorkflowTests
         var content = File.ReadAllText(docPath);
         StringAssert.Contains(content, "workbench:", StringComparison.Ordinal);
         StringAssert.Contains(content, "type: doc", StringComparison.Ordinal);
-        StringAssert.Contains(content, "path: /docs/10-product/init-front-matter.md", StringComparison.Ordinal);
+        StringAssert.Contains(content, "path: /overview/init-front-matter.md", StringComparison.Ordinal);
         StringAssert.Contains(content, "# Existing doc", StringComparison.Ordinal);
     }
 

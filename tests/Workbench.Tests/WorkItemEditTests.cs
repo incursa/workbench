@@ -250,7 +250,7 @@ public class WorkItemEditTests
 
         Assert.HasCount(1, docs);
         Assert.AreEqual("Requirement Spec: Local Web UI Mode", docs[0].Title);
-        Assert.AreEqual("spec", docs[0].Type);
+        Assert.AreEqual("specification", docs[0].Type);
         StringAssert.Contains(docs[0].Excerpt, "browser-based local UI", StringComparison.Ordinal);
 
         var detail = workspace.GetDoc("specs/SPEC-WEB-LOCAL-UI.md");
@@ -339,18 +339,18 @@ public class WorkItemEditTests
             null,
             null);
 
-        Directory.CreateDirectory(Path.Combine(repo.Path, "docs", "20-architecture"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "architecture"));
         File.WriteAllText(
-            Path.Combine(repo.Path, "docs", "20-architecture", "spec-editor.md"),
+            Path.Combine(repo.Path, "architecture", "spec-editor.md"),
             """
             # Spec Editor Architecture
 
             Architecture notes for the spec editor.
             """);
 
-        Directory.CreateDirectory(Path.Combine(repo.Path, "docs", "40-decisions"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "decisions"));
         File.WriteAllText(
-            Path.Combine(repo.Path, "docs", "40-decisions", "ADR-2026-03-20-cli-spec-workflow.md"),
+            Path.Combine(repo.Path, "decisions", "ADR-2026-03-20-cli-spec-workflow.md"),
             """
             # CLI Spec Workflow Decision
 
@@ -373,9 +373,9 @@ public class WorkItemEditTests
 
                 The system MUST create repository-native specs with explicit traceability sections.
                 """,
-            RelatedArchitectureDocs = "- /docs/20-architecture/spec-editor.md",
+            RelatedArchitectureDocs = "- /architecture/spec-editor.md",
             RelatedWorkItems = workItem.Id,
-            RelatedAdrs = "- /docs/40-decisions/ADR-2026-03-20-cli-spec-workflow.md",
+            RelatedAdrs = "- /decisions/ADR-2026-03-20-cli-spec-workflow.md",
             OpenQuestions = "- Should the browser UI support inline path overrides?",
             CodeRefs = "src/Workbench.Cli/Program.cs#L1-L3"
         });
@@ -443,7 +443,7 @@ public class WorkItemEditTests
 
         var markdown = files.First(file => file.Path.Equals("specs/SPEC-WEB-LOCAL-UI.md", StringComparison.OrdinalIgnoreCase));
         Assert.AreEqual("markdown", markdown.FileType);
-        StringAssert.Contains(markdown.Excerpt, "browser-based local UI", StringComparison.Ordinal);
+        StringAssert.Contains(markdown.Excerpt, "SPEC-WEB-LOCAL-UI", StringComparison.Ordinal);
 
         var text = files.First(file => file.Path.Equals("src/Workbench/notes.txt", StringComparison.OrdinalIgnoreCase));
         Assert.AreEqual("text", text.FileType);
@@ -903,7 +903,7 @@ public class WorkItemEditTests
                 - /specs/spec-b.md
               adrs: []
               files:
-                - /docs/20-architecture/file-a.md
+                - /architecture/file-a.md
               prs: []
               issues: []
               branches: []
@@ -921,13 +921,13 @@ public class WorkItemEditTests
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["/specs/spec-b.md"] = "/specs/spec-a.md",
-                ["/docs/20-architecture/file-a.md"] = "/docs/20-architecture/file-b.md"
+                ["/architecture/file-a.md"] = "/architecture/file-b.md"
             });
 
         Assert.IsTrue(changed);
         var updated = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
         CollectionAssert.AreEqual(new[] { "/specs/spec-a.md" }, updated.Related.Specs.ToArray());
-        CollectionAssert.AreEqual(new[] { "/docs/20-architecture/file-b.md" }, updated.Related.Files.ToArray());
+        CollectionAssert.AreEqual(new[] { "/architecture/file-b.md" }, updated.Related.Files.ToArray());
     }
 
     [TestMethod]
@@ -947,7 +947,7 @@ public class WorkItemEditTests
                 - </specs/spec-a.md>
                 - /specs/spec-a.md
               adrs:
-                - </docs/40-decisions/adr-a.md>
+                - </decisions/adr-a.md>
               files: []
               prs:
                 - https://github.com/octo/demo/pull/1
@@ -976,7 +976,7 @@ public class WorkItemEditTests
         Assert.AreEqual(1, updated);
         var normalized = WorkItemService.LoadItem(itemPath) ?? throw new InvalidOperationException("Failed to reload work item.");
         CollectionAssert.AreEqual(new[] { "/specs/spec-a.md" }, normalized.Related.Specs.ToArray());
-        CollectionAssert.AreEqual(new[] { "/docs/40-decisions/adr-a.md" }, normalized.Related.Adrs.ToArray());
+        CollectionAssert.AreEqual(new[] { "/decisions/adr-a.md" }, normalized.Related.Adrs.ToArray());
         CollectionAssert.AreEqual(new[] { "https://github.com/octo/demo/pull/1" }, normalized.Related.Prs.ToArray());
         CollectionAssert.AreEqual(new[] { "https://github.com/octo/demo/issues/7" }, normalized.Related.Issues.ToArray());
     }

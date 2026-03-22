@@ -15,11 +15,11 @@ related:
   specs:
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
   adrs:
-    - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
+    - /decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:
-    - /docs/30-contracts/quality-evidence-model.md
+    - /contracts/quality-evidence-model.md
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
-    - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
+    - /decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   prs: []
   issues: []
   branches: []
@@ -61,7 +61,7 @@ schema.
   identifiers.
 - Discovery warnings are preserved in the artifact instead of silently dropping
   unknown tests.
-- The output matches `docs/30-contracts/test-inventory.schema.json`.
+- The output matches `schemas/test-inventory.schema.json`.
 
 ## Notes
 

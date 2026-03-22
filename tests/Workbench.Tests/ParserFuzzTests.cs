@@ -31,9 +31,9 @@ public class ParserFuzzTests
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "schemas"));
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "30-contracts", "work-item.schema.json"),
+            Path.Combine(repoRoot, "schemas", "work-item.schema.json"),
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",

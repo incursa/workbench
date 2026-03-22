@@ -37,7 +37,9 @@ public static class DocBodyBuilder
             "architecture" or "guide" => SpecTraceMarkdown.BuildArchitectureBody(
                 title,
                 string.Empty),
+            "adr" => header + "## Context\n\n## Decision\n\n## Consequences\n\n## Alternatives considered\n",
             "contract" => header + "## Overview\n\n## Related specs\n\n## Notes\n",
+            "runbook" => header + "## Purpose\n\n## Scope\n\n## Procedure\n\n## Verification\n\n## Rollback\n",
             "work_item" or "work-item" => SpecTraceMarkdown.BuildWorkItemTemplateBody(),
             "doc" => header + "## Summary\n\n## Scope\n\n## Context\n\n## Notes\n",
             _ => header + "## Notes\n"

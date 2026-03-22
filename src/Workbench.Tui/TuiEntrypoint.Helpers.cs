@@ -20,18 +20,22 @@ public static partial class TuiEntrypoint
 
     private static List<string> LoadDocs(string repoRoot, WorkbenchConfig config)
     {
-        var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
-        if (!Directory.Exists(docsRoot))
+        var roots = new[]
         {
-            return new List<string>();
-        }
+            config.Paths.DocsRoot,
+            "contracts",
+            "decisions",
+            "runbooks",
+            "tracking",
+            config.Paths.SpecsRoot,
+            config.Paths.ArchitectureDir
+        };
 
-        var rootPrefix = config.Paths.DocsRoot.TrimEnd('/', '\\') + "/";
-        return Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories)
+        return roots
+            .Select(root => Path.Combine(repoRoot, root))
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
             .Select(path => Path.GetRelativePath(repoRoot, path).Replace('\\', '/'))
-            .Select(path => path.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
-                ? path[rootPrefix.Length..]
-                : path)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
@@ -192,8 +196,7 @@ public static partial class TuiEntrypoint
         }
 
         var trimmed = path.TrimStart('/');
-        var docsRoot = config.Paths.DocsRoot.TrimEnd('/', '\\');
-        var combined = Path.Combine(repoRoot, docsRoot, trimmed);
+        var combined = Path.Combine(repoRoot, trimmed);
         return Path.GetFullPath(combined);
     }
 
@@ -202,6 +205,24 @@ public static partial class TuiEntrypoint
         if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return null;
+        }
+
+        var normalized = selectedPath.Replace('\\', '/').TrimStart('/');
+        var semanticRoots = new[]
+        {
+            config.Paths.DocsRoot.TrimEnd('/', '\\'),
+            "contracts",
+            "decisions",
+            "runbooks",
+            "tracking",
+            config.Paths.SpecsRoot.TrimEnd('/', '\\'),
+            config.Paths.ArchitectureDir.TrimEnd('/', '\\')
+        };
+
+        if (semanticRoots.Any(root => normalized.StartsWith(root + "/", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(normalized, root, StringComparison.OrdinalIgnoreCase)))
+        {
+            return normalized;
         }
 
         if (selectedPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
