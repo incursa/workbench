@@ -16,20 +16,6 @@ related_artifacts:
   - TASK-0021
   - TASK-0022
   - ADR-2026-03-07-quality-evidence-operating-model
-workbench:
-  type: spec
-  workItems:
-    - TASK-0015
-    - TASK-0016
-    - TASK-0017
-    - TASK-0018
-    - TASK-0019
-    - TASK-0020
-    - TASK-0021
-    - TASK-0022
-  pathHistory:
-    - "C:/specs/SPEC-QA-QUALITY-EVIDENCE.md"
-  path: /specs/SPEC-QA-QUALITY-EVIDENCE.md
 ---
 
 # SPEC-QA-QUALITY-EVIDENCE - Quality Evidence v1 (Testing First)

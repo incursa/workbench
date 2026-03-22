@@ -11,11 +11,11 @@ tags: []
 related:
   specs:
     - /specs/SPEC-WEB-LOCAL-UI.md
-    - /docs/10-product/specs/feature-spec-local-web-ui.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md
   files:
-    - /docs/10-product/specs/feature-spec-local-web-ui.md
+    - /specs/SPEC-WEB-LOCAL-UI.md
+    - /docs/40-decisions/ADR-2026-03-20-local-web-ui-mode.md
   prs: []
   issues: []
   branches: []

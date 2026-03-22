@@ -71,12 +71,14 @@ public static class NavigationService
         indexCreated += EnsureIndexFile(rootReadmePath, BuildRootReadmeTemplate(), dryRun);
 
         var docIndex = BuildDocsIndex(repoRoot, config, docReadmePath, docEntries);
+        var specIndex = BuildSpecsIndex(repoRoot, config, specReadmePath, docEntries);
         var architectureIndex = BuildArchitectureIndex(repoRoot, config, architectureReadmePath, docEntries);
         var workIndex = BuildWorkIndex(repoRoot, config, workReadmePath, docEntries, includeDone);
         var rootIndex = BuildRootIndex(repoRoot, config);
 
         var indexUpdated = indexCreated;
         indexUpdated += UpdateIndexSection(docReadmePath, "workbench:docs-index", docIndex, force, dryRun);
+        indexUpdated += UpdateIndexSection(specReadmePath, "workbench:specs-index", specIndex, force, dryRun);
         indexUpdated += UpdateIndexSection(architectureReadmePath, "workbench:architecture-index", architectureIndex, force, dryRun);
         indexUpdated += UpdateIndexSection(workReadmePath, "workbench:work-index", workIndex, force, dryRun);
         indexUpdated += UpdateIndexSection(rootReadmePath, "workbench:root-index", rootIndex, force, dryRun);
@@ -679,6 +681,25 @@ public static class NavigationService
         }
 
         return BuildDocsIndex(repoRoot, config, architectureReadmePath, architectureDocs);
+    }
+
+    private static string BuildSpecsIndex(
+        string repoRoot,
+        WorkbenchConfig config,
+        string specReadmePath,
+        List<DocEntry> docs)
+    {
+        var prefix = NormalizePath(config.Paths.SpecsRoot).TrimEnd('/') + "/";
+        var specDocs = docs
+            .Where(entry => NormalizePath(entry.RepoRelativePath).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (specDocs.Count == 0)
+        {
+            return "_No specs found._";
+        }
+
+        return BuildDocsIndex(repoRoot, config, specReadmePath, specDocs);
     }
 
     private static string BuildRootReadmeTemplate()

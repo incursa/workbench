@@ -24,6 +24,7 @@ public static class SpecTraceMarkdown
         {
             "Satisfied By",
             "Implemented By",
+            "Verified By",
             "Test Refs",
             "Code Refs",
             "Related"
@@ -33,7 +34,8 @@ public static class SpecTraceMarkdown
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Addresses",
-            "Uses Design"
+            "Uses Design",
+            "Verified By"
         };
 
     public static readonly IReadOnlySet<string> CanonicalWorkItemStatuses =
@@ -220,6 +222,10 @@ public static class SpecTraceMarkdown
             "Uses Design:",
             string.Empty,
             NormalizeListOrPlaceholder(designLinks, "- ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"),
+            string.Empty,
+            "Verified By:",
+            string.Empty,
+            NormalizeListOrPlaceholder(string.Empty, "- VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"),
             string.Empty
         };
 
@@ -248,6 +254,8 @@ public static class SpecTraceMarkdown
             "  - ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
             "- Implemented By:",
             "  - WI-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
+            "- Verified By:",
+            "  - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>",
             "- Test Refs:",
             "  - <test reference>",
             "- Code Refs:",

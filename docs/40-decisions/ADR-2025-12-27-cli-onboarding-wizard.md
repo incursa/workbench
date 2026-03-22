@@ -45,8 +45,8 @@ setup steps are skipped when the repo appears partially configured.
 
 ## Related specs
 
-- </docs/10-product/specs/feature-spec-cli-onboarding-wizard.md>
+- [SPEC-CLI-ONBOARDING](/specs/SPEC-CLI-ONBOARDING.md)
 
 ## Related work items
 
-- [TASK-0001](/docs/70-work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
+- [TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)

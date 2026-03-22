@@ -79,7 +79,7 @@ Markdown become the canonical observed record for current testing evidence.
 
 ## Related specs
 
-- [Requirement Spec: Quality Evidence v1 (Testing First)](/docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md)
+- [SPEC-QA-QUALITY-EVIDENCE](/specs/SPEC-QA-QUALITY-EVIDENCE.md)
 - [Quality Evidence Model (Testing V1)](/docs/30-contracts/quality-evidence-model.md)
 
 ## Related work items

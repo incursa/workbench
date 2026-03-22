@@ -10,13 +10,6 @@ tags:
   - "<tag>"
 related_artifacts:
   - "<artifact-id>"
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/docs/templates/requirement-spec.md"
-  path: /docs/templates/requirement-spec.md
 ---
 
 # SPEC-<DOMAIN>[-<GROUPING>...] - <Specification Title>

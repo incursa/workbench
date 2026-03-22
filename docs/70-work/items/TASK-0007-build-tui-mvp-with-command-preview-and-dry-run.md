@@ -10,7 +10,7 @@ githubSynced: null
 tags: []
 related:
   specs:
-    - /docs/10-product/specs/feature-spec-terminal-ui.md
+    - /specs/SPEC-TUI-TERMINAL-UI.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files: []

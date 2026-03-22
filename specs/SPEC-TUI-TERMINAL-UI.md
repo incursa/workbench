@@ -11,13 +11,6 @@ related_artifacts:
   - TASK-0006
   - TASK-0007
   - ADR-2025-12-30-terminal-ui-mode-in-cli-executable
-workbench:
-  type: spec
-  workItems:
-    - TASK-0007
-  pathHistory:
-    - "C:/specs/SPEC-TUI-TERMINAL-UI.md"
-  path: /specs/SPEC-TUI-TERMINAL-UI.md
 ---
 
 # SPEC-TUI-TERMINAL-UI - Terminal UI Mode

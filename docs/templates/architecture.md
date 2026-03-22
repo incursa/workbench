@@ -9,13 +9,6 @@ satisfies:
   - "REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"
 related_artifacts:
   - "SPEC-<DOMAIN>[-<GROUPING>...]"
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/docs/templates/architecture.md"
-  path: /docs/templates/architecture.md
 ---
 
 # ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+> - <Architecture or Design Title>

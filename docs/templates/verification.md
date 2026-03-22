@@ -11,13 +11,6 @@ related_artifacts:
   - "SPEC-<DOMAIN>[-<GROUPING>...]"
   - "ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"
   - "WI-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>"
-workbench:
-  type: doc
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/docs/templates/verification.md"
-  path: /docs/templates/verification.md
 ---
 
 # VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+> - <Verification Title>

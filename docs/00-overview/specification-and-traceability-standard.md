@@ -64,61 +64,41 @@ The important rule is not the label itself but the role:
 
 ## Folder layout
 
-The repository now treats `specs` as the canonical home for
-requirements, `architecture/` as the canonical home for design docs, and
+The repository now treats `specs/` as the canonical home for requirement
+specifications, `architecture/` as the canonical home for design docs, and
 `work/` as the canonical home for work items and templates, while the numbered
 docs tree remains a compatibility and orientation layer:
 
 ```text
 docs/
   00-overview/
-    specification-and-traceability-standard.md
   10-product/
-    README.md
-  specs/
-    README.md
-    requirements/
-      README.md
-      <domain>/
-        SPEC-<DOMAIN>[-<GROUPING>...].md
+  30-contracts/
+  40-decisions/
+  50-runbooks/
+  60-tracking/
+  70-work/
+  templates/
+specs/
+  README.md
+  SPEC-<DOMAIN>[-<GROUPING>...].md
 architecture/
   README.md
-  *.md
-  30-contracts/
-    README.md
-    *.md
-  40-decisions/
-    README.md
-    *.md
-  50-runbooks/
-    README.md
-    *.md
-  60-tracking/
-    README.md
-    *.md
 work/
   README.md
   items/
   done/
   templates/
-  templates/
-    README.md
-    requirement-spec.md
-    architecture.md
-    adr.md
-    contract.md
-    runbook.md
-    feature-spec.md
 ```
 
 Guidance:
 
-- keep requirements specs under `specs`
+- keep requirement specs directly under `specs/`
 - keep architecture/design docs under `architecture`
 - keep decision records under `docs/40-decisions`
 - keep contracts and verification docs under `docs/30-contracts`
 - keep work items under `work/items` and `work/done`
-- keep shared authoring templates under `work/templates`
+- keep shared authoring templates under `docs/templates` and `work/templates`
 - if a repository wants policy-driven IDs, define `artifact-id-policy.json`
   at the repo root and use `domain`/`capability` metadata in the spec or
   architecture front matter so Workbench can generate the matching ID
@@ -131,9 +111,10 @@ Requirement specs are the explicit home for product requirements.
 Rules:
 
 - use Markdown as the authoring format
-- keep `workbench.type: spec`
+- keep specification front matter document-level and canonical
 - include `artifact_id`, `domain`, and `capability` when the repository uses
   a policy-driven spec ID template
+- keep each spec filename aligned with the full `SPEC-...` artifact ID
 - make one file represent one coherent capability
 - avoid mixing unrelated subsystems in the same spec
 - avoid splitting a single capability into many tiny files
@@ -143,56 +124,63 @@ Recommended structure:
 
 ```md
 ---
-workbench:
-  type: spec
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/docs/templates/requirement-spec.md"
-  path: /docs/templates/requirement-spec.md
+artifact_id: SPEC-CLI-ONBOARDING
+artifact_type: specification
+title: CLI Onboarding, Init Walkthrough, and Wizard Mode
+domain: CLI
+capability: onboarding
+status: draft
 owner: "<owner>"
-status: template
-updated: 0000-00-00
 ---
 
-# Requirement Spec: <title>
+# SPEC-CLI-ONBOARDING - CLI Onboarding, Init Walkthrough, and Wizard Mode
 
-## Summary
+## Purpose
 
 ## Scope
 
 ## Context
 
-## Requirements
+## REQ-CLI-0001 Clarify default help output
+The CLI MUST distinguish command groups from leaf commands in default help output.
 
-## REQ-<CODE>-0001 <short title>
-
-Type: functional
-Status: draft
-Priority: medium
-Satisfied by: [Architecture](/architecture/README.md)
-Implemented by: [TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
-Verified by: [Workbench CLI Help](/docs/30-contracts/cli-help.md)
-Related: [ADR-2025-12-27-cli-onboarding-wizard](/docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md)
-
-Requirement:
-The system shall ...
-
-Rationale:
--
+Trace:
+- Implemented By:
+  - [TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
+- Verified By:
+  - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+- Related:
+  - [ADR-2025-12-27-cli-onboarding-wizard](/docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md)
 
 Notes:
--
+- keep the output concise
+
+## REQ-CLI-0002 Report repo health clearly
+The CLI MUST provide a human-readable doctor summary with clear next steps.
+
+Trace:
+- Implemented By:
+  - [TASK-0001](/work/items/TASK-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
+- Verified By:
+  - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+- Related:
+  - [ADR-2025-12-27-cli-onboarding-wizard](/docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md)
+
+Notes:
+- keep JSON as an opt-in machine format
+
 ```
 
 Requirement guidance:
 
-- use a stable requirement ID per requirement block
-- keep the `Requirement:` statement normative and verifiable
-- use `Type`, `Status`, and `Priority` sparingly and consistently
-- use `Satisfied by`, `Implemented by`, `Verified by`, and `Related` only when
-  they add traceability value
-- use `Rationale` and `Notes` for supporting context, not extra requirements
+- use a stable `REQ-...` requirement ID per requirement block
+- keep the normative clause immediately after the requirement heading
+- use the approved all-caps keywords `MUST`, `MUST NOT`, `SHALL`,
+  `SHALL NOT`, `SHOULD`, and `MAY`
+- use `Trace` and `Notes` only when they add traceability value
+- use `Satisfied By`, `Implemented By`, `Verified By`, `Test Refs`,
+  `Code Refs`, and `Related` only when they add value
+- keep the clause normative and verifiable
 - when a requirement mentions another repository document, make it a clickable
   Markdown link or a repo-relative doc reference that Workbench can resolve
 
@@ -202,7 +190,7 @@ Architecture docs explain how requirements are satisfied by design.
 
 Rules:
 
-- keep `workbench.type: guide`
+- keep architecture front matter document-level and canonical
 - include `artifact_id` and `domain` when the repository uses a policy-driven
   architecture ID template
 - describe the design, not the requirement itself
@@ -214,24 +202,24 @@ Recommended structure:
 
 ```md
 ---
-workbench:
-  type: guide
-  workItems: []
-  codeRefs: []
-  pathHistory:
-    - "C:/docs/templates/architecture.md"
-  path: /docs/templates/architecture.md
+artifact_id: ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+artifact_type: architecture
+title: <Architecture or Design Title>
+domain: <domain>
+status: draft
 owner: "<owner>"
-status: template
-updated: 0000-00-00
+satisfies:
+  - REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+related_artifacts:
+  - SPEC-<DOMAIN>[-<GROUPING>...]
 ---
 
-# Architecture: <title>
+# ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+> - <Architecture or Design Title>
 
 ## Purpose
 
-## Requirements satisfied
-- REQ-<CODE>-0001 ([CLI Onboarding, Init Walkthrough, and Wizard Mode](/specs/SPEC-CLI-ONBOARDING.md))
+## Requirements Satisfied
+- REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
 
 ## Design summary
 

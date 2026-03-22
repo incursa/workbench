@@ -9,13 +9,6 @@ owner: platform
 related_artifacts:
   - TASK-0023
   - ADR-2026-03-20-local-web-ui-mode
-workbench:
-  type: spec
-  workItems:
-    - TASK-0023
-  pathHistory:
-    - "C:/specs/SPEC-WEB-LOCAL-UI.md"
-  path: /specs/SPEC-WEB-LOCAL-UI.md
 ---
 
 # SPEC-WEB-LOCAL-UI - Local Web UI Mode

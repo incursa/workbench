@@ -43,7 +43,7 @@ provide a global dry-run toggle that labels outputs accordingly.
 - Cons: added dependency and build complexity; larger binary; UI testing effort.
 
 ## Related specs
-- </docs/10-product/specs/feature-spec-terminal-ui.md>
+- [SPEC-TUI-TERMINAL-UI](/specs/SPEC-TUI-TERMINAL-UI.md)
 
 ## Related work items
-- [TASK-0005](/docs/70-work/done/TASK-0005-plan-terminal-ui-mode.md)
+- [TASK-0005](/work/done/TASK-0005-plan-terminal-ui-mode.md)

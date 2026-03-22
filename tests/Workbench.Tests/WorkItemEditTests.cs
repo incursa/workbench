@@ -226,16 +226,18 @@ public class WorkItemEditTests
         var docsRoot = Path.Combine(repo.Path, "specs");
         Directory.CreateDirectory(docsRoot);
 
-        var docPath = Path.Combine(docsRoot, "feature-spec-local-web-ui.md");
+        var docPath = Path.Combine(docsRoot, "SPEC-WEB-LOCAL-UI.md");
         File.WriteAllText(
             docPath,
             """
             ---
-            workbench:
-              type: spec
-              workItems:
-                - TASK-0023
+            artifact_id: SPEC-WEB-LOCAL-UI
+            artifact_type: specification
+            title: Requirement Spec: Local Web UI Mode
+            domain: WEB
+            capability: local-ui
             status: draft
+            owner: platform
             ---
 
             # Requirement Spec: Local Web UI Mode
@@ -251,7 +253,7 @@ public class WorkItemEditTests
         Assert.AreEqual("spec", docs[0].Type);
         StringAssert.Contains(docs[0].Excerpt, "browser-based local UI", StringComparison.Ordinal);
 
-        var detail = workspace.GetDoc("specs/feature-spec-local-web-ui.md");
+        var detail = workspace.GetDoc("specs/SPEC-WEB-LOCAL-UI.md");
         Assert.IsNotNull(detail);
         Assert.AreEqual("Requirement Spec: Local Web UI Mode", detail!.Summary.Title);
         StringAssert.Contains(detail.Body, "browser-based local UI", StringComparison.Ordinal);
@@ -369,11 +371,7 @@ public class WorkItemEditTests
             Requirements = """
                 ## REQ-CLI-0001 Example requirement
 
-                Type: functional
-                Status: draft
-                Priority: high
-                Requirement:
-                The system shall create repository-native specs with explicit traceability sections.
+                The system MUST create repository-native specs with explicit traceability sections.
                 """,
             RelatedArchitectureDocs = "- /docs/20-architecture/spec-editor.md",
             RelatedWorkItems = workItem.Id,
@@ -388,7 +386,7 @@ public class WorkItemEditTests
         Assert.AreEqual("platform", created.FrontMatter["owner"]?.ToString());
         StringAssert.Contains(created.Body, "# CLI onboarding spec", StringComparison.Ordinal);
         StringAssert.Contains(created.Body, "## REQ-CLI-0001 Example requirement", StringComparison.Ordinal);
-        StringAssert.Contains(created.Body, "The system shall create repository-native specs with explicit traceability sections.", StringComparison.Ordinal);
+        StringAssert.Contains(created.Body, "The system MUST create repository-native specs with explicit traceability sections.", StringComparison.Ordinal);
 
         var savedContent = File.ReadAllText(Path.Combine(repo.Path, created.Summary.Path.Replace('/', Path.DirectorySeparatorChar)));
         StringAssert.Contains(savedContent, "artifact_id: SPEC-CLI-ONBOARDING", StringComparison.Ordinal);
@@ -411,10 +409,20 @@ public class WorkItemEditTests
         Directory.CreateDirectory(docsRoot);
         Directory.CreateDirectory(srcRoot);
 
-        var markdownPath = Path.Combine(docsRoot, "feature-spec-local-web-ui.md");
+        var markdownPath = Path.Combine(docsRoot, "SPEC-WEB-LOCAL-UI.md");
         File.WriteAllText(
             markdownPath,
             """
+            ---
+            artifact_id: SPEC-WEB-LOCAL-UI
+            artifact_type: specification
+            title: Requirement Spec: Local Web UI Mode
+            domain: WEB
+            capability: local-ui
+            status: draft
+            owner: platform
+            ---
+
             # Requirement Spec: Local Web UI Mode
 
             A browser-based local UI for the repo.
@@ -429,11 +437,11 @@ public class WorkItemEditTests
         var workspace = new WorkbenchWorkspace(repo.Path, WorkbenchConfig.Default);
         var files = workspace.ListFiles("all", null);
 
-        Assert.IsTrue(files.Any(file => file.Path.Equals("specs/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(files.Any(file => file.Path.Equals("specs/SPEC-WEB-LOCAL-UI.md", StringComparison.OrdinalIgnoreCase)));
         Assert.IsTrue(files.Any(file => file.Path.Equals("src/Workbench/notes.txt", StringComparison.OrdinalIgnoreCase)));
         Assert.IsTrue(files.Any(file => file.Path.Equals("assets.bin", StringComparison.OrdinalIgnoreCase)));
 
-        var markdown = files.First(file => file.Path.Equals("specs/feature-spec-local-web-ui.md", StringComparison.OrdinalIgnoreCase));
+        var markdown = files.First(file => file.Path.Equals("specs/SPEC-WEB-LOCAL-UI.md", StringComparison.OrdinalIgnoreCase));
         Assert.AreEqual("markdown", markdown.FileType);
         StringAssert.Contains(markdown.Excerpt, "browser-based local UI", StringComparison.Ordinal);
 
@@ -444,7 +452,7 @@ public class WorkItemEditTests
         var binary = files.First(file => file.Path.Equals("assets.bin", StringComparison.OrdinalIgnoreCase));
         Assert.AreEqual("binary", binary.FileType);
 
-        var detail = workspace.GetFile("specs/feature-spec-local-web-ui.md");
+        var detail = workspace.GetFile("specs/SPEC-WEB-LOCAL-UI.md");
         Assert.IsNotNull(detail);
         Assert.IsTrue(detail!.IsMarkdown);
         StringAssert.Contains(detail.Body, "browser-based local UI", StringComparison.Ordinal);
@@ -472,8 +480,18 @@ public class WorkItemEditTests
             """);
 
         File.WriteAllText(
-            Path.Combine(docsProductRoot, "feature-spec-local-web-ui.md"),
+            Path.Combine(docsProductRoot, "SPEC-WEB-LOCAL-UI.md"),
             """
+            ---
+            artifact_id: SPEC-WEB-LOCAL-UI
+            artifact_type: specification
+            title: Requirement Spec: Local Web UI Mode
+            domain: WEB
+            capability: local-ui
+            status: draft
+            owner: platform
+            ---
+
             # Requirement Spec: Local Web UI Mode
             """);
 
@@ -488,11 +506,11 @@ public class WorkItemEditTests
         var docTree = WorkbenchWorkspace.BuildDocTree(
             workspace.ListDocs("all", null),
             doc => $"/Docs?selectedPath={Uri.EscapeDataString(doc.Path)}",
-            "specs/feature-spec-local-web-ui.md");
+            "specs/SPEC-WEB-LOCAL-UI.md");
 
         var specsBranch = docTree.Children.First(child => child.Name.Equals("specs", StringComparison.OrdinalIgnoreCase));
         Assert.HasCount(1, specsBranch.Entries);
-        Assert.AreEqual("specs/feature-spec-local-web-ui.md", specsBranch.Entries[0].Path);
+        Assert.AreEqual("specs/SPEC-WEB-LOCAL-UI.md", specsBranch.Entries[0].Path);
         Assert.IsTrue(specsBranch.Entries[0].IsSelected);
 
         var fileTree = WorkbenchWorkspace.BuildFileTree(

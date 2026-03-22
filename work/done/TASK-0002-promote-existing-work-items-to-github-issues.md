@@ -10,10 +10,9 @@ tags: []
 related:
   specs:
     - /specs/SPEC-SYNC-WORK-ITEM-SYNC.md
-    - /docs/10-product/specs/feature-spec-work-item-sync.md
   adrs: []
   files:
-    - /docs/10-product/specs/feature-spec-work-item-sync.md
+    - /specs/SPEC-SYNC-WORK-ITEM-SYNC.md
   prs: []
   issues: []
   branches: []

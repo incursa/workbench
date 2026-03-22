@@ -53,7 +53,7 @@ will prefer batched or concurrent requests.
   tracked and closed as Octokit support matures.
 
 ## Related specs
-- </docs/10-product/specs/feature-spec-work-item-sync.md>
+- [SPEC-SYNC-WORK-ITEM-SYNC](/specs/SPEC-SYNC-WORK-ITEM-SYNC.md)
 
 ## Related work items
 - none

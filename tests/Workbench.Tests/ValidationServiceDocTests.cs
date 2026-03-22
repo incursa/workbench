@@ -66,6 +66,8 @@ public class ValidationServiceDocTests
               - ARC-CLI-0001
             - Implemented By:
               - WI-CLI-0001
+            - Verified By:
+              - VER-CLI-0001
             - Test Refs:
               - tests/Workbench.Tests/ValidationServiceDocTests.cs
             - Code Refs:

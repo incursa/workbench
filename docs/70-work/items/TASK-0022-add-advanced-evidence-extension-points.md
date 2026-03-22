@@ -14,7 +14,7 @@ tags:
   - phase-4
 related:
   specs:
-    - /docs/10-product/specs/feature-spec-quality-evidence-testing-v1.md
+    - /specs/SPEC-QA-QUALITY-EVIDENCE.md
   adrs:
     - /docs/40-decisions/ADR-2026-03-07-quality-evidence-operating-model.md
   files:

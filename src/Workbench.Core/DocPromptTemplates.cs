@@ -32,13 +32,15 @@ internal static class DocPromptTemplates
                 ## Context
 
                 ## REQ-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+> <short title>
-                The system shall ...
+                The system MUST ...
 
                 Trace:
                 - Satisfied By:
                   - ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
                 - Implemented By:
                   - WI-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+                - Verified By:
+                  - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
                 - Test Refs:
                   - <test reference>
                 - Code Refs:
@@ -155,6 +157,9 @@ internal static class DocPromptTemplates
 
                 Uses Design:
                 - ARC-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
+
+                Verified By:
+                - VER-<DOMAIN>[-<GROUPING>...]-<SEQUENCE:4+>
                 """,
             "doc" => """
                 # <title>

@@ -11,11 +11,11 @@ tags: []
 related:
   specs:
     - /specs/SPEC-TUI-TERMINAL-UI.md
-    - /docs/10-product/specs/feature-spec-terminal-ui.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   files:
-    - /docs/10-product/specs/feature-spec-terminal-ui.md
+    - /specs/SPEC-TUI-TERMINAL-UI.md
+    - /docs/40-decisions/ADR-2025-12-30-terminal-ui-mode-in-cli-executable.md
   prs: []
   issues:
     - "https://github.com/incursa/workbench/issues/22"

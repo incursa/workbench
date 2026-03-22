@@ -10,11 +10,11 @@ tags: []
 related:
   specs:
     - /specs/SPEC-CLI-ONBOARDING.md
-    - /docs/10-product/specs/feature-spec-cli-onboarding-wizard.md
   adrs:
     - /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md
   files:
-    - /docs/10-product/specs/feature-spec-cli-onboarding-wizard.md
+    - /specs/SPEC-CLI-ONBOARDING.md
+    - /docs/40-decisions/ADR-2025-12-27-cli-onboarding-wizard.md
   prs: []
   issues:
     - "https://github.com/incursa/workbench/issues/15"

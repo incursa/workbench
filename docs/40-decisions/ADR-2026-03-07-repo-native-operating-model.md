@@ -45,7 +45,7 @@ Canonical artifacts:
 
 - `.workbench/config.json` and the schemas/contracts under `docs/30-contracts/`
 - Markdown docs under `docs/`
-- Work item Markdown files under `docs/70-work/items/` and `docs/70-work/done/`
+- Work item Markdown files under `work/items/` and `work/done/`
 - The front matter and body content inside those files
 
 Derived artifacts:
@@ -106,7 +106,7 @@ Out of scope:
 ## Related specs
 
 - `/docs/00-overview/workbench-spec.md`
-- `/docs/10-product/specs/feature-spec-work-item-sync.md`
+- `/specs/SPEC-SYNC-WORK-ITEM-SYNC.md`
 
 ## Related work items
 
