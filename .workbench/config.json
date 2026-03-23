@@ -1,19 +1,17 @@
 {
   "Paths": {
-    "DocsRoot": "docs",
-    "WorkRoot": "docs/70-work",
-    "ItemsDir": "docs/70-work/items",
-    "DoneDir": "docs/70-work/done",
-    "TemplatesDir": "docs/70-work/templates",
-    "WorkboardFile": "docs/70-work/README.md"
+    "DocsRoot": "overview",
+    "SpecsRoot": "specs",
+    "ArchitectureDir": "specs/architecture",
+    "WorkItemsSpecsDir": "specs/work-items",
+    "GeneratedDir": "specs/generated",
+    "SpecsTemplatesDir": "specs/templates",
+    "SpecsSchemasDir": "specs/schemas",
+    "WorkRoot": "specs/work-items",
+    "ItemsDir": "specs/work-items/WB"
   },
   "Ids": {
-    "Width": 4,
-    "Prefixes": {
-      "Bug": "BUG",
-      "Task": "TASK",
-      "Spike": "SPIKE"
-    }
+    "Width": 4
   },
   "Git": {
     "BranchPattern": "work/{id}-{slug}",
@@ -22,11 +20,11 @@
     "RequireCleanWorkingTree": true
   },
   "Github": {
-    "Provider": "gh",
-    "DefaultDraft": true,
-    "Host": "",
-    "Owner": "incursa",
-    "Repository": "workbench",
+    "Provider": "octokit",
+    "DefaultDraft": false,
+    "Host": "github.com",
+    "Owner": null,
+    "Repository": null,
     "Sync": {
       "Mode": "generate",
       "ConflictDefault": "fail",
@@ -38,8 +36,8 @@
     "DocExclude": []
   },
   "Tui": {
-    "Theme": "dark",
-    "UseEmoji": false,
-    "AutoRefreshSeconds": 0
+    "Theme": "powershell",
+    "UseEmoji": true,
+    "AutoRefreshSeconds": 60
   }
 }

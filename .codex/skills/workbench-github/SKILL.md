@@ -12,12 +12,12 @@ description: GitHub workflows for Workbench CLI. Use when creating pull requests
 
 Create a PR from a work item:
 ```bash
-workbench.ps1 github pr create TASK-0001 --fill
+workbench.ps1 github pr create WI-WB-0001 --fill
 ```
 
 Create a draft PR targeting a base branch:
 ```bash
-workbench.ps1 github pr create TASK-0001 --draft --base main --fill
+workbench.ps1 github pr create WI-WB-0001 --draft --base main --fill
 ```
 
 ## Output

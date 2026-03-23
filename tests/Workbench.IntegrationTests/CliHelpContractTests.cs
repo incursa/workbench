@@ -29,7 +29,7 @@ public class CliHelpContractTests
         using var repo = TempRepo.Create();
         Directory.CreateDirectory(Path.Combine(repo.Path, ".git"));
 
-        var cliHelpPath = Path.Combine(repo.Path, "docs", "30-contracts", "cli-help.md");
+        var cliHelpPath = Path.Combine(repo.Path, "specs", "generated", "commands.md");
         Directory.CreateDirectory(Path.GetDirectoryName(cliHelpPath)!);
         File.WriteAllText(cliHelpPath, "# stale snapshot\n");
 
@@ -59,6 +59,9 @@ public class CliHelpContractTests
         StringAssert.Contains(content, "Generated from the live `System.CommandLine` tree.", StringComparison.Ordinal);
         StringAssert.Contains(content, "## Sync model", StringComparison.Ordinal);
         StringAssert.Contains(content, "`workbench sync`: umbrella command", StringComparison.Ordinal);
+        StringAssert.Contains(content, "`workbench spec`: dedicated requirement-spec workflow", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench spec`", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench spec new`", StringComparison.Ordinal);
         StringAssert.Contains(content, "### `workbench item edit`", StringComparison.Ordinal);
         StringAssert.Contains(content, "### `workbench doc regen-help`", StringComparison.Ordinal);
 

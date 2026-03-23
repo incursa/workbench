@@ -30,9 +30,9 @@ public static partial class TuiEntrypoint
         var allItems = LoadItems(repoRoot, config);
         StatusBar? statusBar = null;
         ColorScheme? defaultScheme = null;
-        var workItemStatusOptions = new[] { "all", "draft", "ready", "in-progress", "blocked", "done", "dropped" };
-        var workItemTypeOptions = new[] { "task", "bug", "spike" };
-        var docTypeOptions = new[] { "spec", "adr", "doc", "runbook", "guide" };
+        var workItemStatusOptions = new[] { "all", "planned", "in_progress", "blocked", "complete", "cancelled", "superseded" };
+        var workItemTypeOptions = new[] { "work_item" };
+        var docTypeOptions = new[] { "spec", "specification", "architecture", "verification", "doc" };
         var context = new TuiContext(repoRoot, config, allItems, workItemStatusOptions, workItemTypeOptions, docTypeOptions)
         {
             StatusBar = statusBar,
@@ -351,9 +351,7 @@ public static partial class TuiEntrypoint
             var docsRootField = new TextField(string.Empty);
             var workRootField = new TextField(string.Empty);
             var itemsDirField = new TextField(string.Empty);
-            var doneDirField = new TextField(string.Empty);
             var templatesDirField = new TextField(string.Empty);
-            var workboardFileField = new TextField(string.Empty);
             var themeField = new TextField("default");
             var themePickButton = CreatePickerButton(themeField, themeOptions, "Theme");
             var useEmojiCheck = new CheckBox("Use emoji labels");
@@ -361,22 +359,14 @@ public static partial class TuiEntrypoint
             context.DocsRootField = docsRootField;
             context.WorkRootField = workRootField;
             context.ItemsDirField = itemsDirField;
-            context.DoneDirField = doneDirField;
-            context.TemplatesDirField = templatesDirField;
-            context.WorkboardFileField = workboardFileField;
+            context.SpecsTemplatesDirField = templatesDirField;
             context.ThemeField = themeField;
             context.ThemePickButton = themePickButton;
             context.UseEmojiCheck = useEmojiCheck;
             context.AutoRefreshSecondsField = autoRefreshSecondsField;
 
             var idWidthField = new TextField(string.Empty);
-            var bugPrefixField = new TextField(string.Empty);
-            var taskPrefixField = new TextField(string.Empty);
-            var spikePrefixField = new TextField(string.Empty);
             context.IdWidthField = idWidthField;
-            context.BugPrefixField = bugPrefixField;
-            context.TaskPrefixField = taskPrefixField;
-            context.SpikePrefixField = spikePrefixField;
 
             var gitBranchPatternField = new TextField(string.Empty);
             var gitCommitPatternField = new TextField(string.Empty);
@@ -431,9 +421,7 @@ public static partial class TuiEntrypoint
             settingsY = AddFieldRow(settingsScroll, "Docs root:", docsRootField, settingsY, labelWidth, fieldWidth);
             settingsY = AddFieldRow(settingsScroll, "Work root:", workRootField, settingsY, labelWidth, fieldWidth);
             settingsY = AddFieldRow(settingsScroll, "Items dir:", itemsDirField, settingsY, labelWidth, fieldWidth);
-            settingsY = AddFieldRow(settingsScroll, "Done dir:", doneDirField, settingsY, labelWidth, fieldWidth);
             settingsY = AddFieldRow(settingsScroll, "Templates dir:", templatesDirField, settingsY, labelWidth, fieldWidth);
-            settingsY = AddFieldRow(settingsScroll, "Workboard file:", workboardFileField, settingsY, labelWidth, fieldWidth);
             settingsY = AddFieldRowWithPicker(settingsScroll, "Theme:", themeField, themePickButton, settingsY, labelWidth, 14);
             useEmojiCheck.X = 1;
             useEmojiCheck.Y = settingsY;
@@ -442,9 +430,6 @@ public static partial class TuiEntrypoint
             settingsY = AddFieldRow(settingsScroll, "Auto refresh (sec):", autoRefreshSecondsField, settingsY, labelWidth, 10);
             settingsY++;
             settingsY = AddFieldRow(settingsScroll, "ID width:", idWidthField, settingsY, labelWidth, fieldWidth);
-            settingsY = AddFieldRow(settingsScroll, "Bug prefix:", bugPrefixField, settingsY, labelWidth, fieldWidth);
-            settingsY = AddFieldRow(settingsScroll, "Task prefix:", taskPrefixField, settingsY, labelWidth, fieldWidth);
-            settingsY = AddFieldRow(settingsScroll, "Spike prefix:", spikePrefixField, settingsY, labelWidth, fieldWidth);
             settingsY++;
             settingsY = AddFieldRow(settingsScroll, "Branch pattern:", gitBranchPatternField, settingsY, labelWidth, fieldWidth);
             settingsY = AddFieldRow(settingsScroll, "Commit pattern:", gitCommitPatternField, settingsY, labelWidth, fieldWidth);
@@ -787,7 +772,7 @@ public static partial class TuiEntrypoint
                         GitService.CheckoutNewBranch(repoRoot, startBranch);
                     }
 
-                    var updated = WorkItemService.UpdateStatus(item.Path, "in-progress", note: null);
+                    var updated = WorkItemService.UpdateStatus(item.Path, "in_progress", note: null);
                     GitService.Add(repoRoot, updated.Path);
                     var commitMessage = $"Start {updated.Id}: {updated.Title}";
                     GitService.Commit(repoRoot, commitMessage);
@@ -938,7 +923,7 @@ public static partial class TuiEntrypoint
 
                 try
                 {
-                    var updated = WorkItemService.UpdateStatus(item.Path, "done", note: null);
+                    var updated = WorkItemService.UpdateStatus(item.Path, "complete", note: null);
                     GitService.Add(repoRoot, updated.Path);
                     var commitMessage = $"Complete {updated.Id}: {updated.Title}";
                     GitService.Commit(repoRoot, commitMessage);
@@ -1002,28 +987,26 @@ public static partial class TuiEntrypoint
                 var includeDone = false;
                 var syncIssues = true;
                 var force = false;
-                var workboard = true;
 
-                var summaryLabel = new Label("Sync nav updates doc backlinks, indexes, and workboard.")
+                var summaryLabel = new Label("Sync nav updates doc backlinks and indexes.")
                 {
                     X = 1,
                     Y = 0
                 };
-                var includeDoneCheck = new CheckBox("Include done items") { X = 1, Y = 1, Checked = includeDone };
+                var includeDoneCheck = new CheckBox("Include terminal items") { X = 1, Y = 1, Checked = includeDone };
                 var syncIssuesCheck = new CheckBox("Sync issue links") { X = 1, Y = 2, Checked = syncIssues };
                 var forceCheck = new CheckBox("Force index rewrite") { X = 1, Y = 3, Checked = force };
-                var workboardCheck = new CheckBox("Regenerate workboard") { X = 1, Y = 4, Checked = workboard };
-                var previewLabel = new Label("Command: (none)") { X = 1, Y = 6, Width = Dim.Fill(2) };
+                var previewLabel = new Label("Command: (none)") { X = 1, Y = 5, Width = Dim.Fill(2) };
 
                 var dialog = new Dialog("Sync navigation", 70, 14);
-                dialog.Add(summaryLabel, includeDoneCheck, syncIssuesCheck, forceCheck, workboardCheck, previewLabel);
+                dialog.Add(summaryLabel, includeDoneCheck, syncIssuesCheck, forceCheck, previewLabel);
 
                 void UpdatePreview()
                 {
                     var command = "workbench nav sync";
                     if (includeDoneCheck.Checked)
                     {
-                        command += " --include-done";
+                        command += " --include-terminal-items";
                     }
                     if (!syncIssuesCheck.Checked)
                     {
@@ -1032,10 +1015,6 @@ public static partial class TuiEntrypoint
                     if (forceCheck.Checked)
                     {
                         command += " --force";
-                    }
-                    if (!workboardCheck.Checked)
-                    {
-                        command += " --workboard false";
                     }
                     if (context.DryRunEnabled)
                     {
@@ -1048,7 +1027,6 @@ public static partial class TuiEntrypoint
                 includeDoneCheck.Toggled += _ => UpdatePreview();
                 syncIssuesCheck.Toggled += _ => UpdatePreview();
                 forceCheck.Toggled += _ => UpdatePreview();
-                workboardCheck.Toggled += _ => UpdatePreview();
                 UpdatePreview();
 
                 var confirmed = false;
@@ -1072,17 +1050,16 @@ public static partial class TuiEntrypoint
                 includeDone = includeDoneCheck.Checked;
                 syncIssues = syncIssuesCheck.Checked;
                 force = forceCheck.Checked;
-                workboard = workboardCheck.Checked;
 
-                _ = RunSyncWithOptionsAsync(includeDone, syncIssues, force, workboard);
+                _ = RunSyncWithOptionsAsync(includeDone, syncIssues, force);
             }
 
-            async Task RunSyncWithOptionsAsync(bool includeDone, bool syncIssues, bool force, bool workboard)
+            async Task RunSyncWithOptionsAsync(bool includeDone, bool syncIssues, bool force)
             {
                 var command = "workbench nav sync";
                 if (includeDone)
                 {
-                    command += " --include-done";
+                    command += " --include-terminal-items";
                 }
                 if (!syncIssues)
                 {
@@ -1091,10 +1068,6 @@ public static partial class TuiEntrypoint
                 if (force)
                 {
                     command += " --force";
-                }
-                if (!workboard)
-                {
-                    command += " --workboard false";
                 }
                 if (context.DryRunEnabled)
                 {
@@ -1110,10 +1083,9 @@ public static partial class TuiEntrypoint
                             includeDone,
                             syncIssues,
                             force,
-                            workboard,
                             context.DryRunEnabled)
                         .ConfigureAwait(false);
-                    var summary = $"Docs: {result.DocsUpdated}, Items: {result.ItemsUpdated}, Index: {result.IndexFilesUpdated}, Workboard: {result.WorkboardUpdated}";
+                    var summary = $"Docs: {result.DocsUpdated}, Items: {result.ItemsUpdated}, Index: {result.IndexFilesUpdated}";
                     if (context.DryRunEnabled)
                     {
                         summary = $"Dry-run: {summary}";
@@ -1217,7 +1189,7 @@ public static partial class TuiEntrypoint
             {
                 var typeField = new TextField(string.Empty);
                 var typePickButton = CreatePickerButton(typeField, workItemTypeOptions, "Work item type");
-                var instructions = "Say: title and details.\nIf you didn't pick a type, say: type (task/bug/spike).\nPress Stop to finish or Cancel to discard.";
+                var instructions = "Say: title and details.\nIf you didn't pick a type, say: type (work_item).\nPress Stop to finish or Cancel to discard.";
 
                 var recording = CaptureRecordingDialog(
                     "Voice work item",
@@ -1770,14 +1742,12 @@ public static partial class TuiEntrypoint
                 var candidate = overrideType ?? generatedType;
                 if (string.IsNullOrWhiteSpace(candidate))
                 {
-                    return "task";
+                    return "work_item";
                 }
                 return candidate.Trim().ToLowerInvariant() switch
                 {
-                    "bug" => "bug",
-                    "task" => "task",
-                    "spike" => "spike",
-                    _ => "task"
+                    "work_item" or "work-item" or "work item" => "work_item",
+                    _ => "work_item"
                 };
             }
 
@@ -1861,9 +1831,9 @@ public static partial class TuiEntrypoint
 
             void ShowCreateDialog()
             {
-                var typeField = new TextField("task");
+                var typeField = new TextField("work_item");
                 var titleField = new TextField(string.Empty);
-                var statusFieldInput = new TextField("draft");
+                var statusFieldInput = new TextField("planned");
                 var ownerField = new TextField(string.Empty);
                 var priorityField = new TextField(string.Empty);
 
@@ -1885,7 +1855,7 @@ public static partial class TuiEntrypoint
                 ownerField.ColorScheme = inputScheme;
                 priorityField.ColorScheme = inputScheme;
                 dialog.Add(
-                    new Label("Type (task/bug/spike):") { X = 1, Y = 1 },
+                    new Label("Type (work_item):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Status:") { X = 1, Y = 5 },
                     new Label("Owner:") { X = 1, Y = 7 },
@@ -1921,7 +1891,7 @@ public static partial class TuiEntrypoint
 
                 void UpdatePreview()
                 {
-                    var type = typeField.Text?.ToString() ?? "task";
+                    var type = typeField.Text?.ToString() ?? "work_item";
                     var title = titleField.Text?.ToString() ?? string.Empty;
                     var status = statusFieldInput.Text?.ToString();
                     var owner = ownerField.Text?.ToString();
@@ -1962,7 +1932,7 @@ public static partial class TuiEntrypoint
                     return;
                 }
 
-                var type = typeField.Text?.ToString() ?? "task";
+                var type = typeField.Text?.ToString() ?? "work_item";
                 var title = titleField.Text?.ToString() ?? string.Empty;
                 var status = statusFieldInput.Text?.ToString();
                 var owner = ownerField.Text?.ToString();
@@ -2125,7 +2095,7 @@ public static partial class TuiEntrypoint
                 titleField.ColorScheme = inputScheme;
                 pathField.ColorScheme = inputScheme;
                 dialog.Add(
-                    new Label("Type (spec/adr/doc/runbook/guide):") { X = 1, Y = 1 },
+                    new Label("Type (spec/architecture/doc/work_item/guide):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Path (optional):") { X = 1, Y = 5 },
                     typeField, titleField, pathField, previewLabel, typePickButton);
@@ -2233,7 +2203,7 @@ public static partial class TuiEntrypoint
                 pathField.ColorScheme = inputScheme;
 
                 dialog.Add(
-                    new Label("Type (spec/adr/doc/runbook/guide):") { X = 1, Y = 1 },
+                    new Label("Type (spec/specification/architecture/verification/doc):") { X = 1, Y = 1 },
                     new Label("Title:") { X = 1, Y = 3 },
                     new Label("Path (optional):") { X = 1, Y = 5 },
                     typeField, titleField, pathField, previewLabel, typePickButton);
@@ -2604,12 +2574,6 @@ public static partial class TuiEntrypoint
     }
 
 }
-
-
-
-
-
-
 
 
 

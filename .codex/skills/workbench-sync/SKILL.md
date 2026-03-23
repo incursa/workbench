@@ -24,7 +24,7 @@ workbench.ps1 sync --dry-run
 
 Sync a specific item and prefer GitHub content:
 ```bash
-workbench.ps1 item sync --id TASK-0001 --prefer github
+workbench.ps1 item sync --id WI-WB-0001 --prefer github
 ```
 
 Bulk sync (local wins on conflicts):

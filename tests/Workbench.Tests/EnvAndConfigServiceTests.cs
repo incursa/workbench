@@ -127,14 +127,14 @@ public sealed class EnvAndConfigServiceTests
         var updated = ConfigService.SetConfigValue(
             WorkbenchConfig.Default,
             "paths",
-            """{"docsRoot":"knowledge","itemsDir":"work/items","doneDir":"work/done","templatesDir":"work/templates","workRoot":"work","workboardFile":"work/README.md"}""",
+            """{"docsRoot":"knowledge","itemsDir":"specs/work-items/WB","specsTemplatesDir":"specs/templates","workRoot":"specs/work-items"}""",
             parseJson: true,
             out var changed);
 
         Assert.IsTrue(changed);
         Assert.AreEqual("knowledge", updated.Paths.DocsRoot);
-        Assert.AreEqual("work/items", updated.Paths.ItemsDir);
-        Assert.AreEqual("work/done", updated.Paths.DoneDir);
+        Assert.AreEqual("specs/work-items/WB", updated.Paths.ItemsDir);
+        Assert.AreEqual("specs/templates", updated.Paths.SpecsTemplatesDir);
     }
 
     [TestMethod]

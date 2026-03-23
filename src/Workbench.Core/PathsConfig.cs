@@ -5,16 +5,22 @@ namespace Workbench.Core;
 /// </summary>
 public sealed record PathsConfig
 {
-    /// <summary>Root folder for documentation content.</summary>
-    public string DocsRoot { get; init; } = "docs";
+    /// <summary>Root folder for overview and high-level documentation content.</summary>
+    public string DocsRoot { get; init; } = "overview";
+    /// <summary>Root folder for canonical SpecTrace content.</summary>
+    public string SpecsRoot { get; init; } = "specs";
+    /// <summary>Directory for canonical architecture artifacts.</summary>
+    public string ArchitectureDir { get; init; } = "specs/architecture";
+    /// <summary>Directory for canonical work-item artifacts.</summary>
+    public string WorkItemsSpecsDir { get; init; } = "specs/work-items";
+    /// <summary>Directory for generated SpecTrace outputs.</summary>
+    public string GeneratedDir { get; init; } = "specs/generated";
+    /// <summary>Directory for canonical SpecTrace templates.</summary>
+    public string SpecsTemplatesDir { get; init; } = "specs/templates";
+    /// <summary>Directory for canonical SpecTrace schemas.</summary>
+    public string SpecsSchemasDir { get; init; } = "specs/schemas";
     /// <summary>Root folder for work tracking content.</summary>
-    public string WorkRoot { get; init; } = "docs/70-work";
+    public string WorkRoot { get; init; } = "specs/work-items";
     /// <summary>Directory for active work item files.</summary>
-    public string ItemsDir { get; init; } = "docs/70-work/items";
-    /// <summary>Directory for completed/dropped work item files.</summary>
-    public string DoneDir { get; init; } = "docs/70-work/done";
-    /// <summary>Directory containing templates for work items and docs.</summary>
-    public string TemplatesDir { get; init; } = "docs/70-work/templates";
-    /// <summary>Path to the generated workboard index file.</summary>
-    public string WorkboardFile { get; init; } = "docs/70-work/README.md";
+    public string ItemsDir { get; init; } = "specs/work-items/WB";
 }

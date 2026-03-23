@@ -20,18 +20,22 @@ public static partial class TuiEntrypoint
 
     private static List<string> LoadDocs(string repoRoot, WorkbenchConfig config)
     {
-        var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
-        if (!Directory.Exists(docsRoot))
+        var roots = new[]
         {
-            return new List<string>();
-        }
+            config.Paths.DocsRoot,
+            "runbooks",
+            "tracking",
+            SpecTraceLayout.RequirementsRoot,
+            SpecTraceLayout.ArchitectureRoot,
+            SpecTraceLayout.VerificationRoot,
+            SpecTraceLayout.GeneratedRoot
+        };
 
-        var rootPrefix = config.Paths.DocsRoot.TrimEnd('/', '\\') + "/";
-        return Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories)
+        return roots
+            .Select(root => Path.Combine(repoRoot, root))
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
             .Select(path => Path.GetRelativePath(repoRoot, path).Replace('\\', '/'))
-            .Select(path => path.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
-                ? path[rootPrefix.Length..]
-                : path)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
@@ -108,14 +112,14 @@ public static partial class TuiEntrypoint
             linkTargets.Add(link);
             linkLabels.Add($"spec: {link}");
         }
-        foreach (var link in item.Related.Adrs)
+        foreach (var link in item.DesignLinks)
         {
-            if (!ShouldIncludeLink("adr", filter))
+            if (!ShouldIncludeLink("design", filter))
             {
                 continue;
             }
             linkTargets.Add(link);
-            linkLabels.Add($"adr: {link}");
+            linkLabels.Add($"design: {link}");
         }
         foreach (var link in item.Related.Files)
         {
@@ -146,7 +150,7 @@ public static partial class TuiEntrypoint
         }
 
         linksList.SetSource(linkLabels);
-        var counts = $"spec {item.Related.Specs.Count}, adr {item.Related.Adrs.Count}, file {item.Related.Files.Count}, issue {item.Related.Issues.Count}, pr {item.Related.Prs.Count}";
+        var counts = $"spec {item.Related.Specs.Count}, design {item.DesignLinks.Count}, verification {item.VerificationLinks.Count}, file {item.Related.Files.Count}, issue {item.Related.Issues.Count}, pr {item.Related.Prs.Count}";
         if (linkLabels.Count > 0)
         {
             linksList.SelectedItem = 0;
@@ -192,8 +196,7 @@ public static partial class TuiEntrypoint
         }
 
         var trimmed = path.TrimStart('/');
-        var docsRoot = config.Paths.DocsRoot.TrimEnd('/', '\\');
-        var combined = Path.Combine(repoRoot, docsRoot, trimmed);
+        var combined = Path.Combine(repoRoot, trimmed);
         return Path.GetFullPath(combined);
     }
 
@@ -202,6 +205,24 @@ public static partial class TuiEntrypoint
         if (string.IsNullOrWhiteSpace(selectedPath))
         {
             return null;
+        }
+
+        var normalized = selectedPath.Replace('\\', '/').TrimStart('/');
+        var semanticRoots = new[]
+        {
+            config.Paths.DocsRoot.TrimEnd('/', '\\'),
+            "runbooks",
+            "tracking",
+            SpecTraceLayout.RequirementsRoot.TrimEnd('/', '\\'),
+            SpecTraceLayout.ArchitectureRoot.TrimEnd('/', '\\'),
+            SpecTraceLayout.VerificationRoot.TrimEnd('/', '\\'),
+            SpecTraceLayout.GeneratedRoot.TrimEnd('/', '\\')
+        };
+
+        if (semanticRoots.Any(root => normalized.StartsWith(root + "/", StringComparison.OrdinalIgnoreCase) ||
+                                       string.Equals(normalized, root, StringComparison.OrdinalIgnoreCase)))
+        {
+            return normalized;
         }
 
         if (selectedPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))

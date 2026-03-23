@@ -154,12 +154,12 @@ public static partial class TuiEntrypoint
     {
         return status?.ToLowerInvariant() switch
         {
-            "in-progress" => 0,
-            "blocked" => 1,
-            "ready" => 2,
-            "draft" => 3,
-            "done" => 4,
-            "dropped" => 5,
+            "planned" => 0,
+            "in_progress" => 1,
+            "blocked" => 2,
+            "complete" => 3,
+            "cancelled" => 4,
+            "superseded" => 5,
             _ => 6
         };
     }
@@ -187,24 +187,24 @@ public static partial class TuiEntrypoint
         {
             return status.ToLowerInvariant() switch
             {
-                "draft" => "..",
-                "ready" => "->",
-                "in-progress" => ">>",
+                "planned" => "..",
+                "in_progress" => ">>",
                 "blocked" => "!!",
-                "done" => "##",
-                "dropped" => "--",
+                "complete" => "##",
+                "cancelled" => "--",
+                "superseded" => "~>",
                 _ => "??"
             };
         }
 
         return status.ToLowerInvariant() switch
         {
-            "draft" => "🟡 draft",
-            "ready" => "🟢 ready",
-            "in-progress" => "🔵 in-progress",
+            "planned" => "🟡 planned",
+            "in_progress" => "🔵 in-progress",
             "blocked" => "🟥 blocked",
-            "done" => "✅ done",
-            "dropped" => "⚪ dropped",
+            "complete" => "✅ complete",
+            "cancelled" => "⚪ cancelled",
+            "superseded" => "↩ superseded",
             _ => status
         };
     }

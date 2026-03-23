@@ -1,0 +1,343 @@
+@page
+@model Workbench.Pages.IndexModel
+@{
+    ViewData["Title"] = "Items";
+}
+
+<section class="hero inc-card">
+    <div class="hero-copy">
+        <div class="eyebrow">Primary landing page</div>
+        <h2>Manage repo-native work items without remembering commands.</h2>
+        <p>
+            Browse, edit, sync, and validate the same file-backed data that powers the CLI.
+        </p>
+        <div class="hero-links">
+            <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Create">Create item</a>
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Files">Files</a>
+        </div>
+    </div>
+    <div class="hero-stats">
+        <div class="inc-card stat-card accent">
+            <span class="stat-label">Visible items</span>
+            <span class="stat-value">@Model.Items.Count</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Planned</span>
+            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">In progress</span>
+            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</span>
+        </div>
+        <div class="inc-card stat-card">
+            <span class="stat-label">Complete</span>
+            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</span>
+        </div>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
+{
+    <section class="banner">
+        <div class="banner-title">@Model.BannerTitle</div>
+        <div class="banner-message">@Model.BannerMessage</div>
+        @if (Model.BannerLines.Count > 0)
+        {
+            <ul class="banner-lines">
+                @foreach (var line in Model.BannerLines)
+                {
+                    <li>@line</li>
+                }
+            </ul>
+        }
+    </section>
+}
+
+<div class="workspace">
+    <aside class="inc-card panel sidebar">
+        <div class="panel-head">
+            <h3>Work items</h3>
+            <form method="get" class="inline-filter">
+                <input type="hidden" name="selectedId" value="@Model.SelectedId" />
+                <label class="inc-form__group">
+                    <span class="field-label">Search</span>
+                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, ID, owner, text" />
+                </label>
+                    <label class="inc-form__group">
+                        <span class="field-label">Status</span>
+                        <select class="inc-form__select" asp-for="StatusFilter">
+                            <option value="all">All</option>
+                            @foreach (var status in StatusOptions)
+                            {
+                            <option value="@status">@StatusLabel(status)</option>
+                            }
+                        </select>
+                    </label>
+                <label class="inc-form__check checkbox-row">
+                    <input class="inc-form__check__input" asp-for="IncludeDone" />
+                    <span class="inc-form__check__label">Include terminal items</span>
+                </label>
+                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+            </form>
+        </div>
+
+        <div class="item-list">
+            @if (Model.Items.Count == 0)
+            {
+                <div class="empty-state">No work items match the current filters.</div>
+            }
+            else
+            {
+                foreach (var item in Model.Items)
+                {
+                    <a class="inc-card item-card @(Model.SelectedItem?.Id == item.Id ? "selected" : string.Empty)"
+                       asp-page="/Index"
+                       asp-route-selectedId="@item.Id"
+                       asp-route-statusFilter="@Model.StatusFilter"
+                       asp-route-query="@Model.Query"
+                       asp-route-includeDone="@Model.IncludeDone">
+                    <div class="inc-card__body">
+                        <div class="item-card-top">
+                            <span class="item-id">@item.Id</span>
+                            <span class="pill @StatusClass(item.Status)">@StatusLabel(item.Status)</span>
+                        </div>
+                        <div class="item-title">@item.Title</div>
+                        <div class="item-meta">
+                            <span class="pill @PriorityClass(item.Priority)">@(!string.IsNullOrWhiteSpace(item.Priority) ? item.Priority : "unprioritized")</span>
+                            <span>@(string.IsNullOrWhiteSpace(item.Owner) ? "unowned" : item.Owner)</span>
+                            <span>@item.Updated</span>
+                        </div>
+                    </div>
+                    </a>
+                }
+            }
+        </div>
+    </aside>
+
+    <section class="inc-card panel detail">
+        @if (Model.SelectedItem is null)
+        {
+            <div class="empty-state large">
+                Pick a work item to edit or create a new one below.
+            </div>
+        }
+        else
+        {
+            <div class="detail-header">
+                <div>
+                    <div class="eyebrow">Selected item</div>
+                    <h3>@Model.SelectedItem.Id</h3>
+                    <p>@Model.SelectedItem.Title</p>
+                </div>
+                <div class="detail-badges">
+                    <span class="pill @StatusClass(Model.SelectedItem.Status)">@StatusLabel(Model.SelectedItem.Status)</span>
+                    <span class="pill @PriorityClass(Model.SelectedItem.Priority)">@(!string.IsNullOrWhiteSpace(Model.SelectedItem.Priority) ? Model.SelectedItem.Priority : "unprioritized")</span>
+                </div>
+            </div>
+
+            <form method="post" asp-page-handler="Save" class="editor-stack">
+                <input type="hidden" asp-for="Edit.Path" />
+                <input type="hidden" asp-for="SelectedId" />
+                <input type="hidden" asp-for="StatusFilter" />
+                <input type="hidden" asp-for="Query" />
+                <input type="hidden" asp-for="IncludeDone" />
+                <div asp-validation-summary="All" class="validation-summary"></div>
+                <section class="inc-card editor-section">
+                    <div class="editor-section-head">
+                        <h4>Identity</h4>
+                        <span class="muted">@Model.SelectedItem.Path</span>
+                    </div>
+                    <div class="editor-grid editor-grid-two">
+                        <label class="inc-form__group span-2">
+                            <span class="field-label">Title</span>
+                            <input class="inc-form__control" asp-for="Edit.Title" />
+                        </label>
+                        <label class="inc-form__group">
+                            <span class="field-label">Type</span>
+                            <div class="readonly-field">@Model.SelectedItem.Type</div>
+                        </label>
+                        <label class="inc-form__group">
+                            <span class="field-label">Owner / team</span>
+                            <input class="inc-form__control" asp-for="Edit.Owner" placeholder="optional team or person" />
+                        </label>
+                    </div>
+                </section>
+                <section class="inc-card editor-section">
+                    <div class="editor-section-head">
+                        <h4>Workflow</h4>
+                        <span class="muted">Status, priority, and file behavior.</span>
+                    </div>
+                    <div class="editor-grid editor-grid-two">
+                        <label class="inc-form__group">
+                            <span class="field-label">Status</span>
+                            <select class="inc-form__select" asp-for="Edit.Status">
+                                @foreach (var status in StatusOptions)
+                                {
+                                    <option value="@status">@StatusLabel(status)</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="inc-form__group">
+                            <span class="field-label">Priority</span>
+                            <select class="inc-form__select" asp-for="Edit.Priority">
+                                @foreach (var priority in PriorityOptions)
+                                {
+                                    <option value="@(string.IsNullOrWhiteSpace(priority) ? string.Empty : priority)">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="inc-form__check checkbox-row span-2">
+                            <input class="inc-form__check__input" asp-for="Edit.RenameFile" />
+                            <span class="inc-form__check__label">Rename the file when the title changes</span>
+                        </label>
+                    </div>
+                </section>
+                <section class="inc-card editor-section">
+                    <div class="editor-section-head">
+                        <h4>Content</h4>
+                        <span class="muted">The narrative and acceptance criteria.</span>
+                    </div>
+                    <div class="editor-grid">
+                        <label class="inc-form__group span-2">
+                            <span class="field-label">Summary</span>
+                            <textarea class="inc-form__control" asp-for="Edit.Summary" rows="6"></textarea>
+                        </label>
+                        <label class="inc-form__group span-2">
+                            <span class="field-label">Acceptance criteria</span>
+                            <textarea class="inc-form__control" asp-for="Edit.AcceptanceCriteria" rows="8"></textarea>
+                        </label>
+                        <label class="inc-form__group span-2">
+                            <span class="field-label">Append note</span>
+                            <textarea class="inc-form__control" asp-for="Edit.AppendNote" rows="4" placeholder="Optional note appended to the item body"></textarea>
+                        </label>
+                    </div>
+                </section>
+                <div class="button-row">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save item</button>
+                </div>
+            </form>
+
+            <section class="inc-card snapshot">
+                <div class="snapshot-head">
+                    <h4>Related links</h4>
+                    <span class="muted">@Model.SelectedItem.Path</span>
+                </div>
+                    <div class="link-grid">
+                    <div>
+                    <div class="field-label">Specs</div>
+                        @if (Model.SelectedItem.Related.Specs.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var link in Model.SelectedItem.Related.Specs)
+                            {
+                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                            }
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Design links</div>
+                        @if (Model.SelectedItem.DesignLinks.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var link in Model.SelectedItem.DesignLinks)
+                            {
+                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                            }
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Verification links</div>
+                        @if (Model.SelectedItem.VerificationLinks.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var link in Model.SelectedItem.VerificationLinks)
+                            {
+                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                            }
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Issues</div>
+                        @if (Model.SelectedItem.Related.Issues.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var link in Model.SelectedItem.Related.Issues)
+                            {
+                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                            }
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Pull requests</div>
+                        @if (Model.SelectedItem.Related.Prs.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var link in Model.SelectedItem.Related.Prs)
+                            {
+                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                            }
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+
+        <section class="inc-card actions">
+            <div class="panel-head compact">
+                <h3>Repo actions</h3>
+                <span class="muted">Shortcuts for the same core services as the CLI.</span>
+            </div>
+            <div class="action-grid">
+                <div class="inc-card action-tile">
+                    <div class="action-title">Sync issue links</div>
+                    <div class="action-copy">Pull GitHub issue backlinks into the local item metadata.</div>
+                    <form method="post" asp-page-handler="SyncIssues">
+                        <input type="hidden" asp-for="SelectedId" />
+                        <input type="hidden" asp-for="StatusFilter" />
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="IncludeDone" />
+                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
+                    </form>
+                </div>
+                <div class="inc-card action-tile">
+                    <div class="action-title">Sync navigation</div>
+                    <div class="action-copy">Regenerate indexes and backlinks from repo state.</div>
+                    <form method="post" asp-page-handler="SyncNavigation">
+                        <input type="hidden" asp-for="SelectedId" />
+                        <input type="hidden" asp-for="StatusFilter" />
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="IncludeDone" />
+                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
+                    </form>
+                </div>
+                <div class="inc-card action-tile">
+                    <div class="action-title">Validate repo</div>
+                    <div class="action-copy">Check local docs, links, IDs, and work item structure.</div>
+                    <form method="post" asp-page-handler="Validate">
+                        <input type="hidden" asp-for="SelectedId" />
+                        <input type="hidden" asp-for="StatusFilter" />
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="IncludeDone" />
+                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </section>
+</div>

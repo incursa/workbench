@@ -65,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          workbench sync --docs --nav --include-done --force --workboard true
+          workbench sync --docs --nav --include-done --force
           workbench item normalize --include-done
           workbench validate --strict
 
@@ -76,7 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          args=(sync --items --docs --nav --include-done --force --workboard true)
+          args=(sync --items --docs --nav --include-done --force)
           if [[ "${{ inputs.import_issues }}" == "true" ]]; then
             args+=(--import-issues)
           fi

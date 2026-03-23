@@ -31,9 +31,9 @@ public class ParserFuzzTests
         var repoRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "schemas"));
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "30-contracts", "work-item.schema.json"),
+            Path.Combine(repoRoot, "specs", "schemas", "artifact-frontmatter.schema.json"),
             """
             {
               "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -46,29 +46,27 @@ public class ParserFuzzTests
         {
             var payload = new Dictionary<string, object?>(StringComparer.Ordinal)
             {
-                ["id"] = $"TASK-{random.Next(1, 9999):0000}",
-                ["type"] = random.Next(0, 3) switch
-                {
-                    0 => "task",
-                    1 => "bug",
-                    _ => "spike",
-                },
+                ["artifact_id"] = $"WI-WB-{random.Next(1, 9999):D4}",
+                ["artifact_type"] = "work_item",
+                ["title"] = $"Fuzz item {i}",
+                ["domain"] = "WB",
                 ["status"] = random.Next(0, 4) switch
                 {
-                    0 => "draft",
-                    1 => "ready",
-                    2 => "in-progress",
-                    _ => "done",
+                    0 => "planned",
+                    1 => "in_progress",
+                    2 => "blocked",
+                    _ => "complete",
                 },
-                ["created"] = DateTime.UtcNow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
-                ["related"] = new Dictionary<string, object?>(StringComparer.Ordinal)
+                ["owner"] = "platform",
+                ["addresses"] = new[] { $"REQ-WB-{i:D4}" },
+                ["design_links"] = new[] { $"ARC-WB-{i:D4}" },
+                ["verification_links"] = new[] { $"VER-WB-{i:D4}" },
+                ["related_artifacts"] = new[] { $"SPEC-WB-{i:D4}" },
+                ["trace"] = new Dictionary<string, object?>(StringComparer.Ordinal)
                 {
-                    ["specs"] = new[] { BuildRandomText(random, 18) },
-                    ["adrs"] = Array.Empty<string>(),
-                    ["files"] = Array.Empty<string>(),
-                    ["prs"] = Array.Empty<string>(),
-                    ["issues"] = Array.Empty<string>(),
-                    ["branches"] = Array.Empty<string>(),
+                    ["Satisfied By"] = new[] { BuildRandomText(random, 18) },
+                    ["Implemented By"] = Array.Empty<string>(),
+                    ["Verified By"] = Array.Empty<string>(),
                 },
             };
 
@@ -76,7 +74,7 @@ public class ParserFuzzTests
             {
                 _ = SchemaValidationService.ValidateFrontMatter(
                     repoRoot,
-                    $"docs/70-work/items/TASK-{i:0000}-fuzz.md",
+                    $"specs/work-items/WB/WI-WB-{i:D4}-fuzz.md",
                     payload);
             }
             catch (Exception ex)

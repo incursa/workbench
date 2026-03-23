@@ -13,67 +13,49 @@ public class NavigationServiceTests
         ScaffoldService.Scaffold(repoRoot, force: true);
 
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "items", "README.md"),
+            Path.Combine(repoRoot, "specs", "work-items", "WB", "README.md"),
             """
             ---
-            workbench:
-              type: doc
-              workItems: []
-              codeRefs: []
+            artifact_id: WI-WB-0000
+            artifact_type: work_item
+            title: Helper readme
+            domain: WB
+            status: planned
+            owner: platform
+            addresses: []
+            design_links: []
+            verification_links: []
+            related_artifacts: []
             ---
 
             # Items
             """);
         File.WriteAllText(
-            Path.Combine(repoRoot, "docs", "70-work", "done", "README.md"),
+            Path.Combine(repoRoot, "specs", "work-items", "WB", "_index.md"),
             """
             ---
-            workbench:
-              type: doc
-              workItems: []
-              codeRefs: []
+            artifact_id: WI-WB-0000
+            artifact_type: work_item
+            title: Helper index
+            domain: WB
+            status: planned
+            owner: platform
+            addresses: []
+            design_links: []
+            verification_links: []
+            related_artifacts: []
             ---
 
-            # Done
+            # Index
             """);
 
-        WorkItemService.CreateItem(repoRoot, WorkbenchConfig.Default, "task", "Keep indexes readable", "draft", null, null);
+        var created = WorkItemService.CreateItem(repoRoot, WorkbenchConfig.Default, "work_item", "Keep indexes readable", "planned", null, null);
 
         var items = WorkItemService.ListItems(repoRoot, WorkbenchConfig.Default, includeDone: true).Items;
 
         Assert.HasCount(1, items, string.Join(Environment.NewLine, items.Select(item => item.Path)));
-        Assert.AreEqual("TASK-0001", items[0].Id);
-    }
-
-    [TestMethod]
-    public async Task SyncNavigation_OmitsWorkArtifactDocsFromDocsIndexAsync()
-    {
-        var repoRoot = CreateRepoRoot();
-        ScaffoldService.Scaffold(repoRoot, force: true);
-        WorkItemService.CreateItem(repoRoot, WorkbenchConfig.Default, "task", "Keep docs index focused", "draft", null, null);
-
-        await NavigationService.SyncNavigationAsync(
-            repoRoot,
-            WorkbenchConfig.Default,
-            includeDone: true,
-            syncIssues: false,
-            force: false,
-            syncWorkboard: true,
-            dryRun: false,
-            syncDocs: false).ConfigureAwait(false);
-
-        var docsReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "docs", "README.md")).ConfigureAwait(false);
-        var workReadme = await File.ReadAllTextAsync(Path.Combine(repoRoot, "docs", "70-work", "README.md")).ConfigureAwait(false);
-
-        Assert.IsTrue(docsReadme.Contains("70-work/README.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("items/README.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("done/README.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("work-item.task.md", StringComparison.Ordinal), docsReadme);
-        Assert.IsFalse(docsReadme.Contains("TASK-0001", StringComparison.Ordinal), docsReadme);
-
-        Assert.IsFalse(workReadme.Contains("| [ - README](items/README.md)", StringComparison.Ordinal), workReadme);
-        Assert.IsFalse(workReadme.Contains("| [ - README](done/README.md)", StringComparison.Ordinal), workReadme);
-        Assert.IsTrue(workReadme.Contains("TASK-0001 - Keep docs index focused", StringComparison.Ordinal), workReadme);
+        Assert.AreEqual(created.Id, items[0].Id);
+        Assert.IsTrue(items[0].Id.StartsWith("WI-", StringComparison.Ordinal), items[0].Id);
     }
 
     private static string CreateRepoRoot()

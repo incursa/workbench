@@ -40,20 +40,20 @@ public class DocHandlerTests
         Assert.AreEqual("spec", data.GetProperty("type").GetString());
         Assert.AreEqual(1, data.GetProperty("workItems").GetArrayLength());
         Assert.AreEqual(item.Id, data.GetProperty("workItems")[0].GetString());
+        var artifactId = data.GetProperty("artifactId").GetString()!;
 
         var docPath = data.GetProperty("path").GetString()!;
         Assert.IsTrue(File.Exists(docPath), docPath);
+        StringAssert.Contains(Path.GetFileName(docPath), artifactId + ".md", StringComparison.Ordinal);
 
         var docContent = File.ReadAllText(docPath);
-        StringAssert.Contains(docContent, "type: spec", StringComparison.Ordinal);
-        StringAssert.Contains(docContent, "workItems:", StringComparison.Ordinal);
+        StringAssert.Contains(docContent, "artifact_type: specification", StringComparison.Ordinal);
+        StringAssert.Contains(docContent, $"artifact_id: {artifactId}", StringComparison.Ordinal);
+        StringAssert.Contains(docContent, "related_artifacts:", StringComparison.Ordinal);
         StringAssert.Contains(docContent, $"- {item.Id}", StringComparison.Ordinal);
-        StringAssert.Contains(docContent, "codeRefs:", StringComparison.Ordinal);
-        StringAssert.Contains(docContent, "src/Workbench.Cli/Program.cs#L1-L3", StringComparison.Ordinal);
-        StringAssert.Contains(docContent, "path: /docs/10-product/quality-workflow-spec.md", StringComparison.Ordinal);
+        Assert.IsFalse(docContent.Contains("workItems:", StringComparison.Ordinal), docContent);
+        Assert.IsFalse(docContent.Contains("codeRefs:", StringComparison.Ordinal), docContent);
 
-        var updatedItem = WorkItemService.LoadItem(item.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
-        CollectionAssert.Contains(updatedItem.Related.Specs.ToArray(), "/docs/10-product/quality-workflow-spec.md");
     }
 
     [TestMethod]
@@ -69,7 +69,7 @@ public class DocHandlerTests
             "scaffold");
 
         var item = CreateItem(repo.Path, "Doc link item");
-        var docPath = CreateDoc(repo.Path, "Standalone spec", "docs/10-product/standalone-spec.md");
+        var docPath = CreateDoc(repo.Path, "Standalone spec", "specs/standalone-spec.md");
 
         var payload = TestAssertions.RunWorkbenchAndParseJson(
             repo.Path,
@@ -88,16 +88,13 @@ public class DocHandlerTests
 
         Assert.IsTrue(payload.GetProperty("ok").GetBoolean(), payload.ToString());
         var data = payload.GetProperty("data");
-        Assert.AreEqual("/docs/10-product/standalone-spec.md", data.GetProperty("docPath").GetString());
+        Assert.AreEqual("/specs/standalone-spec.md", data.GetProperty("docPath").GetString());
         Assert.AreEqual("spec", data.GetProperty("docType").GetString());
-        Assert.AreEqual(1, data.GetProperty("itemsUpdated").GetInt32());
+        Assert.AreEqual(0, data.GetProperty("itemsUpdated").GetInt32());
         Assert.IsTrue(data.GetProperty("docUpdated").GetBoolean());
 
-        var updatedItem = WorkItemService.LoadItem(item.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
-        CollectionAssert.Contains(updatedItem.Related.Specs.ToArray(), "/docs/10-product/standalone-spec.md");
-
         var docContent = File.ReadAllText(docPath);
-        StringAssert.Contains(docContent, "workItems:", StringComparison.Ordinal);
+        StringAssert.Contains(docContent, "related_artifacts:", StringComparison.Ordinal);
         StringAssert.Contains(docContent, $"- {item.Id}", StringComparison.Ordinal);
     }
 
@@ -114,7 +111,7 @@ public class DocHandlerTests
             "scaffold");
 
         var item = CreateItem(repo.Path, "Doc unlink item");
-        var docPath = CreateDoc(repo.Path, "Linked spec", "docs/10-product/linked-spec.md", item.Id);
+        var docPath = CreateDoc(repo.Path, "Linked spec", "specs/linked-spec.md", item.Id);
 
         var result = WorkbenchCli.Run(
             repo.Path,
@@ -131,13 +128,47 @@ public class DocHandlerTests
             "--dry-run");
 
         Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
-        StringAssert.Contains(result.StdOut, "SPEC unlinked: /docs/10-product/linked-spec.md", StringComparison.Ordinal);
-        StringAssert.Contains(result.StdOut, "Work items updated: 1", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "SPEC unlinked: /specs/linked-spec.md", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Work items updated: 0", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "Doc updated: yes", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "Dry run: no files were modified.", StringComparison.Ordinal);
 
-        var unchangedItem = WorkItemService.LoadItem(item.Path) ?? throw new InvalidOperationException("Failed to reload work item.");
-        CollectionAssert.Contains(unchangedItem.Related.Specs.ToArray(), "/docs/10-product/linked-spec.md");
+        var docContent = File.ReadAllText(docPath);
+        StringAssert.Contains(docContent, $"- {item.Id}", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void SpecUnlink_DryRunTable_PrintsFriendlySummaryWithoutMutatingFiles()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+
+        TestAssertions.RunWorkbenchAndAssertSuccess(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "scaffold");
+
+        var item = CreateItem(repo.Path, "Spec unlink item");
+        var docPath = CreateDoc(repo.Path, "Linked spec", "specs/linked-spec.md", item.Id);
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "spec",
+            "unlink",
+            "--path",
+            docPath,
+            "--work-item",
+            item.Id,
+            "--dry-run");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        StringAssert.Contains(result.StdOut, "Spec unlinked: /specs/linked-spec.md", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Work items updated: 0", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Doc updated: yes", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "Dry run: no files were modified.", StringComparison.Ordinal);
 
         var docContent = File.ReadAllText(docPath);
         StringAssert.Contains(docContent, $"- {item.Id}", StringComparison.Ordinal);
@@ -155,7 +186,7 @@ public class DocHandlerTests
             "--type",
             "spec",
             "--path",
-            "docs/10-product/missing.md");
+            "specs/missing.md");
 
         Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
         Assert.AreEqual("No work items provided.", result.StdOut);
@@ -172,7 +203,7 @@ public class DocHandlerTests
             "item",
             "new",
             "--type",
-            "task",
+            "work_item",
             "--title",
             title);
 

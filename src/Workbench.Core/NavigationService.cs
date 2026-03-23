@@ -1,5 +1,6 @@
 // Navigation and index synchronization for docs and work items.
 // Invariants: generated indexes are deterministic given the same inputs and ordering rules.
+#pragma warning disable S1144
 using System.Collections;
 using System.Text;
 
@@ -13,7 +14,6 @@ public static class NavigationService
     /// <param name="DocsUpdated">Number of docs updated.</param>
     /// <param name="ItemsUpdated">Number of work items updated.</param>
     /// <param name="IndexFilesUpdated">Number of index files updated.</param>
-    /// <param name="WorkboardUpdated">Number of workboards updated.</param>
     /// <param name="MissingDocs">Missing docs referenced in front matter.</param>
     /// <param name="MissingItems">Missing work items referenced in docs.</param>
     /// <param name="Warnings">Warnings emitted during sync.</param>
@@ -21,12 +21,12 @@ public static class NavigationService
         int DocsUpdated,
         int ItemsUpdated,
         int IndexFilesUpdated,
-        int WorkboardUpdated,
         IList<string> MissingDocs,
         IList<string> MissingItems,
         IList<string> Warnings);
 
     private sealed record DocEntry(
+        string? ArtifactId,
         string Title,
         string Type,
         string Status,
@@ -46,7 +46,6 @@ public static class NavigationService
         bool includeDone,
         bool syncIssues,
         bool force,
-        bool syncWorkboard,
         bool dryRun,
         bool syncDocs = true)
     {
@@ -55,40 +54,10 @@ public static class NavigationService
 .ConfigureAwait(false) : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
         var normalizedItems = WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun);
         var warnings = new List<string>();
-        var docEntries = LoadDocEntries(repoRoot, config, warnings);
-        var docReadmePath = Path.Combine(repoRoot, config.Paths.DocsRoot, "README.md");
-        var workReadmePath = Path.Combine(repoRoot, config.Paths.WorkRoot, "README.md");
-        var rootReadmePath = Path.Combine(repoRoot, "README.md");
-
-        var indexCreated = 0;
-        indexCreated += EnsureIndexFile(docReadmePath, BuildDocsReadmeTemplate(), dryRun);
-        indexCreated += EnsureIndexFile(workReadmePath, BuildWorkReadmeTemplate(), dryRun);
-        indexCreated += EnsureIndexFile(rootReadmePath, BuildRootReadmeTemplate(), dryRun);
-
-        var docIndex = BuildDocsIndex(repoRoot, config, docReadmePath, docEntries);
-        var workIndex = BuildWorkIndex(repoRoot, config, workReadmePath, docEntries, includeDone);
-        var rootIndex = BuildRootIndex(repoRoot, config);
-
-        var indexUpdated = indexCreated;
-        indexUpdated += UpdateIndexSection(docReadmePath, "workbench:docs-index", docIndex, force, dryRun);
-        indexUpdated += UpdateIndexSection(workReadmePath, "workbench:work-index", workIndex, force, dryRun);
-        indexUpdated += UpdateIndexSection(rootReadmePath, "workbench:root-index", rootIndex, force, dryRun);
-
-        var workboardUpdated = 0;
-        if (syncWorkboard)
-        {
-            if (!dryRun)
-            {
-                WorkboardService.Regenerate(repoRoot, config);
-            }
-            workboardUpdated = 1;
-        }
-
         return new NavigationSyncResult(
             docSync.DocsUpdated,
             docSync.ItemsUpdated + normalizedItems,
-            indexUpdated,
-            workboardUpdated,
+            0,
             docSync.MissingDocs,
             docSync.MissingItems,
             warnings);
@@ -97,55 +66,79 @@ public static class NavigationService
     private static List<DocEntry> LoadDocEntries(string repoRoot, WorkbenchConfig config, List<string> warnings)
     {
         var entries = new List<DocEntry>();
-        var docsRoot = Path.Combine(repoRoot, config.Paths.DocsRoot);
-        if (!Directory.Exists(docsRoot))
+        var roots = new[]
         {
-            return entries;
-        }
+                Path.Combine(repoRoot, "runbooks"),
+                Path.Combine(repoRoot, "tracking"),
+                Path.Combine(repoRoot, config.Paths.SpecsRoot),
+                Path.Combine(repoRoot, config.Paths.ArchitectureDir),
+                Path.Combine(repoRoot, Path.Combine(config.Paths.SpecsRoot, "verification")),
+                Path.Combine(repoRoot, Path.Combine(config.Paths.SpecsRoot, "work-items"))
+            };
 
-        foreach (var path in Directory.EnumerateFiles(docsRoot, "*.md", SearchOption.AllDirectories))
+        foreach (var root in roots)
         {
-            var relative = NormalizePath(Path.GetRelativePath(repoRoot, path));
-            if (IsDocsIndexFile(config, relative) ||
-                IsDocTemplate(config, relative) ||
-                IsWorkArtifactDoc(config, relative))
+            if (!Directory.Exists(root))
             {
                 continue;
             }
 
-            var content = File.ReadAllText(path);
-            var body = content;
-            Dictionary<string, object?>? data = null;
-            if (HasFrontMatter(content))
+            var searchOption = root.Equals(Path.Combine(repoRoot, config.Paths.SpecsRoot), StringComparison.OrdinalIgnoreCase)
+            ? SearchOption.TopDirectoryOnly
+            : SearchOption.AllDirectories;
+
+            foreach (var path in Directory.EnumerateFiles(root, "*.md", searchOption))
             {
-                if (FrontMatter.TryParse(content, out var frontMatter, out var error))
+                var relative = NormalizePath(Path.GetRelativePath(repoRoot, path));
+                if (IsDocsIndexFile(config, relative) ||
+                    IsSpecsIndexFile(config, relative) ||
+                    IsArchitectureIndexFile(config, relative) ||
+                    IsDocTemplate(config, relative) ||
+                    IsWorkArtifactDoc(config, relative))
                 {
-                    data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
-                    body = frontMatter.Body;
+                    continue;
                 }
-                else
+
+                var content = File.ReadAllText(path);
+                var body = content;
+                Dictionary<string, object?>? data = null;
+                if (HasFrontMatter(content))
                 {
-                    warnings.Add($"{relative}: {error}");
+                    if (FrontMatter.TryParse(content, out var frontMatter, out var error))
+                    {
+                        data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
+                        body = frontMatter.Body;
+                    }
+                    else
+                    {
+                        warnings.Add($"{relative}: {error}");
+                    }
                 }
+
+                data ??= new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                var workbench = GetNestedMap(data, "workbench");
+                var type = GetString(data, "artifact_type") ?? GetString(workbench, "type") ?? InferDocType(relative, config);
+                var status = GetString(data, "status") ?? "unknown";
+                var title = GetString(data, "title") ?? ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(path);
+                var workItems = GetStringList(data, "related_artifacts");
+                if (workItems.Count == 0)
+                {
+                    workItems = GetStringList(workbench, "workItems");
+                }
+                var section = GetDocSection(relative, config);
+                var githubLink = BuildGithubFileLink(config, relative);
+                var artifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId");
+
+                entries.Add(new DocEntry(
+                    artifactId,
+                    title,
+                    type,
+                    status,
+                    relative,
+                    section,
+                    workItems,
+                    githubLink));
             }
-
-            data ??= new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            var workbench = GetNestedMap(data, "workbench");
-            var type = GetString(workbench, "type") ?? InferDocType(relative, config);
-            var status = GetString(data, "status") ?? "unknown";
-            var title = ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(path);
-            var workItems = GetStringList(workbench, "workItems");
-            var section = GetDocSection(relative, config);
-            var githubLink = BuildGithubFileLink(config, relative);
-
-            entries.Add(new DocEntry(
-                title,
-                type,
-                status,
-                relative,
-                section,
-                workItems,
-                githubLink));
         }
 
         return entries;
@@ -173,19 +166,20 @@ public static class NavigationService
         foreach (var group in grouped)
         {
             builder.AppendLine($"### {group.Key}");
-            builder.AppendLine("| Doc | Type | Status | GitHub | Work Items |");
-            builder.AppendLine("| --- | --- | --- | --- | --- |");
+            builder.AppendLine("| Doc | ID | Type | Status | GitHub | Work Items |");
+            builder.AppendLine("| --- | --- | --- | --- | --- | --- |");
 
             foreach (var entry in group)
             {
                 var relativeLink = NormalizePath(Path.GetRelativePath(readmeDir, Path.Combine(repoRoot, entry.RepoRelativePath)));
                 var docLink = BuildMarkdownLink(entry.Title, relativeLink);
+                var artifactLabel = string.IsNullOrWhiteSpace(entry.ArtifactId) ? "-" : EscapeTableCell(entry.ArtifactId);
                 var githubLink = entry.GithubLink is null ? "-" : BuildMarkdownLink("view", entry.GithubLink);
                 var workItems = FormatWorkItemLinks(entry.WorkItems, itemsById, readmeDir);
 
                 var typeLabel = FormatDocType(entry.Type);
                 var statusLabel = FormatDocStatus(entry.Status);
-                builder.AppendLine($"| {docLink} | {typeLabel} | {statusLabel} | {githubLink} | {workItems} |");
+                builder.AppendLine($"| {docLink} | {artifactLabel} | {typeLabel} | {statusLabel} | {githubLink} | {workItems} |");
             }
 
             builder.AppendLine();
@@ -198,19 +192,12 @@ public static class NavigationService
         string repoRoot,
         WorkbenchConfig config,
         string workReadmePath,
-        List<DocEntry> docs,
-        bool includeDone)
+        List<DocEntry> docs
+        )
     {
         var builder = new StringBuilder();
         var activeItems = LoadWorkItemEntries(repoRoot, config.Paths.ItemsDir, config);
         AppendWorkItemTable(builder, "Active items", activeItems, workReadmePath, docs, repoRoot, config);
-
-        if (includeDone)
-        {
-            var doneItems = LoadWorkItemEntries(repoRoot, config.Paths.DoneDir, config);
-            builder.AppendLine();
-            AppendWorkItemTable(builder, "Done items", doneItems, workReadmePath, docs, repoRoot, config);
-        }
 
         return builder.ToString().TrimEnd();
     }
@@ -258,8 +245,16 @@ public static class NavigationService
     {
         var builder = new StringBuilder();
         builder.AppendLine("### Quick links");
-        builder.AppendLine("- [Docs index](docs/README.md)");
-        builder.AppendLine("- [Work index](docs/70-work/README.md)");
+        builder.AppendLine("- [Overview](README.md)");
+        builder.AppendLine("- [Requirements](specs/requirements/_index.md)");
+        builder.AppendLine("- [Architecture](specs/architecture/WB/_index.md)");
+        builder.AppendLine("- [Work items](specs/work-items/WB/_index.md)");
+        builder.AppendLine("- [Verification](specs/verification/WB/_index.md)");
+        builder.AppendLine("- [Generated](specs/generated)");
+        builder.AppendLine("- [Templates](specs/templates)");
+        builder.AppendLine("- [Schemas](specs/schemas)");
+        builder.AppendLine("- [Runbooks](runbooks/README.md)");
+        builder.AppendLine("- [Tracking](tracking/README.md)");
         builder.AppendLine();
         builder.AppendLine("### Work item stats");
 
@@ -283,7 +278,7 @@ public static class NavigationService
 
             builder.AppendLine("| Status | Count |");
             builder.AppendLine("| --- | --- |");
-            foreach (var status in new[] { "draft", "ready", "in-progress", "blocked", "done", "dropped" })
+            foreach (var status in new[] { "planned", "in_progress", "blocked", "complete", "cancelled", "superseded" })
             {
                 counts.TryGetValue(status, out var count);
                 builder.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| {FormatWorkItemStatus(status)} | {count} |"));
@@ -293,7 +288,7 @@ public static class NavigationService
         return builder.ToString().TrimEnd();
     }
 
-    private static List<WorkItemEntry> LoadWorkItemEntries(string repoRoot, string dir, WorkbenchConfig config)
+    private static List<WorkItemEntry> LoadWorkItemEntries(string repoRoot, string dir, WorkbenchConfig config, bool recursive = false)
     {
         var items = new List<WorkItemEntry>();
         var path = Path.Combine(repoRoot, dir);
@@ -302,7 +297,8 @@ public static class NavigationService
             return items;
         }
 
-        foreach (var file in Directory.EnumerateFiles(path, "*.md", SearchOption.TopDirectoryOnly))
+        var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+        foreach (var file in Directory.EnumerateFiles(path, "*.md", searchOption))
         {
             var item = WorkItemService.LoadItem(file);
             if (item is null)
@@ -417,7 +413,7 @@ public static class NavigationService
         string repoRoot)
     {
         var links = new List<string>();
-        foreach (var entry in item.Related.Specs.Concat(item.Related.Adrs).Concat(item.Related.Files))
+        foreach (var entry in item.Related.Specs.Concat(item.Related.Files))
         {
             var normalized = NormalizeLinkPath(repoRoot, entry);
             if (normalized is null)
@@ -509,16 +505,50 @@ public static class NavigationService
     {
         return string.Join(
             "\n",
-            "# Docs",
+            "# Overview",
             string.Empty,
-            "Documentation for product, architecture, decisions, and operational guidance.",
+            "High-level orientation, product summaries, and repo-level standards.",
             string.Empty,
             "## Index",
             string.Empty,
             "Generated by `workbench nav sync`.",
             string.Empty,
-            "<!-- workbench:docs-index:start -->",
-            "<!-- workbench:docs-index:end -->",
+            "<!-- workbench:overview-index:start -->",
+            "<!-- workbench:overview-index:end -->",
+            string.Empty);
+    }
+
+    private static string BuildSpecsReadmeTemplate()
+    {
+        return string.Join(
+            "\n",
+            "# Specs",
+            string.Empty,
+            "Canonical specifications live here. Keep them directly under `specs/` and use the sibling top-level `architecture/` and `work/` roots for design and execution artifacts.",
+            string.Empty,
+            "## Index",
+            string.Empty,
+            "Generated by `workbench nav sync`.",
+            string.Empty,
+            "<!-- workbench:specs-index:start -->",
+            "<!-- workbench:specs-index:end -->",
+            string.Empty);
+    }
+
+    private static string BuildArchitectureReadmeTemplate()
+    {
+        return string.Join(
+            "\n",
+            "# Architecture",
+            string.Empty,
+            "Architecture and design documents for the repository.",
+            string.Empty,
+            "## Index",
+            string.Empty,
+            "Generated by `workbench nav sync`.",
+            string.Empty,
+            "<!-- workbench:architecture-index:start -->",
+            "<!-- workbench:architecture-index:end -->",
             string.Empty);
     }
 
@@ -536,51 +566,28 @@ public static class NavigationService
             "updated: 0000-00-00",
             "---",
             string.Empty,
-            "# Work",
+            "# Work Items",
             string.Empty,
-            "Work items and the day-to-day board for delivery.",
-            string.Empty,
-            "## Workboard",
-            string.Empty,
-            "Generated by `workbench nav sync --workboard`.",
-            string.Empty,
-            "<!-- workbench:workboard:start -->",
-            "## Now (in-progress)",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "## Next (ready)",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "## Blocked",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "<details>",
-            "<summary>Draft (backlog) (0)</summary>",
-            string.Empty,
-            "_None._",
-            string.Empty,
-            "</details>",
-            "<!-- workbench:workboard:end -->",
+            "Canonical work items live under `specs/work-items/`.",
             string.Empty,
             "## Layout",
             string.Empty,
-            "- `docs/70-work/items`: active work items named `<ID>-<slug>.md`.",
-            "- `docs/70-work/done`: closed items for reference and audit history.",
-            "- `docs/70-work/templates`: templates used to create new work items.",
-            string.Empty,
-            "## Source of truth",
-            string.Empty,
-            "- Hand-author the individual work item files under `docs/70-work/items` and `docs/70-work/done`.",
-            "- Treat the workboard and index sections between `workbench:` markers as generated views maintained by `workbench nav sync` or `workbench board regen`.",
+            "- `overview`: high-level product, standard, and orientation docs.",
+            "- `runbooks`: operational procedures and playbooks.",
+            "- `tracking`: milestone and delivery notes.",
+            "- `specs/requirements`: canonical requirement docs.",
+            "- `specs/architecture`: canonical architecture docs.",
+            "- `specs/work-items`: canonical work items.",
+            "- `specs/verification`: canonical verification artifacts.",
+            "- `specs/generated`: derived indexes, matrices, and reports.",
+            "- `specs/templates`: reusable document templates.",
+            "- `specs/schemas`: machine-readable validation contracts.",
             string.Empty,
             "## Workflow",
             string.Empty,
             "1. Create a work item with `workbench item new`, `workbench item generate`, or `workbench voice workitem`.",
-            "2. Edit the Markdown file to tighten the summary, acceptance criteria, and notes.",
-            "3. Link specs, ADRs, files, PRs, or issues with `workbench item link`, and use `workbench promote` when you want branch + commit scaffolding.",
+            "2. Edit the Markdown file to tighten the summary, context, traceability, implementation notes, acceptance criteria, and notes.",
+            "3. Link specs, architecture docs, files, PRs, or issues with `workbench item link`, and use `workbench promote` when you want branch + commit scaffolding.",
             "4. Refresh the generated views with `workbench nav sync` and run `workbench validate` before review or automation.",
             string.Empty,
             "## Index",
@@ -590,6 +597,44 @@ public static class NavigationService
             "<!-- workbench:work-index:start -->",
             "<!-- workbench:work-index:end -->",
             string.Empty);
+    }
+
+    private static string BuildArchitectureIndex(
+        string repoRoot,
+        WorkbenchConfig config,
+        string architectureReadmePath,
+        List<DocEntry> docs)
+    {
+        var prefix = NormalizePath(config.Paths.ArchitectureDir).TrimEnd('/') + "/";
+        var architectureDocs = docs
+            .Where(entry => NormalizePath(entry.RepoRelativePath).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (architectureDocs.Count == 0)
+        {
+            return "_No architecture docs found._";
+        }
+
+        return BuildDocsIndex(repoRoot, config, architectureReadmePath, architectureDocs);
+    }
+
+    private static string BuildSpecsIndex(
+        string repoRoot,
+        WorkbenchConfig config,
+        string specReadmePath,
+        List<DocEntry> docs)
+    {
+        var prefix = NormalizePath(config.Paths.SpecsRoot).TrimEnd('/') + "/";
+        var specDocs = docs
+            .Where(entry => NormalizePath(entry.RepoRelativePath).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (specDocs.Count == 0)
+        {
+            return "_No specs found._";
+        }
+
+        return BuildDocsIndex(repoRoot, config, specReadmePath, specDocs);
     }
 
     private static string BuildRootReadmeTemplate()
@@ -635,10 +680,26 @@ public static class NavigationService
         return normalized.Equals($"{config.Paths.DocsRoot}/README.md", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsSpecsIndexFile(WorkbenchConfig config, string relativePath)
+    {
+        var normalized = NormalizePath(relativePath);
+        return normalized.Equals($"{config.Paths.SpecsRoot}/README.md", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsArchitectureIndexFile(WorkbenchConfig config, string relativePath)
+    {
+        var normalized = NormalizePath(relativePath);
+        return normalized.Equals($"{NormalizePath(config.Paths.ArchitectureDir)}/README.md", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsDocTemplate(WorkbenchConfig config, string relativePath)
     {
         var normalized = NormalizePath(relativePath);
-        return normalized.StartsWith($"{config.Paths.DocsRoot}/templates/", StringComparison.OrdinalIgnoreCase);
+        return normalized.StartsWith($"{config.Paths.DocsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
+               normalized.StartsWith("templates/", StringComparison.OrdinalIgnoreCase) ||
+               normalized.StartsWith($"{config.Paths.SpecsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
+               normalized.StartsWith($"{NormalizePath(config.Paths.ArchitectureDir)}/templates/", StringComparison.OrdinalIgnoreCase) ||
+               normalized.StartsWith($"{NormalizePath(config.Paths.WorkRoot)}/templates/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsWorkArtifactDoc(WorkbenchConfig config, string relativePath)
@@ -652,7 +713,6 @@ public static class NavigationService
 
         var remainder = normalized[(workRoot.Length + 1)..];
         return remainder.StartsWith("items/", StringComparison.OrdinalIgnoreCase)
-            || remainder.StartsWith("done/", StringComparison.OrdinalIgnoreCase)
             || remainder.StartsWith("templates/", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -673,43 +733,65 @@ public static class NavigationService
     private static string GetDocSection(string relativePath, WorkbenchConfig config)
     {
         var normalized = NormalizePath(relativePath);
-        var prefix = $"{config.Paths.DocsRoot.TrimEnd('/')}/";
-        if (!normalized.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        if (normalized.StartsWith($"{config.Paths.DocsRoot.TrimEnd('/')}/", StringComparison.OrdinalIgnoreCase))
         {
-            return "Docs";
+            return "Overview";
         }
 
-        var remainder = normalized[prefix.Length..];
-        var slashIndex = remainder.IndexOf('/', StringComparison.Ordinal);
-        if (slashIndex < 0)
+        if (normalized.StartsWith("runbooks/", StringComparison.OrdinalIgnoreCase))
         {
-            return "Root";
+            return "Runbooks";
         }
 
-        return remainder[..slashIndex];
+        if (normalized.StartsWith("tracking/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Tracking";
+        }
+
+        var architecturePrefix = $"{NormalizePath(config.Paths.ArchitectureDir).TrimEnd('/')}/";
+        if (normalized.StartsWith(architecturePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var architectureRemainder = normalized[architecturePrefix.Length..];
+            var architectureSegments = architectureRemainder.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (architectureSegments.Length == 0)
+            {
+                return "Architecture";
+            }
+
+            return architectureSegments[0];
+        }
+
+        if (normalized.StartsWith($"{config.Paths.SpecsRoot.TrimEnd('/')}/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Specs";
+        }
+
+        return "Repo";
     }
 
     private static string InferDocType(string relativePath, WorkbenchConfig config)
     {
         var normalized = NormalizePath(relativePath).ToLowerInvariant();
-        var docsRoot = config.Paths.DocsRoot.TrimEnd('/').ToLowerInvariant();
-        if (normalized.Contains($"{docsRoot}/10-product/"))
+        var architectureRoot = NormalizePath(config.Paths.ArchitectureDir).TrimEnd('/').ToLowerInvariant();
+        if (normalized.Contains($"{architectureRoot}/"))
         {
-            return "spec";
+            return "architecture";
         }
-        if (normalized.Contains($"{docsRoot}/40-decisions/"))
+
+        var specsRoot = config.Paths.SpecsRoot.TrimEnd('/').ToLowerInvariant();
+        if (normalized.StartsWith($"{specsRoot}/", StringComparison.OrdinalIgnoreCase) &&
+            !normalized.Contains("/specs/templates/", StringComparison.OrdinalIgnoreCase) &&
+            !normalized.Contains("/specs/generated/", StringComparison.OrdinalIgnoreCase))
         {
-            return "adr";
+            return "specification";
         }
-        if (normalized.Contains($"{docsRoot}/50-runbooks/"))
+        if (normalized.Contains("/runbooks/"))
         {
-            return "runbook";
+            return normalized.EndsWith("/README.md", StringComparison.OrdinalIgnoreCase) ? "doc" : "runbook";
         }
-        if (normalized.Contains($"{docsRoot}/20-architecture/"))
-        {
-            return "guide";
-        }
-        if (normalized.Contains($"{docsRoot}/00-overview/"))
+        if (normalized.Contains($"/{config.Paths.DocsRoot.TrimEnd('/').ToLowerInvariant()}/") ||
+            normalized.Contains("/tracking/") ||
+            normalized.Contains("/templates/"))
         {
             return "doc";
         }
@@ -801,12 +883,13 @@ public static class NavigationService
     {
         return status.ToLowerInvariant() switch
         {
-            "in-progress" => 0,
-            "ready" => 1,
+            "planned" => 0,
+            "in_progress" => 1,
+            "in-progress" => 1,
             "blocked" => 2,
-            "draft" => 3,
-            "done" => 4,
-            "dropped" => 5,
+            "complete" => 3,
+            "cancelled" => 4,
+            "superseded" => 5,
             _ => 6
         };
     }
@@ -816,10 +899,10 @@ public static class NavigationService
         return docType.ToLowerInvariant() switch
         {
             "spec" => "🧭 spec",
-            "adr" => "📘 adr",
-            "contract" => "📐 contract",
-            "runbook" => "🛠 runbook",
+            "specification" => "🧭 specification",
+            "architecture" => "🧩 architecture",
             "guide" => "🧩 guide",
+            "work_item" => "🛠 work item",
             "doc" => "📄 doc",
             _ => EscapeTableCell(docType)
         };
@@ -834,13 +917,15 @@ public static class NavigationService
 
         return status.ToLowerInvariant() switch
         {
+            "planned" => "🟦 planned",
+            "in_progress" => "🔵 in-progress",
             "draft" => "🟡 draft",
-            "ready" => "🟢 ready",
             "active" => "🟢 active",
             "accepted" => "✅ accepted",
             "blocked" => "🟥 blocked",
-            "done" => "✅ done",
-            "dropped" => "🚫 dropped",
+            "complete" => "✅ complete",
+            "cancelled" => "🚫 cancelled",
+            "superseded" => "↩ superseded",
             "template" => "🧱 template",
             _ => EscapeTableCell(status)
         };
@@ -855,20 +940,22 @@ public static class NavigationService
 
         return status.ToLowerInvariant() switch
         {
-            "draft" => "🟡 draft",
-            "ready" => "🟢 ready",
+            "planned" => "🟦 planned",
+            "in_progress" => "🔵 in-progress",
             "in-progress" => "🔵 in-progress",
             "blocked" => "🟥 blocked",
-            "done" => "✅ done",
-            "dropped" => "🚫 dropped",
+            "complete" => "✅ complete",
+            "cancelled" => "🚫 cancelled",
+            "superseded" => "↩ superseded",
             _ => EscapeTableCell(status)
         };
     }
 
     private static bool IsTerminalStatus(string status)
     {
-        return string.Equals(status, "done", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "dropped", StringComparison.OrdinalIgnoreCase);
+        return string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "cancelled", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "superseded", StringComparison.OrdinalIgnoreCase);
     }
 
     private static GithubRepoRef? TryResolveRepo(string repoRoot, WorkbenchConfig config)

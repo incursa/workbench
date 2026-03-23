@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       type:
-        description: "Work item type (bug, task, spike)"
+        description: "Work item type (work_item)"
         required: false
         type: string
       status:
-        description: "Work item status (draft, ready, in-progress, blocked, done, dropped)"
+        description: "Work item status (planned, in_progress, blocked, complete, cancelled, superseded)"
         required: false
         type: string
       priority:

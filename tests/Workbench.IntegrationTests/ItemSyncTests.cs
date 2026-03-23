@@ -21,10 +21,6 @@ public class ItemSyncTests
         ConfigureOfflineGithub(repo.Path);
 
         var selected = CreateItem(repo.Path, "Selected sync item");
-        var ignored = CreateItem(repo.Path, "Ignored sync item");
-        WorkItemService.AddRelatedLink(selected.Path, "branches", "feature/selected-sync-item");
-        WorkItemService.AddRelatedLink(ignored.Path, "branches", "feature/ignored-sync-item");
-
         var payload = TestAssertions.RunWorkbenchAndParseJson(
             repo.Path,
             "--repo",
@@ -41,7 +37,7 @@ public class ItemSyncTests
         var data = payload.GetProperty("data");
         Assert.IsTrue(data.GetProperty("dryRun").GetBoolean(), payload.ToString());
         Assert.AreEqual(1, data.GetProperty("issuesCreated").GetArrayLength(), payload.ToString());
-        Assert.AreEqual(1, data.GetProperty("branchesCreated").GetArrayLength(), payload.ToString());
+        Assert.AreEqual(0, data.GetProperty("branchesCreated").GetArrayLength(), payload.ToString());
         Assert.AreEqual(0, data.GetProperty("issuesUpdated").GetArrayLength(), payload.ToString());
         Assert.AreEqual(0, data.GetProperty("itemsUpdated").GetArrayLength(), payload.ToString());
         Assert.AreEqual(0, data.GetProperty("conflicts").GetArrayLength(), payload.ToString());
@@ -51,9 +47,6 @@ public class ItemSyncTests
         Assert.AreEqual(selected.Id, issue.GetProperty("itemId").GetString());
         Assert.AreEqual(string.Empty, issue.GetProperty("issueUrl").GetString());
 
-        var branch = data.GetProperty("branchesCreated")[0];
-        Assert.AreEqual(selected.Id, branch.GetProperty("itemId").GetString());
-        Assert.AreEqual("feature/selected-sync-item", branch.GetProperty("branch").GetString());
     }
 
     [TestMethod]
@@ -70,8 +63,6 @@ public class ItemSyncTests
         ConfigureOfflineGithub(repo.Path);
 
         var item = CreateItem(repo.Path, "Table sync item");
-        WorkItemService.AddRelatedLink(item.Path, "branches", "feature/table-sync-item");
-
         var result = WorkbenchCli.Run(
             repo.Path,
             "--repo",
@@ -84,7 +75,6 @@ public class ItemSyncTests
 
         Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
         StringAssert.Contains(result.StdOut, $"Would create issue for {item.Id}.", StringComparison.Ordinal);
-        StringAssert.Contains(result.StdOut, $"Would create branch feature/table-sync-item for {item.Id}.", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -101,8 +91,7 @@ public class ItemSyncTests
         ConfigureOfflineGithub(repo.Path);
 
         var item = CreateItem(repo.Path, "Done sync item");
-        WorkItemService.AddRelatedLink(item.Path, "branches", "feature/done-sync-item");
-        WorkItemService.UpdateStatus(item.Path, "done", null);
+        WorkItemService.UpdateStatus(item.Path, "complete", null);
 
         var payload = TestAssertions.RunWorkbenchAndParseJson(
             repo.Path,
@@ -166,7 +155,7 @@ public class ItemSyncTests
             "item",
             "new",
             "--type",
-            "task",
+            "work_item",
             "--title",
             title);
 

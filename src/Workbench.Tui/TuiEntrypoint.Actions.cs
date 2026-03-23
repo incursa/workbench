@@ -294,17 +294,19 @@ public static partial class TuiEntrypoint
             return;
         }
         var specsCount = item.Related.Specs.Count;
-        var adrsCount = item.Related.Adrs.Count;
+        var designCount = item.DesignLinks.Count;
+        var verificationCount = item.VerificationLinks.Count;
         var filesCount = item.Related.Files.Count;
         var issuesCount = item.Related.Issues.Count;
         var prsCount = item.Related.Prs.Count;
 
-        detailsHeader.Text = $"[{item.Status}] {item.Id}\n{item.Title}\n\n\nOwner: {item.Owner ?? "?"}\nPriority: {item.Priority ?? "?"}\nUpdated: {item.Updated ?? "?"}\n\nLinked: specs {specsCount}, adrs {adrsCount}, files {filesCount}\nIssues: {issuesCount}, PRs: {prsCount}\n\nEnter: open selected link";
+        detailsHeader.Text = $"[{item.Status}] {item.Id}\n{item.Title}\n\n\nOwner: {item.Owner ?? "?"}\nPriority: {item.Priority ?? "?"}\nUpdated: {item.Updated ?? "?"}\n\nLinked: specs {specsCount}, design {designCount}, verification {verificationCount}, files {filesCount}\nIssues: {issuesCount}, PRs: {prsCount}\n\nEnter: open selected link";
         detailsBody.Text = item.Body;
         SetCommandPreview(context, $"workbench item show {item.Id}");
         startWorkButton.Enabled = true;
-        completeWorkButton.Enabled = !string.Equals(item.Status, "done", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(item.Status, "dropped", StringComparison.OrdinalIgnoreCase);
+        completeWorkButton.Enabled = !string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(item.Status, "cancelled", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(item.Status, "superseded", StringComparison.OrdinalIgnoreCase);
         UpdateCodexStartState(context, item);
 
         PopulateLinks(item, linkTypeField, linkHint, linksList, linkTargets);
@@ -467,7 +469,6 @@ public static partial class TuiEntrypoint
 
         var pathsConfig = loadedConfig.Paths ?? new PathsConfig();
         var idsConfig = loadedConfig.Ids ?? new IdsConfig();
-        var prefixesConfig = idsConfig.Prefixes ?? new PrefixesConfig();
         var gitConfig = loadedConfig.Git ?? new GitConfig();
         var githubConfig = loadedConfig.Github ?? new GithubConfig();
         var validationConfig = loadedConfig.Validation ?? new ValidationConfig();
@@ -476,17 +477,12 @@ public static partial class TuiEntrypoint
         context.DocsRootField!.Text = pathsConfig.DocsRoot ?? string.Empty;
         context.WorkRootField!.Text = pathsConfig.WorkRoot ?? string.Empty;
         context.ItemsDirField!.Text = pathsConfig.ItemsDir ?? string.Empty;
-        context.DoneDirField!.Text = pathsConfig.DoneDir ?? string.Empty;
-        context.TemplatesDirField!.Text = pathsConfig.TemplatesDir ?? string.Empty;
-        context.WorkboardFileField!.Text = pathsConfig.WorkboardFile ?? string.Empty;
+        context.SpecsTemplatesDirField!.Text = pathsConfig.SpecsTemplatesDir ?? string.Empty;
         context.ThemeField!.Text = (tuiConfig.Theme ?? "powershell").Trim();
         context.UseEmojiCheck!.Checked = tuiConfig.UseEmoji;
         context.AutoRefreshSecondsField!.Text = tuiConfig.AutoRefreshSeconds.ToString(CultureInfo.InvariantCulture);
 
         context.IdWidthField!.Text = idsConfig.Width.ToString(CultureInfo.InvariantCulture);
-        context.BugPrefixField!.Text = prefixesConfig.Bug ?? string.Empty;
-        context.TaskPrefixField!.Text = prefixesConfig.Task ?? string.Empty;
-        context.SpikePrefixField!.Text = prefixesConfig.Spike ?? string.Empty;
 
         context.GitBranchPatternField!.Text = gitConfig.BranchPattern ?? string.Empty;
         context.GitCommitPatternField!.Text = gitConfig.CommitMessagePattern ?? string.Empty;
@@ -585,19 +581,11 @@ public static partial class TuiEntrypoint
                 DocsRoot = context.DocsRootField!.Text?.ToString() ?? string.Empty,
                 WorkRoot = context.WorkRootField!.Text?.ToString() ?? string.Empty,
                 ItemsDir = context.ItemsDirField!.Text?.ToString() ?? string.Empty,
-                DoneDir = context.DoneDirField!.Text?.ToString() ?? string.Empty,
-                TemplatesDir = context.TemplatesDirField!.Text?.ToString() ?? string.Empty,
-                WorkboardFile = context.WorkboardFileField!.Text?.ToString() ?? string.Empty
+                SpecsTemplatesDir = context.SpecsTemplatesDirField!.Text?.ToString() ?? string.Empty
             },
             new IdsConfig
             {
-                Width = width,
-                Prefixes = new PrefixesConfig
-                {
-                    Bug = context.BugPrefixField!.Text?.ToString() ?? string.Empty,
-                    Task = context.TaskPrefixField!.Text?.ToString() ?? string.Empty,
-                    Spike = context.SpikePrefixField!.Text?.ToString() ?? string.Empty
-                }
+                Width = width
             },
             new GitConfig
             {

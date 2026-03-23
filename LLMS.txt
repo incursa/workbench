@@ -1,0 +1,19 @@
+# Workbench
+
+> AI-readable bootstrap for the Workbench repository. Non-authoritative. The current Spec Trace standard is the local reference repo at `C:\src\incursa\spec-trace`.
+
+Use this repository in this order:
+
+1. `README.md` for the high-level repo model.
+2. `overview.md`, `layout.md`, and `authoring.md` for the canonical local Spec Trace guidance.
+3. The canonical templates under `specs/templates/` for copy-ready authoring starting points.
+4. `AGENTS.md` for repo-specific agent instructions.
+5. `specs/requirements/`, `specs/architecture/`, `specs/verification/`, `specs/work-items/`, and `specs/schemas/` for the project-specific authored artifacts and validation surfaces.
+
+When authoring or revising Spec Trace content:
+
+- Follow the current local Spec Trace standard from `C:\src\incursa\spec-trace`.
+- Keep requirement clauses compact and use exactly one approved uppercase normative keyword per clause.
+- Treat `contracts/`, `decisions/`, and `work/` as removed legacy surface area rather than core artifact families.
+- Use the canonical trace labels `Satisfied By`, `Implemented By`, `Verified By`, `Derived From`, `Supersedes`, `Source Refs`, `Test Refs`, `Code Refs`, and `Related` when a `Trace` block is present.
+- Verification artifacts should be artifact-scoped and should use `verifies` to list the requirements they cover.

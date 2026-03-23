@@ -5,7 +5,7 @@ description: Generate and inspect repo-native testing evidence for Workbench qua
 
 ## Core workflow
 
-1. Treat `docs/30-contracts/test-gate.contract.yaml` as the canonical authored testing-intent contract.
+1. Treat `quality/testing-intent.yaml` as the canonical authored testing-intent file.
 2. Restore the pinned tool with `dotnet tool restore`.
 3. Generate raw evidence with `pwsh -File scripts/testing/run-quality-evidence.ps1` or `bash ./scripts/testing/run-quality-evidence.sh`.
 4. Normalize and summarize with `dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage`.
@@ -13,7 +13,7 @@ description: Generate and inspect repo-native testing evidence for Workbench qua
 
 ## Path conventions
 
-- Authored intent: `docs/30-contracts/test-gate.contract.yaml`
+- Authored intent: `quality/testing-intent.yaml`
 - Raw test results: `artifacts/quality/raw/test-results/*.trx`
 - Raw coverage: `artifacts/quality/raw/coverage/*.cobertura.xml`
 - Generated quality artifacts: `artifacts/quality/testing/`

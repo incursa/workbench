@@ -4,10 +4,11 @@ Incursa Workbench is a .NET CLI tool for teams that manage engineering work in-r
 
 It provides commands to:
 
-- scaffold and maintain Workbench docs/work item structure
+- scaffold and maintain the canonical Spec Trace artifact families and repository guidance
 - create, update, and sync work items
-- link docs, architecture decisions, and work items
+- link repository specs, architecture docs, verification artifacts, and work items
 - run repository validation and consistency checks
+- open a local browser UI for browsing and editing work items
 
 ## Installation
 
@@ -44,21 +45,27 @@ Run diagnostics:
 workbench doctor
 ```
 
+Open the local browser UI:
+
+```bash
+workbench web
+```
+
 ## Typical Workflows
 
 Create a work item:
 
 ```bash
-workbench item new --type task --title "Example task"
+workbench item new --type work_item --title "Example work item"
 ```
 
 Create a document:
 
 ```bash
-workbench doc new --type doc --title "Example design note"
+workbench doc new --type architecture --title "Example design note"
 ```
 
-Sync docs and links:
+Sync specs, docs, and links:
 
 ```bash
 workbench doc sync --all
@@ -73,6 +80,8 @@ workbench doc sync --all
 
 Project documentation and contracts are available in the repository:
 
-- `docs/README.md`
-- `docs/30-contracts/cli-help.md`
-
+- `README.md`
+- `overview.md`
+- `layout.md`
+- `authoring.md`
+- `specs/generated/commands.md`

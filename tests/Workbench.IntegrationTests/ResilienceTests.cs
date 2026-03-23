@@ -124,9 +124,12 @@ public class ResilienceTests
             repo.Path,
             "scaffold");
 
-        File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "work-item.schema.json"));
-        File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "workbench-config.schema.json"));
-        File.Delete(Path.Combine(repo.Path, "docs", "30-contracts", "doc.schema.json"));
+        File.Delete(Path.Combine(repo.Path, "specs", "schemas", "artifact-frontmatter.schema.json"));
+        var configSchemaPath = Path.Combine(repo.Path, "schemas", "workbench-config.schema.json");
+        if (File.Exists(configSchemaPath))
+        {
+            File.Delete(configSchemaPath);
+        }
 
         var result = WorkbenchCli.Run(
             repo.Path,
@@ -183,7 +186,7 @@ public class ResilienceTests
             "item",
             "new",
             "--type",
-            "task",
+            "work_item",
             "--title",
             "Local-only sync test item");
 

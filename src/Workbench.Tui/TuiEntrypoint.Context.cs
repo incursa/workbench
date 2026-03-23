@@ -93,18 +93,13 @@ public static partial class TuiEntrypoint
         public TextField? DocsRootField { get; set; }
         public TextField? WorkRootField { get; set; }
         public TextField? ItemsDirField { get; set; }
-        public TextField? DoneDirField { get; set; }
-        public TextField? TemplatesDirField { get; set; }
-        public TextField? WorkboardFileField { get; set; }
+        public TextField? SpecsTemplatesDirField { get; set; }
         public TextField? ThemeField { get; set; }
         public Button? ThemePickButton { get; set; }
         public CheckBox? UseEmojiCheck { get; set; }
         public TextField? AutoRefreshSecondsField { get; set; }
 
         public TextField? IdWidthField { get; set; }
-        public TextField? BugPrefixField { get; set; }
-        public TextField? TaskPrefixField { get; set; }
-        public TextField? SpikePrefixField { get; set; }
 
         public TextField? GitBranchPatternField { get; set; }
         public TextField? GitCommitPatternField { get; set; }

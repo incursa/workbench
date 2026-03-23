@@ -28,10 +28,10 @@ public class QualityServiceTests
         Assert.AreEqual(0.5, result.Coverage.Summary.BranchRate, 0.0001);
         Assert.AreEqual("fail", result.Report.Assessment.Status);
 
-        AssertSchema(repo.Path, "docs/30-contracts/test-inventory.schema.json", "artifacts/quality/testing/test-inventory.json");
-        AssertSchema(repo.Path, "docs/30-contracts/test-run-summary.schema.json", "artifacts/quality/testing/test-run-summary.json");
-        AssertSchema(repo.Path, "docs/30-contracts/coverage-summary.schema.json", "artifacts/quality/testing/coverage-summary.json");
-        AssertSchema(repo.Path, "docs/30-contracts/quality-report.schema.json", "artifacts/quality/testing/quality-report.json");
+        AssertSchema(repo.Path, "schemas/test-inventory.schema.json", "artifacts/quality/testing/test-inventory.json");
+        AssertSchema(repo.Path, "schemas/test-run-summary.schema.json", "artifacts/quality/testing/test-run-summary.json");
+        AssertSchema(repo.Path, "schemas/coverage-summary.schema.json", "artifacts/quality/testing/coverage-summary.json");
+        AssertSchema(repo.Path, "schemas/quality-report.schema.json", "artifacts/quality/testing/quality-report.json");
 
         var summaryPath = Path.Combine(repo.Path, "artifacts", "quality", "testing", "quality-summary.md");
         Assert.IsTrue(File.Exists(summaryPath));
@@ -156,7 +156,8 @@ public class QualityServiceTests
         var repoRoot = Path.Combine(Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(repoRoot);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
-        Directory.CreateDirectory(Path.Combine(repoRoot, "docs", "30-contracts"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "schemas"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "contracts"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "artifacts", "raw", "test-results"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "artifacts", "raw", "coverage"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "src", "Sample"));
@@ -172,11 +173,12 @@ public class QualityServiceTests
         })
         {
             File.Copy(
-                Path.Combine(sourceRepoRoot, "docs", "30-contracts", schema),
-                Path.Combine(repoRoot, "docs", "30-contracts", schema));
+                Path.Combine(sourceRepoRoot, "schemas", schema),
+                Path.Combine(repoRoot, "schemas", schema));
         }
 
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "30-contracts", "test-gate.contract.yaml"), contractContent ?? """
+        Directory.CreateDirectory(Path.Combine(repoRoot, "quality"));
+        File.WriteAllText(Path.Combine(repoRoot, "quality", "testing-intent.yaml"), contractContent ?? """
             version: 2
             domain: testing
 
@@ -205,7 +207,7 @@ public class QualityServiceTests
 
             related:
               docs:
-                - /docs/10-product/sample.md
+                - /overview/sample.md
               workItems:
                 - TASK-0099
               codeRefs:

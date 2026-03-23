@@ -12,7 +12,7 @@ public sealed class AiWorkItemClient
         - title: short imperative title (3-8 words).
         - summary: 1-3 short paragraphs describing the work.
         - acceptanceCriteria: array of 3-7 concrete, testable bullets.
-        - type: one of bug, task, spike.
+        - type: `work_item`.
         - tags: array of short lowercase tags (optional).
         Use concise, clear language and avoid placeholders.
         """;
