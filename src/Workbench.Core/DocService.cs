@@ -1563,10 +1563,22 @@ public static class DocService
         {
             trimmed = trimmed[1..^1];
         }
+
+        var fullPath = Path.GetFullPath(trimmed);
+        var repoFull = Path.GetFullPath(repoRoot)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (Path.IsPathRooted(trimmed) &&
+            (string.Equals(fullPath, repoFull, StringComparison.OrdinalIgnoreCase)
+             || fullPath.StartsWith(repoFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+        {
+            return fullPath;
+        }
+
         if (trimmed.StartsWith("/", StringComparison.Ordinal))
         {
             return Path.Combine(repoRoot, trimmed.TrimStart('/'));
         }
+
         return Path.Combine(repoRoot, trimmed);
     }
 
