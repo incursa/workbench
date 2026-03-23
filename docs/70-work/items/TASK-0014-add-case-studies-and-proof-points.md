@@ -6,7 +6,7 @@ priority: medium
 owner: platform
 created: 2026-01-01
 updated: null
-githubSynced: null
+githubSynced: "2026-02-19T04:59:22Z"
 tags:
   - launch
   - docs
@@ -15,7 +15,8 @@ related:
   adrs: []
   files: []
   prs: []
-  issues: []
+  issues:
+    - "https://github.com/incursa/workbench/issues/597"
   branches: []
 ---
 
