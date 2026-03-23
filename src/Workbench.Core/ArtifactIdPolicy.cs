@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Workbench.Core;
 
@@ -152,63 +151,87 @@ public sealed record ArtifactIdPolicy(int MinimumDigits, IReadOnlyDictionary<str
             return true;
         }
 
-        var pattern = BuildArtifactIdPattern(template);
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            return true;
-        }
-
-        var regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
-        var match = regex.Match(artifactId.Trim());
-        if (!match.Success)
+        var normalizedArtifactId = artifactId.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedArtifactId))
         {
             return false;
         }
 
-        var requiresDomain = template.Contains("{domain}", StringComparison.OrdinalIgnoreCase);
-        if (requiresDomain)
+        var domainMarkerIndex = template.IndexOf("{domain}", StringComparison.OrdinalIgnoreCase);
+        if (domainMarkerIndex < 0)
         {
-            var expectedDomain = NormalizeToken(domain);
-            if (string.IsNullOrWhiteSpace(expectedDomain))
-            {
-                return false;
-            }
-
-            var matchedDomain = NormalizeToken(match.Groups["domain"].Value);
-            if (!string.Equals(matchedDomain, expectedDomain, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
+            return true;
         }
 
-        var requiresGrouping = template.Contains("{grouping}", StringComparison.OrdinalIgnoreCase);
-        if (requiresGrouping)
+        var prefix = template[..domainMarkerIndex];
+        if (!normalizedArtifactId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
-            var expectedGrouping = NormalizeGrouping(capability);
-            var matchedGrouping = NormalizeGrouping(match.Groups["grouping"].Value);
-            if (string.IsNullOrWhiteSpace(expectedGrouping))
+            return false;
+        }
+
+        var remainder = normalizedArtifactId[prefix.Length..];
+        if (remainder.StartsWith("-", StringComparison.Ordinal))
+        {
+            remainder = remainder[1..];
+        }
+
+        if (string.IsNullOrWhiteSpace(remainder))
+        {
+            return false;
+        }
+
+        var parts = remainder.Split('-', StringSplitOptions.None);
+        if (parts.Any(part => part.Length == 0))
+        {
+            return false;
+        }
+
+        var expectedDomain = NormalizeToken(domain);
+        if (string.IsNullOrWhiteSpace(expectedDomain))
+        {
+            return false;
+        }
+
+        var matchedDomain = NormalizeToken(parts[0]);
+        if (!string.Equals(matchedDomain, expectedDomain, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var requiresSequence = template.Contains("{sequence}", StringComparison.OrdinalIgnoreCase);
+        if (requiresSequence)
+        {
+            if (parts.Length < 2)
             {
-                if (!string.IsNullOrWhiteSpace(matchedGrouping))
+                return false;
+            }
+
+            var sequence = parts[^1];
+            if (!TryParseSequence(sequence, out _))
+            {
+                return false;
+            }
+
+            foreach (var part in parts.Skip(1).Take(parts.Length - 2))
+            {
+                if (!IsValidToken(part))
                 {
                     return false;
                 }
             }
-            else if (!string.Equals(matchedGrouping, expectedGrouping, StringComparison.OrdinalIgnoreCase))
+        }
+        else
+        {
+            foreach (var part in parts.Skip(1))
             {
-                return false;
+                if (!IsValidToken(part))
+                {
+                    return false;
+                }
             }
         }
 
         return true;
-    }
-
-    private string BuildArtifactIdPattern(string template)
-    {
-        var escaped = Regex.Escape(template);
-        escaped = escaped.Replace(@"\{domain\}", @"(?<domain>[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*)", StringComparison.OrdinalIgnoreCase);
-        escaped = escaped.Replace(@"\{grouping\}", @"(?<grouping>(?:-[A-Z][A-Z0-9]*)*)", StringComparison.OrdinalIgnoreCase);
-        escaped = escaped.Replace(@"\{sequence\}", $"(?<sequence>\\d{{{MinimumDigits},}})", StringComparison.OrdinalIgnoreCase);
-        return $"^{escaped}$";
     }
 
     public static string NormalizeToken(string? value)
@@ -241,6 +264,24 @@ public sealed record ArtifactIdPolicy(int MinimumDigits, IReadOnlyDictionary<str
         }
 
         return builder.ToString();
+    }
+
+    private static bool IsValidToken(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || !char.IsLetter(value[0]))
+        {
+            return false;
+        }
+
+        foreach (var ch in value)
+        {
+            if (!char.IsLetterOrDigit(ch))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static string NormalizeGrouping(string? value)

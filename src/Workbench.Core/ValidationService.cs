@@ -29,7 +29,8 @@ public static class ValidationService
     private static List<WorkItemRecord> CollectWorkItems(string repoRoot, WorkbenchConfig config)
     {
         var items = new List<WorkItemRecord>();
-        foreach (var dir in new[] { Path.Combine(config.Paths.SpecsRoot, "work-items") })
+        var specsRoot = GetSpecsRoot(config);
+        foreach (var dir in new[] { Path.Combine(specsRoot, "work-items") })
         {
             var full = Path.Combine(repoRoot, dir);
             if (!Directory.Exists(full))
@@ -172,9 +173,10 @@ public static class ValidationService
         {
             result.Errors.Add(artifactIdPolicyError);
         }
-        var requirementsRoot = Path.Combine(repoRoot, config.Paths.SpecsRoot, "requirements");
-        var architectureRoot = Path.Combine(repoRoot, config.Paths.ArchitectureDir);
-        var verificationRoot = Path.Combine(repoRoot, config.Paths.SpecsRoot, "verification");
+        var specsRoot = GetSpecsRoot(config);
+        var architectureRoot = Path.Combine(repoRoot, GetArchitectureRoot(config));
+        var requirementsRoot = Path.Combine(repoRoot, specsRoot, "requirements");
+        var verificationRoot = Path.Combine(repoRoot, specsRoot, "verification");
         if (!Directory.Exists(requirementsRoot) &&
             !Directory.Exists(architectureRoot) &&
             !Directory.Exists(verificationRoot))
@@ -198,9 +200,9 @@ public static class ValidationService
                 }
 
                 if (repoRelative.StartsWith("templates/", StringComparison.OrdinalIgnoreCase) ||
-                    repoRelative.StartsWith($"{config.Paths.SpecsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
-                    repoRelative.StartsWith($"{config.Paths.SpecsRoot}/schemas/", StringComparison.OrdinalIgnoreCase) ||
-                    repoRelative.StartsWith($"{config.Paths.SpecsRoot}/generated/", StringComparison.OrdinalIgnoreCase))
+                    repoRelative.StartsWith($"{specsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
+                    repoRelative.StartsWith($"{specsRoot}/schemas/", StringComparison.OrdinalIgnoreCase) ||
+                    repoRelative.StartsWith($"{specsRoot}/generated/", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -233,7 +235,7 @@ public static class ValidationService
                 if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase) &&
                     !SpecTraceLayout.IsSpecificationRootFile(repoRelativeSpecs))
                 {
-                    result.Errors.Add($"{file}: specifications must live under '{config.Paths.SpecsRoot}/requirements/<domain>/'.");
+                    result.Errors.Add($"{file}: specifications must live under '{specsRoot}/requirements/<domain>/'.");
                     continue;
                 }
 
@@ -436,6 +438,20 @@ public static class ValidationService
         }
         var baseDir = Path.GetDirectoryName(itemPath) ?? repoRoot;
         return Path.GetFullPath(Path.Combine(baseDir, link));
+    }
+
+    private static string GetSpecsRoot(WorkbenchConfig config)
+    {
+        return string.IsNullOrWhiteSpace(config.Paths.SpecsRoot)
+            ? SpecTraceLayout.SpecsRoot
+            : config.Paths.SpecsRoot;
+    }
+
+    private static string GetArchitectureRoot(WorkbenchConfig config)
+    {
+        return string.IsNullOrWhiteSpace(config.Paths.ArchitectureDir)
+            ? SpecTraceLayout.ArchitectureRoot
+            : config.Paths.ArchitectureDir;
     }
 
     private static int ValidateMarkdownLinks(string repoRoot, WorkbenchConfig config, ValidationResult result, ValidationOptions options)
