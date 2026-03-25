@@ -699,6 +699,11 @@ public static class QualityService
                     }
 
                     var repoPath = NormalizeCoveragePath(repoRoot, filename);
+                    if (!ShouldIncludeCoveragePath(repoRoot, repoPath, authored))
+                    {
+                        continue;
+                    }
+
                     var lines = DescendantsLocal(classElement, "line").ToList();
                     var lineValid = lines.Count;
                     var lineCovered = lines.Count(line => ParseInt(line.Attribute("hits")?.Value) > 0);
@@ -1487,6 +1492,31 @@ public static class QualityService
             normalizedPath,
             expression,
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    }
+
+    private static bool ShouldIncludeCoveragePath(string repoRoot, string repoPath, QualityAuthoredIntent authored)
+    {
+        if (IsGeneratedOrBuildPath(Path.Combine(repoRoot, repoPath)))
+        {
+            return false;
+        }
+
+        if (authored.Includes.Count > 0 && !authored.Includes.Any(include => MatchesScopePattern(repoPath, include)))
+        {
+            return false;
+        }
+
+        if (authored.Excludes.Any(exclude => MatchesScopePattern(repoPath, exclude)))
+        {
+            return false;
+        }
+
+        if (authored.IntentionalGaps.Any(gap => MatchesScopePattern(repoPath, gap.Subject)))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static bool ContainsWildcard(string value)

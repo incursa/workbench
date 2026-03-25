@@ -40,12 +40,12 @@ gaps, and make agent reasoning less trustworthy.
 
 ## Requirements Satisfied
 
-- REQ-QE-0001
-- REQ-QE-0002
-- REQ-QE-0003
-- REQ-QE-0004
-- REQ-QE-0005
-- REQ-QE-0006
+- [`REQ-QE-0001`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0002`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0003`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Design Summary
 
@@ -64,7 +64,7 @@ V1 rules:
 - the subsystem manages evidence and summaries, not CI orchestration, policy
   enforcement, or autonomous remediation
 
-The existing `quality/testing-intent.yaml` is the authored-intent anchor for
+The existing [`quality/testing-intent.yaml`](../../../quality/testing-intent.yaml) is the authored-intent anchor for
 testing intent in V1. Normalized JSON plus generated Markdown become the
 canonical observed record for current testing evidence.
 

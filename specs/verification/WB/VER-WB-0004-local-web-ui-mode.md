@@ -24,11 +24,11 @@ Browser-first local editing, repository browsing, and shared core-service reuse 
 
 ## Requirements Verified
 
-- REQ-WEB-0001
-- REQ-WEB-0002
-- REQ-WEB-0003
-- REQ-WEB-0004
-- REQ-WEB-0005
+- [`REQ-WEB-0001`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0002`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0003`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0004`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0005`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
 
 ## Verification Method
 
@@ -50,9 +50,9 @@ The linked requirements are satisfied by the documented repository behavior and 
 
 ## Evidence
 
-- src/Workbench/Pages/Index.cshtml.cs
+- [`src/Workbench/Pages/Index.cshtml.cs`](../../../src/Workbench/Pages/Index.cshtml.cs)
 - tests/Workbench.Tests/WorkItemEditTests.cs
-- tests/Workbench.IntegrationTests/CommandSurfaceTests.cs
+- [`tests/Workbench.IntegrationTests/CommandSurfaceTests.cs`](../../../tests/Workbench.IntegrationTests/CommandSurfaceTests.cs)
 
 ## Status
 
@@ -62,5 +62,5 @@ passed
 
 ## Related Artifacts
 
-- SPEC-WEB-LOCAL-UI
-- ARC-WB-0006
+- [`SPEC-WEB-LOCAL-UI`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)

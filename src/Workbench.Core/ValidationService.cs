@@ -1,7 +1,6 @@
 // Repository validation orchestration for work items, docs, and links.
 // Invariants: validation is read-only; counts reflect items present at scan time.
 #pragma warning disable S1144, S1172
-using System.Collections;
 using System.Text.RegularExpressions;
 
 namespace Workbench.Core;
@@ -19,9 +18,8 @@ public static class ValidationService
         }
         var items = CollectWorkItems(repoRoot, config);
         result.WorkItemCount = items.Count;
-        ValidateItems(repoRoot, items, config, result);
-        var itemIndex = LoadItemIndex(items);
-        ValidateDocs(repoRoot, config, itemIndex, result, options);
+        ValidateItems(repoRoot, items, result);
+        ValidateDocs(repoRoot, config, result, options);
         result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, config, result, options);
         return result;
     }
@@ -37,9 +35,11 @@ public static class ValidationService
             {
                 continue;
             }
-            foreach (var file in Directory.EnumerateFiles(full, "*.md", SearchOption.TopDirectoryOnly))
+            foreach (var file in Directory.EnumerateFiles(full, "*.md", SearchOption.AllDirectories))
             {
-                if (Path.GetFileName(file).Equals("_index.md", StringComparison.OrdinalIgnoreCase))
+                var fileName = Path.GetFileName(file);
+                if (fileName.Equals("_index.md", StringComparison.OrdinalIgnoreCase) ||
+                    fileName.Equals("README.md", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -49,7 +49,7 @@ public static class ValidationService
         return items;
     }
 
-    private static void ValidateItems(string repoRoot, List<WorkItemRecord> items, WorkbenchConfig config, ValidationResult result)
+    private static void ValidateItems(string repoRoot, List<WorkItemRecord> items, ValidationResult result)
     {
         var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var artifactIdPolicyPath = Path.Combine(repoRoot, "artifact-id-policy.json");
@@ -110,25 +110,28 @@ public static class ValidationService
 
                 if (!string.Equals(artifactType, "work_item", StringComparison.OrdinalIgnoreCase))
                 {
-                    result.Errors.Add($"{item.Path}: invalid artifact_type '{artifactType}'.");
+                    result.Errors.Add($"{item.Path}: invalid artifact_type '{artifactType ?? "<missing>"}'.");
                 }
 
                 if (!string.IsNullOrWhiteSpace(canonicalStatus) && !canonicalStatuses.Contains(canonicalStatus))
                 {
-                    result.Errors.Add($"{item.Path}: invalid canonical status '{canonicalStatus}'.");
+                    result.Errors.Add($"{item.Path}: invalid canonical status '{canonicalStatus ?? "<missing>"}'.");
                 }
 
                 if (!string.IsNullOrWhiteSpace(artifactId))
                 {
-                    if (!seenIds.Add(artifactId))
+                    var artifactTypeForPolicy = artifactType ?? "work_item";
+                    var artifactIdForPolicy = artifactId ?? string.Empty;
+
+                    if (!seenIds.Add(artifactIdForPolicy))
                     {
-                        result.Errors.Add($"{item.Path}: duplicate artifact_id '{artifactId}'.");
+                        result.Errors.Add($"{item.Path}: duplicate artifact_id '{artifactId ?? "<missing>"}'.");
                     }
 
                     if (artifactIdPolicyEnabled &&
-                        !artifactIdPolicy.MatchesArtifactId(artifactType, artifactId, domain, null))
+                        !artifactIdPolicy.MatchesArtifactId(artifactTypeForPolicy, artifactIdForPolicy, domain, null))
                     {
-                        result.Errors.Add($"{item.Path}: artifact_id '{artifactId}' does not match the configured artifact ID policy.");
+                        result.Errors.Add($"{item.Path}: artifact_id '{artifactId ?? "<missing>"}' does not match the configured artifact ID policy.");
                     }
                 }
 
@@ -139,25 +142,9 @@ public static class ValidationService
         }
     }
 
-    private static Dictionary<string, WorkItem> LoadItemIndex(List<WorkItemRecord> items)
-    {
-        var index = new Dictionary<string, WorkItem>(StringComparer.OrdinalIgnoreCase);
-        foreach (var record in items)
-        {
-            var loaded = WorkItemService.LoadItem(record.Path);
-            if (loaded is null || string.IsNullOrWhiteSpace(loaded.Id))
-            {
-                continue;
-            }
-            index[loaded.Id] = loaded;
-        }
-        return index;
-    }
-
     private static void ValidateDocs(
         string repoRoot,
         WorkbenchConfig config,
-        Dictionary<string, WorkItem> itemsById,
         ValidationResult result,
         ValidationOptions options)
     {
@@ -293,7 +280,7 @@ public static class ValidationService
         }
         else if (!seenArtifactIds.Add(artifactId))
         {
-            result.Errors.Add($"{file}: duplicate artifact_id '{artifactId}'.");
+            result.Errors.Add($"{file}: duplicate artifact_id '{artifactId ?? "<missing>"}'.");
         }
 
         if (artifactIdPolicyEnabled &&
@@ -304,7 +291,7 @@ public static class ValidationService
                 domain,
                 capability))
         {
-            result.Errors.Add($"{file}: artifact_id '{artifactId}' does not match the configured artifact ID policy.");
+            result.Errors.Add($"{file}: artifact_id '{artifactId ?? "<missing>"}' does not match the configured artifact ID policy.");
         }
 
         if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase))
@@ -345,106 +332,21 @@ public static class ValidationService
         }
     }
 
-    private static void ValidateRelated(
-        IDictionary<string, object?> data,
-        string itemPath,
-        string? id,
-        ValidationResult result)
-    {
-        var related = GetRelatedMap(data);
-        if (related is null)
-        {
-            result.Errors.Add($"{itemPath}: missing related section.");
-            return;
-        }
-
-        ValidateRelatedPaths(itemPath, "specs", related, result);
-        ValidateRelatedFiles(itemPath, id, related, result);
-    }
-
-    private static void ValidateRelatedPaths(
-        string itemPath,
-        string key,
-        Dictionary<string, object?> related,
-        ValidationResult result)
-    {
-        if (!related.TryGetValue(key, out var listObj) || listObj is null)
-        {
-            result.Errors.Add($"{itemPath}: related.{key} missing or invalid.");
-            return;
-        }
-
-        foreach (var entry in EnumerateList(listObj))
-        {
-            if (entry is not string path || string.IsNullOrWhiteSpace(path))
-            {
-                result.Errors.Add($"{itemPath}: related.{key} entry is invalid.");
-                continue;
-            }
-            var resolved = ResolvePath(itemPath, path);
-            if (resolved is null || !File.Exists(resolved))
-            {
-                result.Errors.Add($"{itemPath}: related.{key} missing file '{path}'.");
-            }
-        }
-    }
-
-    private static void ValidateRelatedFiles(
-        string itemPath,
-        string? id,
-        Dictionary<string, object?> related,
-        ValidationResult result)
-    {
-        if (!related.TryGetValue("files", out var listObj) || listObj is null)
-        {
-            result.Errors.Add($"{itemPath}: related.files missing or invalid.");
-            return;
-        }
-
-        foreach (var entry in EnumerateList(listObj))
-        {
-            if (entry is not string path || string.IsNullOrWhiteSpace(path))
-            {
-                result.Errors.Add($"{itemPath}: related.files entry is invalid.");
-                continue;
-            }
-            var resolved = ResolvePath(itemPath, path);
-            if (resolved is null || !File.Exists(resolved))
-            {
-                result.Errors.Add($"{itemPath}: related.files missing file '{path}'.");
-                continue;
-            }
-            if (!string.IsNullOrWhiteSpace(id))
-            {
-                var content = File.ReadAllText(resolved);
-                if (!content.Contains(id, StringComparison.OrdinalIgnoreCase))
-                {
-                    result.Errors.Add($"{itemPath}: related.files target missing backlink '{id}'.");
-                }
-            }
-        }
-    }
-
-    private static string? ResolvePath(string itemPath, string link)
-    {
-        var repoRoot = Repository.FindRepoRoot(Path.GetDirectoryName(itemPath) ?? ".");
-        if (repoRoot is null)
-        {
-            return null;
-        }
-        if (link.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-        {
-            return Path.Combine(repoRoot, link.TrimStart('/'));
-        }
-        var baseDir = Path.GetDirectoryName(itemPath) ?? repoRoot;
-        return Path.GetFullPath(Path.Combine(baseDir, link));
-    }
-
     private static string GetSpecsRoot(WorkbenchConfig config)
     {
         return string.IsNullOrWhiteSpace(config.Paths.SpecsRoot)
             ? SpecTraceLayout.SpecsRoot
             : config.Paths.SpecsRoot;
+    }
+
+    private static string? GetString(IDictionary<string, object?> data, string key)
+    {
+        if (!data.TryGetValue(key, out var value) || value is null)
+        {
+            return null;
+        }
+
+        return value.ToString();
     }
 
     private static string GetArchitectureRoot(WorkbenchConfig config)
@@ -602,152 +504,11 @@ public static class ValidationService
         return includePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string? GetString(IDictionary<string, object?> data, string key)
-    {
-        if (!data.TryGetValue(key, out var value) || value is null)
-        {
-            return null;
-        }
-        return value.ToString();
-    }
-
-    private static List<string> GetStringList(IDictionary<string, object?> data, string key)
-    {
-        if (!data.TryGetValue(key, out var value) || value is null)
-        {
-            return new List<string>();
-        }
-        if (value is IEnumerable enumerable && value is not string)
-        {
-            return enumerable.Cast<object?>()
-                .Select(item => item?.ToString() ?? string.Empty)
-                .Where(item => item.Length > 0)
-                .ToList();
-        }
-        return new List<string>();
-    }
-
-    private static Dictionary<string, object?>? GetRelatedMap(IDictionary<string, object?> data)
-    {
-        if (!data.TryGetValue("related", out var relatedObj) || relatedObj is null)
-        {
-            return null;
-        }
-        if (relatedObj is Dictionary<string, object?> typed)
-        {
-            return typed;
-        }
-        if (relatedObj is Dictionary<object, object> legacy)
-        {
-            return legacy.ToDictionary(
-                kvp => kvp.Key.ToString() ?? string.Empty,
-                kvp => (object?)kvp.Value,
-                StringComparer.OrdinalIgnoreCase);
-        }
-        return null;
-    }
-
-    private static IEnumerable<object?> EnumerateList(object listObj)
-    {
-        if (listObj is string)
-        {
-            return Array.Empty<object?>();
-        }
-        if (listObj is IEnumerable enumerable)
-        {
-            return enumerable.Cast<object?>();
-        }
-        return Array.Empty<object?>();
-    }
-
     private static bool LooksLikeFrontMatter(string content)
     {
         var trimmed = content.TrimStart();
         return trimmed.StartsWith("---\n", StringComparison.Ordinal) ||
                trimmed.StartsWith("---\r\n", StringComparison.Ordinal);
-    }
-
-    private static bool HasDocBacklink(WorkItem item, string docPath, string docType)
-    {
-        if (docType.Equals("spec", StringComparison.OrdinalIgnoreCase))
-        {
-            return item.Related.Specs.Any(link => PathsMatch(link, docPath));
-        }
-
-        return item.Related.Specs.Any(link => PathsMatch(link, docPath)) ||
-               item.Related.Files.Any(link => PathsMatch(link, docPath));
-    }
-
-    private static bool PathsMatch(string left, string right)
-    {
-        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
-        {
-            return false;
-        }
-        return string.Equals(left.Trim(), right.Trim(), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool ValidateCodeRef(string repoRoot, string codeRef, out string? error)
-    {
-        error = null;
-        if (string.IsNullOrWhiteSpace(codeRef))
-        {
-            error = "codeRefs entry is empty.";
-            return false;
-        }
-
-        var parts = codeRef.Split('#', 2);
-        var pathPart = parts[0].Trim();
-        if (string.IsNullOrWhiteSpace(pathPart))
-        {
-            error = $"codeRefs entry '{codeRef}' is missing a path.";
-            return false;
-        }
-
-        var resolved = pathPart.StartsWith("/", StringComparison.Ordinal)
-            ? Path.Combine(repoRoot, pathPart.TrimStart('/'))
-            : Path.Combine(repoRoot, pathPart);
-
-        if (!File.Exists(resolved))
-        {
-            error = $"codeRefs entry '{codeRef}' points to missing file '{pathPart}'.";
-            return false;
-        }
-
-        if (parts.Length == 1)
-        {
-            return true;
-        }
-
-        var anchor = parts[1].Trim();
-        if (string.IsNullOrWhiteSpace(anchor))
-        {
-            return true;
-        }
-
-        var match = Regex.Match(anchor, @"^L(?<start>\d+)(C(?<colStart>\d+))?(?:-L(?<end>\d+)(C(?<colEnd>\d+))?)?$", RegexOptions.Compiled | RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
-        if (!match.Success)
-        {
-            error = $"codeRefs entry '{codeRef}' has an invalid anchor.";
-            return false;
-        }
-
-        var start = int.Parse(match.Groups["start"].Value, CultureInfo.InvariantCulture);
-        var end = match.Groups["end"].Success ? int.Parse(match.Groups["end"].Value, CultureInfo.InvariantCulture) : start;
-        if (start <= 0 || end <= 0 || end < start)
-        {
-            error = $"codeRefs entry '{codeRef}' has invalid line numbers.";
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool IsTerminalStatus(string status)
-    {
-        return string.Equals(status, "complete", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "cancelled", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(status, "superseded", StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed record WorkItemRecord(string Path, bool IsCanonical);

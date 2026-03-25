@@ -42,26 +42,26 @@ Describe the top-level product boundaries that Workbench owns.
 
 ## Requirements Satisfied
 
-- REQ-WB-STD-0001
-- REQ-WB-STD-0002
-- REQ-WB-STD-0003
-- REQ-WB-STD-0004
-- REQ-CLI-SURFACE-0001
-- REQ-CLI-SURFACE-0002
-- REQ-CLI-SURFACE-0003
-- REQ-CLI-SURFACE-0004
-- REQ-CLI-SURFACE-0005
-- REQ-CLI-SURFACE-0006
-- REQ-TUI-0001
-- REQ-TUI-0002
-- REQ-TUI-0003
-- REQ-TUI-0004
-- REQ-TUI-0005
-- REQ-WEB-0001
-- REQ-WEB-0002
-- REQ-WEB-0003
-- REQ-WEB-0004
-- REQ-WEB-0005
+- [`REQ-WB-STD-0001`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0002`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0003`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0004`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-CLI-SURFACE-0001`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0002`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0003`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0004`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0005`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0006`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-TUI-0001`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0002`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0003`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0004`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0005`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-WEB-0001`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0002`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0003`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0004`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
+- [`REQ-WEB-0005`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
 
 ## Design Summary
 

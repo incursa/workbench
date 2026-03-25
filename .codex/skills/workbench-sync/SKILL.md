@@ -5,7 +5,7 @@ description: Sync workflows for Workbench CLI. Use when aligning local work item
 
 ## Key settings
 
-- `.workbench/config.json`: github.owner, github.repository, github.host, git.defaultBaseBranch.
+- [`.workbench/config.json`](../../../.workbench/config.json): github.owner, github.repository, github.host, git.defaultBaseBranch.
 - Ensure `gh auth login` is complete before syncing issues.
 
 ## Core workflows

@@ -5,7 +5,7 @@ description: Work item management for Workbench CLI. Use when creating, updating
 
 ## Key settings
 
-- `.workbench/config.json`: paths.itemsDir, paths.workItemsSpecsDir, ids.width, git.branchPattern.
+- [`.workbench/config.json`](../../.workbench/config.json): paths.itemsDir, paths.workItemsSpecsDir, ids.width, git.branchPattern.
 - Status values: planned, in_progress, blocked, complete, cancelled, superseded.
 
 ## Core workflows

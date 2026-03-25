@@ -211,13 +211,4 @@ public static class SchemaValidationService
         }
     }
 
-    private static string? GetString(IDictionary<string, object?> data, string key)
-    {
-        if (!data.TryGetValue(key, out var value) || value is null)
-        {
-            return null;
-        }
-
-        return value.ToString();
-    }
 }

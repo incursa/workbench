@@ -8,7 +8,7 @@ validation, and maintenance".
 
 1. Rebuild and republish the shipped `workbench` tool so the installed command
    surface matches the checked-in source tree.
-2. Regenerate `specs/generated/commands.md` from the live command tree and keep
+2. Regenerate [`specs/generated/commands.md`](../specs/generated/commands.md) from the live command tree and keep
    `workbench doc regen-help --check` green.
 3. Keep the source help, installed tool help, and AI help surface aligned so
    `workbench spec`, `workbench validate`, and `workbench nav sync` are all
@@ -38,7 +38,7 @@ validation, and maintenance".
 1. Update the checked-in command help snapshot and any stale doc references
    after the command surface is fixed.
 2. Keep `workbench llm help` as the primary AI bootstrap surface.
-3. Defer any separate `LLMS.txt` until the command tree is stable and there is a
+3. Defer any separate [`LLMS.txt`](../LLMS.txt) until the command tree is stable and there is a
    clear external need for another bootstrap file.
 
 ## Tests And Smoke Coverage

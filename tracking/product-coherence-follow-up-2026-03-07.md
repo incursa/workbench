@@ -18,7 +18,7 @@ ergonomic gaps remain.
 
 ## Larger redesign items
 
-- A single-source help/export system that can generate `specs/generated/commands.md`
+- A single-source help/export system that can generate [`specs/generated/commands.md`](../specs/generated/commands.md)
   from the live command tree.
 - A narrower top-level command model that distinguishes local authoring,
   derived-view refresh, and GitHub sync more explicitly.
@@ -43,4 +43,4 @@ ergonomic gaps remain.
 
 ## Related decisions
 
-- `/architecture/ARC-WB-0004-repo-native-operating-model.md`
+- [`specs/architecture/WB/ARC-WB-0004-repo-native-operating-model.md`](../specs/architecture/WB/ARC-WB-0004-repo-native-operating-model.md)

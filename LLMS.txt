@@ -4,11 +4,12 @@
 
 Use this repository in this order:
 
-1. `README.md` for the high-level repo model.
-2. `overview.md`, `layout.md`, and `authoring.md` for the canonical local Spec Trace guidance.
+1. [`README.md`](README.md) for the high-level repo model.
+2. [`overview.md`](overview.md), [`layout.md`](layout.md), and [`authoring.md`](authoring.md) for the canonical local Spec Trace guidance.
 3. The canonical templates under `specs/templates/` for copy-ready authoring starting points.
-4. `AGENTS.md` for repo-specific agent instructions.
+4. [`AGENTS.md`](AGENTS.md) for repo-specific agent instructions.
 5. `specs/requirements/`, `specs/architecture/`, `specs/verification/`, `specs/work-items/`, and `specs/schemas/` for the project-specific authored artifacts and validation surfaces.
+6. `.codex/agents/` for reusable .NET subagent roles when the task needs discovery, build/test recovery, cleanup, documentation, or review beyond a simple skill.
 
 When authoring or revising Spec Trace content:
 
@@ -17,3 +18,4 @@ When authoring or revising Spec Trace content:
 - Treat `contracts/`, `decisions/`, and `work/` as removed legacy surface area rather than core artifact families.
 - Use the canonical trace labels `Satisfied By`, `Implemented By`, `Verified By`, `Derived From`, `Supersedes`, `Source Refs`, `Test Refs`, `Code Refs`, and `Related` when a `Trace` block is present.
 - Verification artifacts should be artifact-scoped and should use `verifies` to list the requirements they cover.
+- In markdown, render repository-local references as clickable relative links and keep inline code styling inside the link text when needed. Use absolute URLs only for external resources such as NuGet package pages.

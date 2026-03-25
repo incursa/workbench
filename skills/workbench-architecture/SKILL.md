@@ -5,7 +5,7 @@ description: Architecture workflows for Workbench CLI. Use when documenting syst
 
 ## Key settings
 
-- `.workbench/config.json`: paths.architectureDir, paths.specsRoot, git.defaultBaseBranch.
+- [`.workbench/config.json`](../../.workbench/config.json): paths.architectureDir, paths.specsRoot, git.defaultBaseBranch.
 - Use `workbench config show --format json` to confirm defaults.
 
 ## Core workflows

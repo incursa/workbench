@@ -14,12 +14,12 @@ This checklist is the release bar before upgrading other repositories to this mo
   - global options after subcommand.
 - [x] Run integration tests in CI and quality gates (not only unit tests).
 - [x] Add contract docs for testing and failures:
-  - `quality/testing-intent.yaml`
-  - `specs/generated/test-matrix.md`
-  - `specs/generated/error-codes.md`
-- [x] Add critical-surface coverage verification script (`scripts/testing/verify-critical-coverage.ps1`).
-- [x] Add targeted parser/schema fuzz tests for resilience in `tests/Workbench.Tests/ParserFuzzTests.cs`.
-- [x] Add scheduled mutation workflow for critical core files (`.github/workflows/mutation-critical.yml`).
+  - [`quality/testing-intent.yaml`](../quality/testing-intent.yaml)
+  - [`specs/generated/test-matrix.md`](../specs/generated/test-matrix.md)
+  - [`specs/generated/error-codes.md`](../specs/generated/error-codes.md)
+- [x] Add critical-surface coverage verification script ([`scripts/testing/verify-critical-coverage.ps1`](../scripts/testing/verify-critical-coverage.ps1)).
+- [x] Add targeted parser/schema fuzz tests for resilience in [`tests/Workbench.Tests/ParserFuzzTests.cs`](../tests/Workbench.Tests/ParserFuzzTests.cs).
+- [x] Add scheduled mutation workflow for critical core files ([`.github/workflows/mutation-critical.yml`](../.github/workflows/mutation-critical.yml)).
 - [x] Extend CI-required smoke matrix for:
   - non-git folder,
   - git repo without scaffold,

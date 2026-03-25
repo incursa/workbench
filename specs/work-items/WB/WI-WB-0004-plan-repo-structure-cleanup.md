@@ -51,30 +51,30 @@ navigability without changing behavior.
 
 ## Requirements Addressed
 
-- REQ-CLI-SCAFFOLD-0001
-- REQ-CLI-SCAFFOLD-0002
-- REQ-CLI-SCAFFOLD-0003
-- REQ-CLI-SCAFFOLD-0004
-- REQ-CLI-SCAFFOLD-0005
-- REQ-CLI-MIGRATE-0001
-- REQ-CLI-MIGRATE-0002
-- REQ-CLI-MIGRATE-0003
-- REQ-CLI-MIGRATE-0004
-- REQ-CLI-MIGRATE-0005
-- REQ-CLI-NAV-0001
-- REQ-CLI-NAV-0002
-- REQ-CLI-NAV-0003
-- REQ-CLI-NAV-0004
-- REQ-CLI-NAV-0005
-- REQ-CLI-NAV-0006
-- REQ-WB-STD-0001
-- REQ-WB-STD-0002
-- REQ-WB-STD-0003
-- REQ-WB-STD-0004
+- [`REQ-CLI-SCAFFOLD-0001`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0002`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0003`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0004`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0005`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-MIGRATE-0001`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0002`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0003`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0004`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0005`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-NAV-0001`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0002`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0003`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0004`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0005`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0006`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-WB-STD-0001`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0002`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0003`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0004`](../../requirements/WB/SPEC-WB-STD.md)
 
 ## Design Inputs
 
-- ARC-WB-0007
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 ## Planned Changes
 
@@ -100,31 +100,31 @@ Optional implementation notes, deviations, or follow-up items.
 
 Addresses:
 
-- REQ-CLI-SCAFFOLD-0001
-- REQ-CLI-SCAFFOLD-0002
-- REQ-CLI-SCAFFOLD-0003
-- REQ-CLI-SCAFFOLD-0004
-- REQ-CLI-SCAFFOLD-0005
-- REQ-CLI-MIGRATE-0001
-- REQ-CLI-MIGRATE-0002
-- REQ-CLI-MIGRATE-0003
-- REQ-CLI-MIGRATE-0004
-- REQ-CLI-MIGRATE-0005
-- REQ-CLI-NAV-0001
-- REQ-CLI-NAV-0002
-- REQ-CLI-NAV-0003
-- REQ-CLI-NAV-0004
-- REQ-CLI-NAV-0005
-- REQ-CLI-NAV-0006
-- REQ-WB-STD-0001
-- REQ-WB-STD-0002
-- REQ-WB-STD-0003
-- REQ-WB-STD-0004
+- [`REQ-CLI-SCAFFOLD-0001`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0002`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0003`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0004`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0005`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-MIGRATE-0001`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0002`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0003`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0004`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0005`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-NAV-0001`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0002`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0003`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0004`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0005`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0006`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-WB-STD-0001`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0002`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0003`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0004`](../../requirements/WB/SPEC-WB-STD.md)
 
 Uses Design:
 
-- ARC-WB-0007
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 Verified By:
 
-- VER-WB-0001
+- [`VER-WB-0001`](../../verification/WB/VER-WB-0001-repo-operations-and-command-surface.md)

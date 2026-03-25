@@ -43,7 +43,7 @@ the dedicated leaf commands.
 
 ## REQ-CLI-DOC-0003 Snapshot boundary
 
-`doc regen-help` MUST regenerate `specs/generated/commands.md` from the live command
+`doc regen-help` MUST regenerate [`specs/generated/commands.md`](../../generated/commands.md) from the live command
 tree and leave authored docs untouched.
 
 ## REQ-CLI-DOC-0004 Metadata boundary
@@ -68,12 +68,12 @@ commands in separate leaf families.
 
 ## Command Family Catalog
 
-- [SPEC-CLI-DOC-DELETE](./SPEC-CLI-DOC-DELETE.md)
-- [SPEC-CLI-DOC-EDIT](./SPEC-CLI-DOC-EDIT.md)
-- [SPEC-CLI-DOC-LINK](./SPEC-CLI-DOC-LINK.md)
-- [SPEC-CLI-DOC-NEW](./SPEC-CLI-DOC-NEW.md)
-- [SPEC-CLI-DOC-REGEN-HELP](./SPEC-CLI-DOC-REGEN-HELP.md)
-- [SPEC-CLI-DOC-SHOW](./SPEC-CLI-DOC-SHOW.md)
-- [SPEC-CLI-DOC-SUMMARIZE](./SPEC-CLI-DOC-SUMMARIZE.md)
-- [SPEC-CLI-DOC-SYNC](./SPEC-CLI-DOC-SYNC.md)
-- [SPEC-CLI-DOC-UNLINK](./SPEC-CLI-DOC-UNLINK.md)
+- [`SPEC-CLI-DOC-DELETE`](SPEC-CLI-DOC-DELETE.md)
+- [`SPEC-CLI-DOC-EDIT`](SPEC-CLI-DOC-EDIT.md)
+- [`SPEC-CLI-DOC-LINK`](SPEC-CLI-DOC-LINK.md)
+- [`SPEC-CLI-DOC-NEW`](SPEC-CLI-DOC-NEW.md)
+- [`SPEC-CLI-DOC-REGEN-HELP`](SPEC-CLI-DOC-REGEN-HELP.md)
+- [`SPEC-CLI-DOC-SHOW`](SPEC-CLI-DOC-SHOW.md)
+- [`SPEC-CLI-DOC-SUMMARIZE`](SPEC-CLI-DOC-SUMMARIZE.md)
+- [`SPEC-CLI-DOC-SYNC`](SPEC-CLI-DOC-SYNC.md)
+- [`SPEC-CLI-DOC-UNLINK`](SPEC-CLI-DOC-UNLINK.md)

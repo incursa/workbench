@@ -28,11 +28,11 @@ Valid work item fixture for parser and schema tests.
 
 ## Requirements Addressed
 
-- REQ-CLI-0001
+- [`REQ-CLI-0001`](../../specs/requirements/CLI/SPEC-CLI-ONBOARDING.md)
 
 ## Design Inputs
 
-- ARC-WB-0001
+- [`ARC-WB-0001`](../../specs/architecture/WB/ARC-WB-0001-cli-onboarding-flow-with-init-run-wizard.md)
 
 ## Planned Changes
 
@@ -55,12 +55,12 @@ This fixture is intentionally minimal while still using canonical trace fields.
 
 Addresses:
 
-- REQ-CLI-0001
+- [`REQ-CLI-0001`](../../specs/requirements/CLI/SPEC-CLI-ONBOARDING.md)
 
 Uses Design:
 
-- ARC-WB-0001
+- [`ARC-WB-0001`](../../specs/architecture/WB/ARC-WB-0001-cli-onboarding-flow-with-init-run-wizard.md)
 
 Verified By:
 
-- VER-WB-0001
+- [`VER-WB-0001`](../../specs/verification/WB/VER-WB-0001-repo-operations-and-command-surface.md)

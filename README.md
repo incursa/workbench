@@ -22,7 +22,7 @@ record.
 - Keep generated repository views under `specs/generated/`.
 - Keep canonical templates under `specs/templates/`.
 - Keep canonical schemas under `specs/schemas/`.
-- Keep the quality intent contract in `quality/testing-intent.yaml`.
+- Keep the quality intent contract in [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
 - Treat `overview/`, `contracts/`, `decisions/`, `work/`, and the old root
   template/schema copies as removed legacy surfaces.
 
@@ -66,7 +66,7 @@ record.
 
 ## Requirements
 
-- .NET SDK `10.0.100` (see `global.json`).
+- .NET SDK `10.0.100` (see [`global.json`](global.json)).
 - Optional: GitHub CLI for the GH-dependent integration tests.
 
 ## Common commands
@@ -125,7 +125,7 @@ Pack the .NET tool:
 dotnet pack src/Workbench/Workbench.csproj -c Release
 ```
 
-Publish a native binary (AOT):
+Publish a self-contained single-file binary:
 
 ```bash
 dotnet publish src/Workbench/Workbench.csproj -c Release -r osx-arm64
@@ -141,21 +141,21 @@ ls src/Workbench/bin/Release/net10.0/osx-arm64/publish
 ```
 
 Expected warnings:
-- None. Treat any trimming/AOT warnings (IL2026/IL3050) as regressions.
+- None. Treat publish-time warnings as regressions.
 
 ## Documentation and contracts
 
-- Overview: `overview.md`
-- Authoring guide: `authoring.md`
-- Layout guide: `layout.md`
+- Overview: [`overview.md`](overview.md)
+- Authoring guide: [`authoring.md`](authoring.md)
+- Layout guide: [`layout.md`](layout.md)
 - Requirements: `specs/requirements/`
 - Architecture: `specs/architecture/`
 - Verification artifacts: `specs/verification/`
 - Work items: `specs/work-items/`
 - Templates: `specs/templates/`
 - Schemas: `specs/schemas/`
-- Canonical CLI help snapshot: `specs/generated/commands.md`
-- Quality intent contract: `quality/testing-intent.yaml`
+- Canonical CLI help snapshot: [`specs/generated/commands.md`](specs/generated/commands.md)
+- Quality intent contract: [`quality/testing-intent.yaml`](quality/testing-intent.yaml)
 
 ## Quality evidence
 
@@ -172,7 +172,7 @@ dotnet tool run workbench quality show
 
 Path conventions:
 
-- Authored intent: `quality/testing-intent.yaml`
+- Authored intent: [`quality/testing-intent.yaml`](quality/testing-intent.yaml)
 - Raw test evidence: `artifacts/quality/raw/test-results/*.trx`
 - Raw coverage evidence: `artifacts/quality/raw/coverage/*.cobertura.xml`
 - Generated quality artifacts: `artifacts/quality/testing/`

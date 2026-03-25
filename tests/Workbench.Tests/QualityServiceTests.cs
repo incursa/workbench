@@ -200,6 +200,10 @@ public class QualityServiceTests
               criticalFiles:
                 - src/Sample/Widget.cs
 
+            intentionalGaps:
+              - subject: src/Sample/Generated
+                rationale: Generated sample coverage should be excluded from the authored quality bar.
+
             scenarios:
               requiredTests:
                 - tests/Sample.Tests/WidgetTests.cs::Adds_numbers
@@ -338,6 +342,22 @@ public class QualityServiceTests
                         <line number="2" hits="1" branch="true" condition-coverage="50% (1/2)" />
                         <line number="3" hits="1" branch="false" />
                         <line number="4" hits="0" branch="false" />
+                      </lines>
+                    </class>
+                    <class name="Sample.Generated.Widget" filename="src/Sample/Generated/Extra.cs" line-rate="1" branch-rate="1">
+                      <lines>
+                        <line number="1" hits="1" branch="false" />
+                        <line number="2" hits="1" branch="true" condition-coverage="100% (2/2)" />
+                      </lines>
+                    </class>
+                    <class name="Sample.Widget.Generated" filename="src/Sample/obj/Generated.g.cs" line-rate="1" branch-rate="1">
+                      <lines>
+                        <line number="1" hits="1" branch="false" />
+                      </lines>
+                    </class>
+                    <class name="Elsewhere.Widget" filename="src/Elsewhere/Outside.cs" line-rate="1" branch-rate="1">
+                      <lines>
+                        <line number="1" hits="1" branch="false" />
                       </lines>
                     </class>
                   </classes>

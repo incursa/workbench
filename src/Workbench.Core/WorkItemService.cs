@@ -917,7 +917,61 @@ public static class WorkItemService
             };
         }
 
-        return null;
+        var legacyId = GetString(data, "id") ?? string.Empty;
+        var legacyStatus = GetString(data, "status") ?? string.Empty;
+        var legacyTitle = GetString(data, "title") ?? DeriveTitleFromPath(path, legacyId);
+        if (string.IsNullOrWhiteSpace(legacyId) ||
+            string.IsNullOrWhiteSpace(legacyStatus) ||
+            string.IsNullOrWhiteSpace(legacyTitle))
+        {
+            return null;
+        }
+
+        var legacyType = GetString(data, "type") ?? "work_item";
+        var legacyPriority = GetString(data, "priority");
+        var legacyOwner = GetString(data, "owner");
+        var legacyCreated = GetString(data, "created") ?? File.GetCreationTimeUtc(path).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var legacyUpdated = GetString(data, "updated") ?? File.GetLastWriteTimeUtc(path).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var related = GetRelatedMap(data);
+        var relatedLinks = related is null
+            ? new RelatedLinks(
+                new List<string>(),
+                new List<string>(),
+                new List<string>(),
+                new List<string>(),
+                new List<string>())
+            : new RelatedLinks(
+                GetStringList(related, "specs"),
+                GetStringList(related, "files"),
+                GetStringList(related, "prs"),
+                GetStringList(related, "issues"),
+                GetStringList(related, "branches"));
+
+        return new WorkItem(
+            legacyId,
+            legacyType,
+            legacyStatus,
+            legacyTitle,
+            legacyPriority,
+            legacyOwner,
+            legacyCreated,
+            legacyUpdated,
+            GetStringList(data, "tags"),
+            relatedLinks,
+            DeriveSlugFromPath(path, legacyId),
+            path,
+            frontMatter.Body)
+        {
+            ArtifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId") ?? legacyId,
+            ArtifactType = GetString(data, "artifact_type") ?? legacyType,
+            ArtifactStatus = legacyStatus,
+            Domain = GetString(data, "domain") ?? string.Empty,
+            Addresses = GetStringList(data, "addresses"),
+            DesignLinks = GetStringList(data, "design_links"),
+            VerificationLinks = GetStringList(data, "verification_links"),
+            RelatedArtifacts = GetStringList(data, "related_artifacts"),
+            GithubSynced = GetString(data, "githubSynced")
+        };
     }
 
     public static WorkItem UpdateStatus(string path, string status, string? note)

@@ -30,7 +30,7 @@ tree and, with `--check`, fail if the checked-in snapshot is stale.
 ## REQ-CLI-DOC-REGEN-HELP-0002 Output path behavior
 
 `doc regen-help` MUST write the generated help snapshot to the requested path
-or to `specs/generated/commands.md` when no path is supplied.
+or to [`specs/generated/commands.md`](../../generated/commands.md) when no path is supplied.
 
 ## REQ-CLI-DOC-REGEN-HELP-0003 Check mode
 

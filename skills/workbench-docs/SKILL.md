@@ -5,7 +5,7 @@ description: Documentation workflows for Workbench CLI. Use when creating or upd
 
 ## Key settings
 
-- `.workbench/config.json`: paths.docsRoot, paths.templatesDir, ids.width, prefixes, git.defaultBaseBranch, github.owner, github.repository.
+- [`.workbench/config.json`](../../.workbench/config.json): paths.docsRoot, paths.templatesDir, ids.width, prefixes, git.defaultBaseBranch, github.owner, github.repository.
 - Use `workbench config show --format json` to verify effective settings.
 
 ## Core workflows
@@ -62,5 +62,6 @@ workbench doc summarize --staged --update-index
 
 - Keep doc types aligned with folder intent (specs, architecture, verification, runbooks, and general docs).
 - Always link docs to relevant work items with `--work-item` or `workbench item link`.
+- When writing markdown, use clickable relative links for repository-local references, and keep inline code styling inside the link text when needed. Use absolute URLs only for external resources such as NuGet package pages.
 - For major changes, write a spec before implementation.
 - Prefer `workbench doc` commands; `workbench spec` and `workbench adr` are deprecated.

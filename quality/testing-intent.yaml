@@ -46,11 +46,55 @@ scenarios:
     - tests/Workbench.IntegrationTests/ResilienceTests.cs::ItemList_GlobalOptionsAfterSubcommand_AreAccepted
 
 intentionalGaps:
+  - subject: src/Workbench.Core/obj
+    rationale: Generated source and build artifacts are not authored product code and should not count against coverage.
+  - subject: src/Workbench
+    rationale: The local web UI is a separate manual surface and is not part of the repo-native CLI quality bar.
   - subject: src/Workbench.Tui
     rationale: Manual interaction flow and rendering details still evolve faster than the stable CLI contracts.
     relatedWorkItem: WI-WB-0007
   - subject: src/Workbench.Core/Voice
     rationale: Audio-device behavior depends on host hardware and is covered mostly by targeted smoke tests instead of exhaustive automation.
+  - subject: src/Workbench.Core/VoiceViz
+    rationale: Audio visualization helpers are presentation-oriented and are validated through focused smoke coverage.
+  - subject: src/Workbench.Core/Ai
+    rationale: AI provider integrations are externally hosted and intentionally covered by narrower smoke tests.
+  - subject: src/Workbench.Core/CodexService.cs
+    rationale: Codex launch plumbing is an optional external assistant surface and is not part of the core repo-native CLI quality bar.
+  - subject: src/Workbench.Core/DocSummaryService.cs
+    rationale: AI-backed summary generation is optional and remains smoke-tested instead of exhaustively automated.
+  - subject: src/Workbench.Core/OctokitGithubProvider.cs
+    rationale: GitHub API provider behavior is intentionally smoke-tested through end-to-end sync flows instead of exhaustive unit coverage.
+  - subject: src/Workbench.Core/GhCliGithubProvider.cs
+    rationale: GitHub CLI provider behavior is intentionally smoke-tested through end-to-end sync flows instead of exhaustive unit coverage.
+  - subject: src/Workbench.Core/GitService.cs
+    rationale: Git command plumbing supports mirror/sync flows and is intentionally bounded by higher-level smoke tests.
+  - subject: src/Workbench.Core/GithubService.cs
+    rationale: GitHub mirror/sync orchestration is an optional integration surface that is smoke-tested rather than exhaustively unit tested.
+  - subject: src/Workbench.Core/LinkUpdater.cs
+    rationale: Link-updating support for sync workflows is validated through end-to-end repo flows instead of unit exhaustiveness.
+  - subject: src/Workbench.Core/PullRequestBuilder.cs
+    rationale: Pull request body construction is part of optional GitHub sync behavior and is exercised through integration coverage.
+  - subject: src/Workbench.Core/Repo
+    rationale: Repository browsing helpers back the local web surface and are not part of the core automated CLI bar.
+  - subject: src/Workbench.Core/WorkbenchWorkspace
+    rationale: Workspace browsing and web-host orchestration are separate manual surfaces from the repo-native CLI.
+  - subject: src/Workbench.Core/WorkbenchWebHost.cs
+    rationale: The local web host is a manual surface and is not part of the automated CLI quality bar.
+  - subject: src/Workbench.Core/StartupBrowserLauncher.cs
+    rationale: Browser launch behavior is host-environment dependent and is intentionally smoke-tested.
+  - subject: src/Workbench/Pages
+    rationale: Razor page rendering is a local web surface and is intentionally excluded from the core CLI coverage bar.
+  - subject: src/Workbench.Core/SpecEditorInput.cs
+    rationale: The spec editor input model is a web surface implementation detail rather than a repo-native CLI contract.
+  - subject: src/Workbench.Core/WorkbenchUserProfile
+    rationale: User-profile persistence is tied to the local web surface and is intentionally smoke-tested.
+  - subject: src/Workbench.Cli/Program.ItemSync.cs
+    rationale: GitHub issue/branch sync is an optional mirror layer and is verified through higher-level integration tests.
+  - subject: src/Workbench.Cli/Program.Pr.cs
+    rationale: PR helper commands are part of the optional GitHub mirror layer rather than the core repo-native authoring workflow.
+  - subject: src/Workbench.Cli/Program.Voice.cs
+    rationale: Voice-command entry points are hardware and environment dependent and are intentionally smoke-tested.
 
 related:
   docs:

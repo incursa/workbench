@@ -26,7 +26,7 @@ Define the contract for mutating repo configuration values.
 
 `config set` MUST accept the documented dotted config path and value options,
 support JSON parsing when requested, and persist the updated
-`.workbench/config.json` atomically enough to avoid partial writes.
+[`.workbench/config.json`](../../../.workbench/config.json) atomically enough to avoid partial writes.
 
 ## REQ-CLI-CONFIG-SET-0002 Path validation
 

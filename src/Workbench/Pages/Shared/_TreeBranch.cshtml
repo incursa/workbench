@@ -1,34 +1,52 @@
 @model RepoTreeBranch
 
-<details class="inc-card tree-branch" open>
-    <summary class="tree-summary">
-        <span>@Model.Name</span>
-        <span class="muted">@Model.EntryCount items</span>
-    </summary>
+@{
+    var branch = Model;
+    while (branch.Children.Count == 1 && branch.Entries.Count == 0)
+    {
+        branch = branch.Children[0];
+    }
+
+    var isContainerOnly = string.IsNullOrWhiteSpace(branch.Path) && branch.Entries.Count == 0 && branch.Children.Count > 0;
+}
+
+@if (isContainerOnly)
+{
     <div class="tree-children">
-        @foreach (var child in Model.Children)
+        @foreach (var child in branch.Children)
         {
             @await Html.PartialAsync("_TreeBranch", child)
         }
-
-        @foreach (var entry in Model.Entries)
-        {
-            <a class="inc-card tree-entry @(entry.IsSelected ? "selected" : string.Empty)" href="@entry.Href">
-                <div class="inc-card__body">
-                    <div class="tree-entry-top">
-                        <span class="tree-entry-title">@entry.Title</span>
-                        <span class="pill">@entry.Badge</span>
-                    </div>
-                    <div class="tree-entry-meta">
-                        <span>@entry.Secondary</span>
-                        <span>@entry.Path</span>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(entry.Excerpt))
-                    {
-                        <div class="doc-excerpt">@entry.Excerpt</div>
-                    }
-                </div>
-            </a>
-        }
     </div>
-</details>
+}
+else
+{
+    <details class="inc-card tree-branch" open>
+        <summary class="tree-summary">
+            <span class="tree-summary-title">@branch.Name</span>
+            <span class="muted">@branch.EntryCount items</span>
+        </summary>
+        <div class="tree-children">
+            @foreach (var child in branch.Children)
+            {
+                @await Html.PartialAsync("_TreeBranch", child)
+            }
+
+            @foreach (var entry in branch.Entries)
+            {
+                <a class="inc-card tree-entry @(entry.IsSelected ? "selected" : string.Empty)" href="@entry.Href">
+                    <div class="inc-card__body">
+                        <div class="tree-entry-top">
+                            <span class="pill">@entry.Badge</span>
+                        </div>
+                        <div class="tree-entry-title">@entry.Title</div>
+                        @if (!string.IsNullOrWhiteSpace(entry.Secondary))
+                        {
+                            <div class="tree-entry-meta">@entry.Secondary</div>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    </details>
+}

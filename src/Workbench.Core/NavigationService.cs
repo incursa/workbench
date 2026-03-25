@@ -54,10 +54,53 @@ public static class NavigationService
 .ConfigureAwait(false) : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
         var normalizedItems = WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun);
         var warnings = new List<string>();
+        var docs = LoadDocEntries(repoRoot, config, warnings);
+        var docsReadmePath = Path.Combine(repoRoot, config.Paths.DocsRoot, "README.md");
+        var specsReadmePath = Path.Combine(repoRoot, config.Paths.SpecsRoot, "README.md");
+        var architectureReadmePath = Path.Combine(repoRoot, config.Paths.ArchitectureDir, "README.md");
+        var workReadmePath = Path.Combine(repoRoot, config.Paths.WorkRoot, "README.md");
+        var rootReadmePath = Path.Combine(repoRoot, "README.md");
+
+        var indexFilesUpdated = 0;
+        indexFilesUpdated += SyncIndexFile(
+            docsReadmePath,
+            BuildDocsReadmeTemplate(),
+            "workbench:overview-index",
+            BuildDocsIndex(repoRoot, config, docsReadmePath, docs),
+            force,
+            dryRun);
+        indexFilesUpdated += SyncIndexFile(
+            specsReadmePath,
+            BuildSpecsReadmeTemplate(),
+            "workbench:specs-index",
+            BuildSpecsIndex(repoRoot, config, specsReadmePath, docs),
+            force,
+            dryRun);
+        indexFilesUpdated += SyncIndexFile(
+            architectureReadmePath,
+            BuildArchitectureReadmeTemplate(),
+            "workbench:architecture-index",
+            BuildArchitectureIndex(repoRoot, config, architectureReadmePath, docs),
+            force,
+            dryRun);
+        indexFilesUpdated += SyncIndexFile(
+            workReadmePath,
+            BuildWorkReadmeTemplate(),
+            "workbench:work-index",
+            BuildWorkIndex(repoRoot, config, workReadmePath, docs),
+            force,
+            dryRun);
+        indexFilesUpdated += SyncIndexFile(
+            rootReadmePath,
+            BuildRootReadmeTemplate(),
+            "workbench:root-index",
+            BuildRootIndex(repoRoot, config),
+            force,
+            dryRun);
         return new NavigationSyncResult(
             docSync.DocsUpdated,
             docSync.ItemsUpdated + normalizedItems,
-            0,
+            indexFilesUpdated,
             docSync.MissingDocs,
             docSync.MissingItems,
             warnings);
@@ -68,8 +111,10 @@ public static class NavigationService
         var entries = new List<DocEntry>();
         var roots = new[]
         {
+                Path.Combine(repoRoot, config.Paths.DocsRoot),
                 Path.Combine(repoRoot, "runbooks"),
                 Path.Combine(repoRoot, "tracking"),
+                Path.Combine(repoRoot, config.Paths.SpecsRoot, "requirements"),
                 Path.Combine(repoRoot, config.Paths.SpecsRoot),
                 Path.Combine(repoRoot, config.Paths.ArchitectureDir),
                 Path.Combine(repoRoot, Path.Combine(config.Paths.SpecsRoot, "verification")),
@@ -463,13 +508,31 @@ public static class NavigationService
         return NormalizePath(relative);
     }
 
-    private static int UpdateIndexSection(string filePath, string markerName, string content, bool force, bool dryRun)
+    private static int SyncIndexFile(string filePath, string template, string markerName, string content, bool force, bool dryRun)
     {
         if (!File.Exists(filePath))
         {
-            return 0;
+            if (!dryRun)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? Directory.GetCurrentDirectory());
+                var startMarker = $"<!-- {markerName}:start -->";
+                var endMarker = $"<!-- {markerName}:end -->";
+                if (!ReplaceSection(template, startMarker, endMarker, content, out var newContent))
+                {
+                    newContent = template;
+                }
+
+                File.WriteAllText(filePath, newContent);
+            }
+
+            return 1;
         }
 
+        return UpdateIndexSection(filePath, markerName, content, force, dryRun);
+    }
+
+    private static int UpdateIndexSection(string filePath, string markerName, string content, bool force, bool dryRun)
+    {
         var startMarker = $"<!-- {markerName}:start -->";
         var endMarker = $"<!-- {markerName}:end -->";
         var fileContent = File.ReadAllText(filePath);
@@ -483,22 +546,7 @@ public static class NavigationService
         {
             File.WriteAllText(filePath, newContent);
         }
-        return !dryRun && (updated || force) ? 1 : 0;
-    }
-
-    private static int EnsureIndexFile(string filePath, string template, bool dryRun)
-    {
-        if (File.Exists(filePath))
-        {
-            return 0;
-        }
-
-        if (!dryRun)
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? Directory.GetCurrentDirectory());
-            File.WriteAllText(filePath, template);
-        }
-        return 1;
+        return updated || force ? 1 : 0;
     }
 
     private static string BuildDocsReadmeTemplate()

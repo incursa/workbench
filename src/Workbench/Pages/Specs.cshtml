@@ -208,11 +208,11 @@
                         </div>
                     </section>
 
-                    <section class="inc-card editor-section">
-                        <div class="editor-section-head">
+                    <details class="inc-card editor-section">
+                        <summary class="editor-section-head">
                             <h4>Core narrative</h4>
-                            <span class="muted">Purpose, scope, and context frame the grouped requirement clauses.</span>
-                        </div>
+                            <span class="muted">Purpose, scope, and context frame the grouped requirement clauses. Edit</span>
+                        </summary>
                         <div class="editor-stack">
                             <label class="inc-form__group">
                                 <span class="field-label">Purpose</span>
@@ -227,7 +227,7 @@
                                 <textarea class="inc-form__control" asp-for="Edit.Context" rows="5"></textarea>
                             </label>
                         </div>
-                    </section>
+                    </details>
 
                     <section class="inc-card editor-section">
                         <div class="editor-section-head">
@@ -240,27 +240,27 @@
                         </label>
                     </section>
 
-                    <section class="inc-card editor-section">
-                        <div class="editor-section-head">
+                    <details class="inc-card editor-section">
+                        <summary class="editor-section-head">
                             <h4>Related artifacts</h4>
-                            <span class="muted">Optional artifact IDs that should be linked from the specification front matter.</span>
-                        </div>
+                            <span class="muted">Optional artifact IDs that should be linked from the specification front matter. Edit</span>
+                        </summary>
                         <label class="inc-form__group">
                             <span class="field-label">Related artifacts</span>
                             <textarea class="inc-form__control mono" asp-for="Edit.RelatedArtifacts" rows="6" placeholder="ARC-PAY-ACH-0002"></textarea>
                         </label>
-                    </section>
+                    </details>
 
-                    <section class="inc-card editor-section">
-                        <div class="editor-section-head">
+                    <details class="inc-card editor-section">
+                        <summary class="editor-section-head">
                             <h4>Open questions</h4>
-                            <span class="muted">Keep unresolved items visible instead of burying them in prose.</span>
-                        </div>
+                            <span class="muted">Keep unresolved items visible instead of burying them in prose. Edit</span>
+                        </summary>
                         <label class="inc-form__group">
                             <span class="field-label">Open questions</span>
                             <textarea class="inc-form__control" asp-for="Edit.OpenQuestions" rows="4"></textarea>
                         </label>
-                    </section>
+                    </details>
 
                     <div class="button-row">
                         <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create spec" : "Save spec")</button>
@@ -270,15 +270,15 @@
 
             @if (!Model.IsCreateMode)
             {
-                <section class="doc-viewer">
-                    <div class="panel-head compact">
+                <details class="inc-card doc-viewer">
+                    <summary class="panel-head compact">
                         <h4>Rendered preview</h4>
-                        <span class="muted">Current Markdown body</span>
-                    </div>
+                        <span class="muted">Collapsed by default</span>
+                    </summary>
                     <div class="markdown-body">
                         @Html.Raw(Model.SelectedSpecHtml)
                     </div>
-                </section>
+                </details>
             }
         }
     </section>

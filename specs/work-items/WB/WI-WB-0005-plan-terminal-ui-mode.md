@@ -34,16 +34,16 @@ with a visible command preview and a global dry-run toggle.
 
 ## Requirements Addressed
 
-- REQ-TUI-0001
-- REQ-TUI-0002
-- REQ-TUI-0003
-- REQ-TUI-0004
-- REQ-TUI-0005
+- [`REQ-TUI-0001`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0002`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0003`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0004`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0005`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
 
 ## Design Inputs
 
-- ARC-WB-0003
-- ARC-WB-0007
+- [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 ## Planned Changes
 
@@ -68,17 +68,17 @@ Optional implementation notes, deviations, or follow-up items.
 
 Addresses:
 
-- REQ-TUI-0001
-- REQ-TUI-0002
-- REQ-TUI-0003
-- REQ-TUI-0004
-- REQ-TUI-0005
+- [`REQ-TUI-0001`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0002`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0003`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0004`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0005`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
 
 Uses Design:
 
-- ARC-WB-0003
-- ARC-WB-0007
+- [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 Verified By:
 
-- VER-WB-0003
+- [`VER-WB-0003`](../../verification/WB/VER-WB-0003-terminal-ui-mode.md)

@@ -50,5 +50,5 @@ The `quality` index MUST expose `show` and `sync` as its documented children.
 
 ## Command Family Catalog
 
-- [SPEC-CLI-QUALITY-SHOW](./SPEC-CLI-QUALITY-SHOW.md)
-- [SPEC-CLI-QUALITY-SYNC](./SPEC-CLI-QUALITY-SYNC.md)
+- [`SPEC-CLI-QUALITY-SHOW`](SPEC-CLI-QUALITY-SHOW.md)
+- [`SPEC-CLI-QUALITY-SYNC`](SPEC-CLI-QUALITY-SYNC.md)

@@ -5,7 +5,7 @@ description: GitHub workflows for Workbench CLI. Use when creating pull requests
 
 ## Key settings
 
-- `.workbench/config.json`: github.owner, github.repository, github.host, git.defaultBaseBranch.
+- [`.workbench/config.json`](../../.workbench/config.json): github.owner, github.repository, github.host, git.defaultBaseBranch.
 - Ensure GitHub auth is configured (token or `gh auth login`).
 
 ## Commands

@@ -24,11 +24,11 @@ Launch narrative, getting-started content, demo assets, packaging guidance, and 
 
 ## Requirements Verified
 
-- REQ-WB-RELEASE-0001
-- REQ-WB-RELEASE-0002
-- REQ-WB-RELEASE-0003
-- REQ-WB-RELEASE-0004
-- REQ-WB-RELEASE-0005
+- [`REQ-WB-RELEASE-0001`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0002`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0003`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0004`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0005`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
 
 ## Verification Method
 
@@ -50,11 +50,15 @@ The linked requirements are satisfied by the documented repository behavior and 
 
 ## Evidence
 
-- README.md
-- overview.md
-- layout.md
-- authoring.md
-- specs/SPEC-WB-PUBLIC-RELEASE.md
+- [`README.md`](../../../README.md)
+- [`overview.md`](../../../overview.md)
+- [`layout.md`](../../../layout.md)
+- [`authoring.md`](../../../authoring.md)
+- [`specs/requirements/WB/SPEC-WB-PUBLIC-RELEASE.md`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- dotnet pack [`src/Workbench/Workbench.csproj`](../../../src/Workbench/Workbench.csproj) -c Release
+- dotnet publish [`src/Workbench/Workbench.csproj`](../../../src/Workbench/Workbench.csproj) -c Release -r osx-arm64
+- artifacts/Incursa.Workbench.0.1.0.nupkg
+- src/Workbench/bin/Release/net10.0/osx-arm64/publish/Workbench
 
 ## Status
 
@@ -64,5 +68,5 @@ passed
 
 ## Related Artifacts
 
-- SPEC-WB-PUBLIC-RELEASE
-- ARC-WB-0007
+- [`SPEC-WB-PUBLIC-RELEASE`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)

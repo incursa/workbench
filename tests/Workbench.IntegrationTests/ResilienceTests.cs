@@ -143,6 +143,101 @@ public class ResilienceTests
     }
 
     [TestMethod]
+    public void ValidateStrict_ScaffoldedRepo_JsonOutput_ReturnsSuccessEnvelope()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+
+        TestAssertions.RunWorkbenchAndAssertSuccess(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "scaffold");
+        CopyValidationSchemas(repo.Path);
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-9000-integration-coverage.md"),
+            """
+            ---
+            artifact_id: WI-WB-9000
+            artifact_type: work_item
+            title: Integration coverage item
+            domain: WB
+            status: planned
+            owner: platform
+            addresses:
+              - REQ-WB-0001
+            design_links:
+              - ARC-WB-0001
+            verification_links:
+              - VER-WB-0001
+            related_artifacts:
+              - SPEC-WB-STD
+            ---
+
+            # WI-WB-9000 - Integration coverage item
+
+            ## Summary
+            Item summary.
+            """);
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "validate",
+            "--strict",
+            "--format",
+            "json");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        var payload = TestAssertions.ParseJson(result.StdOut);
+        Assert.IsTrue(payload.GetProperty("ok").GetBoolean(), result.StdOut);
+
+        var data = payload.GetProperty("data");
+        Assert.AreEqual(0, data.GetProperty("errors").GetArrayLength(), result.StdOut);
+        Assert.AreEqual(0, data.GetProperty("warnings").GetArrayLength(), result.StdOut);
+        Assert.IsGreaterThan(0, data.GetProperty("counts").GetProperty("workItems").GetInt32(), result.StdOut);
+        Assert.IsGreaterThan(0, data.GetProperty("counts").GetProperty("markdownFiles").GetInt32(), result.StdOut);
+    }
+
+    private static void CopyValidationSchemas(string repoPath)
+    {
+        var sourceRepoRoot = FindSourceRepoRoot();
+        Directory.CreateDirectory(Path.Combine(repoPath, "schemas"));
+        Directory.CreateDirectory(Path.Combine(repoPath, "specs", "schemas"));
+
+        File.Copy(
+            Path.Combine(sourceRepoRoot, "schemas", "workbench-config.schema.json"),
+            Path.Combine(repoPath, "schemas", "workbench-config.schema.json"),
+            overwrite: true);
+        File.Copy(
+            Path.Combine(sourceRepoRoot, "specs", "schemas", "artifact-frontmatter.schema.json"),
+            Path.Combine(repoPath, "specs", "schemas", "artifact-frontmatter.schema.json"),
+            overwrite: true);
+        File.Copy(
+            Path.Combine(sourceRepoRoot, "specs", "schemas", "work-item-trace-fields.schema.json"),
+            Path.Combine(repoPath, "specs", "schemas", "work-item-trace-fields.schema.json"),
+            overwrite: true);
+    }
+
+    private static string FindSourceRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "Workbench.slnx")))
+            {
+                return dir.FullName;
+            }
+
+            dir = dir.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate the Workbench repo root.");
+    }
+
+    [TestMethod]
     public void ItemList_GlobalOptionsAfterSubcommand_AreAccepted()
     {
         using var repo = TempRepo.Create();

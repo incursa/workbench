@@ -1,7 +1,7 @@
 # External Trial Report (2026-02-20)
 
 This report documents the two-repo external hardening trial required by
-`tracking/hardening-gate-2026-02-19.md`.
+[`tracking/hardening-gate-2026-02-19.md`](hardening-gate-2026-02-19.md).
 
 ## Trial scope
 

@@ -45,7 +45,7 @@ the documented precedence order.
 ## REQ-CLI-CONFIG-0004 File-target boundary
 
 `config set` and the credential subcommands MUST confine writes to
-`.workbench/config.json` or `credentials.env` as appropriate, leaving
+[`.workbench/config.json`](../../../.workbench/config.json) or `credentials.env` as appropriate, leaving
 unrelated files untouched.
 
 ## REQ-CLI-CONFIG-0005 Child exposure
@@ -55,8 +55,8 @@ documented children.
 
 ## Command Family Catalog
 
-- [SPEC-CLI-CONFIG-CREDENTIALS](./SPEC-CLI-CONFIG-CREDENTIALS.md)
-- [SPEC-CLI-CONFIG-CREDENTIALS-SET](./SPEC-CLI-CONFIG-CREDENTIALS-SET.md)
-- [SPEC-CLI-CONFIG-CREDENTIALS-UNSET](./SPEC-CLI-CONFIG-CREDENTIALS-UNSET.md)
-- [SPEC-CLI-CONFIG-SET](./SPEC-CLI-CONFIG-SET.md)
-- [SPEC-CLI-CONFIG-SHOW](./SPEC-CLI-CONFIG-SHOW.md)
+- [`SPEC-CLI-CONFIG-CREDENTIALS`](SPEC-CLI-CONFIG-CREDENTIALS.md)
+- [`SPEC-CLI-CONFIG-CREDENTIALS-SET`](SPEC-CLI-CONFIG-CREDENTIALS-SET.md)
+- [`SPEC-CLI-CONFIG-CREDENTIALS-UNSET`](SPEC-CLI-CONFIG-CREDENTIALS-UNSET.md)
+- [`SPEC-CLI-CONFIG-SET`](SPEC-CLI-CONFIG-SET.md)
+- [`SPEC-CLI-CONFIG-SHOW`](SPEC-CLI-CONFIG-SHOW.md)

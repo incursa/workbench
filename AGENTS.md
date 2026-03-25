@@ -12,7 +12,7 @@
 - `specs/templates/`: canonical copy-ready templates.
 - `specs/schemas/`: canonical schemas.
 - `quality/`: local quality-intent inputs.
-- `LLMS.txt`: lightweight AI bootstrap that points back to the repo guidance.
+- [`LLMS.txt`](LLMS.txt): lightweight AI bootstrap that points back to the repo guidance.
 - `artifacts/`: generated outputs only. Do not hand-edit files there.
 
 ## Build, Test, and Quality Commands
@@ -26,18 +26,20 @@
 
 ## Quality Evidence Workflow
 
-- Canonical authored intent lives in `quality/testing-intent.yaml`.
+- Canonical authored intent lives in [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
 - Raw observed evidence lives in `artifacts/quality/raw/test-results/*.trx` and `artifacts/quality/raw/coverage/*.cobertura.xml`.
 - Generated quality artifacts live in `artifacts/quality/testing/` and are derived outputs from Workbench. Do not edit them by hand.
 - Treat the quality report as advisory evidence for humans and agents. Do not add merge-blocking behavior based on the generated report in this repo.
-- Prefer `dotnet tool run workbench` for quality commands so the repo uses the version pinned in `dotnet-tools.json`. Use `workbench.ps1` only when intentionally validating in-repo source changes.
+- Prefer `dotnet tool run workbench` for quality commands so the repo uses the version pinned in [`dotnet-tools.json`](dotnet-tools.json). Use [`workbench.ps1`](workbench.ps1) only when intentionally validating in-repo source changes.
 
 ## Agent-Specific Instructions
 
-- If you change test scope, thresholds, or critical areas, update `quality/testing-intent.yaml`.
+- If you change test scope, thresholds, or critical areas, update [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
 - If you change the quality workflow, keep the artifact paths above stable unless you also update the docs and agent guidance.
 - When summarizing repo quality state, rely on `workbench quality show` or the generated files in `artifacts/quality/testing/`, not on ad hoc TRX or Cobertura parsing.
-- When editing Spec Trace-facing docs or templates, keep `overview.md`, `layout.md`, `authoring.md`, `specs/templates/`, `specs/schemas/`, and `specs/` aligned.
+- When editing Spec Trace-facing docs or templates, keep [`overview.md`](overview.md), [`layout.md`](layout.md), [`authoring.md`](authoring.md), `specs/templates/`, `specs/schemas/`, and `specs/` aligned.
+- When editing markdown docs, prefer clickable relative links for repository-local references, and keep inline code styling inside the link text when needed. Use absolute URLs only for external targets such as NuGet package pages.
+- For multi-file .NET work that needs discovery, build/test recovery, cleanup, documentation, or diff review beyond a single command, prefer the reusable baseline agents under `.codex/agents/`.
 
 ## Formatting (Required)
 

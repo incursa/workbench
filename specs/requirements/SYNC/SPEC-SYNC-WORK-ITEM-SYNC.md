@@ -38,10 +38,10 @@ The sync command MUST keep local work items and GitHub issues aligned in both di
 
 Trace:
 - Implemented By:
-  - [WI-WB-0002](/specs/work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
+  - [`WI-WB-0002`](../../work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ARC-WB-0004](/architecture/ARC-WB-0004-repo-native-operating-model.md)
-  - [ARC-WB-0002](/architecture/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
+  - [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+  - [`ARC-WB-0002`](../../architecture/WB/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
 
 Notes:
 - preserve content on both sides
@@ -52,10 +52,10 @@ The sync command MUST create a branch when a work item lists one in `related.bra
 
 Trace:
 - Implemented By:
-  - [WI-WB-0002](/specs/work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
+  - [`WI-WB-0002`](../../work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ARC-WB-0004](/architecture/ARC-WB-0004-repo-native-operating-model.md)
-  - [ARC-WB-0002](/architecture/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
+  - [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+  - [`ARC-WB-0002`](../../architecture/WB/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
 
 Notes:
 - record the branch name in work-item metadata
@@ -66,10 +66,10 @@ The sync command MUST record the GitHub issue reference and branch names in work
 
 Trace:
 - Implemented By:
-  - [WI-WB-0002](/specs/work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
+  - [`WI-WB-0002`](../../work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ARC-WB-0004](/architecture/ARC-WB-0004-repo-native-operating-model.md)
-  - [ARC-WB-0002](/architecture/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
+  - [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+  - [`ARC-WB-0002`](../../architecture/WB/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
 
 Notes:
 - preserve issue URLs and branch links
@@ -80,10 +80,10 @@ The sync command MUST support dry-run mode and a source preference for ID-scoped
 
 Trace:
 - Implemented By:
-  - [WI-WB-0002](/specs/work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
+  - [`WI-WB-0002`](../../work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ARC-WB-0004](/architecture/ARC-WB-0004-repo-native-operating-model.md)
-  - [ARC-WB-0002](/architecture/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
+  - [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+  - [`ARC-WB-0002`](../../architecture/WB/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
 
 Notes:
 - prefer local content when bulk-updating existing GitHub issues
@@ -94,10 +94,10 @@ The sync command MUST continue to import GitHub issues into local work items eve
 
 Trace:
 - Implemented By:
-  - [WI-WB-0002](/specs/work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
+  - [`WI-WB-0002`](../../work-items/WB/WI-WB-0002-promote-existing-work-items-to-github-issues.md)
 - Related:
-  - [ARC-WB-0004](/architecture/ARC-WB-0004-repo-native-operating-model.md)
-  - [ARC-WB-0002](/architecture/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
+  - [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+  - [`ARC-WB-0002`](../../architecture/WB/ARC-WB-0002-github-provider-abstraction-and-octokit-default.md)
 
 Notes:
 - skip creating GitHub records for local items in terminal states

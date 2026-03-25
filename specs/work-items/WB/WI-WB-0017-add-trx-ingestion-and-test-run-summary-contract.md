@@ -33,16 +33,16 @@ what passed, what failed, and what was skipped.
 
 ## Requirements Addressed
 
-- REQ-QE-0001
-- REQ-QE-0002
-- REQ-QE-0003
-- REQ-QE-0004
-- REQ-QE-0005
-- REQ-QE-0006
+- [`REQ-QE-0001`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0002`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0003`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Design Inputs
 
-- ARC-WB-0005
+- [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 ## Planned Changes
 
@@ -50,7 +50,7 @@ what passed, what failed, and what was skipped.
 - `artifacts/quality/testing/test-run-summary.json`.
 - The summary retains enough per-test identity to compare run results against
 - inventory and required tests.
-- The output matches `schemas/test-run-summary.schema.json`.
+- The output matches [`schemas/test-run-summary.schema.json`](../../../schemas/test-run-summary.schema.json).
 
 ## Out of Scope
 
@@ -69,17 +69,17 @@ Optional implementation notes, deviations, or follow-up items.
 
 Addresses:
 
-- REQ-QE-0001
-- REQ-QE-0002
-- REQ-QE-0003
-- REQ-QE-0004
-- REQ-QE-0005
-- REQ-QE-0006
+- [`REQ-QE-0001`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0002`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0003`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 Uses Design:
 
-- ARC-WB-0005
+- [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Verified By:
 
-- VER-WB-0002
+- [`VER-WB-0002`](../../verification/WB/VER-WB-0002-quality-evidence.md)

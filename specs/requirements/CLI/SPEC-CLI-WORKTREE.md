@@ -50,4 +50,4 @@ worktree creation flow.
 
 ## Command Family Catalog
 
-- [SPEC-CLI-WORKTREE-START](./SPEC-CLI-WORKTREE-START.md)
+- [`SPEC-CLI-WORKTREE-START`](SPEC-CLI-WORKTREE-START.md)

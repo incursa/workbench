@@ -73,7 +73,7 @@ verification, and derived navigation outputs.
 
 ## Related docs
 
-- `/specs/generated/commands.md`
-- `/specs/requirements/spec-trace/_index.md`
-- `/tracking/hardening-gate-2026-02-19.md`
-- `/tracking/migration-coherent-v1-2026-02-19.md`
+- [`specs/generated/commands.md`](../specs/generated/commands.md)
+- [`specs/requirements/_index.md`](../specs/requirements/_index.md)
+- [`tracking/hardening-gate-2026-02-19.md`](../tracking/hardening-gate-2026-02-19.md)
+- [`tracking/migration-coherent-v1-2026-02-19.md`](../tracking/migration-coherent-v1-2026-02-19.md)

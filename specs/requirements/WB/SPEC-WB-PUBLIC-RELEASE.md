@@ -33,52 +33,52 @@ Workbench MUST provide launch-facing messaging that explains what the tool is, w
 
 Trace:
 - Satisfied By:
-  - ARC-WB-0007
+  - [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 - Implemented By:
-  - WI-WB-0010
+  - [`WI-WB-0010`](../../work-items/WB/WI-WB-0010-create-public-launch-landing-and-messaging-kit.md)
 - Verified By:
-  - VER-WB-0006
+  - [`VER-WB-0006`](../../verification/WB/VER-WB-0006-public-release-support.md)
 
 ## REQ-WB-RELEASE-0002 Provide a getting-started tutorial
 Workbench MUST provide a getting-started tutorial and sample repository that show the first successful CLI flow.
 
 Trace:
 - Satisfied By:
-  - ARC-WB-0007
+  - [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 - Implemented By:
-  - WI-WB-0011
+  - [`WI-WB-0011`](../../work-items/WB/WI-WB-0011-add-getting-started-tutorial-and-sample-repo.md)
 - Verified By:
-  - VER-WB-0006
+  - [`VER-WB-0006`](../../verification/WB/VER-WB-0006-public-release-support.md)
 
 ## REQ-WB-RELEASE-0003 Provide demo assets
 Workbench MUST provide demo assets that illustrate the core repo-native workflow and common user-facing scenarios.
 
 Trace:
 - Satisfied By:
-  - ARC-WB-0007
+  - [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 - Implemented By:
-  - WI-WB-0012
+  - [`WI-WB-0012`](../../work-items/WB/WI-WB-0012-produce-demo-assets-for-public-release.md)
 - Verified By:
-  - VER-WB-0006
+  - [`VER-WB-0006`](../../verification/WB/VER-WB-0006-public-release-support.md)
 
 ## REQ-WB-RELEASE-0004 Document packaging and distribution
 Workbench MUST document packaging and distribution expectations for releases.
 
 Trace:
 - Satisfied By:
-  - ARC-WB-0007
+  - [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 - Implemented By:
-  - WI-WB-0013
+  - [`WI-WB-0013`](../../work-items/WB/WI-WB-0013-define-release-packaging-and-distribution.md)
 - Verified By:
-  - VER-WB-0006
+  - [`VER-WB-0006`](../../verification/WB/VER-WB-0006-public-release-support.md)
 
 ## REQ-WB-RELEASE-0005 Share proof points
 Workbench SHOULD provide case studies or proof points that demonstrate practical usage and outcomes.
 
 Trace:
 - Satisfied By:
-  - ARC-WB-0007
+  - [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 - Implemented By:
-  - WI-WB-0014
+  - [`WI-WB-0014`](../../work-items/WB/WI-WB-0014-add-case-studies-and-proof-points.md)
 - Verified By:
-  - VER-WB-0006
+  - [`VER-WB-0006`](../../verification/WB/VER-WB-0006-public-release-support.md)

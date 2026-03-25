@@ -32,17 +32,19 @@ single published executable and reusing the existing service layer.
 The TUI is intended to sit between the CLI and a future browser UI: it should
 make browsing and common edits easier without changing the data model or
 duplicating the underlying business logic.
+The current shipped CLI does not expose `workbench tui`; this spec tracks the
+planned terminal UI contract rather than a live command surface.
 
 ## REQ-TUI-0001 Expose the TUI from the same executable
 The CLI MUST expose the terminal UI as a subcommand or alias inside the same published executable.
 
 Trace:
 - Implemented By:
-  - [WI-WB-0005](/specs/work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
-  - [WI-WB-0006](/specs/work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
-  - [WI-WB-0007](/specs/work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
+  - [`WI-WB-0005`](../../work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
+  - [`WI-WB-0006`](../../work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
+  - [`WI-WB-0007`](../../work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ARC-WB-0003](/architecture/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+  - [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep the entrypoint repo-native
@@ -52,11 +54,11 @@ The TUI MUST use the existing shared services for work-item and doc reads and wr
 
 Trace:
 - Implemented By:
-  - [WI-WB-0005](/specs/work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
-  - [WI-WB-0006](/specs/work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
-  - [WI-WB-0007](/specs/work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
+  - [`WI-WB-0005`](../../work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
+  - [`WI-WB-0006`](../../work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
+  - [`WI-WB-0007`](../../work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ARC-WB-0003](/architecture/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+  - [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep mutation logic in shared code
@@ -67,11 +69,11 @@ The TUI MUST support browsing work items, viewing details, creating items, chang
 
 Trace:
 - Implemented By:
-  - [WI-WB-0005](/specs/work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
-  - [WI-WB-0006](/specs/work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
-  - [WI-WB-0007](/specs/work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
+  - [`WI-WB-0005`](../../work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
+  - [`WI-WB-0006`](../../work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
+  - [`WI-WB-0007`](../../work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ARC-WB-0003](/architecture/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+  - [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep the command preview visible for mutations
@@ -82,11 +84,11 @@ The TUI MUST support keyboard-first navigation, show the current repo and action
 
 Trace:
 - Implemented By:
-  - [WI-WB-0005](/specs/work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
-  - [WI-WB-0006](/specs/work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
-  - [WI-WB-0007](/specs/work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
+  - [`WI-WB-0005`](../../work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
+  - [`WI-WB-0006`](../../work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
+  - [`WI-WB-0007`](../../work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ARC-WB-0003](/architecture/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+  - [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep the layout compact
@@ -97,11 +99,11 @@ The TUI MUST preview the exact CLI command or equivalent action before any mutat
 
 Trace:
 - Implemented By:
-  - [WI-WB-0005](/specs/work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
-  - [WI-WB-0006](/specs/work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
-  - [WI-WB-0007](/specs/work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
+  - [`WI-WB-0005`](../../work-items/WB/WI-WB-0005-plan-terminal-ui-mode.md)
+  - [`WI-WB-0006`](../../work-items/WB/WI-WB-0006-implement-shared-core-and-clitui-split.md)
+  - [`WI-WB-0007`](../../work-items/WB/WI-WB-0007-build-tui-mvp-with-command-preview-and-dry-run.md)
 - Related:
-  - [ARC-WB-0003](/architecture/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
+  - [`ARC-WB-0003`](../../architecture/WB/ARC-WB-0003-terminal-ui-mode-in-cli-executable.md)
 
 Notes:
 - keep command previews visible across views

@@ -12,9 +12,9 @@ for a capability, behavior area, interface, or narrow technical concern.
 
 Read first:
 
-- `overview.md`
-- `layout.md`
-- `specs/templates/spec-template.md`
+- [`overview.md`](overview.md)
+- [`layout.md`](layout.md)
+- [`specs/templates/spec-template.md`](specs/templates/spec-template.md)
 
 ### Requirement
 
@@ -24,8 +24,8 @@ live inside a specification.
 Read first:
 
 - the owning `SPEC-...` file
-- `overview.md`
-- `specs/templates/spec-template.md`
+- [`overview.md`](overview.md)
+- [`specs/templates/spec-template.md`](specs/templates/spec-template.md)
 
 ### Architecture
 
@@ -35,7 +35,7 @@ satisfied, including rationale and tradeoffs.
 Read first:
 
 - the relevant `SPEC-...` file
-- `specs/templates/architecture-template.md`
+- [`specs/templates/architecture-template.md`](specs/templates/architecture-template.md)
 
 ### Work Item
 
@@ -46,7 +46,7 @@ Read first:
 
 - the relevant `SPEC-...` file
 - the relevant architecture artifact
-- `specs/templates/work-item-template.md`
+- [`specs/templates/work-item-template.md`](specs/templates/work-item-template.md)
 
 ### Verification Artifact
 
@@ -57,7 +57,7 @@ Read first:
 
 - the relevant `SPEC-...` file
 - the relevant architecture and work-item artifacts
-- `specs/templates/verification-template.md`
+- [`specs/templates/verification-template.md`](specs/templates/verification-template.md)
 
 ## Workflow
 
@@ -72,4 +72,5 @@ Read first:
 - Keep requirement clauses atomic.
 - Keep `Notes` informative only.
 - Use explicit trace labels instead of loose prose when traceability matters.
-- Prefer clickable Markdown links for repository-local references.
+- Prefer clickable relative Markdown links for repository-local references, and keep inline code styling inside the link text when needed, for example [`ValidationService`](src/Workbench.Core/ValidationService.cs).
+- Use absolute URLs only for external targets such as NuGet package pages or other web-hosted documentation.

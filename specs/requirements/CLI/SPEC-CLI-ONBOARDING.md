@@ -43,9 +43,9 @@ output and avoid duplicate or confusing version commands or flags.
 
 Trace:
 - Implemented By:
-  - [WI-WB-0001](/specs/work-items/WB/WI-WB-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
+  - [`WI-WB-0001`](../../work-items/WB/WI-WB-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
 - Related:
-  - [ARC-WB-0001](/architecture/ARC-WB-0001-cli-onboarding-flow-with-init-run-wizard.md)
+  - [`ARC-WB-0001`](../../architecture/WB/ARC-WB-0001-cli-onboarding-flow-with-init-run-wizard.md)
 
 Notes:
 - keep the output concise
@@ -58,9 +58,9 @@ discover the command tree manually.
 
 Trace:
 - Implemented By:
-  - [WI-WB-0001](/specs/work-items/WB/WI-WB-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
+  - [`WI-WB-0001`](../../work-items/WB/WI-WB-0001-improve-cli-onboarding-help-init-walkthrough-and-run-wizard.md)
 - Related:
-  - [ARC-WB-0001](/architecture/ARC-WB-0001-cli-onboarding-flow-with-init-run-wizard.md)
+  - [`ARC-WB-0001`](../../architecture/WB/ARC-WB-0001-cli-onboarding-flow-with-init-run-wizard.md)
 
 Notes:
 - preserve normal help behavior after the repository is initialized

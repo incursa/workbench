@@ -30,7 +30,7 @@ output human-readable and command-tree complete.
 ## REQ-CLI-LLM-0002 `workbench llm help`
 
 `llm help` MUST print the comprehensive command reference for AI agents, keep
-the command tree in one stream, and avoid introducing a separate `LLMS.txt`
+the command tree in one stream, and avoid introducing a separate [`LLMS.txt`](../../../LLMS.txt)
 surface unless the repository explicitly decides to add one later.
 
 ## REQ-CLI-LLM-0003 Bootstrap boundary

@@ -25,12 +25,12 @@ Authored testing intent, normalized test inventory, run summaries, coverage summ
 
 ## Requirements Verified
 
-- REQ-QE-0001
-- REQ-QE-0002
-- REQ-QE-0003
-- REQ-QE-0004
-- REQ-QE-0005
-- REQ-QE-0006
+- [`REQ-QE-0001`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0002`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0003`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Verification Method
 
@@ -52,12 +52,12 @@ The linked requirements are satisfied by the documented repository behavior and 
 
 ## Evidence
 
-- quality/testing-intent.yaml
-- artifacts/quality/testing/quality-summary.md
-- artifacts/quality/testing/quality-report.json
-- scripts/testing/verify-critical-coverage.ps1
-- tests/Workbench.Tests/QualityServiceTests.cs
-- tests/Workbench.IntegrationTests/QualityCommandTests.cs
+- [`quality/testing-intent.yaml`](../../../quality/testing-intent.yaml)
+- [`artifacts/quality/testing/quality-summary.md`](../../../artifacts/quality/testing/quality-summary.md)
+- [`artifacts/quality/testing/quality-report.json`](../../../artifacts/quality/testing/quality-report.json)
+- [`scripts/testing/verify-critical-coverage.ps1`](../../../scripts/testing/verify-critical-coverage.ps1)
+- [`tests/Workbench.Tests/QualityServiceTests.cs`](../../../tests/Workbench.Tests/QualityServiceTests.cs)
+- [`tests/Workbench.IntegrationTests/QualityCommandTests.cs`](../../../tests/Workbench.IntegrationTests/QualityCommandTests.cs)
 
 ## Status
 
@@ -67,5 +67,5 @@ passed
 
 ## Related Artifacts
 
-- SPEC-QA-QUALITY-EVIDENCE
-- ARC-WB-0005
+- [`SPEC-QA-QUALITY-EVIDENCE`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)

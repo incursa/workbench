@@ -52,12 +52,12 @@ The quality workflow MUST read authored testing intent from the local contract, 
 
 Trace:
 - Implemented By:
-  - [WI-WB-0015](/specs/work-items/WB/WI-WB-0015-expand-test-gate-into-authored-testing-intent.md)
+  - [`WI-WB-0015`](../../work-items/WB/WI-WB-0015-expand-test-gate-into-authored-testing-intent.md)
 - Related:
-  - [ARC-WB-0005](/architecture/ARC-WB-0005-quality-evidence-operating-model.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Notes:
-- keep `quality/testing-intent.yaml` as the authored testing-intent anchor
+- keep [`quality/testing-intent.yaml`](../../../quality/testing-intent.yaml) as the authored testing-intent anchor
 - link related docs, work items, and files where practical
 
 ## REQ-QE-0002 Normalize observed evidence
@@ -65,13 +65,13 @@ The quality sync command MUST discover test inventory, ingest TRX results, inges
 
 Trace:
 - Implemented By:
-  - [WI-WB-0016](/specs/work-items/WB/WI-WB-0016-add-normalized-test-inventory-discovery-and-schema.md)
-  - [WI-WB-0017](/specs/work-items/WB/WI-WB-0017-add-trx-ingestion-and-test-run-summary-contract.md)
-  - [WI-WB-0018](/specs/work-items/WB/WI-WB-0018-add-cobertura-ingestion-and-coverage-summary-contract.md)
-  - [WI-WB-0019](/specs/work-items/WB/WI-WB-0019-generate-quality-report-json-and-markdown-summary.md)
-  - [WI-WB-0020](/specs/work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
+  - [`WI-WB-0016`](../../work-items/WB/WI-WB-0016-add-normalized-test-inventory-discovery-and-schema.md)
+  - [`WI-WB-0017`](../../work-items/WB/WI-WB-0017-add-trx-ingestion-and-test-run-summary-contract.md)
+  - [`WI-WB-0018`](../../work-items/WB/WI-WB-0018-add-cobertura-ingestion-and-coverage-summary-contract.md)
+  - [`WI-WB-0019`](../../work-items/WB/WI-WB-0019-generate-quality-report-json-and-markdown-summary.md)
+  - [`WI-WB-0020`](../../work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
 - Related:
-  - [ARC-WB-0005](/architecture/ARC-WB-0005-quality-evidence-operating-model.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Notes:
 - keep raw TRX and Cobertura files as inputs, not the canonical record
@@ -82,9 +82,9 @@ The quality show command MUST render the latest normalized report or a selected 
 
 Trace:
 - Implemented By:
-  - [WI-WB-0020](/specs/work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
+  - [`WI-WB-0020`](../../work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
 - Related:
-  - [ARC-WB-0005](/architecture/ARC-WB-0005-quality-evidence-operating-model.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Notes:
 - default to the report view
@@ -95,11 +95,11 @@ The quality report MUST compare authored truth to observed truth and flag missin
 
 Trace:
 - Implemented By:
-  - [WI-WB-0019](/specs/work-items/WB/WI-WB-0019-generate-quality-report-json-and-markdown-summary.md)
-  - [WI-WB-0021](/specs/work-items/WB/WI-WB-0021-add-analyzer-evidence-and-changed-file-heuristics.md)
-  - [WI-WB-0022](/specs/work-items/WB/WI-WB-0022-add-advanced-evidence-extension-points.md)
+  - [`WI-WB-0019`](../../work-items/WB/WI-WB-0019-generate-quality-report-json-and-markdown-summary.md)
+  - [`WI-WB-0021`](../../work-items/WB/WI-WB-0021-add-analyzer-evidence-and-changed-file-heuristics.md)
+  - [`WI-WB-0022`](../../work-items/WB/WI-WB-0022-add-advanced-evidence-extension-points.md)
 - Related:
-  - [ARC-WB-0005](/architecture/ARC-WB-0005-quality-evidence-operating-model.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Notes:
 - report missing evidence and thresholds explicitly
@@ -110,9 +110,9 @@ The quality workflow MUST remain advisory and not turn generated output into mer
 
 Trace:
 - Implemented By:
-  - [WI-WB-0020](/specs/work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
+  - [`WI-WB-0020`](../../work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
 - Related:
-  - [ARC-WB-0005](/architecture/ARC-WB-0005-quality-evidence-operating-model.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Notes:
 - keep the quality report as evidence for humans and agents
@@ -123,13 +123,13 @@ The quality report MUST carry links to the related docs, work items, and code re
 
 Trace:
 - Implemented By:
-  - [WI-WB-0015](/specs/work-items/WB/WI-WB-0015-expand-test-gate-into-authored-testing-intent.md)
-  - [WI-WB-0019](/specs/work-items/WB/WI-WB-0019-generate-quality-report-json-and-markdown-summary.md)
-  - [WI-WB-0020](/specs/work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
-  - [WI-WB-0021](/specs/work-items/WB/WI-WB-0021-add-analyzer-evidence-and-changed-file-heuristics.md)
-  - [WI-WB-0022](/specs/work-items/WB/WI-WB-0022-add-advanced-evidence-extension-points.md)
+  - [`WI-WB-0015`](../../work-items/WB/WI-WB-0015-expand-test-gate-into-authored-testing-intent.md)
+  - [`WI-WB-0019`](../../work-items/WB/WI-WB-0019-generate-quality-report-json-and-markdown-summary.md)
+  - [`WI-WB-0020`](../../work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
+  - [`WI-WB-0021`](../../work-items/WB/WI-WB-0021-add-analyzer-evidence-and-changed-file-heuristics.md)
+  - [`WI-WB-0022`](../../work-items/WB/WI-WB-0022-add-advanced-evidence-extension-points.md)
 - Related:
-  - [ARC-WB-0005](/architecture/ARC-WB-0005-quality-evidence-operating-model.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Notes:
 - prefer local repo links where possible

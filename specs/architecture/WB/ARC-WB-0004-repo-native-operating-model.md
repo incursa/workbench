@@ -80,51 +80,51 @@ repo-native Markdown record.
 
 ## Requirements Satisfied
 
-- REQ-WB-STD-0001
-- REQ-WB-STD-0002
-- REQ-WB-STD-0003
-- REQ-WB-STD-0004
-- REQ-CLI-SURFACE-0001
-- REQ-CLI-SURFACE-0002
-- REQ-CLI-SURFACE-0003
-- REQ-CLI-SURFACE-0004
-- REQ-CLI-SURFACE-0005
-- REQ-CLI-SURFACE-0006
-- REQ-CLI-ITEM-0001
-- REQ-CLI-ITEM-0002
-- REQ-CLI-ITEM-0003
-- REQ-CLI-ITEM-0004
-- REQ-CLI-ITEM-0005
-- REQ-CLI-ITEM-0006
-- REQ-CLI-ITEM-0007
-- REQ-CLI-DOC-0001
-- REQ-CLI-DOC-0002
-- REQ-CLI-DOC-0003
-- REQ-CLI-DOC-0004
-- REQ-CLI-DOC-0005
-- REQ-CLI-DOC-0006
-- REQ-CLI-DOC-0007
-- REQ-CLI-NAV-0001
-- REQ-CLI-NAV-0002
-- REQ-CLI-NAV-0003
-- REQ-CLI-NAV-0004
-- REQ-CLI-NAV-0005
-- REQ-CLI-NAV-0006
-- REQ-CLI-MIGRATE-0001
-- REQ-CLI-MIGRATE-0002
-- REQ-CLI-MIGRATE-0003
-- REQ-CLI-MIGRATE-0004
-- REQ-CLI-MIGRATE-0005
-- REQ-CLI-SCAFFOLD-0001
-- REQ-CLI-SCAFFOLD-0002
-- REQ-CLI-SCAFFOLD-0003
-- REQ-CLI-SCAFFOLD-0004
-- REQ-CLI-SCAFFOLD-0005
-- REQ-SYNC-0001
-- REQ-SYNC-0002
-- REQ-SYNC-0003
-- REQ-SYNC-0004
-- REQ-SYNC-0005
+- [`REQ-WB-STD-0001`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0002`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0003`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0004`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-CLI-SURFACE-0001`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0002`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0003`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0004`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0005`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0006`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-ITEM-0001`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0002`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0003`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0004`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0005`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0006`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0007`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-DOC-0001`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-DOC-0002`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-DOC-0003`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-DOC-0004`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-DOC-0005`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-DOC-0006`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-DOC-0007`](../../requirements/CLI/SPEC-CLI-DOC.md)
+- [`REQ-CLI-NAV-0001`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0002`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0003`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0004`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0005`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-NAV-0006`](../../requirements/CLI/SPEC-CLI-NAV.md)
+- [`REQ-CLI-MIGRATE-0001`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0002`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0003`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0004`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-MIGRATE-0005`](../../requirements/CLI/SPEC-CLI-MIGRATE.md)
+- [`REQ-CLI-SCAFFOLD-0001`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0002`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0003`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0004`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-CLI-SCAFFOLD-0005`](../../requirements/CLI/SPEC-CLI-SCAFFOLD.md)
+- [`REQ-SYNC-0001`](../../requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md)
+- [`REQ-SYNC-0002`](../../requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md)
+- [`REQ-SYNC-0003`](../../requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md)
+- [`REQ-SYNC-0004`](../../requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md)
+- [`REQ-SYNC-0005`](../../requirements/SYNC/SPEC-SYNC-WORK-ITEM-SYNC.md)
 
 ## Design Summary
 
@@ -140,7 +140,7 @@ not a hosted project-management system.
 
 Canonical artifacts:
 
-- `.workbench/config.json` and the schemas under `schemas/`
+- [`.workbench/config.json`](../../../.workbench/config.json) and the schemas under `schemas/`
 - Markdown docs under `runbooks/`, `tracking/`, `specs/requirements/`, `specs/architecture/`, `specs/work-items/`, `specs/verification/`, `specs/generated/`, `specs/templates/`, and `specs/schemas/`
 - Work item Markdown files under `specs/work-items/`
 - The front matter and body content inside those files

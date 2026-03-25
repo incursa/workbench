@@ -26,12 +26,12 @@ IDs work.
 
 - You are inside a Workbench repository.
 - The repo has the canonical `specs` tree and a Workbench config file.
-- If the repo defines `artifact-id-policy.json`, you know the domain and
+- If the repo defines [`artifact-id-policy.json`](../artifact-id-policy.json), you know the domain and
   capability metadata that should be used for the spec ID pattern.
 
 ## Required access/tools
 
-- The `workbench` CLI, preferably the repo-pinned tool or `workbench.ps1`.
+- The `workbench` CLI, preferably the repo-pinned tool or [`workbench.ps1`](../workbench.ps1).
 - A text editor or the Workbench `Specs` page if you want form-based editing.
 - Repository write access if you plan to create or modify files.
 
@@ -53,8 +53,8 @@ IDs work.
 4. Keep the spec body structured.
    - Fill in `Purpose`, `Scope`, `Context`, `Requirements`, `Trace`, `Notes`, and `Open Questions` as needed.
    - Keep requirement blocks stable and numbered with 4-digit sequences.
-   - When a field names another repository document, use a clickable Markdown
-     link or a repo path that Workbench can resolve into one on save.
+   - When a field names another repository document, use a clickable relative Markdown link and keep inline code styling inside the link text when needed.
+   - Use absolute URLs only for external targets such as NuGet package pages or other web-hosted documentation.
 5. Link the spec to work items when delivery work starts.
    ```bash
    workbench spec link --path specs/SPEC-CLI-ONBOARDING.md --work-item WI-WB-0001
@@ -82,12 +82,12 @@ IDs work.
 - If a repo policy is active, the generated artifact ID matches the configured
   template.
 - Specs, architecture docs, work items, and verification artifacts should
-  render clickable repository links wherever they refer to another local
-  document.
+  render clickable relative repository links wherever they refer to another
+  local document.
 
 ## Related docs
 
-- [README](../README.md)
+- [`README`](../README.md)
 - [Overview](../overview.md)
 - [Layout](../layout.md)
 - [Authoring guide](../authoring.md)

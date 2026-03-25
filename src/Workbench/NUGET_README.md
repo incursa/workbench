@@ -80,8 +80,8 @@ workbench doc sync --all
 
 Project documentation and contracts are available in the repository:
 
-- `README.md`
-- `overview.md`
-- `layout.md`
-- `authoring.md`
-- `specs/generated/commands.md`
+- [`README.md`](../../README.md)
+- [`overview.md`](../../overview.md)
+- [`layout.md`](../../layout.md)
+- [`authoring.md`](../../authoring.md)
+- [`specs/generated/commands.md`](../../specs/generated/commands.md)

@@ -27,14 +27,16 @@ Workbench uses Markdown as its primary data model with a CLI for manipulation. U
 want a more discoverable interface that still preserves a single executable and the
 existing CLI workflows. The UI must show which CLI command was invoked and support
 a global dry-run mode that is clearly indicated in outputs.
+The current shipped CLI does not expose this mode yet; this architecture
+documents the planned contract and its shared-service boundary.
 
 ## Requirements Satisfied
 
-- REQ-TUI-0001
-- REQ-TUI-0002
-- REQ-TUI-0003
-- REQ-TUI-0004
-- REQ-TUI-0005
+- [`REQ-TUI-0001`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0002`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0003`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0004`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
+- [`REQ-TUI-0005`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
 
 ## Design Summary
 

@@ -16,6 +16,7 @@ satisfies:
   - REQ-CLI-DOCTOR-0003
   - REQ-CLI-DOCTOR-0004
   - REQ-CLI-DOCTOR-0005
+  - REQ-CLI-DOCTOR-0006
   - REQ-CLI-GUIDE-0001
   - REQ-CLI-GUIDE-0002
   - REQ-CLI-GUIDE-0003
@@ -46,27 +47,28 @@ setup steps are skipped when the repo appears partially configured.
 
 ## Requirements Satisfied
 
-- REQ-CLI-0001
-- REQ-CLI-0002
-- REQ-CLI-0003
-- REQ-CLI-0004
-- REQ-CLI-0005
-- REQ-CLI-DOCTOR-0001
-- REQ-CLI-DOCTOR-0002
-- REQ-CLI-DOCTOR-0003
-- REQ-CLI-DOCTOR-0004
-- REQ-CLI-DOCTOR-0005
-- REQ-CLI-GUIDE-0001
-- REQ-CLI-GUIDE-0002
-- REQ-CLI-GUIDE-0003
-- REQ-CLI-GUIDE-0004
-- REQ-CLI-GUIDE-0005
-- REQ-CLI-INIT-0001
-- REQ-CLI-INIT-0002
-- REQ-CLI-INIT-0003
-- REQ-CLI-INIT-0004
-- REQ-CLI-INIT-0005
-- REQ-CLI-INIT-0006
+- [`REQ-CLI-0001`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0002`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0003`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0004`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0005`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-DOCTOR-0001`](../../requirements/CLI/SPEC-CLI-DOCTOR.md)
+- [`REQ-CLI-DOCTOR-0002`](../../requirements/CLI/SPEC-CLI-DOCTOR.md)
+- [`REQ-CLI-DOCTOR-0003`](../../requirements/CLI/SPEC-CLI-DOCTOR.md)
+- [`REQ-CLI-DOCTOR-0004`](../../requirements/CLI/SPEC-CLI-DOCTOR.md)
+- [`REQ-CLI-DOCTOR-0005`](../../requirements/CLI/SPEC-CLI-DOCTOR.md)
+- [`REQ-CLI-DOCTOR-0006`](../../requirements/CLI/SPEC-CLI-DOCTOR.md)
+- [`REQ-CLI-GUIDE-0001`](../../requirements/CLI/SPEC-CLI-GUIDE.md)
+- [`REQ-CLI-GUIDE-0002`](../../requirements/CLI/SPEC-CLI-GUIDE.md)
+- [`REQ-CLI-GUIDE-0003`](../../requirements/CLI/SPEC-CLI-GUIDE.md)
+- [`REQ-CLI-GUIDE-0004`](../../requirements/CLI/SPEC-CLI-GUIDE.md)
+- [`REQ-CLI-GUIDE-0005`](../../requirements/CLI/SPEC-CLI-GUIDE.md)
+- [`REQ-CLI-INIT-0001`](../../requirements/CLI/SPEC-CLI-INIT.md)
+- [`REQ-CLI-INIT-0002`](../../requirements/CLI/SPEC-CLI-INIT.md)
+- [`REQ-CLI-INIT-0003`](../../requirements/CLI/SPEC-CLI-INIT.md)
+- [`REQ-CLI-INIT-0004`](../../requirements/CLI/SPEC-CLI-INIT.md)
+- [`REQ-CLI-INIT-0005`](../../requirements/CLI/SPEC-CLI-INIT.md)
+- [`REQ-CLI-INIT-0006`](../../requirements/CLI/SPEC-CLI-INIT.md)
 
 ## Design Summary
 

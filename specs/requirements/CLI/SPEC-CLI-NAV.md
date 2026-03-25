@@ -52,4 +52,4 @@ The `nav` group root MUST not mutate authored content outside derived outputs.
 
 ## Command Family Catalog
 
-- [SPEC-CLI-NAV-SYNC](./SPEC-CLI-NAV-SYNC.md)
+- [`SPEC-CLI-NAV-SYNC`](SPEC-CLI-NAV-SYNC.md)

@@ -97,18 +97,17 @@
                        asp-route-statusFilter="@Model.StatusFilter"
                        asp-route-query="@Model.Query"
                        asp-route-includeDone="@Model.IncludeDone">
-                    <div class="inc-card__body">
-                        <div class="item-card-top">
-                            <span class="item-id">@item.Id</span>
-                            <span class="pill @StatusClass(item.Status)">@StatusLabel(item.Status)</span>
+                        <div class="inc-card__body">
+                            <div class="item-card-top">
+                                <span class="item-id">@item.Id</span>
+                                <span class="pill @StatusClass(item.Status)">@StatusLabel(item.Status)</span>
+                            </div>
+                            <div class="item-title">@item.Title</div>
+                            <div class="item-meta">
+                                <span>@(string.IsNullOrWhiteSpace(item.Owner) ? "unowned" : item.Owner)</span>
+                                <span>@(string.IsNullOrWhiteSpace(item.Priority) ? "unprioritized" : item.Priority)</span>
+                            </div>
                         </div>
-                        <div class="item-title">@item.Title</div>
-                        <div class="item-meta">
-                            <span class="pill @PriorityClass(item.Priority)">@(!string.IsNullOrWhiteSpace(item.Priority) ? item.Priority : "unprioritized")</span>
-                            <span>@(string.IsNullOrWhiteSpace(item.Owner) ? "unowned" : item.Owner)</span>
-                            <span>@item.Updated</span>
-                        </div>
-                    </div>
                     </a>
                 }
             }

@@ -5,7 +5,7 @@ description: Architecture and ADR workflows for Workbench CLI. Use when document
 
 ## Key settings
 
-- `.workbench/config.json`: paths.docsRoot, git.defaultBaseBranch.
+- [`.workbench/config.json`](../../../.workbench/config.json): paths.docsRoot, git.defaultBaseBranch.
 - Use `workbench.ps1 config show --format json` to confirm defaults.
 
 ## Core workflows

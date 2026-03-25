@@ -24,10 +24,10 @@ Canonical Spec Trace integration, artifact validation, requirement grammar, layo
 
 ## Requirements Verified
 
-- REQ-WB-STD-0001
-- REQ-WB-STD-0002
-- REQ-WB-STD-0003
-- REQ-WB-STD-0004
+- [`REQ-WB-STD-0001`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0002`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0003`](../../requirements/WB/SPEC-WB-STD.md)
+- [`REQ-WB-STD-0004`](../../requirements/WB/SPEC-WB-STD.md)
 
 ## Verification Method
 
@@ -49,11 +49,11 @@ The linked requirements are satisfied by the documented repository behavior and 
 
 ## Evidence
 
-- README.md
-- overview.md
-- layout.md
-- authoring.md
-- artifact-id-policy.json
+- [`README.md`](../../../README.md)
+- [`overview.md`](../../../overview.md)
+- [`layout.md`](../../../layout.md)
+- [`authoring.md`](../../../authoring.md)
+- [`artifact-id-policy.json`](../../../artifact-id-policy.json)
 - schemas/artifact-frontmatter.schema.json
 
 ## Status
@@ -64,6 +64,6 @@ passed
 
 ## Related Artifacts
 
-- SPEC-WB-STD
-- ARC-WB-0004
-- ARC-WB-0007
+- [`SPEC-WB-STD`](../../requirements/WB/SPEC-WB-STD.md)
+- [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)

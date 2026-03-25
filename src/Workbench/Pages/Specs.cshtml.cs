@@ -34,7 +34,7 @@ public class SpecsModel : RepoPageModel
 
     public IReadOnlyList<RepoDocSummary> Specs { get; private set; } = Array.Empty<RepoDocSummary>();
 
-    public RepoTreeBranch Tree { get; private set; } = new("Repository", string.Empty, 0, Array.Empty<RepoTreeBranch>(), Array.Empty<RepoTreeEntry>());
+    public RepoTreeBranch Tree { get; private set; } = new("Specifications", string.Empty, 0, Array.Empty<RepoTreeBranch>(), Array.Empty<RepoTreeEntry>());
 
     public RepoDocDetail? SelectedSpec { get; private set; }
 
@@ -131,10 +131,77 @@ public class SpecsModel : RepoPageModel
         }
 
         SpecIdPolicySummary = Workspace.GetSpecIdPolicySummary();
-        Tree = WorkbenchWorkspace.BuildDocTree(
+        Tree = BuildSpecTree(
             Specs,
             doc => Url.Page("/Specs", new { selectedReference = doc.ArtifactId ?? doc.Path, query = Query }) ?? doc.Path,
             IsCreateMode ? null : SelectedReference);
+    }
+
+    private static RepoTreeBranch BuildSpecTree(
+        IReadOnlyList<RepoDocSummary> specs,
+        Func<RepoDocSummary, string> hrefFactory,
+        string? selectedReference)
+    {
+        var branches = specs
+            .GroupBy(GetSpecGroupName, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key.Equals("Ungrouped", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+            .ThenBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(group =>
+            {
+                var entries = group
+                    .OrderBy(spec => spec.ArtifactId ?? spec.Path, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(spec => spec.Title, StringComparer.OrdinalIgnoreCase)
+                    .Select(spec => new RepoTreeEntry(
+                        spec.Path,
+                        spec.Title,
+                        string.IsNullOrWhiteSpace(spec.ArtifactId) ? spec.Domain ?? spec.Type : spec.ArtifactId,
+                        string.Empty,
+                        null,
+                        hrefFactory(spec),
+                        IsSelected: !string.IsNullOrWhiteSpace(selectedReference) &&
+                            (spec.Path.Equals(selectedReference, StringComparison.OrdinalIgnoreCase) ||
+                             (!string.IsNullOrWhiteSpace(spec.ArtifactId) &&
+                              spec.ArtifactId.Equals(selectedReference, StringComparison.OrdinalIgnoreCase)))))
+                    .ToList();
+
+                return new RepoTreeBranch(group.Key, group.Key, entries.Count, Array.Empty<RepoTreeBranch>(), entries);
+            })
+            .ToList();
+
+        return new RepoTreeBranch("Specifications", string.Empty, specs.Count, branches, Array.Empty<RepoTreeEntry>());
+    }
+
+    private static string GetSpecGroupName(RepoDocSummary spec)
+    {
+        if (!string.IsNullOrWhiteSpace(spec.Domain))
+        {
+            return spec.Domain.Trim().ToUpperInvariant();
+        }
+
+        if (!string.IsNullOrWhiteSpace(spec.ArtifactId))
+        {
+            var artifactId = spec.ArtifactId.Trim();
+            if (artifactId.StartsWith("SPEC-", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = artifactId.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Length >= 3)
+                {
+                    return parts[1].ToUpperInvariant();
+                }
+            }
+        }
+
+        var folder = Path.GetDirectoryName(spec.Path);
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            var name = Path.GetFileName(folder);
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                return name.ToUpperInvariant();
+            }
+        }
+
+        return "Ungrouped";
     }
 
     private RepoDocDetail? ResolveSelectedSpec()

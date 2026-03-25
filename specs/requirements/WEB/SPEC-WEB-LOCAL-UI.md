@@ -24,8 +24,9 @@ structured specification editing.
 
 - provide a click-first local editing experience for work items
 - add a compact specs browser with stable identifier-family grouping
-- add card-based requirement editing with save-time validation
+- add card-based requirement editing with per-card save/delete/reorder controls and all-or-nothing save-all validation
 - add docs and file browsers with tree-style grouping
+- hide the rendered markdown preview behind a collapsed toggle by default
 - add a separate create-item page
 - keep the UI repo-native and single-file publish friendly
 
@@ -42,9 +43,9 @@ The UI MUST run from the same published Workbench executable that provides the C
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - keep the host single-file friendly
@@ -54,9 +55,9 @@ The UI MUST use the existing Workbench.Core services for item creation, editing,
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - avoid duplicating parsing or mutation logic in the UI layer
@@ -66,9 +67,9 @@ The UI MUST provide a browsable work-item view, a selected-item editor, a separa
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - keep docs browsing tree-oriented instead of flat
@@ -79,9 +80,9 @@ The UI MUST support local work-item and doc management without requiring GitHub 
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - keep GitHub issues as the coordination surface, not the canonical store
@@ -91,9 +92,9 @@ The UI MUST include an obvious browser-launch path for interactive sessions and 
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - keep the author profile machine-local
@@ -104,9 +105,9 @@ The UI MUST keep page content and cards visually separated with interior padding
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - use the same spacing treatment across the specs page
@@ -116,9 +117,9 @@ The Specs page MUST group specification cards under stable identifier-family hea
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - examples include `SPEC-CLI`, `SPEC-QA`, and `SPEC-WEB`
@@ -128,9 +129,9 @@ Each specification card MUST display only the specification artifact ID and titl
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - the file path and summary excerpt stay hidden from the default view
@@ -140,9 +141,9 @@ The Specs page MUST NOT require nested collapsible repository, spec, or requirem
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - group headers may remain collapsible
@@ -152,9 +153,9 @@ The Requirements section MUST include an Add Requirement button that appends a b
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - the new card should start with empty requirement fields
@@ -164,41 +165,77 @@ The requirement editor MUST expose separate inputs for requirement ID, title, an
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
 - the ID input controls the `REQ-...` heading token
 - the title input controls the heading title
 - the clause input controls the sentence that appears immediately after the heading
 
-## REQ-WEB-0012 Validate requirement clauses on save
-The page Save button MUST reject any requirement whose ID is missing or malformed, whose title is missing, or whose clause does not contain exactly one approved normative keyword.
+## REQ-WEB-0012 Expose requirement card actions
+The requirement editor MUST expose Save, Delete, and Move Earlier/Move Later controls on each requirement card.
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
-- approved keywords are `MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, and `MAY`
+- the Save control is covered by REQ-WEB-0013
+- the Delete control removes the targeted card from the editing list
+- the Move Earlier and Move Later controls change the card order in the current list
 
-## REQ-WEB-0013 Collapse optional sections until edited
-The Core Narrative, Open Questions, and Related Artifacts sections MUST render as read-only or collapsed by default when empty.
+## REQ-WEB-0013 Save requirement cards independently
+The card Save button MUST validate only the targeted card and persist only that card when it is valid.
 
 Trace:
 - Implemented By:
-  - [WI-WB-0023](/specs/work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
 - Related:
-  - [ARC-WB-0006](/architecture/ARC-WB-0006-local-web-ui-mode.md)
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
 Notes:
-- their Edit button expands the section into editable inputs without discarding saved values
+- if validation fails, the card stays unsaved, its validation errors remain visible, and no other card is marked saved by that action
+
+## REQ-WEB-0014 Validate Save All atomically
+The Save All button MUST refuse to persist any requirement card when any card is invalid.
+
+Trace:
+- Implemented By:
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+- Related:
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
+
+Notes:
+- the page should surface every failing card and keep invalid cards visibly marked unsaved so the blocked batch does not look like a successful save
+
+## REQ-WEB-0015 Collapse optional sections until edited
+The Core Narrative, Open Questions, and Related Artifacts sections MUST render collapsed and read-only by default when empty.
+
+Trace:
+- Implemented By:
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+- Related:
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
+
+Notes:
+- each section's Edit button expands the section into editable inputs without discarding saved values
+
+## REQ-WEB-0016 Hide rendered preview by default
+The rendered Markdown preview MUST start hidden behind a collapsed toggle and only appear after the user expands it.
+
+Trace:
+- Implemented By:
+  - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+- Related:
+  - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
+
+Notes:
+- the preview can remain available, but it should not occupy the default editing layout
 
 ## Open Questions
 
-- Should the Specs page keep the rendered Markdown preview, hide it behind a toggle, or remove it?
-- Should requirement cards support delete and reordering actions in the first pass, or only append and edit?
 - Should identifier-family grouping always use the `SPEC-<DOMAIN>` prefix, or should it follow a configurable registry when one exists?

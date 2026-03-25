@@ -45,22 +45,22 @@ behavior contracts.
 
 ## Requirements Addressed
 
-- REQ-CLI-SURFACE-0001
-- REQ-CLI-SURFACE-0002
-- REQ-CLI-SURFACE-0003
-- REQ-CLI-SURFACE-0004
-- REQ-CLI-SURFACE-0005
-- REQ-CLI-SURFACE-0006
-- REQ-CLI-0001
-- REQ-CLI-0002
-- REQ-CLI-0003
-- REQ-CLI-0004
-- REQ-CLI-0005
+- [`REQ-CLI-SURFACE-0001`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0002`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0003`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0004`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0005`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0006`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-0001`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0002`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0003`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0004`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0005`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
 
 ## Design Inputs
 
-- ARC-WB-0004
-- ARC-WB-0007
+- [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 ## Planned Changes
 
@@ -87,31 +87,31 @@ State how the work will be proven and link the verification artifact.
 
 - Author the specs under `specs/` with one spec per command family or command
   node, plus a root surface index that points at the focused specs.
-- Keep the command-tree terminology aligned with the live `specs/generated/commands.md`
+- Keep the command-tree terminology aligned with the live [`specs/generated/commands.md`](../../generated/commands.md)
   snapshot and the executable help output.
 
 ## Trace Links
 
 Addresses:
 
-- REQ-CLI-SURFACE-0001
-- REQ-CLI-SURFACE-0002
-- REQ-CLI-SURFACE-0003
-- REQ-CLI-SURFACE-0004
-- REQ-CLI-SURFACE-0005
-- REQ-CLI-SURFACE-0006
-- REQ-CLI-0001
-- REQ-CLI-0002
-- REQ-CLI-0003
-- REQ-CLI-0004
-- REQ-CLI-0005
+- [`REQ-CLI-SURFACE-0001`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0002`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0003`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0004`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0005`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-SURFACE-0006`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
+- [`REQ-CLI-0001`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0002`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0003`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0004`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
+- [`REQ-CLI-0005`](../../requirements/CLI/SPEC-CLI-ONBOARDING.md)
 
 Uses Design:
 
-- ARC-WB-0004
-- ARC-WB-0007
+- [`ARC-WB-0004`](../../architecture/WB/ARC-WB-0004-repo-native-operating-model.md)
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 Verified By:
 
-- VER-WB-0001
-- VER-WB-0005
+- [`VER-WB-0001`](../../verification/WB/VER-WB-0001-repo-operations-and-command-surface.md)
+- [`VER-WB-0005`](../../verification/WB/VER-WB-0005-workbench-standards-integration.md)

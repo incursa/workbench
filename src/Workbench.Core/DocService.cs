@@ -1513,7 +1513,7 @@ public static class DocService
             }
             else if (string.Equals(canonicalType, "verification", StringComparison.OrdinalIgnoreCase))
             {
-                var verificationRoot = Path.GetFullPath(Path.Combine(repoRoot, SpecTraceLayout.SpecsRoot, SpecTraceLayout.VerificationRoot));
+                var verificationRoot = Path.GetFullPath(Path.Combine(repoRoot, SpecTraceLayout.VerificationRoot));
                 if (!IsChildPath(target, verificationRoot) ||
                     Path.GetFileName(target).Equals("README.md", StringComparison.OrdinalIgnoreCase))
                 {

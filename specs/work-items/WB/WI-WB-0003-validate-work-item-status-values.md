@@ -42,24 +42,24 @@ future-friendly path for configurable statuses.
 
 ## Requirements Addressed
 
-- REQ-CLI-ITEM-STATUS-0001
-- REQ-CLI-ITEM-STATUS-0002
-- REQ-CLI-ITEM-STATUS-0003
-- REQ-CLI-ITEM-STATUS-0004
-- REQ-CLI-ITEM-STATUS-0005
-- REQ-CLI-ITEM-STATUS-0006
-- REQ-CLI-ITEM-STATUS-0007
-- REQ-CLI-ITEM-0001
-- REQ-CLI-ITEM-0002
-- REQ-CLI-ITEM-0003
-- REQ-CLI-ITEM-0004
-- REQ-CLI-ITEM-0005
-- REQ-CLI-ITEM-0006
-- REQ-CLI-ITEM-0007
+- [`REQ-CLI-ITEM-STATUS-0001`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0002`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0003`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0004`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0005`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0006`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0007`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-0001`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0002`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0003`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0004`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0005`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0006`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0007`](../../requirements/CLI/SPEC-CLI-ITEM.md)
 
 ## Design Inputs
 
-- ARC-WB-0007
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 ## Planned Changes
 
@@ -84,25 +84,25 @@ Optional implementation notes, deviations, or follow-up items.
 
 Addresses:
 
-- REQ-CLI-ITEM-STATUS-0001
-- REQ-CLI-ITEM-STATUS-0002
-- REQ-CLI-ITEM-STATUS-0003
-- REQ-CLI-ITEM-STATUS-0004
-- REQ-CLI-ITEM-STATUS-0005
-- REQ-CLI-ITEM-STATUS-0006
-- REQ-CLI-ITEM-STATUS-0007
-- REQ-CLI-ITEM-0001
-- REQ-CLI-ITEM-0002
-- REQ-CLI-ITEM-0003
-- REQ-CLI-ITEM-0004
-- REQ-CLI-ITEM-0005
-- REQ-CLI-ITEM-0006
-- REQ-CLI-ITEM-0007
+- [`REQ-CLI-ITEM-STATUS-0001`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0002`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0003`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0004`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0005`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0006`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-STATUS-0007`](../../requirements/CLI/SPEC-CLI-ITEM-STATUS.md)
+- [`REQ-CLI-ITEM-0001`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0002`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0003`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0004`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0005`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0006`](../../requirements/CLI/SPEC-CLI-ITEM.md)
+- [`REQ-CLI-ITEM-0007`](../../requirements/CLI/SPEC-CLI-ITEM.md)
 
 Uses Design:
 
-- ARC-WB-0007
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 Verified By:
 
-- VER-WB-0001
+- [`VER-WB-0001`](../../verification/WB/VER-WB-0001-repo-operations-and-command-surface.md)

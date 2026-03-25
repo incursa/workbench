@@ -5,7 +5,7 @@ description: Documentation workflows for Workbench CLI. Use when creating or upd
 
 ## Key settings
 
-- `.workbench/config.json`: paths.docsRoot, paths.templatesDir, ids.width, prefixes, git.defaultBaseBranch, github.owner, github.repository.
+- [`.workbench/config.json`](../../../.workbench/config.json): paths.docsRoot, paths.templatesDir, ids.width, prefixes, git.defaultBaseBranch, github.owner, github.repository.
 - Use `workbench.ps1 config show --format json` to verify effective settings.
 
 ## Core workflows
@@ -67,6 +67,7 @@ workbench.ps1 doc summarize --staged --update-index
 
 - Keep doc types aligned with folder intent (product, architecture, decisions, runbooks).
 - Always link docs to relevant work items with `--work-item` or `workbench.ps1 item link`.
+- When writing markdown, use clickable relative links for repository-local references, and keep inline code styling inside the link text when needed. Use absolute URLs only for external resources such as NuGet package pages.
 - For major changes, write a spec before implementation.
 - When decisions change, update or create the ADR.
 - Prefer `workbench.ps1 doc` commands; `workbench.ps1 spec` and `workbench.ps1 adr` are deprecated.

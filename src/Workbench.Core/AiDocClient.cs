@@ -12,6 +12,8 @@ public sealed class AiDocClient
         - title: concise title, 3-10 words.
         - body: markdown content without YAML front matter.
         Use clear headings and avoid placeholders.
+        When the body references repository-local files, folders, classes, interfaces, or symbols, render them as clickable relative Markdown links and keep inline code styling inside the link text, for example [`ValidationService`](../src/Workbench.Core/ValidationService.cs).
+        Use absolute URLs only for external resources such as NuGet package pages or other web-hosted documentation.
         """;
 
     private const string DefaultPrompt = """

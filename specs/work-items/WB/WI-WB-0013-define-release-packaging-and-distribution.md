@@ -32,20 +32,20 @@ installing Workbench.
 
 ## Requirements Addressed
 
-- REQ-WB-RELEASE-0001
-- REQ-WB-RELEASE-0002
-- REQ-WB-RELEASE-0003
-- REQ-WB-RELEASE-0004
-- REQ-WB-RELEASE-0005
+- [`REQ-WB-RELEASE-0001`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0002`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0003`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0004`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0005`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
 
 ## Design Inputs
 
-- ARC-WB-0007
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 ## Planned Changes
 
 - Release checklist covers versioning, changelog/update notes, and validation.
-- Installation docs include dotnet tool install + optional native binaries.
+- Installation docs include dotnet tool install + optional self-contained single-file binaries.
 - CI or scripted workflow publishes artifacts in a repeatable way.
 
 ## Out of Scope
@@ -65,16 +65,16 @@ Optional implementation notes, deviations, or follow-up items.
 
 Addresses:
 
-- REQ-WB-RELEASE-0001
-- REQ-WB-RELEASE-0002
-- REQ-WB-RELEASE-0003
-- REQ-WB-RELEASE-0004
-- REQ-WB-RELEASE-0005
+- [`REQ-WB-RELEASE-0001`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0002`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0003`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0004`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
+- [`REQ-WB-RELEASE-0005`](../../requirements/WB/SPEC-WB-PUBLIC-RELEASE.md)
 
 Uses Design:
 
-- ARC-WB-0007
+- [`ARC-WB-0007`](../../architecture/WB/ARC-WB-0007-workbench-boundaries.md)
 
 Verified By:
 
-- VER-WB-0006
+- [`VER-WB-0006`](../../verification/WB/VER-WB-0006-public-release-support.md)

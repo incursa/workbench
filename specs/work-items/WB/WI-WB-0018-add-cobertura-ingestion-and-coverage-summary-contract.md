@@ -33,23 +33,23 @@ compare authored thresholds and critical files against observed coverage.
 
 ## Requirements Addressed
 
-- REQ-QE-0001
-- REQ-QE-0002
-- REQ-QE-0003
-- REQ-QE-0004
-- REQ-QE-0005
-- REQ-QE-0006
+- [`REQ-QE-0001`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0002`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0003`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Design Inputs
 
-- ARC-WB-0005
+- [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 ## Planned Changes
 
 - Workbench ingests Cobertura-compatible coverage files and emits
 - `artifacts/quality/testing/coverage-summary.json`.
 - The summary includes overall coverage plus per-file and critical-file views.
-- The output matches `schemas/coverage-summary.schema.json`.
+- The output matches [`schemas/coverage-summary.schema.json`](../../../schemas/coverage-summary.schema.json).
 
 ## Out of Scope
 
@@ -68,17 +68,17 @@ Optional implementation notes, deviations, or follow-up items.
 
 Addresses:
 
-- REQ-QE-0001
-- REQ-QE-0002
-- REQ-QE-0003
-- REQ-QE-0004
-- REQ-QE-0005
-- REQ-QE-0006
+- [`REQ-QE-0001`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0002`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0003`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 Uses Design:
 
-- ARC-WB-0005
+- [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
 Verified By:
 
-- VER-WB-0002
+- [`VER-WB-0002`](../../verification/WB/VER-WB-0002-quality-evidence.md)
