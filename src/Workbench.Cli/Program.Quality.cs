@@ -97,6 +97,126 @@ public partial class Program
             }
         });
 
+        var attestCommand = new Command("attest", "Generate a derived repository evidence snapshot as HTML and JSON.");
+        var attestScopeOption = new Option<string[]>("--scope")
+        {
+            Description = "Repo-relative path prefixes or files to include in the snapshot scope.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var attestProfileOption = new Option<string>("--profile")
+        {
+            Description = "Validation profile to use for the snapshot (core|traceable|auditable)."
+        };
+        attestProfileOption.CompletionSources.Add("core", "traceable", "auditable");
+        var emitOption = new Option<string>("--emit")
+        {
+            Description = "Derived output format to write (html|json|both).",
+            DefaultValueFactory = _ => "both"
+        };
+        emitOption.CompletionSources.Add("html", "json", "both");
+        var attestOutDirOption = new Option<string?>("--out-dir")
+        {
+            Description = "Directory for derived attestation artifacts.",
+            DefaultValueFactory = _ => AttestationService.DefaultOutputDirectory
+        };
+        var attestConfigOption = new Option<string?>("--config")
+        {
+            Description = "Optional attestation config path.",
+            DefaultValueFactory = _ => AttestationConfig.DefaultConfigPath
+        };
+        var attestResultsOption = new Option<string?>("--results")
+        {
+            Description = "TRX file or directory root to ingest for evidence."
+        };
+        var attestCoverageOption = new Option<string?>("--coverage")
+        {
+            Description = "Cobertura file or directory root to ingest for evidence."
+        };
+        var benchmarksOption = new Option<string?>("--benchmarks")
+        {
+            Description = "Benchmark evidence file or directory root to inspect."
+        };
+        var manualQaOption = new Option<string?>("--manual-qa")
+        {
+            Description = "Manual QA evidence file or directory root to inspect."
+        };
+        var execOption = new Option<bool>("--exec")
+        {
+            Description = "Run configured evidence refresh commands before generating the snapshot."
+        };
+        var noExecOption = new Option<bool>("--no-exec")
+        {
+            Description = "Do not execute configured evidence refresh commands."
+        };
+        attestCommand.Options.Add(attestScopeOption);
+        attestCommand.Options.Add(attestProfileOption);
+        attestCommand.Options.Add(emitOption);
+        attestCommand.Options.Add(attestOutDirOption);
+        attestCommand.Options.Add(attestConfigOption);
+        attestCommand.Options.Add(attestResultsOption);
+        attestCommand.Options.Add(attestCoverageOption);
+        attestCommand.Options.Add(benchmarksOption);
+        attestCommand.Options.Add(manualQaOption);
+        attestCommand.Options.Add(execOption);
+        attestCommand.Options.Add(noExecOption);
+        attestCommand.SetAction(parseResult =>
+        {
+            try
+            {
+                var repo = parseResult.GetValue(repoOption);
+                var format = parseResult.GetValue(formatOption) ?? "table";
+                var repoRoot = ResolveRepo(repo);
+                var resolvedFormat = ResolveFormat(format);
+                _ = WorkbenchConfig.Load(repoRoot, out var configError);
+                if (configError is not null)
+                {
+                    Console.WriteLine($"Config error: {configError}");
+                    SetExitCode(2);
+                    return;
+                }
+
+                var result = AttestationService.Generate(
+                    repoRoot,
+                    new AttestationRunOptions(
+                        (parseResult.GetValue(attestScopeOption) ?? Array.Empty<string>()).ToList(),
+                        parseResult.GetValue(attestProfileOption),
+                        parseResult.GetValue(emitOption) ?? "both",
+                        parseResult.GetValue(attestOutDirOption) ?? AttestationService.DefaultOutputDirectory,
+                        parseResult.GetValue(attestConfigOption),
+                        parseResult.GetValue(attestResultsOption),
+                        parseResult.GetValue(attestCoverageOption),
+                        parseResult.GetValue(benchmarksOption),
+                        parseResult.GetValue(manualQaOption),
+                        parseResult.GetValue(execOption),
+                        parseResult.GetValue(noExecOption)));
+
+                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteJson(
+                        new AttestationOutput(
+                            true,
+                            new AttestationRunData(
+                                result.Snapshot,
+                                result.SummaryHtmlPath,
+                                result.DetailsHtmlPath,
+                                result.JsonPath,
+                                result.Warnings.ToList())),
+                        WorkbenchJsonContext.Default.AttestationOutput);
+                }
+                else
+                {
+                    WriteAttestationTable(result);
+                }
+
+                SetExitCode(0);
+            }
+            catch (Exception ex)
+            {
+                ReportError(ex);
+                SetExitCode(2);
+            }
+        });
+
         var showCommand = new Command("show", "Read the latest normalized quality artifact or a selected evidence kind.");
         var kindOption = new Option<string>("--kind")
         {
@@ -151,10 +271,11 @@ public partial class Program
         });
 
         qualityCommand.Subcommands.Add(syncCommand);
+        qualityCommand.Subcommands.Add(attestCommand);
         qualityCommand.Subcommands.Add(showCommand);
         qualityCommand.SetAction(parseResult =>
         {
-            Console.WriteLine("Use `workbench quality sync` to generate testing evidence or `workbench quality show` to inspect it.");
+            Console.WriteLine("Use `workbench quality sync` to generate testing evidence, `workbench quality attest` to generate a repository evidence snapshot, or `workbench quality show` to inspect normalized artifacts.");
             SetExitCode(0);
         });
 
@@ -247,5 +368,45 @@ public partial class Program
         {
             Console.WriteLine($"- {entry}");
         }
+    }
+
+    static void WriteAttestationTable(AttestationRunResult result)
+    {
+        var snapshot = result.Snapshot;
+        var trace = snapshot.Aggregates.TraceCoverage;
+        var workItems = snapshot.Aggregates.WorkItemStatuses;
+        var verifications = snapshot.Aggregates.VerificationStatuses;
+
+        Console.WriteLine($"Repository: {snapshot.Repository.Root}");
+        Console.WriteLine($"Profile: {snapshot.Selection.Profile}");
+        Console.WriteLine($"Scope: {(snapshot.Selection.Scope.Count == 0 ? "entire repository" : string.Join(", ", snapshot.Selection.Scope))}");
+        Console.WriteLine($"Requirements: {snapshot.Aggregates.Requirements}");
+        Console.WriteLine($"Trace coverage: {trace.WithSatisfiedBy}/{trace.Requirements} satisfied, {trace.WithImplementedBy}/{trace.Requirements} implemented, {trace.WithVerifiedBy}/{trace.Requirements} verified");
+        Console.WriteLine($"Direct refs: {trace.WithTestRefs}/{trace.Requirements} test refs, {trace.WithCodeRefs}/{trace.Requirements} code refs");
+        Console.WriteLine($"Work items: {workItems.Done} done, {workItems.InProgress} in progress, {workItems.Open} open, {workItems.Blocked} blocked, {workItems.Unknown} unknown");
+        Console.WriteLine($"Verification artifacts: {verifications.Passing} passing, {verifications.Failing} failing, {verifications.Pending} pending, {verifications.Stale} stale, {verifications.Unknown} unknown");
+        Console.WriteLine($"Evidence: tests {snapshot.Evidence.TestResults.Status ?? "unknown"}, coverage {snapshot.Evidence.Coverage.Status ?? "unknown"}, benchmarks {snapshot.Evidence.Benchmarks.Status ?? "unknown"}, manual QA {snapshot.Evidence.ManualQa.Status ?? "unknown"}");
+
+        if (snapshot.Evidence.Execution.Requested)
+        {
+            Console.WriteLine($"Execution: {(snapshot.Evidence.Execution.Performed ? "performed" : "requested")}, {snapshot.Evidence.Execution.Commands.Count} command(s)");
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.SummaryHtmlPath))
+        {
+            Console.WriteLine($"Summary HTML: {result.SummaryHtmlPath}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.DetailsHtmlPath))
+        {
+            Console.WriteLine($"Details HTML: {result.DetailsHtmlPath}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.JsonPath))
+        {
+            Console.WriteLine($"JSON snapshot: {result.JsonPath}");
+        }
+
+        WriteQualityEntries("Warnings", result.Warnings);
     }
 }

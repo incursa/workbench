@@ -23,6 +23,7 @@ record.
 - Keep canonical templates under `specs/templates/`.
 - Keep canonical schemas under `specs/schemas/`.
 - Keep the quality intent contract in [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
+- Keep the attestation config in [`quality/attestation.yaml`](quality/attestation.yaml) when you want repo-local evidence rollup defaults.
 - Treat `overview/`, `contracts/`, `decisions/`, `work/`, and the old root
   template/schema copies as removed legacy surfaces.
 
@@ -36,7 +37,9 @@ record.
 4. Use `workbench item link` to connect work items to specs, architecture docs,
    and verification artifacts.
 5. Refresh generated views with `workbench nav sync` and run
-   `workbench validate` before review or automation.
+   `workbench validate` before review or automation. Use
+   `--profile traceable` or `--profile auditable` when you need stronger graph
+   checks, and `--scope <path>` to focus validation on a subtree.
 6. Agents should prefer `workbench llm help` and `--format json`.
 
 ## Sync model
@@ -159,7 +162,13 @@ Expected warnings:
 
 ## Quality evidence
 
-Workbench quality evidence is advisory in this repo. It summarizes authored test intent plus observed test and coverage artifacts, but it does not introduce a merge gate.
+Workbench quality evidence is advisory in this repo. `workbench quality sync`
+normalizes raw test and coverage evidence into `artifacts/quality/testing/`.
+`workbench quality attest` produces a read-only snapshot in
+`artifacts/quality/attestation/` that rolls up requirement coverage, trace
+completeness, direct refs, work-item status, verification status, and evidence
+health. Neither command mutates canonical trace or turns direct refs into
+canonical downstream edges.
 
 Happy path:
 
@@ -168,16 +177,25 @@ dotnet tool restore
 pwsh -File scripts/testing/run-quality-evidence.ps1
 dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage
 dotnet tool run workbench quality show
+dotnet tool run workbench quality attest
 ```
 
 Path conventions:
 
 - Authored intent: [`quality/testing-intent.yaml`](quality/testing-intent.yaml)
+- Attestation defaults: [`quality/attestation.yaml`](quality/attestation.yaml)
 - Raw test evidence: `artifacts/quality/raw/test-results/*.trx`
 - Raw coverage evidence: `artifacts/quality/raw/coverage/*.cobertura.xml`
 - Generated quality artifacts: `artifacts/quality/testing/`
+- Generated attestation artifacts: `artifacts/quality/attestation/`
 
-Generated artifacts under `artifacts/quality/testing/` are derived outputs. Do not hand-edit them.
+Generated artifacts under `artifacts/quality/testing/` are derived outputs. Do
+not hand-edit them, and do not treat them as canonical `Verified By` coverage
+unless you explicitly project them into a verification artifact.
+
+Generated attestation artifacts under `artifacts/quality/attestation/` are
+derived outputs too. They report the current repository snapshot; they do not
+replace authored requirements or canonical trace.
 
 ## Voice commands
 

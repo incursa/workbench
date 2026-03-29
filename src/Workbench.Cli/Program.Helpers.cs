@@ -32,7 +32,7 @@ public partial class Program
             var arg = args[i];
             if (string.Equals(arg, "--repo", StringComparison.Ordinal))
             {
-                if (i + 1 < args.Length)
+                if (i + 1 < args.Length && !args[i + 1].StartsWith("-", StringComparison.Ordinal))
                 {
                     front.Add("--repo");
                     front.Add(args[i + 1]);
@@ -54,7 +54,7 @@ public partial class Program
 
             if (string.Equals(arg, "--format", StringComparison.Ordinal))
             {
-                if (i + 1 < args.Length)
+                if (i + 1 < args.Length && !args[i + 1].StartsWith("-", StringComparison.Ordinal))
                 {
                     front.Add("--format");
                     front.Add(args[i + 1]);

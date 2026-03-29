@@ -30,6 +30,8 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(PromoteOutput))]
 [JsonSerializable(typeof(PrOutput))]
 [JsonSerializable(typeof(ValidateOutput))]
+[JsonSerializable(typeof(ValidateData))]
+[JsonSerializable(typeof(ValidationFinding))]
 [JsonSerializable(typeof(DocCreateOutput))]
 [JsonSerializable(typeof(DocShowOutput))]
 [JsonSerializable(typeof(DocEditOutput))]
@@ -49,6 +51,9 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(QualityReport))]
 [JsonSerializable(typeof(QualitySyncOutput))]
 [JsonSerializable(typeof(QualityShowOutput))]
+[JsonSerializable(typeof(AttestationSnapshot))]
+[JsonSerializable(typeof(AttestationRunData))]
+[JsonSerializable(typeof(AttestationOutput))]
 public partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

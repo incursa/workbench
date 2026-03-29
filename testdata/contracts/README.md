@@ -5,3 +5,4 @@ Static fixtures used by spec/contract-focused tests.
 - [`work-item.valid.md`](work-item.valid.md): canonical work item shape expected by parser/validator.
 - [`work-item.invalid-missing-id.md`](work-item.invalid-missing-id.md): invalid shape used for negative tests.
 - [`doctor-non-git-error.json`](doctor-non-git-error.json): canonical JSON error envelope shape for repo detection failures.
+- [`validate-profile-envelopes.json`](validate-profile-envelopes.json): machine-readable validation examples for `core`, `traceable`, and `auditable`.

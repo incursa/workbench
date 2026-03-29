@@ -1,0 +1,39 @@
+scope:
+  includes:
+    - specs/requirements
+    - specs/architecture
+    - specs/work-items
+    - specs/verification
+evidenceRoots:
+  qualityTesting:
+    - artifacts/quality/testing
+  testResults:
+    - artifacts/quality/raw/test-results
+  coverage:
+    - artifacts/quality/raw/coverage
+  benchmarks:
+    - artifacts/quality/benchmarks
+  manualQa:
+    - quality/manual-qa
+statusPolicy:
+  workItems:
+    done:
+      - complete
+      - cancelled
+      - superseded
+    inProgress:
+      - in_progress
+    open:
+      - planned
+    blocked:
+      - blocked
+  verifications:
+    passing:
+      - passed
+      - waived
+    failing:
+      - failed
+    pending:
+      - planned
+    stale:
+      - obsolete

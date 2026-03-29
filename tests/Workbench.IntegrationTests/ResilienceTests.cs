@@ -195,8 +195,10 @@ public class ResilienceTests
         Assert.IsTrue(payload.GetProperty("ok").GetBoolean(), result.StdOut);
 
         var data = payload.GetProperty("data");
+        Assert.AreEqual("core", data.GetProperty("profile").GetString(), result.StdOut);
         Assert.AreEqual(0, data.GetProperty("errors").GetArrayLength(), result.StdOut);
         Assert.AreEqual(0, data.GetProperty("warnings").GetArrayLength(), result.StdOut);
+        Assert.AreEqual(0, data.GetProperty("findings").GetArrayLength(), result.StdOut);
         Assert.IsGreaterThan(0, data.GetProperty("counts").GetProperty("workItems").GetInt32(), result.StdOut);
         Assert.IsGreaterThan(0, data.GetProperty("counts").GetProperty("markdownFiles").GetInt32(), result.StdOut);
     }

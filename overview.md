@@ -25,6 +25,32 @@ verification.
   `Verified By`, `Derived From`, `Supersedes`, `Source Refs`, `Test Refs`,
   `Code Refs`, and `Related`.
 
+## Validation Profiles
+
+- `workbench validate` supports the canonical `core`, `traceable`, and
+  `auditable` profiles.
+- `core` checks schema, identifier, and approved keyword correctness only.
+- `traceable` adds canonical graph resolution plus downstream trace
+  completeness checks.
+- `auditable` adds verification coverage, reciprocal agreement where a
+  reciprocal field exists, and orphan ARC/WI/VER detection.
+- Generated quality evidence under `artifacts/quality/testing/` is derived
+  output and is not canonical `Verified By` coverage unless explicitly
+  projected into a verification artifact.
+
+## Derived Attestation
+
+- `workbench quality attest` produces a current repository snapshot of
+  requirement coverage, trace completeness, direct refs, work-item progress,
+  verification status, and evidence health.
+- The attestation outputs under `artifacts/quality/attestation/` are derived
+  reports, not canonical authored artifacts.
+- Direct `Test Refs` and `Code Refs` remain direct refs; they are not silently
+  converted into canonical downstream trace edges.
+- Optional repository-local defaults can live in
+  [`quality/attestation.yaml`](quality/attestation.yaml) when a repo wants to
+  pin evidence roots, freshness windows, or rollup policy.
+
 ## File-Level Metadata
 
 - File-level front matter describes the document as a whole.

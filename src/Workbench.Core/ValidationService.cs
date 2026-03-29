@@ -14,13 +14,55 @@ public static class ValidationService
         var configErrors = SchemaValidationService.ValidateConfig(repoRoot);
         foreach (var error in configErrors)
         {
-            result.Errors.Add(error);
+            result.AddError(
+                ValidationProfiles.RepoState,
+                ValidationCategories.Schema,
+                error,
+                file: WorkbenchConfig.GetConfigPath(repoRoot));
         }
-        var items = CollectWorkItems(repoRoot, config);
-        result.WorkItemCount = items.Count;
-        ValidateItems(repoRoot, items, result);
-        ValidateDocs(repoRoot, config, result, options);
-        result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, config, result, options);
+
+        var selectedProfile = ValidationProfiles.Resolve(options.Profile, config.Validation?.Profile, out var profileError);
+        result.Profile = selectedProfile;
+        var scopePrefixes = NormalizePrefixes(options.Scope);
+        foreach (var prefix in scopePrefixes)
+        {
+            result.Scope.Add(prefix);
+        }
+
+        if (!string.IsNullOrWhiteSpace(profileError))
+        {
+            result.AddError(
+                ValidationProfiles.RepoState,
+                ValidationCategories.Profile,
+                profileError,
+                file: WorkbenchConfig.GetConfigPath(repoRoot));
+        }
+
+        var artifactIdPolicyPath = Path.Combine(repoRoot, "artifact-id-policy.json");
+        var artifactIdPolicy = ArtifactIdPolicy.Load(repoRoot, out var artifactIdPolicyError);
+        if (!string.IsNullOrWhiteSpace(artifactIdPolicyError))
+        {
+            result.AddError(
+                ValidationProfiles.RepoState,
+                ValidationCategories.Identifier,
+                artifactIdPolicyError,
+                file: artifactIdPolicyPath);
+        }
+
+        ValidationGraphValidator.ValidateCanonicalGraph(
+            repoRoot,
+            config,
+            options,
+            selectedProfile,
+            scopePrefixes,
+            artifactIdPolicy,
+            result);
+
+        var workItems = CollectWorkItems(repoRoot, config);
+        ValidateItems(repoRoot, workItems, result);
+        result.WorkItemCount = workItems.Count;
+
+        result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, config, result, options, scopePrefixes);
         return result;
     }
 
@@ -356,7 +398,12 @@ public static class ValidationService
             : config.Paths.ArchitectureDir;
     }
 
-    private static int ValidateMarkdownLinks(string repoRoot, WorkbenchConfig config, ValidationResult result, ValidationOptions options)
+    private static int ValidateMarkdownLinks(
+        string repoRoot,
+        WorkbenchConfig config,
+        ValidationResult result,
+        ValidationOptions options,
+        List<string> scopePrefixes)
     {
         var includePrefixes = NormalizePrefixes(options.LinkInclude);
         var excludePrefixes = NormalizePrefixes(options.LinkExclude);
@@ -372,7 +419,7 @@ public static class ValidationService
         foreach (var file in EnumerateMarkdownFiles(repoRoot))
         {
             var repoRelative = NormalizeRepoRelative(repoRoot, file);
-            if (!ShouldValidatePath(repoRelative, includePrefixes, excludePrefixes))
+            if (!ShouldValidatePath(repoRelative, scopePrefixes, includePrefixes, excludePrefixes))
             {
                 continue;
             }
@@ -415,7 +462,11 @@ public static class ValidationService
 
                 if (!File.Exists(resolved))
                 {
-                    result.Errors.Add($"{file}: broken local link '{link}'.");
+                    result.AddError(
+                        ValidationProfiles.RepoState,
+                        ValidationCategories.RepoState,
+                        $"broken local link '{link}'.",
+                        file: file);
                 }
             }
         }
@@ -488,8 +539,17 @@ public static class ValidationService
             .ToList();
     }
 
-    private static bool ShouldValidatePath(string repoRelative, List<string> includePrefixes, List<string> excludePrefixes)
+    private static bool ShouldValidatePath(
+        string repoRelative,
+        List<string> scopePrefixes,
+        List<string> includePrefixes,
+        List<string> excludePrefixes)
     {
+        if (scopePrefixes.Count > 0 && !scopePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
         if (excludePrefixes.Count > 0 &&
             excludePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
         {

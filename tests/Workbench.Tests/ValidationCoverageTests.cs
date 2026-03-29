@@ -126,6 +126,673 @@ public class ValidationCoverageTests
     }
 
     [TestMethod]
+    public void ValidateRepo_CoreProfile_AllowsMissingDownstreamTrace()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-CORE.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-CORE",
+                "Core profile only",
+                "REQ-WB-CORE-0001",
+                "The tool MUST keep core validation narrow.",
+                traceBlock: null,
+                relatedArtifacts: new[] { "SPEC-WB-CORE" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Core));
+
+        Assert.IsEmpty(result.Errors, string.Join(Environment.NewLine, result.Errors));
+        Assert.IsEmpty(result.Findings, string.Join(Environment.NewLine, result.Errors));
+    }
+
+    [TestMethod]
+    public void ValidateRepo_TraceableProfile_MissingDownstreamTrace_Fails()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-TRACE.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-TRACE",
+                "Traceability required",
+                "REQ-WB-TRACE-0001",
+                "The tool MUST require traceability links at traceable level.",
+                traceBlock: null,
+                relatedArtifacts: new[] { "SPEC-WB-TRACE" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Traceable));
+
+        AssertHasFinding(
+            result,
+            ValidationProfiles.Traceable,
+            "downstream-missing",
+            "at least one downstream trace link");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_TraceableProfile_UnresolvedDirectTraceRefs_Fail()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-UNRESOLVED.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-UNRESOLVED",
+                "Unresolved trace",
+                "REQ-WB-UNRESOLVED-0001",
+                "The tool MUST resolve direct trace links.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-9999"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-UNRESOLVED" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Traceable));
+
+        AssertHasFinding(
+            result,
+            ValidationProfiles.Traceable,
+            "unresolved-reference",
+            "ARC-WB-9999");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_TraceableProfile_CompleteResolvedGraph_Passes()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "verification", "WB"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-FULL.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-FULL",
+                "Complete graph",
+                "REQ-WB-FULL-0001",
+                "The tool MUST support complete graph validation.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0001",
+                    "- Implemented By:",
+                    "  - WI-WB-0001",
+                    "- Verified By:",
+                    "  - VER-WB-0001",
+                    "- Derived From:",
+                    "  - REQ-WB-LEGACY-0001",
+                    "- Source Refs:",
+                    "  - RFC-0001",
+                    "- Test Refs:",
+                    "  - tests/Workbench.Tests/ValidationCoverageTests.cs",
+                    "- Code Refs:",
+                    "  - src/Workbench.Core/ValidationService.cs",
+                    "- Related:",
+                    "  - SPEC-WB-FULL"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-FULL", "ARC-WB-0001", "WI-WB-0001", "VER-WB-0001" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0001.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0001",
+                "Complete architecture",
+                new[] { "REQ-WB-FULL-0001" },
+                new[] { "SPEC-WB-FULL" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0001.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0001",
+                "Complete implementation",
+                new[] { "REQ-WB-FULL-0001" },
+                new[] { "ARC-WB-0001" },
+                new[] { "VER-WB-0001" },
+                new[] { "SPEC-WB-FULL" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0001.md"),
+            BuildVerificationDoc(
+                "VER-WB-0001",
+                "Complete verification",
+                new[] { "REQ-WB-FULL-0001" },
+                new[] { "SPEC-WB-FULL", "ARC-WB-0001", "WI-WB-0001" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Traceable));
+
+        Assert.IsEmpty(result.Errors, string.Join(Environment.NewLine, result.Errors));
+        Assert.IsEmpty(result.Findings, string.Join(Environment.NewLine, result.Errors));
+    }
+
+    [TestMethod]
+    public void ValidateRepo_TraceableProfile_TestAndCodeRefs_DoNotCountAsDownstreamEdges()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-TEST-REFS.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-TEST-REFS",
+                "Implementation specific refs",
+                "REQ-WB-TEST-0001",
+                "The tool MUST ignore implementation-specific refs for downstream completeness.",
+                traceBlock:
+                [
+                    "- Test Refs:",
+                    "  - tests/Workbench.Tests/ValidationCoverageTests.cs",
+                    "- Code Refs:",
+                    "  - src/Workbench.Core/ValidationService.cs"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-TEST-REFS" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Traceable));
+
+        AssertHasFinding(
+            result,
+            ValidationProfiles.Traceable,
+            "downstream-missing",
+            "at least one downstream trace link");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_AuditableProfile_MissingVerifiedBy_Fails()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-AUDIT.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-AUDIT",
+                "Verification coverage required",
+                "REQ-WB-AUDIT-0001",
+                "The tool MUST require verification coverage at auditable level.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0001",
+                    "- Implemented By:",
+                    "  - WI-WB-0001"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-AUDIT" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0001.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0001",
+                "Audit architecture",
+                new[] { "REQ-WB-AUDIT-0001" },
+                new[] { "SPEC-WB-AUDIT" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0001.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0001",
+                "Audit implementation",
+                new[] { "REQ-WB-AUDIT-0001" },
+                new[] { "ARC-WB-0001" },
+                new[] { "VER-WB-9999" },
+                new[] { "SPEC-WB-AUDIT" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Auditable));
+
+        AssertHasFinding(
+            result,
+            ValidationProfiles.Auditable,
+            "verification-missing",
+            "Verified By");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_AuditableProfile_ReciprocalMismatch_Fails()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "verification", "WB"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-RECIP.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-RECIP",
+                "Reciprocal agreement",
+                "REQ-WB-RECIP-0001",
+                "The tool MUST validate reciprocal links.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0001",
+                    "- Implemented By:",
+                    "  - WI-WB-0001",
+                    "- Verified By:",
+                    "  - VER-WB-0001"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-RECIP" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-RECIP-2.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-RECIP-2",
+                "Reciprocal target",
+                "REQ-WB-RECIP-0002",
+                "The tool MUST keep reciprocal links consistent.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0001",
+                    "- Implemented By:",
+                    "  - WI-WB-0002",
+                    "- Verified By:",
+                    "  - VER-WB-0002"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-RECIP-2" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0001.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0001",
+                "Shared architecture",
+                new[] { "REQ-WB-RECIP-0001", "REQ-WB-RECIP-0002" },
+                new[] { "SPEC-WB-RECIP", "SPEC-WB-RECIP-2" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0001.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0001",
+                "Mismatch implementation",
+                new[] { "REQ-WB-RECIP-0002" },
+                new[] { "ARC-WB-0001" },
+                new[] { "VER-WB-0001" },
+                new[] { "SPEC-WB-RECIP" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0002.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0002",
+                "Matching implementation",
+                new[] { "REQ-WB-RECIP-0002" },
+                new[] { "ARC-WB-0001" },
+                new[] { "VER-WB-0002" },
+                new[] { "SPEC-WB-RECIP-2" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0001.md"),
+            BuildVerificationDoc(
+                "VER-WB-0001",
+                "Mismatch verification",
+                new[] { "REQ-WB-RECIP-0001" },
+                new[] { "SPEC-WB-RECIP", "WI-WB-0001" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0002.md"),
+            BuildVerificationDoc(
+                "VER-WB-0002",
+                "Matching verification",
+                new[] { "REQ-WB-RECIP-0002" },
+                new[] { "SPEC-WB-RECIP-2", "WI-WB-0002" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Auditable));
+
+        AssertHasFinding(
+            result,
+            ValidationProfiles.Auditable,
+            "reciprocal-mismatch",
+            "REQ-WB-RECIP-0002");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_AuditableProfile_OrphanSupportingArtifacts_Fail()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "verification", "WB"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-ORPHAN.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-ORPHAN",
+                "Orphan detection",
+                "REQ-WB-ORPHAN-0001",
+                "The tool MUST detect orphan supporting artifacts.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0001",
+                    "- Implemented By:",
+                    "  - WI-WB-0001",
+                    "- Verified By:",
+                    "  - VER-WB-0001"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-ORPHAN" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0001.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0001",
+                "Linked architecture",
+                new[] { "REQ-WB-ORPHAN-0001" },
+                new[] { "SPEC-WB-ORPHAN" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0001.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0001",
+                "Linked work item",
+                new[] { "REQ-WB-ORPHAN-0001" },
+                new[] { "ARC-WB-0001" },
+                new[] { "VER-WB-0001" },
+                new[] { "SPEC-WB-ORPHAN" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0001.md"),
+            BuildVerificationDoc(
+                "VER-WB-0001",
+                "Linked verification",
+                new[] { "REQ-WB-ORPHAN-0001" },
+                new[] { "SPEC-WB-ORPHAN", "ARC-WB-0001", "WI-WB-0001" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0099-orphan.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0099",
+                "Orphan architecture",
+                new[] { "REQ-WB-ORPHAN-0001" },
+                new[] { "SPEC-WB-ORPHAN" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0099-orphan.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0099",
+                "Orphan work item",
+                new[] { "REQ-WB-ORPHAN-0001" },
+                new[] { "ARC-WB-0001" },
+                new[] { "VER-WB-0001" },
+                new[] { "SPEC-WB-ORPHAN" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0099-orphan.md"),
+            BuildVerificationDoc(
+                "VER-WB-0099",
+                "Orphan verification",
+                new[] { "REQ-WB-ORPHAN-0001" },
+                new[] { "SPEC-WB-ORPHAN", "ARC-WB-0001", "WI-WB-0001" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Auditable));
+
+        AssertHasFinding(result, ValidationProfiles.Auditable, "orphan-artifact", "ARC-WB-0099");
+        AssertHasFinding(result, ValidationProfiles.Auditable, "orphan-artifact", "WI-WB-0099");
+        AssertHasFinding(result, ValidationProfiles.Auditable, "orphan-artifact", "VER-WB-0099");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_AuditableProfile_FullyLinkedMinimalRepo_Passes()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "verification", "WB"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-MINIMAL.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-MINIMAL",
+                "Fully linked minimal repo",
+                "REQ-WB-MINIMAL-0001",
+                "The tool MUST support a fully linked minimal repository.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0100",
+                    "- Implemented By:",
+                    "  - WI-WB-0100",
+                    "- Verified By:",
+                    "  - VER-WB-0100",
+                    "- Derived From:",
+                    "  - REQ-WB-LEGACY-0100",
+                    "- Related:",
+                    "  - SPEC-WB-MINIMAL"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-MINIMAL", "ARC-WB-0100", "WI-WB-0100", "VER-WB-0100" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0100.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0100",
+                "Minimal architecture",
+                new[] { "REQ-WB-MINIMAL-0001" },
+                new[] { "SPEC-WB-MINIMAL" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0100.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0100",
+                "Minimal work item",
+                new[] { "REQ-WB-MINIMAL-0001" },
+                new[] { "ARC-WB-0100" },
+                new[] { "VER-WB-0100" },
+                new[] { "SPEC-WB-MINIMAL" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0100.md"),
+            BuildVerificationDoc(
+                "VER-WB-0100",
+                "Minimal verification",
+                new[] { "REQ-WB-MINIMAL-0001" },
+                new[] { "SPEC-WB-MINIMAL", "ARC-WB-0100", "WI-WB-0100" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Auditable));
+
+        Assert.IsEmpty(result.Errors, string.Join(Environment.NewLine, result.Errors));
+        Assert.IsEmpty(result.Findings, string.Join(Environment.NewLine, result.Errors));
+    }
+
+    [TestMethod]
+    public void ValidateRepo_AuditableProfile_DerivedQualityOutputsDoNotCountAsVerification()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "artifacts", "quality", "testing"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "artifacts", "quality", "testing", "quality-report.json"),
+            """
+            {
+              "report": "derived",
+              "status": "fail"
+            }
+            """);
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-QUALITY.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-QUALITY",
+                "Derived evidence stays derived",
+                "REQ-WB-QUALITY-0001",
+                "The tool MUST keep derived quality outputs out of canonical verification by default.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0200",
+                    "- Implemented By:",
+                    "  - WI-WB-0200",
+                    "- Test Refs:",
+                    "  - artifacts/quality/testing/quality-report.json",
+                    "- Code Refs:",
+                    "  - artifacts/quality/testing/quality-report.json"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-QUALITY" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0200.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0200",
+                "Quality architecture",
+                new[] { "REQ-WB-QUALITY-0001" },
+                new[] { "SPEC-WB-QUALITY" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0200.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0200",
+                "Quality work item",
+                new[] { "REQ-WB-QUALITY-0001" },
+                new[] { "ARC-WB-0200" },
+                new[] { "VER-WB-0200" },
+                new[] { "SPEC-WB-QUALITY" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Auditable));
+
+        AssertHasFinding(
+            result,
+            ValidationProfiles.Auditable,
+            "verification-missing",
+            "Verified By");
+    }
+
+    [TestMethod]
+    public void ValidateRepo_ScopedValidation_IgnoresUnrelatedRepoStateIssues()
+    {
+        using var repo = CreateRepoWithSchemas();
+        WriteConfig(repo.Path);
+
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "requirements", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "architecture", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "work-items", "WB"));
+        Directory.CreateDirectory(Path.Combine(repo.Path, "specs", "verification", "WB"));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-SCOPED.md"),
+            BuildSpecificationDoc(
+                "SPEC-WB-SCOPED",
+                "Scoped validation",
+                "REQ-WB-SCOPED-0001",
+                "The tool MUST keep scoped validation focused.",
+                traceBlock:
+                [
+                    "- Satisfied By:",
+                    "  - ARC-WB-0300",
+                    "- Implemented By:",
+                    "  - WI-WB-0300",
+                    "- Verified By:",
+                    "  - VER-WB-0300"
+                ],
+                relatedArtifacts: new[] { "SPEC-WB-SCOPED" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "architecture", "WB", "ARC-WB-0300.md"),
+            BuildArchitectureDoc(
+                "ARC-WB-0300",
+                "Scoped architecture",
+                new[] { "REQ-WB-SCOPED-0001" },
+                new[] { "SPEC-WB-SCOPED" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "work-items", "WB", "WI-WB-0300.md"),
+            BuildWorkItemDoc(
+                "WI-WB-0300",
+                "Scoped work item",
+                new[] { "REQ-WB-SCOPED-0001" },
+                new[] { "ARC-WB-0300" },
+                new[] { "VER-WB-0300" },
+                new[] { "SPEC-WB-SCOPED" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0300.md"),
+            BuildVerificationDoc(
+                "VER-WB-0300",
+                "Scoped verification",
+                new[] { "REQ-WB-SCOPED-0001" },
+                new[] { "SPEC-WB-SCOPED", "ARC-WB-0300", "WI-WB-0300" }));
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "README.md"),
+            """
+            # Repo
+
+            See [missing](docs/missing.md).
+            """);
+
+        File.WriteAllText(
+            Path.Combine(repo.Path, "specs", "verification", "WB", "VER-WB-0999.md"),
+            BuildVerificationDoc(
+                "VER-WB-0999",
+                "Unscoped verification",
+                new[] { "REQ-WB-UNSCOPED-0001" },
+                new[] { "SPEC-WB-SCOPED" }));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(
+                Profile: ValidationProfiles.Auditable,
+                Scope: new List<string> { "specs/requirements/WB" }));
+
+        Assert.IsEmpty(result.Errors, string.Join(Environment.NewLine, result.Errors));
+        Assert.IsEmpty(result.Findings, string.Join(Environment.NewLine, result.Errors));
+    }
+
+    [TestMethod]
     public void ValidateRepo_MissingConfigSchema_ReportsConfigSchemaError()
     {
         using var repo = new TempRepoRoot();
@@ -842,6 +1509,345 @@ public class ValidationCoverageTests
                 ## Summary
                 Item summary.
                 """;
+    }
+
+    private static string BuildSpecificationDoc(
+        string artifactId,
+        string title,
+        string requirementId,
+        string clause,
+        IReadOnlyList<string>? traceBlock = null,
+        IReadOnlyList<string>? relatedArtifacts = null)
+    {
+        var lines = new List<string>
+        {
+            "---",
+            $"artifact_id: {artifactId}",
+            "artifact_type: specification",
+            $"title: {title}",
+            "domain: WB",
+            "capability: validation",
+            "status: draft",
+            "owner: platform"
+        };
+
+        if (relatedArtifacts is { Count: > 0 })
+        {
+            lines.Add("related_artifacts:");
+            foreach (var artifact in relatedArtifacts)
+            {
+                lines.Add($"  - {artifact}");
+            }
+        }
+
+        lines.Add("---");
+        lines.Add(string.Empty);
+        lines.Add($"# {artifactId} - {title}");
+        lines.Add(string.Empty);
+        lines.Add("## Purpose");
+        lines.Add(string.Empty);
+        lines.Add("Purpose.");
+        lines.Add(string.Empty);
+        lines.Add("## Scope");
+        lines.Add(string.Empty);
+        lines.Add("Scope.");
+        lines.Add(string.Empty);
+        lines.Add("## Context");
+        lines.Add(string.Empty);
+        lines.Add("Context.");
+        lines.Add(string.Empty);
+        lines.Add($"## {requirementId} Requirement title");
+        lines.Add(clause);
+
+        if (traceBlock is { Count: > 0 })
+        {
+            lines.Add(string.Empty);
+            lines.Add("Trace:");
+            lines.AddRange(traceBlock);
+        }
+
+        return string.Join("\n", lines) + "\n";
+    }
+
+    private static string BuildArchitectureDoc(
+        string artifactId,
+        string title,
+        IReadOnlyList<string> satisfies,
+        IReadOnlyList<string>? relatedArtifacts = null)
+    {
+        var lines = new List<string>
+        {
+            "---",
+            $"artifact_id: {artifactId}",
+            "artifact_type: architecture",
+            $"title: {title}",
+            "domain: WB",
+            "status: approved",
+            "owner: platform",
+            "satisfies:"
+        };
+
+        foreach (var requirement in satisfies)
+        {
+            lines.Add($"  - {requirement}");
+        }
+
+        if (relatedArtifacts is { Count: > 0 })
+        {
+            lines.Add("related_artifacts:");
+            foreach (var artifact in relatedArtifacts)
+            {
+                lines.Add($"  - {artifact}");
+            }
+        }
+
+        lines.Add("---");
+        lines.Add(string.Empty);
+        lines.Add($"# {artifactId} - {title}");
+        lines.Add(string.Empty);
+        lines.Add("## Purpose");
+        lines.Add(string.Empty);
+        lines.Add("State how this design satisfies the named requirements.");
+        lines.Add(string.Empty);
+        lines.Add("## Requirements Satisfied");
+        lines.Add(string.Empty);
+        foreach (var requirement in satisfies)
+        {
+            lines.Add($"- {requirement}");
+        }
+
+        return string.Join("\n", lines) + "\n";
+    }
+
+    private static string BuildWorkItemDoc(
+        string artifactId,
+        string title,
+        IReadOnlyList<string> addresses,
+        IReadOnlyList<string> designLinks,
+        IReadOnlyList<string> verificationLinks,
+        IReadOnlyList<string>? relatedArtifacts = null,
+        IReadOnlyList<string>? bodyAddresses = null,
+        IReadOnlyList<string>? bodyDesignLinks = null,
+        IReadOnlyList<string>? bodyVerificationLinks = null)
+    {
+        bodyAddresses ??= addresses;
+        bodyDesignLinks ??= designLinks;
+        bodyVerificationLinks ??= verificationLinks;
+
+        var lines = new List<string>
+        {
+            "---",
+            $"artifact_id: {artifactId}",
+            "artifact_type: work_item",
+            $"title: {title}",
+            "domain: WB",
+            "status: planned",
+            "owner: platform",
+            "addresses:"
+        };
+
+        foreach (var requirement in addresses)
+        {
+            lines.Add($"  - {requirement}");
+        }
+
+        lines.Add("design_links:");
+        foreach (var design in designLinks)
+        {
+            lines.Add($"  - {design}");
+        }
+
+        lines.Add("verification_links:");
+        foreach (var verification in verificationLinks)
+        {
+            lines.Add($"  - {verification}");
+        }
+
+        if (relatedArtifacts is { Count: > 0 })
+        {
+            lines.Add("related_artifacts:");
+            foreach (var artifact in relatedArtifacts)
+            {
+                lines.Add($"  - {artifact}");
+            }
+        }
+
+        lines.Add("---");
+        lines.Add(string.Empty);
+        lines.Add($"# {artifactId} - {title}");
+        lines.Add(string.Empty);
+        lines.Add("## Summary");
+        lines.Add(string.Empty);
+        lines.Add("Summary.");
+        lines.Add(string.Empty);
+        lines.Add("## Requirements Addressed");
+        lines.Add(string.Empty);
+        foreach (var requirement in bodyAddresses)
+        {
+            lines.Add($"- {requirement}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("## Design Inputs");
+        lines.Add(string.Empty);
+        foreach (var design in bodyDesignLinks)
+        {
+            lines.Add($"- {design}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("## Planned Changes");
+        lines.Add(string.Empty);
+        lines.Add("Changes.");
+        lines.Add(string.Empty);
+        lines.Add("## Out of Scope");
+        lines.Add(string.Empty);
+        lines.Add("- <item>");
+        lines.Add(string.Empty);
+        lines.Add("## Verification Plan");
+        lines.Add(string.Empty);
+        lines.Add("Plan.");
+        lines.Add(string.Empty);
+        lines.Add("## Completion Notes");
+        lines.Add(string.Empty);
+        lines.Add("Notes.");
+        lines.Add(string.Empty);
+        lines.Add("## Trace Links");
+        lines.Add(string.Empty);
+        lines.Add("Addresses:");
+        lines.Add(string.Empty);
+        foreach (var requirement in bodyAddresses)
+        {
+            lines.Add($"- {requirement}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("Uses Design:");
+        lines.Add(string.Empty);
+        foreach (var design in bodyDesignLinks)
+        {
+            lines.Add($"- {design}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("Verified By:");
+        lines.Add(string.Empty);
+        foreach (var verification in bodyVerificationLinks)
+        {
+            lines.Add($"- {verification}");
+        }
+
+        return string.Join("\n", lines) + "\n";
+    }
+
+    private static string BuildVerificationDoc(
+        string artifactId,
+        string title,
+        IReadOnlyList<string> verifies,
+        IReadOnlyList<string>? relatedArtifacts = null,
+        IReadOnlyList<string>? bodyVerifies = null,
+        IReadOnlyList<string>? bodyRelatedArtifacts = null)
+    {
+        bodyVerifies ??= verifies;
+        bodyRelatedArtifacts ??= relatedArtifacts;
+
+        var lines = new List<string>
+        {
+            "---",
+            $"artifact_id: {artifactId}",
+            "artifact_type: verification",
+            $"title: {title}",
+            "domain: WB",
+            "status: passed",
+            "owner: platform",
+            "verifies:"
+        };
+
+        foreach (var requirement in verifies)
+        {
+            lines.Add($"  - {requirement}");
+        }
+
+        if (relatedArtifacts is { Count: > 0 })
+        {
+            lines.Add("related_artifacts:");
+            foreach (var artifact in relatedArtifacts)
+            {
+                lines.Add($"  - {artifact}");
+            }
+        }
+
+        lines.Add("---");
+        lines.Add(string.Empty);
+        lines.Add($"# {artifactId} - {title}");
+        lines.Add(string.Empty);
+        lines.Add("## Scope");
+        lines.Add(string.Empty);
+        lines.Add("Scope.");
+        lines.Add(string.Empty);
+        lines.Add("## Requirements Verified");
+        lines.Add(string.Empty);
+        foreach (var requirement in bodyVerifies)
+        {
+            lines.Add($"- {requirement}");
+        }
+
+        lines.Add(string.Empty);
+        lines.Add("## Verification Method");
+        lines.Add(string.Empty);
+        lines.Add("Method.");
+        lines.Add(string.Empty);
+        lines.Add("## Preconditions");
+        lines.Add(string.Empty);
+        lines.Add("- <precondition>");
+        lines.Add(string.Empty);
+        lines.Add("## Procedure or Approach");
+        lines.Add(string.Empty);
+        lines.Add("Procedure.");
+        lines.Add(string.Empty);
+        lines.Add("## Expected Result");
+        lines.Add(string.Empty);
+        lines.Add("Result.");
+        lines.Add(string.Empty);
+        lines.Add("## Evidence");
+        lines.Add(string.Empty);
+        lines.Add("- <evidence or test reference>");
+        lines.Add(string.Empty);
+        lines.Add("## Status");
+        lines.Add(string.Empty);
+        lines.Add("passed");
+        lines.Add(string.Empty);
+        lines.Add("## Related Artifacts");
+        lines.Add(string.Empty);
+        if (bodyRelatedArtifacts is { Count: > 0 })
+        {
+            foreach (var artifact in bodyRelatedArtifacts)
+            {
+                lines.Add($"- {artifact}");
+            }
+        }
+        else
+        {
+            lines.Add("- SPEC-WB-<GROUPING>");
+            lines.Add("- ARC-WB-<GROUPING>-<SEQUENCE:4+>");
+            lines.Add("- WI-WB-<GROUPING>-<SEQUENCE:4+>");
+        }
+
+        return string.Join("\n", lines) + "\n";
+    }
+
+    private static void AssertHasFinding(
+        ValidationResult result,
+        string profile,
+        string category,
+        string messageFragment)
+    {
+        Assert.IsTrue(
+            result.Findings.Any(finding =>
+                string.Equals(finding.Profile, profile, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(finding.Category, category, StringComparison.OrdinalIgnoreCase) &&
+                finding.Message.Contains(messageFragment, StringComparison.OrdinalIgnoreCase)),
+            string.Join(Environment.NewLine, result.Errors));
     }
 
     private static string FindRepoRoot()

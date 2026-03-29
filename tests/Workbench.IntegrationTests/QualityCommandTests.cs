@@ -125,6 +125,7 @@ public class QualityCommandTests
 
         Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
         StringAssert.Contains(result.StdOut, "Use `workbench quality sync`", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "`workbench quality attest`", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "`workbench quality show`", StringComparison.Ordinal);
     }
 

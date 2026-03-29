@@ -3620,7 +3620,7 @@ public partial class Program
         });
         root.Subcommands.Add(guideCommand);
 
-        var validateCommand = new Command("validate", "Validate work items, links, and schemas.");
+        var validateCommand = new Command("validate", "Validate repository artifacts, links, and trace profiles.");
         var strictOption = new Option<bool>("--strict")
         {
             Description = "Treat warnings as errors."
@@ -3643,11 +3643,23 @@ public partial class Program
         {
             Description = "Skip doc front matter schema validation."
         };
+        var profileOption = new Option<string>("--profile")
+        {
+            Description = "Validation profile to enforce (core|traceable|auditable)."
+        };
+        profileOption.CompletionSources.Add("core", "traceable", "auditable");
+        var scopeOption = new Option<string[]>("--scope")
+        {
+            Description = "Repo-relative path prefixes or files to validate.",
+            AllowMultipleArgumentsPerToken = true
+        };
         validateCommand.Options.Add(strictOption);
         validateCommand.Options.Add(verboseOption);
         validateCommand.Options.Add(linkIncludeOption);
         validateCommand.Options.Add(linkExcludeOption);
         validateCommand.Options.Add(skipDocSchemaOption);
+        validateCommand.Options.Add(profileOption);
+        validateCommand.Options.Add(scopeOption);
         validateCommand.Aliases.Add("verify");
         validateCommand.SetAction(parseResult =>
         {
@@ -3660,6 +3672,8 @@ public partial class Program
                 var linkInclude = parseResult.GetValue(linkIncludeOption) ?? Array.Empty<string>();
                 var linkExclude = parseResult.GetValue(linkExcludeOption) ?? Array.Empty<string>();
                 var skipDocSchema = parseResult.GetValue(skipDocSchemaOption);
+                var profile = parseResult.GetValue(profileOption);
+                var scope = parseResult.GetValue(scopeOption) ?? Array.Empty<string>();
                 var repoRoot = ResolveRepo(repo);
                 var resolvedFormat = ResolveFormat(format);
                 var config = WorkbenchConfig.Load(repoRoot, out var configError);
@@ -3669,7 +3683,7 @@ public partial class Program
                     SetExitCode(2);
                     return;
                 }
-                var options = new ValidationOptions(linkInclude, linkExclude, skipDocSchema);
+                var options = new ValidationOptions(linkInclude, linkExclude, skipDocSchema, profile, scope);
                 var result = ValidationService.ValidateRepo(repoRoot, config, options);
                 int exit;
                 if (result.Errors.Count > 0)
@@ -3706,7 +3720,10 @@ public partial class Program
                                 result.Errors.Count,
                                 result.Warnings.Count,
                                 result.WorkItemCount,
-                                result.MarkdownFileCount)));
+                                result.MarkdownFileCount),
+                            result.Profile,
+                            result.Scope,
+                            result.Findings));
                     WriteJson(payload, Core.WorkbenchJsonContext.Default.ValidateOutput);
                 }
                 else

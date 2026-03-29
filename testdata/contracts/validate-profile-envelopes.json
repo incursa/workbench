@@ -1,0 +1,91 @@
+{
+  "cases": [
+    {
+      "name": "core",
+      "ok": true,
+      "data": {
+        "errors": [],
+        "warnings": [],
+        "counts": {
+          "errors": 0,
+          "warnings": 0,
+          "workItems": 1,
+          "markdownFiles": 3
+        },
+        "profile": "core",
+        "scope": [
+          "specs/requirements/WB"
+        ],
+        "findings": []
+      }
+    },
+    {
+      "name": "traceable",
+      "ok": false,
+      "data": {
+        "errors": [
+          "[traceable/downstream-missing] specs/requirements/WB/SPEC-WB-TRACE.md: Requirement REQ-WB-TRACE-0001 must have at least one downstream trace link."
+        ],
+        "warnings": [],
+        "counts": {
+          "errors": 1,
+          "warnings": 0,
+          "workItems": 1,
+          "markdownFiles": 4
+        },
+        "profile": "traceable",
+        "scope": [
+          "specs/requirements/WB"
+        ],
+        "findings": [
+          {
+            "profile": "traceable",
+            "category": "downstream-missing",
+            "severity": "error",
+            "message": "Requirement REQ-WB-TRACE-0001 must have at least one downstream trace link.",
+            "file": "specs/requirements/WB/SPEC-WB-TRACE.md",
+            "artifactId": "REQ-WB-TRACE-0001",
+            "field": "Trace",
+            "targetId": null,
+            "targetType": null,
+            "targetFile": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "auditable",
+      "ok": false,
+      "data": {
+        "errors": [
+          "[auditable/verification-missing] specs/requirements/WB/SPEC-WB-AUDIT.md: Requirement REQ-WB-AUDIT-0001 must have Verified By coverage."
+        ],
+        "warnings": [],
+        "counts": {
+          "errors": 1,
+          "warnings": 0,
+          "workItems": 1,
+          "markdownFiles": 5
+        },
+        "profile": "auditable",
+        "scope": [
+          "specs/requirements/WB"
+        ],
+        "findings": [
+          {
+            "profile": "auditable",
+            "category": "verification-missing",
+            "severity": "error",
+            "message": "Requirement REQ-WB-AUDIT-0001 must have Verified By coverage.",
+            "file": "specs/requirements/WB/SPEC-WB-AUDIT.md",
+            "artifactId": "REQ-WB-AUDIT-0001",
+            "field": "Verified By",
+            "targetId": null,
+            "targetType": null,
+            "targetFile": null
+          }
+        ]
+      }
+    }
+  ]
+}

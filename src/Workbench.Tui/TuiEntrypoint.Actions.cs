@@ -604,7 +604,8 @@ public static partial class TuiEntrypoint
             },
             new ValidationConfig(
                 ParseList(context.LinkExcludeField!.Text?.ToString()),
-                ParseList(context.DocExcludeField!.Text?.ToString())),
+                ParseList(context.DocExcludeField!.Text?.ToString()),
+                validationConfig.Profile),
             new TuiConfig
             {
                 Theme = context.ThemeField!.Text?.ToString() ?? "powershell",

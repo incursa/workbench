@@ -21,12 +21,14 @@ Define the contract for repository validation.
 ## Scope
 
 - `workbench validate`
+- `workbench validate --profile <core|traceable|auditable>`
+- `workbench validate --scope <repo-relative path>`
 
 ## REQ-CLI-VALIDATE-0001 `workbench validate`
 
-`validate` MUST accept the documented strict, verbose, include/exclude, and
-skip-doc-schema options, validate work items and schemas, and distinguish
-warnings from errors in the exit code.
+`validate` MUST accept the documented strict, verbose, include/exclude,
+skip-doc-schema, profile, and scope options, validate work items and schemas,
+and distinguish warnings from errors in the exit code.
 
 ## REQ-CLI-VALIDATE-0002 Warning semantics
 
@@ -41,7 +43,8 @@ repository links.
 ## REQ-CLI-VALIDATE-0004 Error reporting
 
 `validate` MUST report each validation failure with enough context for the
-caller to locate the problem.
+caller to locate the problem, including the selected profile and any scoped
+repo-relative path prefix when relevant.
 
 ## REQ-CLI-VALIDATE-0005 Read-only behavior
 
@@ -49,4 +52,5 @@ caller to locate the problem.
 
 ## REQ-CLI-VALIDATE-0006 Machine-readable output
 
-`validate` MUST support machine-readable output when requested.
+`validate` MUST support machine-readable output when requested, including the
+selected profile, scope, and structured findings payload.

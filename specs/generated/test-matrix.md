@@ -18,6 +18,7 @@ Keep this file aligned with the active suite and the authored quality intent.
 | Raw evidence | `pwsh -File scripts/testing/run-quality-evidence.ps1` | Produces TRX and Cobertura artifacts in `artifacts/quality/raw/`. |
 | Sync report | `dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage` | Normalizes raw evidence into the repo-native quality report. |
 | Report view | `dotnet tool run workbench quality show` | Shows the current quality summary and findings. |
+| Attestation snapshot | `dotnet tool run workbench quality attest` | Produces summary/details HTML plus a JSON attestation snapshot under `artifacts/quality/attestation/`. |
 
 ## GitHub-Dependent Coverage
 

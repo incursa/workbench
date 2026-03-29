@@ -59,6 +59,19 @@ Read first:
 - the relevant architecture and work-item artifacts
 - [`specs/templates/verification-template.md`](specs/templates/verification-template.md)
 
+### Derived Attestation Snapshot
+
+Use `workbench quality attest` when you need a current snapshot of requirement
+coverage, trace completeness, direct refs, work-item progress, verification
+status, and evidence health. It reads authored artifacts and derived evidence
+but does not create canonical trace or replace authored requirements.
+
+Read first:
+
+- [`overview.md`](overview.md)
+- [`quality/attestation.yaml`](quality/attestation.yaml) if the repo defines
+  local evidence-root or rollup defaults
+
 ## Workflow
 
 1. Start with the authoritative `SPEC-...` files for the task.
@@ -66,6 +79,13 @@ Read first:
 3. Draft or revise the artifact.
 4. Run `workbench validate`.
 5. Refresh generated views when the repo surface changes.
+6. Use `workbench quality attest` when you need the derived evidence snapshot
+   instead of another canonical artifact.
+
+When traceability needs stronger enforcement, run `workbench validate` with
+`--profile traceable` or `--profile auditable`. Use `--scope` to narrow the
+validation target to a subtree without turning derived quality evidence into
+canonical trace.
 
 ## Authoring Rules
 

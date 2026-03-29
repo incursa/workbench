@@ -85,6 +85,7 @@ workbench <command> [options]
   - `workbench normalize`: Normalize work item and doc front matter.
   - `workbench promote`: Create a work item, branch, and commit in one step.
   - `workbench quality`: Group: repo-native quality evidence commands.
+    - `workbench quality attest`: Generate a derived repository evidence snapshot as HTML and JSON.
     - `workbench quality show`: Read the latest normalized quality artifact or a selected evidence kind.
     - `workbench quality sync`: Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
   - `workbench scaffold`: Create the default folder structure, templates, and config.
@@ -97,7 +98,7 @@ workbench <command> [options]
     - `workbench spec sync`: Repo metadata stage: sync spec/work-item backlinks and spec front matter. Does not regenerate indexes.
     - `workbench spec unlink`: Unlink a specification from work items.
   - `workbench sync`: Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.
-  - `workbench validate`: Validate work items, links, and schemas.
+  - `workbench validate`: Validate repository artifacts, links, and trace profiles.
   - `workbench version`: Print CLI version.
   - `workbench voice`: Group: voice input commands.
     - `workbench voice doc`: Create a documentation file from voice input.
@@ -532,8 +533,25 @@ Options:
 Group: repo-native quality evidence commands.
 
 Subcommands:
+- `attest`: Generate a derived repository evidence snapshot as HTML and JSON.
 - `show`: Read the latest normalized quality artifact or a selected evidence kind.
 - `sync`: Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
+
+### `workbench quality attest`
+Generate a derived repository evidence snapshot as HTML and JSON.
+
+Options:
+- `--scope <scope>`: Repo-relative path prefixes or files to include in the snapshot scope.
+- `--profile <profile>`: Validation profile to use for the snapshot (core|traceable|auditable).
+- `--emit <emit>`: Derived output format to write (html|json|both).
+- `--out-dir <out-dir>`: Directory for derived attestation artifacts.
+- `--config <config>`: Optional attestation config path.
+- `--results <results>`: TRX file or directory root to ingest for evidence.
+- `--coverage <coverage>`: Cobertura file or directory root to ingest for evidence.
+- `--benchmarks <benchmarks>`: Benchmark evidence file or directory root to inspect.
+- `--manual-qa <manual-qa>`: Manual QA evidence file or directory root to inspect.
+- `--exec`: Run configured evidence refresh commands before generating the snapshot.
+- `--no-exec`: Do not execute configured evidence refresh commands.
 
 ### `workbench quality show`
 Read the latest normalized quality artifact or a selected evidence kind.
@@ -654,7 +672,7 @@ Options:
 - `--prefer <prefer>`: Pass through to the item sync stage when local and GitHub descriptions differ.
 
 ### `workbench validate`
-Validate work items, links, and schemas.
+Validate repository artifacts, links, and trace profiles.
 
 Aliases: `verify`
 
@@ -664,6 +682,8 @@ Options:
 - `--link-include <link-include>`: Repo-relative path prefixes to include in link validation.
 - `--link-exclude <link-exclude>`: Repo-relative path prefixes to exclude from link validation.
 - `--skip-doc-schema`: Skip doc front matter schema validation.
+- `--profile <profile>`: Validation profile to enforce (core|traceable|auditable).
+- `--scope <scope>`: Repo-relative path prefixes or files to validate.
 
 ### `workbench version`
 Print CLI version.
