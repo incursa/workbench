@@ -201,7 +201,7 @@ public partial class Program
                                 result.DetailsHtmlPath,
                                 result.JsonPath,
                                 result.Warnings.ToList())),
-                        WorkbenchJsonContext.Default.AttestationOutput);
+                        AttestationJsonContext.Default.AttestationOutput);
                 }
                 else
                 {

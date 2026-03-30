@@ -5,7 +5,8 @@ using System.Text.Json.Serialization;
 namespace Workbench.Core;
 
 public sealed record AttestationRepositoryMetadata(
-    [property: JsonPropertyName("root")] string Root,
+    [property: JsonIgnore] string Root,
+    [property: JsonPropertyName("displayName")] string DisplayName,
     [property: JsonPropertyName("commit")] string? Commit,
     [property: JsonPropertyName("branch")] string? Branch,
     [property: JsonPropertyName("configPath")] string? ConfigPath,
@@ -22,12 +23,26 @@ public sealed record AttestationSelection(
 public sealed record AttestationValidationProfileSummary(
     [property: JsonPropertyName("profile")] string Profile,
     [property: JsonPropertyName("errors")] int Errors,
-    [property: JsonPropertyName("warnings")] int Warnings,
-    [property: JsonPropertyName("findings")] IList<ValidationFinding> Findings);
+    [property: JsonPropertyName("warnings")] int Warnings);
+
+public sealed record AttestationValidationFindingSummary(
+    [property: JsonPropertyName("findingId")] string FindingId,
+    [property: JsonPropertyName("profile")] string Profile,
+    [property: JsonPropertyName("severity")] string Severity,
+    [property: JsonPropertyName("category")] string Category,
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("repoRelativePath")] string? RepoRelativePath,
+    [property: JsonPropertyName("artifactId")] string? ArtifactId,
+    [property: JsonPropertyName("field")] string? Field,
+    [property: JsonPropertyName("targetId")] string? TargetId,
+    [property: JsonPropertyName("targetType")] string? TargetType,
+    [property: JsonPropertyName("targetFile")] string? TargetFile,
+    [property: JsonPropertyName("requirementIds")] IList<string>? RequirementIds);
 
 public sealed record AttestationValidationSummary(
     [property: JsonPropertyName("selectedProfile")] string SelectedProfile,
-    [property: JsonPropertyName("profiles")] IList<AttestationValidationProfileSummary> Profiles);
+    [property: JsonPropertyName("profiles")] IList<AttestationValidationProfileSummary> Profiles,
+    [property: JsonPropertyName("findings")] IList<AttestationValidationFindingSummary> Findings);
 
 public sealed record AttestationTraceCoverageSummary(
     [property: JsonPropertyName("requirements")] int Requirements,
@@ -142,11 +157,8 @@ public sealed record AttestationArtifactSummary(
     [property: JsonPropertyName("artifactType")] string ArtifactType,
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("status")] string Status,
-    [property: JsonPropertyName("path")] string Path,
     [property: JsonPropertyName("repoRelativePath")] string RepoRelativePath,
-    [property: JsonPropertyName("requirementIds")] IList<string> RequirementIds,
-    [property: JsonPropertyName("validationErrors")] IList<string> ValidationErrors,
-    [property: JsonPropertyName("validationWarnings")] IList<string> ValidationWarnings);
+    [property: JsonPropertyName("requirementIds")] IList<string>? RequirementIds);
 
 public sealed record AttestationArtifactCollections(
     [property: JsonPropertyName("architectures")] IList<AttestationArtifactSummary> Architectures,
@@ -180,24 +192,12 @@ public sealed record AttestationRequirementRecord(
     [property: JsonPropertyName("clause")] string Clause,
     [property: JsonPropertyName("specificationId")] string SpecificationId,
     [property: JsonPropertyName("specificationTitle")] string SpecificationTitle,
-    [property: JsonPropertyName("specificationPath")] string SpecificationPath,
     [property: JsonPropertyName("specificationRepoRelativePath")] string SpecificationRepoRelativePath,
     [property: JsonPropertyName("specificationStatus")] string SpecificationStatus,
-    [property: JsonPropertyName("hasSatisfiedBy")] bool HasSatisfiedBy,
-    [property: JsonPropertyName("hasImplementedBy")] bool HasImplementedBy,
-    [property: JsonPropertyName("hasVerifiedBy")] bool HasVerifiedBy,
-    [property: JsonPropertyName("hasTestRefs")] bool HasTestRefs,
-    [property: JsonPropertyName("hasCodeRefs")] bool HasCodeRefs,
-    [property: JsonPropertyName("validationErrors")] IList<string> ValidationErrors,
-    [property: JsonPropertyName("validationWarnings")] IList<string> ValidationWarnings,
     [property: JsonPropertyName("trace")] AttestationRequirementTraceSummary Trace,
     [property: JsonPropertyName("lineage")] AttestationRequirementLineageSummary Lineage,
     [property: JsonPropertyName("directRefs")] AttestationRequirementDirectRefs DirectRefs,
-    [property: JsonPropertyName("linkedArchitectures")] IList<AttestationArtifactSummary> LinkedArchitectures,
-    [property: JsonPropertyName("linkedWorkItems")] IList<AttestationArtifactSummary> LinkedWorkItems,
-    [property: JsonPropertyName("linkedVerifications")] IList<AttestationArtifactSummary> LinkedVerifications,
-    [property: JsonPropertyName("linkedWorkItemStatuses")] IList<string> LinkedWorkItemStatuses,
-    [property: JsonPropertyName("linkedVerificationStatuses")] IList<string> LinkedVerificationStatuses,
+    [property: JsonPropertyName("validationFindingIds")] IList<string>? ValidationFindingIds,
     [property: JsonPropertyName("testEvidenceStatus")] string TestEvidenceStatus,
     [property: JsonPropertyName("coverageEvidenceStatus")] string CoverageEvidenceStatus,
     [property: JsonPropertyName("benchmarkEvidenceStatus")] string BenchmarkEvidenceStatus,

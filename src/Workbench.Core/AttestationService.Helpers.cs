@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 namespace Workbench.Core;
 
@@ -25,29 +26,37 @@ public static partial class AttestationService
             options.Exec,
             options.NoExec);
 
-        var artifacts = BuildArtifactCollections(graph, selectedValidation, effectiveScope);
-        var requirements = BuildRequirementRecords(
+        var requirements = graph.Requirements
+            .Where(requirement => IsRequirementInScope(requirement, effectiveScope))
+            .OrderBy(requirement => requirement.RequirementId, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var scopedValidationFindings = FilterValidationFindings(selectedValidation.Findings, repoRoot, effectiveScope, attestationConfig.ScopeExcludes).ToList();
+        var validationIndex = BuildValidationFindingIndex(repoRoot, requirements, scopedValidationFindings);
+        var artifactLookup = BuildArtifactLookup(graph);
+        var artifacts = BuildArtifactCollections(graph, requirements, artifactLookup);
+        var requirementsRecords = BuildRequirementRecords(
             graph,
-            selectedValidation,
+            requirements,
+            validationIndex,
             evidence,
             attestationConfig,
-            effectiveScope);
+            artifactLookup);
 
-        var aggregates = BuildAggregateSummary(attestationConfig, requirements, graph, artifacts);
-        var gaps = BuildGapSummary(requirements, selectedValidation);
-        var derivedRollups = BuildDerivedRollups(attestationConfig, requirements);
+        var aggregates = BuildAggregateSummary(attestationConfig, requirementsRecords, graph, artifacts, artifactLookup);
+        var gaps = BuildGapSummary(requirementsRecords, scopedValidationFindings);
+        var derivedRollups = BuildDerivedRollups(attestationConfig, requirementsRecords);
 
         return new AttestationSnapshot(
-            1,
+            2,
             "attestation",
             DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             repoMetadata,
             selection,
-            new AttestationValidationSummary(selectedProfile, validationSnapshots.ToList()),
+            new AttestationValidationSummary(selectedProfile, validationSnapshots.ToList(), validationIndex.Findings.ToList()),
             aggregates,
             evidence,
             artifacts,
-            requirements,
+            requirementsRecords,
             gaps,
             derivedRollups,
             warnings.ToList());
@@ -58,10 +67,18 @@ public static partial class AttestationService
         var configPath = ResolveConfigPath(repoRoot, attestationConfigPath);
         return new AttestationRepositoryMetadata(
             repoRoot,
+            GetRepositoryDisplayName(repoRoot),
             TryReadGitValue(repoRoot, "rev-parse", "HEAD"),
             TryReadGitValue(repoRoot, "rev-parse", "--abbrev-ref", "HEAD"),
             NormalizeRepoPath(repoRoot, configPath),
             NormalizeRepoPath(repoRoot, WorkbenchConfig.GetConfigPath(repoRoot)));
+    }
+
+    private static string GetRepositoryDisplayName(string repoRoot)
+    {
+        var trimmed = Path.GetFullPath(repoRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var displayName = Path.GetFileName(trimmed);
+        return string.IsNullOrWhiteSpace(displayName) ? trimmed : displayName;
     }
 
     private static IReadOnlyList<AttestationValidationProfileSummary> BuildValidationSnapshots(
@@ -82,8 +99,7 @@ public static partial class AttestationService
             summaries.Add(new AttestationValidationProfileSummary(
                 profile,
                 CountSeverity(findings, "error"),
-                CountSeverity(findings, "warning"),
-                findings));
+                CountSeverity(findings, "warning")));
         }
 
         return summaries;
@@ -91,29 +107,28 @@ public static partial class AttestationService
 
     private static AttestationArtifactCollections BuildArtifactCollections(
         ValidationGraph graph,
-        ValidationResult selectedValidation,
-        IList<string> scope)
+        IReadOnlyList<RequirementNode> requirements,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> lookup)
     {
-        var lookup = BuildArtifactLookup(graph, selectedValidation);
         var architectureIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var workItemIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var verificationIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var requirement in graph.Requirements.Where(requirement => IsRequirementInScope(requirement, scope)))
+        foreach (var requirement in requirements)
         {
             foreach (var id in GetTraceValues(requirement.Trace, "Satisfied By"))
             {
-                AddLinkedArtifactIds(graph, id, "architecture", architectureIds);
+                AddLinkedArtifactIds(graph, id, "architecture", architectureIds, lookup, requirement.RequirementId);
             }
 
             foreach (var id in GetTraceValues(requirement.Trace, "Implemented By"))
             {
-                AddLinkedArtifactIds(graph, id, "work_item", workItemIds);
+                AddLinkedArtifactIds(graph, id, "work_item", workItemIds, lookup, requirement.RequirementId);
             }
 
             foreach (var id in GetTraceValues(requirement.Trace, "Verified By"))
             {
-                AddLinkedArtifactIds(graph, id, "verification", verificationIds);
+                AddLinkedArtifactIds(graph, id, "verification", verificationIds, lookup, requirement.RequirementId);
             }
         }
 
@@ -125,18 +140,12 @@ public static partial class AttestationService
 
     private static IList<AttestationRequirementRecord> BuildRequirementRecords(
         ValidationGraph graph,
-        ValidationResult selectedValidation,
+        IReadOnlyList<RequirementNode> requirements,
+        ValidationFindingIndex validationIndex,
         AttestationEvidenceSnapshot evidence,
         AttestationConfig attestationConfig,
-        IList<string> scope)
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup)
     {
-        var artifactLookup = BuildArtifactLookup(graph, selectedValidation);
-        var validationFindings = selectedValidation.Findings.ToList();
-        var requirements = graph.Requirements
-            .Where(requirement => IsRequirementInScope(requirement, scope))
-            .OrderBy(requirement => requirement.RequirementId, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
         var records = new List<AttestationRequirementRecord>();
         foreach (var requirement in requirements)
         {
@@ -149,18 +158,8 @@ public static partial class AttestationService
             var sourceRefs = GetTraceValues(requirement.Trace, "Source Refs");
             var testRefs = GetTraceValues(requirement.Trace, "Test Refs");
             var codeRefs = GetTraceValues(requirement.Trace, "Code Refs");
-
-            var linkedArchitectures = BuildLinkedArtifacts(graph, artifactLookup, satisfiedBy, "architecture");
-            var linkedWorkItems = BuildLinkedArtifacts(graph, artifactLookup, implementedBy, "work_item");
-            var linkedVerifications = BuildLinkedArtifacts(graph, artifactLookup, verifiedBy, "verification");
-
-            var allRequirementFindings = validationFindings
-                .Where(finding => IsFindingForRequirement(finding, requirement.RequirementId, requirement.SpecPath))
-                .Select(FormatFinding)
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
-            var validationErrors = allRequirementFindings.Where(message => message.StartsWith("[error]", StringComparison.OrdinalIgnoreCase)).ToList();
-            var validationWarnings = allRequirementFindings.Where(message => message.StartsWith("[warning]", StringComparison.OrdinalIgnoreCase)).ToList();
+            validationIndex.RequirementFindingIds.TryGetValue(requirement.RequirementId, out var validationFindingIds);
+            validationFindingIds ??= new List<string>();
 
             var testEvidenceStatus = DetermineRequirementTestEvidenceStatus(evidence.TestResults, testRefs);
             var coverageEvidenceStatus = DetermineRequirementCoverageEvidenceStatus(evidence.Coverage, codeRefs);
@@ -172,13 +171,12 @@ public static partial class AttestationService
                 verifiedBy,
                 testRefs,
                 codeRefs,
-                linkedVerifications,
                 testEvidenceStatus,
                 coverageEvidenceStatus,
                 benchmarkEvidenceStatus,
                 manualQaStatus,
-                validationErrors,
-                validationWarnings);
+                validationFindingIds,
+                validationIndex.FindingLookup);
 
             records.Add(new AttestationRequirementRecord(
                 requirement.RequirementId,
@@ -186,30 +184,18 @@ public static partial class AttestationService
                 requirement.Clause,
                 specification?.Artifact.ArtifactId ?? requirement.SpecArtifactId,
                 specification?.Artifact.Title ?? string.Empty,
-                specification?.Artifact.Path ?? requirement.SpecPath,
                 specification?.Artifact.RepoRelativePath ?? requirement.SpecRepoRelativePath,
                 specification?.Artifact.Status ?? string.Empty,
-                satisfiedBy.Count > 0,
-                implementedBy.Count > 0,
-                verifiedBy.Count > 0,
-                testRefs.Count > 0,
-                codeRefs.Count > 0,
-                validationErrors,
-                validationWarnings,
                 new AttestationRequirementTraceSummary(satisfiedBy, implementedBy, verifiedBy),
                 new AttestationRequirementLineageSummary(derivedFrom, supersedes, sourceRefs, requirement.RelatedArtifacts.ToList()),
                 new AttestationRequirementDirectRefs(testRefs, codeRefs),
-                linkedArchitectures,
-                linkedWorkItems,
-                linkedVerifications,
-                linkedWorkItems.Select(item => item.Status).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(status => status, StringComparer.OrdinalIgnoreCase).ToList(),
-                linkedVerifications.Select(item => item.Status).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(status => status, StringComparer.OrdinalIgnoreCase).ToList(),
+                validationFindingIds.Count == 0 ? null : validationFindingIds.ToList(),
                 testEvidenceStatus,
                 coverageEvidenceStatus,
                 benchmarkEvidenceStatus,
                 manualQaStatus,
                 gaps,
-                BuildRequirementRollups(attestationConfig, linkedWorkItems, linkedVerifications, validationErrors, evidence)));
+                BuildRequirementRollups(attestationConfig, implementedBy, verifiedBy, validationFindingIds, artifactLookup, evidence)));
         }
 
         return records;
@@ -219,7 +205,8 @@ public static partial class AttestationService
         AttestationConfig attestationConfig,
         IList<AttestationRequirementRecord> requirements,
         ValidationGraph graph,
-        AttestationArtifactCollections artifacts)
+        AttestationArtifactCollections artifacts,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup)
     {
         var total = requirements.Count;
         var satisfiedBy = requirements.Count(requirement => requirement.Trace.SatisfiedBy.Count > 0);
@@ -249,18 +236,25 @@ public static partial class AttestationService
                 Percent(codeRefs, total),
                 downstream,
                 Percent(downstream, total)),
-            BuildWorkItemStatusSummary(attestationConfig, requirements),
-            BuildVerificationStatusSummary(attestationConfig, requirements));
+            BuildWorkItemStatusSummary(attestationConfig, requirements, artifactLookup),
+            BuildVerificationStatusSummary(attestationConfig, requirements, artifactLookup));
     }
 
     private static AttestationWorkItemStatusSummary BuildWorkItemStatusSummary(
         AttestationConfig attestationConfig,
-        IList<AttestationRequirementRecord> requirements)
+        IList<AttestationRequirementRecord> requirements,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup)
     {
-        var artifacts = requirements.SelectMany(requirement => requirement.LinkedWorkItems).DistinctBy(item => item.ArtifactId, StringComparer.OrdinalIgnoreCase).ToList();
+        var artifacts = requirements
+            .SelectMany(requirement => requirement.Trace.ImplementedBy)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(id => artifactLookup.TryGetValue(id, out var summary) ? summary : null)
+            .Where(summary => summary is not null)
+            .Select(summary => summary!)
+            .ToList();
         return new AttestationWorkItemStatusSummary(
             artifacts.Count,
-            requirements.Count(requirement => requirement.LinkedWorkItems.Count > 0),
+            requirements.Count(requirement => requirement.Trace.ImplementedBy.Count > 0),
             CountStatuses(artifacts, attestationConfig.StatusPolicy.WorkItemDone),
             CountStatuses(artifacts, attestationConfig.StatusPolicy.WorkItemInProgress),
             CountStatuses(artifacts, attestationConfig.StatusPolicy.WorkItemOpen),
@@ -270,12 +264,19 @@ public static partial class AttestationService
 
     private static AttestationVerificationStatusSummary BuildVerificationStatusSummary(
         AttestationConfig attestationConfig,
-        IList<AttestationRequirementRecord> requirements)
+        IList<AttestationRequirementRecord> requirements,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup)
     {
-        var artifacts = requirements.SelectMany(requirement => requirement.LinkedVerifications).DistinctBy(item => item.ArtifactId, StringComparer.OrdinalIgnoreCase).ToList();
+        var artifacts = requirements
+            .SelectMany(requirement => requirement.Trace.VerifiedBy)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(id => artifactLookup.TryGetValue(id, out var summary) ? summary : null)
+            .Where(summary => summary is not null)
+            .Select(summary => summary!)
+            .ToList();
         return new AttestationVerificationStatusSummary(
             artifacts.Count,
-            requirements.Count(requirement => requirement.LinkedVerifications.Count > 0),
+            requirements.Count(requirement => requirement.Trace.VerifiedBy.Count > 0),
             CountStatuses(artifacts, attestationConfig.StatusPolicy.VerificationPassing),
             CountStatuses(artifacts, attestationConfig.StatusPolicy.VerificationFailing),
             CountStatuses(artifacts, attestationConfig.StatusPolicy.VerificationPending),
@@ -285,21 +286,21 @@ public static partial class AttestationService
 
     private static AttestationGapSummary BuildGapSummary(
         IList<AttestationRequirementRecord> requirements,
-        ValidationResult selectedValidation)
+        IReadOnlyList<ValidationFinding> selectedValidationFindings)
     {
         var withoutDownstream = requirements.Where(requirement => requirement.Trace.SatisfiedBy.Count == 0 && requirement.Trace.ImplementedBy.Count == 0 && requirement.Trace.VerifiedBy.Count == 0).Select(requirement => requirement.RequirementId).ToList();
         var withoutImplementation = requirements.Where(requirement => requirement.Trace.ImplementedBy.Count == 0 && requirement.DirectRefs.TestRefs.Count == 0 && requirement.DirectRefs.CodeRefs.Count == 0).Select(requirement => requirement.RequirementId).ToList();
-        var withoutVerification = requirements.Where(requirement => requirement.Trace.VerifiedBy.Count == 0 && requirement.LinkedVerifications.Count == 0).Select(requirement => requirement.RequirementId).ToList();
+        var withoutVerification = requirements.Where(requirement => requirement.Trace.VerifiedBy.Count == 0).Select(requirement => requirement.RequirementId).ToList();
         var failingOrStale = requirements.Where(requirement => IsProblemEvidenceStatus(requirement.TestEvidenceStatus) || IsProblemEvidenceStatus(requirement.CoverageEvidenceStatus) || IsProblemEvidenceStatus(requirement.BenchmarkEvidenceStatus) || IsProblemEvidenceStatus(requirement.ManualQaStatus)).Select(requirement => requirement.RequirementId).ToList();
 
-        var orphanArtifacts = selectedValidation.Findings
+        var orphanArtifacts = selectedValidationFindings
             .Where(finding => string.Equals(finding.Category, ValidationCategories.OrphanArtifact, StringComparison.OrdinalIgnoreCase))
             .Select(finding => finding.ArtifactId ?? finding.File ?? finding.Message)
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var unresolved = selectedValidation.Findings
+        var unresolved = selectedValidationFindings
             .Where(finding => string.Equals(finding.Category, ValidationCategories.UnresolvedReference, StringComparison.OrdinalIgnoreCase))
             .Select(finding => finding.TargetId ?? finding.ArtifactId ?? finding.Message)
             .Where(value => !string.IsNullOrWhiteSpace(value))
@@ -342,9 +343,10 @@ public static partial class AttestationService
 
     private static AttestationRequirementRollupSummary? BuildRequirementRollups(
         AttestationConfig attestationConfig,
-        IList<AttestationArtifactSummary> linkedWorkItems,
-        IList<AttestationArtifactSummary> linkedVerifications,
-        IList<string> validationErrors,
+        IReadOnlyList<string> implementedBy,
+        IReadOnlyList<string> verifiedBy,
+        IReadOnlyList<string> validationFindingIds,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup,
         AttestationEvidenceSnapshot evidence)
     {
         if (attestationConfig.Rollups is null)
@@ -352,12 +354,12 @@ public static partial class AttestationService
             return null;
         }
 
-        var implemented = attestationConfig.Rollups.Implemented && linkedWorkItems.Any(item => HasStatus(attestationConfig.StatusPolicy.WorkItemDone, item.Status));
-        var verified = attestationConfig.Rollups.Verified && linkedVerifications.Any(item => HasStatus(attestationConfig.StatusPolicy.VerificationPassing, item.Status));
+        var implemented = attestationConfig.Rollups.Implemented && implementedBy.Any(id => artifactLookup.TryGetValue(id, out var item) && HasStatus(attestationConfig.StatusPolicy.WorkItemDone, item.Status));
+        var verified = attestationConfig.Rollups.Verified && verifiedBy.Any(id => artifactLookup.TryGetValue(id, out var item) && HasStatus(attestationConfig.StatusPolicy.VerificationPassing, item.Status));
         var releaseReady = attestationConfig.Rollups.ReleaseReady &&
-            (!attestationConfig.Rollups.RequireNoOpenWorkItems || !linkedWorkItems.Any(item => HasStatus(attestationConfig.StatusPolicy.WorkItemOpen, item.Status) || HasStatus(attestationConfig.StatusPolicy.WorkItemBlocked, item.Status))) &&
-            (!attestationConfig.Rollups.RequireNoValidationErrors || validationErrors.Count == 0) &&
-            (!attestationConfig.Rollups.RequireNoFailingVerifications || !linkedVerifications.Any(item => HasStatus(attestationConfig.StatusPolicy.VerificationFailing, item.Status))) &&
+            (!attestationConfig.Rollups.RequireNoOpenWorkItems || !implementedBy.Any(id => artifactLookup.TryGetValue(id, out var item) && (HasStatus(attestationConfig.StatusPolicy.WorkItemOpen, item.Status) || HasStatus(attestationConfig.StatusPolicy.WorkItemBlocked, item.Status)))) &&
+            (!attestationConfig.Rollups.RequireNoValidationErrors || validationFindingIds.Count == 0) &&
+            (!attestationConfig.Rollups.RequireNoFailingVerifications || !verifiedBy.Any(id => artifactLookup.TryGetValue(id, out var item) && HasStatus(attestationConfig.StatusPolicy.VerificationFailing, item.Status))) &&
             (!attestationConfig.Rollups.RequireNoStaleEvidence || (!string.Equals(evidence.TestResults.Status, "stale", StringComparison.OrdinalIgnoreCase) && !string.Equals(evidence.Coverage.Status, "stale", StringComparison.OrdinalIgnoreCase) && !string.Equals(evidence.Benchmarks.Status, "stale", StringComparison.OrdinalIgnoreCase) && !string.Equals(evidence.ManualQa.Status, "stale", StringComparison.OrdinalIgnoreCase)));
 
         return new AttestationRequirementRollupSummary(implemented, verified, releaseReady, "configured local rule");
@@ -404,13 +406,12 @@ public static partial class AttestationService
         IReadOnlyList<string> verifiedBy,
         IReadOnlyList<string> testRefs,
         IReadOnlyList<string> codeRefs,
-        IList<AttestationArtifactSummary> linkedVerifications,
         string testEvidenceStatus,
         string coverageEvidenceStatus,
         string benchmarkEvidenceStatus,
         string manualQaStatus,
-        IList<string> validationErrors,
-        IList<string> validationWarnings)
+        IReadOnlyList<string> validationFindingIds,
+        IReadOnlyDictionary<string, AttestationValidationFindingSummary> findingLookup)
     {
         var gaps = new List<string>();
 
@@ -424,7 +425,7 @@ public static partial class AttestationService
             gaps.Add("no implementation evidence or direct refs");
         }
 
-        if (verifiedBy.Count == 0 && linkedVerifications.Count == 0)
+        if (verifiedBy.Count == 0)
         {
             gaps.Add("no verification coverage");
         }
@@ -471,6 +472,9 @@ public static partial class AttestationService
             gaps.Add($"manual QA evidence {manualQaStatus}");
         }
 
+        var validationErrors = validationFindingIds.Where(id => findingLookup.TryGetValue(id, out var finding) && string.Equals(finding.Severity, "error", StringComparison.OrdinalIgnoreCase)).ToList();
+        var validationWarnings = validationFindingIds.Where(id => findingLookup.TryGetValue(id, out var finding) && string.Equals(finding.Severity, "warning", StringComparison.OrdinalIgnoreCase)).ToList();
+
         if (validationErrors.Count > 0)
         {
             gaps.Add($"validation errors ({validationErrors.Count})");
@@ -486,8 +490,7 @@ public static partial class AttestationService
     }
 
     private static Dictionary<string, AttestationArtifactSummary> BuildArtifactLookup(
-        ValidationGraph graph,
-        ValidationResult selectedValidation)
+        ValidationGraph graph)
     {
         var lookup = new Dictionary<string, AttestationArtifactSummary>(StringComparer.OrdinalIgnoreCase);
         foreach (var artifact in graph.Artifacts)
@@ -497,62 +500,110 @@ public static partial class AttestationService
                 continue;
             }
 
-            lookup[artifact.ArtifactId] = BuildArtifactSummary(artifact, selectedValidation);
+            lookup[artifact.ArtifactId] = BuildArtifactSummary(artifact);
         }
 
         return lookup;
     }
 
-    private static AttestationArtifactSummary BuildArtifactSummary(CanonicalArtifactNode artifact, ValidationResult selectedValidation)
+    private static AttestationArtifactSummary BuildArtifactSummary(CanonicalArtifactNode artifact)
     {
-        var findings = selectedValidation.Findings
-            .Where(finding => IsFindingForArtifact(finding, artifact.ArtifactId, artifact.Path))
-            .Select(FormatFinding)
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-        var validationWarnings = findings.Where(message => message.StartsWith("[warning]", StringComparison.OrdinalIgnoreCase)).ToList();
-        var validationErrors = findings.Where(message => message.StartsWith("[error]", StringComparison.OrdinalIgnoreCase)).ToList();
-
         return new AttestationArtifactSummary(
             artifact.ArtifactId,
             artifact.ArtifactType,
             artifact.Title,
             artifact.Status,
-            artifact.Path,
             artifact.RepoRelativePath,
-            new List<string>(),
-            validationErrors,
-            validationWarnings);
+            new List<string>());
     }
 
-    private static IList<AttestationArtifactSummary> BuildLinkedArtifacts(
-        ValidationGraph graph,
-        IReadOnlyDictionary<string, AttestationArtifactSummary> lookup,
-        IReadOnlyList<string> ids,
-        string expectedType)
+    private static ValidationFindingIndex BuildValidationFindingIndex(
+        string repoRoot,
+        IReadOnlyList<RequirementNode> requirements,
+        IReadOnlyList<ValidationFinding> findings)
     {
-        var list = new List<AttestationArtifactSummary>();
-        foreach (var id in ids)
+        var groups = new Dictionary<string, ValidationFindingGroup>(StringComparer.Ordinal);
+        foreach (var finding in findings)
         {
-            foreach (var match in graph.ResolveArtifact(id))
+            var key = BuildFindingGroupKey(repoRoot, finding);
+            if (!groups.TryGetValue(key, out var group))
             {
-                if (!string.Equals(match.ArtifactType, expectedType, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
+                group = new ValidationFindingGroup(
+                    finding.Profile,
+                    finding.Severity,
+                    finding.Category,
+                    finding.Message,
+                    NormalizeRepoPathOrNull(repoRoot, finding.File),
+                    finding.ArtifactId,
+                    finding.Field,
+                    finding.TargetId,
+                    finding.TargetType,
+                    NormalizeRepoPathOrNull(repoRoot, finding.TargetFile),
+                    new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+                groups[key] = group;
+            }
 
-                if (lookup.TryGetValue(match.ArtifactId, out var summary))
+            foreach (var requirement in requirements)
+            {
+                if (IsFindingForRequirement(finding, requirement.RequirementId, requirement.SpecPath))
                 {
-                    list.Add(summary);
+                    group.RequirementIds.Add(requirement.RequirementId);
                 }
             }
         }
 
-        return list
-            .GroupBy(item => item.ArtifactId, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .OrderBy(item => item.ArtifactId, StringComparer.OrdinalIgnoreCase)
+        var orderedGroups = groups.Values
+            .OrderBy(group => group.Severity.Equals("error", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(group => group.Category, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(group => group.RepoRelativePath ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(group => group.TargetId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(group => group.Message, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        var findingsById = new Dictionary<string, AttestationValidationFindingSummary>(StringComparer.OrdinalIgnoreCase);
+        var requirementFindingIds = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var summaries = new List<AttestationValidationFindingSummary>();
+
+        for (var index = 0; index < orderedGroups.Count; index++)
+        {
+            var group = orderedGroups[index];
+            var findingId = $"F{index + 1:000}";
+            var requirementIds = group.RequirementIds
+                .OrderBy(requirementId => requirementId, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var groupedByRequirement = requirementIds.Count > 1;
+            var summary = new AttestationValidationFindingSummary(
+                findingId,
+                group.Profile,
+                group.Severity,
+                group.Category,
+                group.Message,
+                group.RepoRelativePath,
+                requirementIds.Count == 0 ? group.ArtifactId : null,
+                group.Field,
+                groupedByRequirement ? null : group.TargetId,
+                group.TargetType,
+                groupedByRequirement ? null : group.TargetFile,
+                requirementIds.Count == 0 ? null : requirementIds);
+            summaries.Add(summary);
+            findingsById[findingId] = summary;
+
+            foreach (var requirementId in requirementIds)
+            {
+                if (!requirementFindingIds.TryGetValue(requirementId, out var list))
+                {
+                    list = new List<string>();
+                    requirementFindingIds[requirementId] = list;
+                }
+
+                list.Add(findingId);
+            }
+        }
+
+        return new ValidationFindingIndex(
+            summaries,
+            requirementFindingIds.ToDictionary(entry => entry.Key, entry => (IReadOnlyList<string>)entry.Value.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(), StringComparer.OrdinalIgnoreCase),
+            findingsById);
     }
 
     private static IEnumerable<ValidationFinding> FilterValidationFindings(
@@ -614,24 +665,18 @@ public static partial class AttestationService
         return false;
     }
 
-    private static bool IsFindingForArtifact(ValidationFinding finding, string artifactId, string path)
+    private static string BuildFindingGroupKey(string repoRoot, ValidationFinding finding)
     {
-        if (string.Equals(finding.ArtifactId, artifactId, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (finding.File is not null && string.Equals(NormalizePathForComparison(finding.File), NormalizePathForComparison(path), StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (finding.TargetFile is not null && string.Equals(NormalizePathForComparison(finding.TargetFile), NormalizePathForComparison(path), StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return false;
+        return string.Join(
+            '\u001f',
+            NormalizeKeyToken(finding.Profile),
+            NormalizeKeyToken(finding.Severity),
+            NormalizeKeyToken(finding.Category),
+            NormalizeRepoPathOrNull(repoRoot, finding.File) ?? string.Empty,
+            NormalizeKeyToken(finding.Field),
+            NormalizeKeyToken(finding.TargetType),
+            NormalizeRepoPathOrNull(repoRoot, finding.TargetFile) ?? string.Empty,
+            NormalizeFindingMessageForGrouping(finding.Message));
     }
 
     private static string NormalizePathForComparison(string path)
@@ -639,29 +684,71 @@ public static partial class AttestationService
         return Path.GetFullPath(path).Replace('\\', '/');
     }
 
-    private static string FormatFinding(ValidationFinding finding)
+    private static string? NormalizeRepoPathOrNull(string repoRoot, string? path)
     {
-        var prefix = string.Equals(finding.Severity, "warning", StringComparison.OrdinalIgnoreCase) ? "[warning]" : "[error]";
-        string location;
-        if (!string.IsNullOrWhiteSpace(finding.File))
+        if (string.IsNullOrWhiteSpace(path))
         {
-            location = finding.File;
+            return null;
         }
-        else if (!string.IsNullOrWhiteSpace(finding.ArtifactId))
+
+        return NormalizeRepoPath(repoRoot, path);
+    }
+
+    private static string NormalizeFindingMessageForGrouping(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
         {
-            location = finding.ArtifactId;
+            return string.Empty;
         }
-        else if (!string.IsNullOrWhiteSpace(finding.TargetId))
+
+        var builder = new StringBuilder(message.Length);
+        var index = 0;
+        while (index < message.Length)
         {
-            location = finding.TargetId;
+            if (char.IsUpper(message[index]))
+            {
+                var start = index;
+                var sawDash = false;
+                var allAllowed = true;
+
+                while (index < message.Length)
+                {
+                    var current = message[index];
+                    if (char.IsUpper(current) || char.IsDigit(current) || current == '-' || current == '_')
+                    {
+                        sawDash |= current == '-';
+                        index++;
+                        continue;
+                    }
+
+                    allAllowed = false;
+                    break;
+                }
+
+                if (allAllowed && sawDash)
+                {
+                    builder.Append("<id>");
+                }
+                else
+                {
+                    builder.Append(message, start, index - start);
+                }
+
+                continue;
+            }
+
+            builder.Append(message[index]);
+            index++;
         }
-        else
-        {
-            location = string.Empty;
-        }
-        return string.IsNullOrWhiteSpace(location)
-            ? $"{prefix} {finding.Category}: {finding.Message}"
-            : $"{prefix} {finding.Category} {location}: {finding.Message}";
+
+        return builder.ToString();
+    }
+
+    private static string NormalizeKeyToken(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToLowerInvariant();
     }
 
     private static int CountSeverity(IEnumerable<ValidationFinding> findings, string severity)
@@ -738,6 +825,24 @@ public static partial class AttestationService
         return count;
     }
 
+    private sealed record ValidationFindingGroup(
+        string Profile,
+        string Severity,
+        string Category,
+        string Message,
+        string? RepoRelativePath,
+        string? ArtifactId,
+        string? Field,
+        string? TargetId,
+        string? TargetType,
+        string? TargetFile,
+        HashSet<string> RequirementIds);
+
+    private sealed record ValidationFindingIndex(
+        IReadOnlyList<AttestationValidationFindingSummary> Findings,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> RequirementFindingIds,
+        IReadOnlyDictionary<string, AttestationValidationFindingSummary> FindingLookup);
+
     private static string NormalizeEvidenceStatus(string? status, bool present)
     {
         if (!present || string.IsNullOrWhiteSpace(status))
@@ -794,14 +899,32 @@ public static partial class AttestationService
         return (double)numerator / denominator;
     }
 
-    private static void AddLinkedArtifactIds(ValidationGraph graph, string id, string expectedType, ISet<string> ids)
+    private static void AddLinkedArtifactIds(
+        ValidationGraph graph,
+        string id,
+        string expectedType,
+        ISet<string> ids,
+        IReadOnlyDictionary<string, AttestationArtifactSummary>? lookup = null,
+        string? requirementId = null)
     {
         foreach (var match in graph.ResolveArtifact(id))
         {
             if (string.Equals(match.ArtifactType, expectedType, StringComparison.OrdinalIgnoreCase))
             {
                 ids.Add(match.ArtifactId);
+                if (lookup is not null && requirementId is not null && lookup.TryGetValue(match.ArtifactId, out var summary) && summary.RequirementIds is not null)
+                {
+                    AddValue(summary.RequirementIds, requirementId);
+                }
             }
+        }
+    }
+
+    private static void AddValue(ICollection<string> values, string value)
+    {
+        if (!values.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            values.Add(value);
         }
     }
 }

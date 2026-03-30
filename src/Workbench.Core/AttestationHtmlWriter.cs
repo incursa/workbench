@@ -18,7 +18,7 @@ public static class AttestationHtmlWriter
     private static string BuildSummaryHtml(string reportPath, AttestationSnapshot snapshot, string detailsLink, string jsonLink)
     {
         var builder = new StringBuilder();
-        AppendDocumentStart(builder, $"Attestation Summary - {snapshot.Repository.Root}");
+        AppendDocumentStart(builder, $"Attestation Summary - {snapshot.Repository.DisplayName}");
         AppendHeader(builder, "Attestation Summary", detailsLink, jsonLink);
         AppendRepositorySection(builder, reportPath, snapshot);
         AppendValidationSection(builder, snapshot);
@@ -38,9 +38,11 @@ public static class AttestationHtmlWriter
     private static string BuildDetailsHtml(string reportPath, AttestationSnapshot snapshot, string summaryLink, string jsonLink)
     {
         var builder = new StringBuilder();
-        AppendDocumentStart(builder, $"Attestation Details - {snapshot.Repository.Root}");
+        AppendDocumentStart(builder, $"Attestation Details - {snapshot.Repository.DisplayName}");
         AppendHeader(builder, "Attestation Details", summaryLink, jsonLink);
         AppendRequirementOverview(builder, snapshot);
+        AppendArtifactIndexes(builder, reportPath, snapshot);
+        AppendValidationFindingsSection(builder, reportPath, snapshot);
         foreach (var requirement in snapshot.Requirements.OrderBy(requirement => requirement.RequirementId, StringComparer.OrdinalIgnoreCase))
         {
             AppendRequirementDetails(builder, reportPath, snapshot.Repository.Root, requirement);
@@ -65,10 +67,15 @@ public static class AttestationHtmlWriter
         builder.AppendLine("th{background:#f5f5f5;}");
         builder.AppendLine("details{border:1px solid #ddd;padding:0.5rem 0.75rem;background:#fafafa;}");
         builder.AppendLine("summary{font-weight:600;cursor:pointer;}");
+        builder.AppendLine("summary a{color:inherit;text-decoration:none;}");
+        builder.AppendLine("summary a:hover{text-decoration:underline;}");
         builder.AppendLine("code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;}");
         builder.AppendLine(".muted{color:#666;}");
         builder.AppendLine(".error{color:#8b0000;}");
         builder.AppendLine(".warning{color:#8a5a00;}");
+        builder.AppendLine(".validation-findings{margin:0.25rem 0 0.75rem 1.25rem;padding:0;}");
+        builder.AppendLine(".validation-findings li{margin:0.15rem 0;}");
+        builder.AppendLine(".compact-links{white-space:normal;}");
         builder.AppendLine("</style>");
         builder.AppendLine("</head>");
         builder.AppendLine("<body>");
@@ -99,8 +106,8 @@ public static class AttestationHtmlWriter
         {
             new[]
             {
-                "Repo root",
-                snapshot.Repository.Root
+                "Repository",
+                snapshot.Repository.DisplayName
             },
             new[]
             {
@@ -130,12 +137,12 @@ public static class AttestationHtmlWriter
             new[]
             {
                 "Config path",
-                LinkToRepoPath(reportPath, snapshot.Repository.Root, ResolveRepoAbsolutePath(snapshot.Repository.Root, snapshot.Repository.ConfigPath), snapshot.Repository.ConfigPath)
+                LinkToRepoPath(reportPath, snapshot.Repository.Root, null, snapshot.Repository.ConfigPath)
             },
             new[]
             {
                 "Workbench config",
-                LinkToRepoPath(reportPath, snapshot.Repository.Root, ResolveRepoAbsolutePath(snapshot.Repository.Root, snapshot.Repository.WorkbenchConfigPath), snapshot.Repository.WorkbenchConfigPath)
+                LinkToRepoPath(reportPath, snapshot.Repository.Root, null, snapshot.Repository.WorkbenchConfigPath)
             }
         });
         builder.AppendLine("</section>");
@@ -146,7 +153,7 @@ public static class AttestationHtmlWriter
         builder.AppendLine("<section>");
         builder.AppendLine("<h2>Validation</h2>");
         builder.AppendLine("<table>");
-        builder.AppendLine("<thead><tr><th>Profile</th><th>Errors</th><th>Warnings</th><th>Findings</th></tr></thead>");
+        builder.AppendLine("<thead><tr><th>Profile</th><th>Errors</th><th>Warnings</th></tr></thead>");
         builder.AppendLine("<tbody>");
         foreach (var profile in snapshot.Validation.Profiles.OrderBy(profile => profile.Profile, StringComparer.OrdinalIgnoreCase))
         {
@@ -154,7 +161,6 @@ public static class AttestationHtmlWriter
             builder.AppendLine($"<td>{Encode(profile.Profile)}</td>");
             builder.AppendLine($"<td>{FormatInt(profile.Errors)}</td>");
             builder.AppendLine($"<td>{FormatInt(profile.Warnings)}</td>");
-            builder.AppendLine($"<td>{FormatInt(profile.Findings.Count)}</td>");
             builder.AppendLine("</tr>");
         }
         builder.AppendLine("</tbody></table>");
@@ -267,28 +273,27 @@ public static class AttestationHtmlWriter
     {
         builder.AppendLine("<section>");
         builder.AppendLine("<h2>Requirements</h2>");
-        builder.AppendLine($"<p>{FormatInt(snapshot.Requirements.Count)} requirement(s) in this snapshot.</p>");
+        builder.AppendLine($"<p>{FormatInt(snapshot.Requirements.Count)} requirement(s), {FormatInt(snapshot.Validation.Findings.Count)} grouped validation finding(s).</p>");
         builder.AppendLine("</section>");
     }
 
-    private static void AppendRequirementDetails(StringBuilder builder, string reportPath, string repoRoot, AttestationRequirementRecord requirement)
+    private static void AppendRequirementDetails(
+        StringBuilder builder,
+        string reportPath,
+        string repoRoot,
+        AttestationRequirementRecord requirement)
     {
-        builder.AppendLine($"<details id=\"{Encode(requirement.RequirementId)}\">");
-        builder.AppendLine($"<summary>{Encode(requirement.RequirementId)} {Encode(requirement.Title)}</summary>");
+        builder.AppendLine($"<details id=\"{Encode(BuildRequirementAnchor(requirement.RequirementId))}\">");
+        builder.AppendLine($"<summary>{LinkToRepoPath(reportPath, repoRoot, null, requirement.SpecificationRepoRelativePath, $"{requirement.RequirementId} {requirement.Title}")}</summary>");
         builder.AppendLine("<div>");
         AppendDefinitionList(builder, new[]
         {
             ("Clause", requirement.Clause),
             ("Specification", $"{requirement.SpecificationId} - {requirement.SpecificationTitle}"),
-            ("Specification path", LinkToRepoPath(reportPath, repoRoot, requirement.SpecificationPath, requirement.SpecificationRepoRelativePath)),
             ("Specification status", requirement.SpecificationStatus),
-            ("Has Satisfied By", FormatBool(requirement.HasSatisfiedBy)),
-            ("Has Implemented By", FormatBool(requirement.HasImplementedBy)),
-            ("Has Verified By", FormatBool(requirement.HasVerifiedBy)),
-            ("Has Test Refs", FormatBool(requirement.HasTestRefs)),
-            ("Has Code Refs", FormatBool(requirement.HasCodeRefs)),
-            ("Test refs", requirement.DirectRefs.TestRefs.Count == 0 ? "none" : string.Join(", ", requirement.DirectRefs.TestRefs)),
-            ("Code refs", requirement.DirectRefs.CodeRefs.Count == 0 ? "none" : string.Join(", ", requirement.DirectRefs.CodeRefs)),
+            ("Test refs", RenderRepoPathLinkList(reportPath, repoRoot, (IReadOnlyList<string>)requirement.DirectRefs.TestRefs)),
+            ("Code refs", RenderRepoPathLinkList(reportPath, repoRoot, (IReadOnlyList<string>)requirement.DirectRefs.CodeRefs)),
+            ("Validation refs", RenderLinkList((IReadOnlyList<string>)(requirement.ValidationFindingIds ?? Array.Empty<string>()), value => LinkToAnchor(BuildFindingAnchor(value), value))),
             ("Test evidence", requirement.TestEvidenceStatus),
             ("Coverage evidence", requirement.CoverageEvidenceStatus),
             ("Benchmark evidence", requirement.BenchmarkEvidenceStatus),
@@ -296,11 +301,6 @@ public static class AttestationHtmlWriter
         });
 
         AppendRequirementTrace(builder, "Downstream trace", requirement.Trace.SatisfiedBy, requirement.Trace.ImplementedBy, requirement.Trace.VerifiedBy);
-        AppendArtifactList(builder, reportPath, repoRoot, "Linked architecture", requirement.LinkedArchitectures);
-        AppendArtifactList(builder, reportPath, repoRoot, "Linked work item", requirement.LinkedWorkItems);
-        AppendArtifactList(builder, reportPath, repoRoot, "Linked verification", requirement.LinkedVerifications);
-        AppendList(builder, requirement.ValidationErrors, "Validation errors");
-        AppendList(builder, requirement.ValidationWarnings, "Validation warnings");
         AppendList(builder, requirement.Gaps, "Gaps");
 
         if (requirement.DerivedRollups is not null)
@@ -321,13 +321,30 @@ public static class AttestationHtmlWriter
     private static void AppendRequirementTrace(StringBuilder builder, string title, IList<string> satisfiedBy, IList<string> implementedBy, IList<string> verifiedBy)
     {
         builder.AppendLine($"<section><h3>{Encode(title)}</h3>");
-        AppendList(builder, satisfiedBy, "Satisfied By");
-        AppendList(builder, implementedBy, "Implemented By");
-        AppendList(builder, verifiedBy, "Verified By");
+        builder.AppendLine("<dl>");
+        builder.AppendLine($"<dt>Satisfied By</dt><dd>{RenderLinkList((IReadOnlyList<string>)satisfiedBy, value => LinkToAnchor(BuildArtifactAnchor(value), value))}</dd>");
+        builder.AppendLine($"<dt>Implemented By</dt><dd>{RenderLinkList((IReadOnlyList<string>)implementedBy, value => LinkToAnchor(BuildArtifactAnchor(value), value))}</dd>");
+        builder.AppendLine($"<dt>Verified By</dt><dd>{RenderLinkList((IReadOnlyList<string>)verifiedBy, value => LinkToAnchor(BuildArtifactAnchor(value), value))}</dd>");
+        builder.AppendLine("</dl>");
         builder.AppendLine("</section>");
     }
 
-    private static void AppendArtifactList(StringBuilder builder, string reportPath, string repoRoot, string title, IList<AttestationArtifactSummary> artifacts)
+    private static void AppendArtifactIndexes(StringBuilder builder, string reportPath, AttestationSnapshot snapshot)
+    {
+        builder.AppendLine("<section>");
+        builder.AppendLine("<h2>Artifacts</h2>");
+        AppendArtifactSection(builder, reportPath, snapshot.Repository.Root, "Architectures", snapshot.Artifacts.Architectures);
+        AppendArtifactSection(builder, reportPath, snapshot.Repository.Root, "Work Items", snapshot.Artifacts.WorkItems);
+        AppendArtifactSection(builder, reportPath, snapshot.Repository.Root, "Verifications", snapshot.Artifacts.Verifications);
+        builder.AppendLine("</section>");
+    }
+
+    private static void AppendArtifactSection(
+        StringBuilder builder,
+        string reportPath,
+        string repoRoot,
+        string title,
+        IList<AttestationArtifactSummary> artifacts)
     {
         builder.AppendLine($"<section><h3>{Encode(title)}</h3>");
         if (artifacts.Count == 0)
@@ -338,16 +355,46 @@ public static class AttestationHtmlWriter
         }
 
         builder.AppendLine("<table>");
-        builder.AppendLine("<thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Path</th><th>Findings</th></tr></thead>");
+        builder.AppendLine("<thead><tr><th>ID</th><th>Title</th><th>Status</th><th>Path</th><th>Requirements</th></tr></thead>");
         builder.AppendLine("<tbody>");
-        foreach (var artifact in artifacts)
+        foreach (var artifact in artifacts.OrderBy(artifact => artifact.ArtifactId, StringComparer.OrdinalIgnoreCase))
         {
-            builder.AppendLine("<tr>");
-            builder.AppendLine($"<td>{Encode(artifact.ArtifactId)}</td>");
+            builder.AppendLine($"<tr id=\"{Encode(BuildArtifactAnchor(artifact.ArtifactId))}\">");
+            builder.AppendLine($"<td><a href=\"#{Encode(BuildArtifactAnchor(artifact.ArtifactId))}\">{Encode(artifact.ArtifactId)}</a></td>");
             builder.AppendLine($"<td>{Encode(artifact.Title)}</td>");
             builder.AppendLine($"<td>{Encode(artifact.Status)}</td>");
-            builder.AppendLine($"<td>{LinkToRepoPath(reportPath, repoRoot, artifact.Path, artifact.RepoRelativePath)}</td>");
-            builder.AppendLine($"<td>{Encode(string.Join(" | ", artifact.ValidationErrors.Concat(artifact.ValidationWarnings)))}</td>");
+            builder.AppendLine($"<td>{LinkToRepoPath(reportPath, repoRoot, null, artifact.RepoRelativePath)}</td>");
+            builder.AppendLine($"<td class=\"compact-links\">{RenderLinkList((IReadOnlyList<string>)(artifact.RequirementIds ?? Array.Empty<string>()), value => LinkToAnchor(BuildRequirementAnchor(value), value))}</td>");
+            builder.AppendLine("</tr>");
+        }
+        builder.AppendLine("</tbody></table>");
+        builder.AppendLine("</section>");
+    }
+
+    private static void AppendValidationFindingsSection(StringBuilder builder, string reportPath, AttestationSnapshot snapshot)
+    {
+        builder.AppendLine("<section>");
+        builder.AppendLine("<h2>Validation Findings</h2>");
+        var findings = snapshot.Validation.Findings;
+        if (findings.Count == 0)
+        {
+            builder.AppendLine("<p class=\"muted\">none</p>");
+            builder.AppendLine("</section>");
+            return;
+        }
+
+        builder.AppendLine("<table>");
+        builder.AppendLine("<thead><tr><th>ID</th><th>Severity</th><th>Category</th><th>Location</th><th>Requirements</th><th>Message</th></tr></thead>");
+        builder.AppendLine("<tbody>");
+        foreach (var finding in findings.OrderBy(finding => finding.FindingId, StringComparer.OrdinalIgnoreCase))
+        {
+            builder.AppendLine($"<tr id=\"{Encode(BuildFindingAnchor(finding.FindingId))}\">");
+            builder.AppendLine($"<td><a href=\"#{Encode(BuildFindingAnchor(finding.FindingId))}\">{Encode(finding.FindingId)}</a></td>");
+            builder.AppendLine($"<td><span class=\"{Encode(finding.Severity.Equals("warning", StringComparison.OrdinalIgnoreCase) ? "warning" : "error")}\">[{Encode(finding.Severity)}]</span></td>");
+            builder.AppendLine($"<td>{Encode(finding.Category)}</td>");
+            builder.AppendLine($"<td>{RenderFindingLocation(reportPath, snapshot.Repository.Root, finding)}</td>");
+            builder.AppendLine($"<td class=\"compact-links\">{RenderLinkList((IReadOnlyList<string>)(finding.RequirementIds ?? Array.Empty<string>()), value => LinkToAnchor(BuildRequirementAnchor(value), value))}</td>");
+            builder.AppendLine($"<td>{Encode(finding.Message)}</td>");
             builder.AppendLine("</tr>");
         }
         builder.AppendLine("</tbody></table>");
@@ -371,6 +418,84 @@ public static class AttestationHtmlWriter
         }
         builder.AppendLine("</ul>");
         builder.AppendLine("</section>");
+    }
+
+    private static string RenderLinkList(IReadOnlyList<string> values, Func<string, string> linkFactory)
+    {
+        if (values.Count == 0)
+        {
+            return "<span class=\"muted\">none</span>";
+        }
+
+        var links = values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(value => linkFactory(value.Trim()))
+            .ToList();
+
+        if (links.Count == 0)
+        {
+            return "<span class=\"muted\">none</span>";
+        }
+
+        return string.Join(", ", links);
+    }
+
+    private static string RenderRepoPathLinkList(string reportPath, string repoRoot, IReadOnlyList<string> values)
+    {
+        return RenderLinkList(values, value => LinkToRepoPath(reportPath, repoRoot, null, value));
+    }
+
+    private static string LinkToAnchor(string anchor, string label)
+    {
+        return $"<a href=\"#{Encode(anchor)}\">{Encode(label)}</a>";
+    }
+
+    private static string BuildRequirementAnchor(string requirementId)
+    {
+        return $"requirement-{NormalizeAnchor(requirementId)}";
+    }
+
+    private static string BuildArtifactAnchor(string artifactId)
+    {
+        return $"artifact-{NormalizeAnchor(artifactId)}";
+    }
+
+    private static string BuildFindingAnchor(string findingId)
+    {
+        return $"finding-{NormalizeAnchor(findingId)}";
+    }
+
+    private static string NormalizeAnchor(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "item"
+            : value.Trim().Replace(' ', '-').Replace('_', '-');
+    }
+
+    private static string RenderFindingLocation(string reportPath, string repoRoot, AttestationValidationFindingSummary finding)
+    {
+        if (!string.IsNullOrWhiteSpace(finding.RepoRelativePath))
+        {
+            return LinkToRepoPath(reportPath, repoRoot, null, finding.RepoRelativePath);
+        }
+
+        if (!string.IsNullOrWhiteSpace(finding.TargetFile))
+        {
+            return LinkToRepoPath(reportPath, repoRoot, null, finding.TargetFile);
+        }
+
+        if (!string.IsNullOrWhiteSpace(finding.ArtifactId))
+        {
+            return $"<code>{Encode(finding.ArtifactId)}</code>";
+        }
+
+        if (!string.IsNullOrWhiteSpace(finding.TargetId))
+        {
+            return $"<code>{Encode(finding.TargetId)}</code>";
+        }
+
+        return "<span class=\"muted\">unavailable</span>";
     }
 
     private static void AppendDefinitionList(StringBuilder builder, IEnumerable<(string Label, string Value)> items)
@@ -514,7 +639,7 @@ public static class AttestationHtmlWriter
         return Encode(text);
     }
 
-    private static string LinkToRepoPath(string reportPath, string repoRoot, string? absolutePath, string? repoRelativePath)
+    private static string LinkToRepoPath(string reportPath, string repoRoot, string? absolutePath, string? repoRelativePath, string? displayText = null)
     {
         if (string.IsNullOrWhiteSpace(absolutePath) && string.IsNullOrWhiteSpace(repoRelativePath))
         {
@@ -525,27 +650,23 @@ public static class AttestationHtmlWriter
             ? absolutePath!
             : Path.Combine(repoRoot, repoRelativePath!.Replace('/', Path.DirectorySeparatorChar));
 
-        var displayText = !string.IsNullOrWhiteSpace(repoRelativePath)
-            ? repoRelativePath!
-            : targetPath;
+        string linkText;
+        if (!string.IsNullOrWhiteSpace(displayText))
+        {
+            linkText = displayText!;
+        }
+        else if (!string.IsNullOrWhiteSpace(repoRelativePath))
+        {
+            linkText = repoRelativePath!;
+        }
+        else
+        {
+            linkText = targetPath;
+        }
 
         var reportDirectory = Path.GetDirectoryName(reportPath) ?? Directory.GetCurrentDirectory();
         var relative = Path.GetRelativePath(reportDirectory, targetPath).Replace('\\', '/');
-        return $"<a href=\"{Encode(relative)}\">{Encode(displayText)}</a>";
+        return $"<a href=\"{Encode(relative)}\">{Encode(linkText)}</a>";
     }
 
-    private static string? ResolveRepoAbsolutePath(string repoRoot, string? repoRelativePath)
-    {
-        if (string.IsNullOrWhiteSpace(repoRelativePath))
-        {
-            return null;
-        }
-
-        if (Path.IsPathRooted(repoRelativePath))
-        {
-            return Path.GetFullPath(repoRelativePath);
-        }
-
-        return Path.GetFullPath(Path.Combine(repoRoot, repoRelativePath));
-    }
 }
