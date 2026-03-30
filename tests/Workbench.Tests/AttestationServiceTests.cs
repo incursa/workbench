@@ -25,27 +25,27 @@ public class AttestationServiceTests
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithVerifiedBy);
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithTestRefs);
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithCodeRefs);
+        Assert.AreEqual(2, snapshot.SchemaVersion);
+        Assert.AreEqual(Path.GetFileName(repo.Path), snapshot.Repository.DisplayName);
 
         var traceRequirement = snapshot.Requirements.Single(requirement => string.Equals(requirement.RequirementId, "REQ-WB-ATTEST-0001", StringComparison.OrdinalIgnoreCase));
         var refsRequirement = snapshot.Requirements.Single(requirement => string.Equals(requirement.RequirementId, "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase));
 
-        Assert.IsTrue(traceRequirement.HasSatisfiedBy);
-        Assert.IsTrue(traceRequirement.HasImplementedBy);
-        Assert.IsTrue(traceRequirement.HasVerifiedBy);
-        Assert.IsFalse(traceRequirement.HasTestRefs);
-        Assert.IsFalse(traceRequirement.HasCodeRefs);
-        CollectionAssert.AreEquivalent(new[] { "complete", "in_progress", "planned", "blocked", "mystery" }, traceRequirement.LinkedWorkItemStatuses.ToArray());
-        CollectionAssert.AreEquivalent(new[] { "passed", "failed", "planned", "obsolete", "mystery" }, traceRequirement.LinkedVerificationStatuses.ToArray());
+        Assert.AreEqual("specs/requirements/WB/SPEC-WB-ATTEST.md", traceRequirement.SpecificationRepoRelativePath);
+        Assert.IsNull(traceRequirement.ValidationFindingIds);
+        CollectionAssert.AreEquivalent(new[] { "ARC-WB-ATTEST-0001" }, traceRequirement.Trace.SatisfiedBy.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "WI-WB-ATTEST-0001", "WI-WB-ATTEST-0002", "WI-WB-ATTEST-0003", "WI-WB-ATTEST-0004", "WI-WB-ATTEST-0005" }, traceRequirement.Trace.ImplementedBy.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "VER-WB-ATTEST-0001", "VER-WB-ATTEST-0002", "VER-WB-ATTEST-0003", "VER-WB-ATTEST-0004", "VER-WB-ATTEST-0005" }, traceRequirement.Trace.VerifiedBy.ToArray());
+        Assert.IsEmpty(traceRequirement.DirectRefs.TestRefs);
+        Assert.IsEmpty(traceRequirement.DirectRefs.CodeRefs);
         Assert.AreEqual("passing", traceRequirement.BenchmarkEvidenceStatus);
         Assert.AreEqual("passing", traceRequirement.ManualQaStatus);
 
-        Assert.IsFalse(refsRequirement.HasSatisfiedBy);
-        Assert.IsFalse(refsRequirement.HasImplementedBy);
-        Assert.IsFalse(refsRequirement.HasVerifiedBy);
-        Assert.IsTrue(refsRequirement.HasTestRefs);
-        Assert.IsTrue(refsRequirement.HasCodeRefs);
-        Assert.IsEmpty(refsRequirement.LinkedWorkItems);
-        Assert.IsEmpty(refsRequirement.LinkedVerifications);
+        Assert.AreEqual("specs/requirements/WB/SPEC-WB-ATTEST-REFS.md", refsRequirement.SpecificationRepoRelativePath);
+        CollectionAssert.AreEquivalent(new[] { "tests/Workbench.Tests/AttestationServiceTests.cs" }, refsRequirement.DirectRefs.TestRefs.ToArray());
+        CollectionAssert.AreEquivalent(new[] { "src/Workbench.Core/AttestationService.cs" }, refsRequirement.DirectRefs.CodeRefs.ToArray());
+        Assert.IsNotNull(refsRequirement.ValidationFindingIds);
+        Assert.IsNotEmpty(refsRequirement.ValidationFindingIds);
         CollectionAssert.Contains(refsRequirement.Gaps.ToArray(), "no downstream trace links");
 
         Assert.IsNotNull(snapshot.DerivedRollups);
@@ -59,15 +59,38 @@ public class AttestationServiceTests
         Assert.HasCount(preValidation.Errors.Count, postValidation.Errors);
         Assert.HasCount(preValidation.Findings.Count, postValidation.Findings);
 
-        var json = JsonSerializer.Serialize(snapshot, WorkbenchJsonContext.Default.AttestationSnapshot);
+        var json = JsonSerializer.Serialize(snapshot, AttestationJsonContext.Default.AttestationSnapshot);
+        Assert.IsFalse(json.Contains(Environment.NewLine, StringComparison.Ordinal), json);
         using var document = JsonDocument.Parse(json);
+        Assert.AreEqual(2, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.IsTrue(document.RootElement.TryGetProperty("repository", out var repository));
+        Assert.IsTrue(repository.TryGetProperty("displayName", out var displayName));
+        Assert.AreEqual(Path.GetFileName(repo.Path), displayName.GetString());
+        Assert.IsFalse(repository.TryGetProperty("root", out _));
         Assert.IsTrue(document.RootElement.TryGetProperty("aggregates", out var aggregates));
         Assert.IsTrue(aggregates.TryGetProperty("traceCoverage", out var traceCoverage));
         Assert.AreEqual(2, traceCoverage.GetProperty("requirements").GetInt32());
+        Assert.IsTrue(document.RootElement.TryGetProperty("validation", out var validation));
+        Assert.IsTrue(validation.TryGetProperty("findings", out var findings));
+        Assert.IsGreaterThan(0, findings.GetArrayLength());
         Assert.IsTrue(document.RootElement.TryGetProperty("requirements", out var requirements));
         Assert.AreEqual(2, requirements.GetArrayLength());
-        Assert.IsTrue(requirements[0].TryGetProperty("hasTestRefs", out _));
-        Assert.IsTrue(requirements[0].TryGetProperty("linkedWorkItemStatuses", out _));
+        var requirement0 = requirements[0];
+        Assert.IsTrue(requirement0.TryGetProperty("specificationRepoRelativePath", out _));
+        Assert.IsTrue(requirement0.TryGetProperty("trace", out _));
+        Assert.IsTrue(requirement0.TryGetProperty("directRefs", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("specificationPath", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("validationFindingIds", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("hasSatisfiedBy", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("hasImplementedBy", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("hasVerifiedBy", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("hasTestRefs", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("hasCodeRefs", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("linkedWorkItems", out _));
+        Assert.IsFalse(requirement0.TryGetProperty("linkedVerifications", out _));
+        var refsJson = requirements.EnumerateArray().Single(requirement => string.Equals(requirement.GetProperty("requirementId").GetString(), "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(refsJson.TryGetProperty("validationFindingIds", out var validationFindingIds));
+        Assert.IsGreaterThan(0, validationFindingIds.GetArrayLength());
     }
 
     [TestMethod]
@@ -86,6 +109,52 @@ public class AttestationServiceTests
         Assert.HasCount(3, unscoped.Snapshot.Requirements);
         Assert.HasCount(2, scoped.Snapshot.Requirements);
         CollectionAssert.DoesNotContain(scoped.Snapshot.Requirements.Select(requirement => requirement.RequirementId).ToList(), "REQ-UX-LEGACY-0001");
+    }
+
+    [TestMethod]
+    public void Generate_GroupsRepeatedValidationFindingsAcrossRequirementIds()
+    {
+        using var repo = CreateAttestationRepo(includeOutsideScopeRequirement: false, legacyOnly: false, includeExecutionCommand: false);
+        WriteGroupedValidationArtifacts(repo.Path);
+
+        var result = AttestationService.Generate(
+            repo.Path,
+            new AttestationRunOptions(null, ValidationProfiles.Auditable, "json", "artifacts/quality/attestation", null, null, null, null, null, false, false));
+
+        var snapshot = result.Snapshot;
+        var groupedRequirementIds = new[] { "REQ-WB-GROUP-0001", "REQ-WB-GROUP-0002" };
+
+        var groupedRequirements = snapshot.Requirements
+            .Where(requirement => groupedRequirementIds.Contains(requirement.RequirementId, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        Assert.HasCount(2, groupedRequirements);
+        var groupedFindings = snapshot.Validation.Findings
+            .Where(finding => finding.RequirementIds is not null &&
+                finding.RequirementIds.Count == 2 &&
+                groupedRequirementIds.All(requirementId => finding.RequirementIds.Contains(requirementId, StringComparer.OrdinalIgnoreCase)))
+            .ToList();
+
+        Assert.IsNotEmpty(groupedFindings);
+        var groupedFindingIds = groupedFindings.Select(finding => finding.FindingId).ToArray();
+
+        foreach (var requirement in groupedRequirements)
+        {
+            Assert.IsNotNull(requirement.ValidationFindingIds);
+            Assert.IsGreaterThanOrEqualTo(groupedFindingIds.Length, requirement.ValidationFindingIds!.Count);
+            foreach (var findingId in groupedFindingIds)
+            {
+                CollectionAssert.Contains(requirement.ValidationFindingIds.ToArray(), findingId);
+            }
+        }
+
+        foreach (var finding in groupedFindings)
+        {
+            Assert.AreEqual("specs/requirements/WB/SPEC-WB-GROUPED.md", finding.RepoRelativePath);
+            Assert.IsNull(finding.ArtifactId);
+            Assert.IsNull(finding.TargetId);
+            Assert.IsNull(finding.TargetFile);
+        }
     }
 
     [TestMethod]
@@ -129,8 +198,9 @@ public class AttestationServiceTests
 
         Assert.HasCount(1, legacy.Snapshot.Requirements);
         Assert.AreEqual("REQ-WB-LEGACY-0001", legacy.Snapshot.Requirements[0].RequirementId);
-        Assert.IsEmpty(legacy.Snapshot.Requirements[0].LinkedWorkItems);
-        Assert.IsEmpty(legacy.Snapshot.Requirements[0].LinkedVerifications);
+        Assert.IsEmpty(legacy.Snapshot.Requirements[0].Trace.SatisfiedBy);
+        Assert.IsEmpty(legacy.Snapshot.Requirements[0].Trace.ImplementedBy);
+        Assert.IsEmpty(legacy.Snapshot.Requirements[0].Trace.VerifiedBy);
     }
 
     private static TempRepoRoot CreateAttestationRepo(bool includeOutsideScopeRequirement, bool legacyOnly, bool includeExecutionCommand)
@@ -531,6 +601,29 @@ public class AttestationServiceTests
                 The tool MUST ignore unrelated requirement subtrees when a scope is selected.
                 """);
         }
+    }
+
+    private static void WriteGroupedValidationArtifacts(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "WB", "SPEC-WB-GROUPED.md"), """
+            ---
+            artifact_id: SPEC-WB-GROUPED
+            artifact_type: specification
+            title: Grouped validation findings
+            domain: WB
+            capability: validation
+            status: draft
+            owner: platform
+            ---
+
+            # SPEC-WB-GROUPED - Grouped validation findings
+
+            ## REQ-WB-GROUP-0001 First grouped requirement
+            The tool MUST report repeated validation findings once.
+
+            ## REQ-WB-GROUP-0002 Second grouped requirement
+            The tool MUST report repeated validation findings once.
+            """);
     }
 
     private static string FindSourceRepoRoot()

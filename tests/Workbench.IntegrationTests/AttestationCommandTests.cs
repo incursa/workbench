@@ -24,7 +24,9 @@ public class AttestationCommandTests
         var snapshot = data.GetProperty("snapshot");
 
         Assert.AreEqual("attestation", snapshot.GetProperty("domain").GetString());
+        Assert.AreEqual(2, snapshot.GetProperty("schemaVersion").GetInt32());
         Assert.AreEqual(2, snapshot.GetProperty("requirements").GetArrayLength());
+        Assert.AreEqual(Path.GetFileName(repo.Path), snapshot.GetProperty("repository").GetProperty("displayName").GetString());
 
         var aggregates = snapshot.GetProperty("aggregates");
         Assert.AreEqual(2, aggregates.GetProperty("requirements").GetInt32());
@@ -52,21 +54,30 @@ public class AttestationCommandTests
         var traceRequirement = requirements.EnumerateArray().Single(requirement => string.Equals(requirement.GetProperty("requirementId").GetString(), "REQ-WB-ATTEST-0001", StringComparison.OrdinalIgnoreCase));
         var refsRequirement = requirements.EnumerateArray().Single(requirement => string.Equals(requirement.GetProperty("requirementId").GetString(), "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase));
 
-        Assert.IsTrue(traceRequirement.GetProperty("hasSatisfiedBy").GetBoolean());
-        Assert.IsTrue(traceRequirement.GetProperty("hasImplementedBy").GetBoolean());
-        Assert.IsTrue(traceRequirement.GetProperty("hasVerifiedBy").GetBoolean());
-        Assert.IsFalse(traceRequirement.GetProperty("hasTestRefs").GetBoolean());
-        Assert.IsFalse(traceRequirement.GetProperty("hasCodeRefs").GetBoolean());
+        Assert.IsTrue(traceRequirement.TryGetProperty("specificationRepoRelativePath", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("specificationPath", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("hasSatisfiedBy", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("hasImplementedBy", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("hasVerifiedBy", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("hasTestRefs", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("hasCodeRefs", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("linkedWorkItems", out _));
+        Assert.IsFalse(traceRequirement.TryGetProperty("linkedVerifications", out _));
         Assert.AreEqual(1, traceRequirement.GetProperty("trace").GetProperty("satisfiedBy").GetArrayLength());
         Assert.AreEqual(0, traceRequirement.GetProperty("directRefs").GetProperty("testRefs").GetArrayLength());
+        Assert.IsFalse(traceRequirement.TryGetProperty("validationFindingIds", out _));
 
-        Assert.IsFalse(refsRequirement.GetProperty("hasSatisfiedBy").GetBoolean());
-        Assert.IsFalse(refsRequirement.GetProperty("hasImplementedBy").GetBoolean());
-        Assert.IsFalse(refsRequirement.GetProperty("hasVerifiedBy").GetBoolean());
-        Assert.IsTrue(refsRequirement.GetProperty("hasTestRefs").GetBoolean());
-        Assert.IsTrue(refsRequirement.GetProperty("hasCodeRefs").GetBoolean());
+        Assert.IsTrue(refsRequirement.TryGetProperty("specificationRepoRelativePath", out _));
+        Assert.IsFalse(refsRequirement.TryGetProperty("specificationPath", out _));
+        Assert.IsFalse(refsRequirement.TryGetProperty("hasSatisfiedBy", out _));
+        Assert.IsFalse(refsRequirement.TryGetProperty("hasImplementedBy", out _));
+        Assert.IsFalse(refsRequirement.TryGetProperty("hasVerifiedBy", out _));
+        Assert.IsFalse(refsRequirement.TryGetProperty("hasTestRefs", out _));
+        Assert.IsFalse(refsRequirement.TryGetProperty("hasCodeRefs", out _));
         Assert.AreEqual(0, refsRequirement.GetProperty("trace").GetProperty("satisfiedBy").GetArrayLength());
         Assert.AreEqual(1, refsRequirement.GetProperty("directRefs").GetProperty("testRefs").GetArrayLength());
+        Assert.IsTrue(refsRequirement.TryGetProperty("validationFindingIds", out var refsValidationFindingIds));
+        Assert.IsGreaterThan(0, refsValidationFindingIds.GetArrayLength());
 
         var summaryPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "summary.html");
         var detailsPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "details.html");
@@ -83,12 +94,51 @@ public class AttestationCommandTests
         Assert.IsFalse(summaryHtml.Contains("<script", StringComparison.OrdinalIgnoreCase), summaryHtml);
 
         StringAssert.Contains(detailsHtml, "<details", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "<summary>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "<summary><a href=\"", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "<h2>Artifacts</h2>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "<h2>Validation Findings</h2>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(detailsHtml, "REQ-WB-ATTEST-0001", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(detailsHtml, "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(detailsHtml, "Test refs", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(detailsHtml, "Code refs", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(detailsHtml.Contains("Specification path", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("Has Satisfied By", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("Has Implemented By", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("Has Verified By", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("Has Test Refs", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("Has Code Refs", StringComparison.OrdinalIgnoreCase), detailsHtml);
         Assert.IsFalse(detailsHtml.Contains("<script", StringComparison.OrdinalIgnoreCase), detailsHtml);
+    }
+
+    [TestMethod]
+    public void AttestationCommand_RendersValidationFindings_WithRelativeLinks()
+    {
+        using var repo = CreateFixtureRepo(includeOutsideScopeRequirement: false, includeExecutionCommand: false, includeValidationErrorRequirement: true);
+
+        var sync = RunQualitySync(repo.Path);
+        Assert.AreEqual(0, sync.ExitCode, $"stderr: {sync.StdErr}\nstdout: {sync.StdOut}");
+
+        var result = WorkbenchCli.Run(repo.Path, "quality", "attest", "--format", "json");
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+
+        var detailsPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "details.html");
+        Assert.IsTrue(File.Exists(detailsPath), detailsPath);
+
+        var detailsHtml = File.ReadAllText(detailsPath);
+        var groupedSpecPath = Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-GROUPED.md");
+        var groupedSpecLink = Path.GetRelativePath(Path.GetDirectoryName(detailsPath)!, groupedSpecPath).Replace('\\', '/');
+
+        StringAssert.Contains(detailsHtml, "<h2>Validation Findings</h2>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "<h2>Artifacts</h2>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, $"<summary><a href=\"{groupedSpecLink}\">REQ-WB-GROUP-0001 First grouped requirement</a></summary>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, $"<summary><a href=\"{groupedSpecLink}\">REQ-WB-GROUP-0002 Second grouped requirement</a></summary>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "REQ-WB-GROUP-0001", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "REQ-WB-GROUP-0002", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, $"<a href=\"{groupedSpecLink}\">specs/requirements/WB/SPEC-WB-GROUPED.md</a>", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(detailsHtml.Contains(Path.GetFullPath(groupedSpecPath), StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("Specification path", StringComparison.OrdinalIgnoreCase), detailsHtml);
     }
 
     [TestMethod]
@@ -176,7 +226,7 @@ public class AttestationCommandTests
             "json");
     }
 
-    private static TempRepo CreateFixtureRepo(bool includeOutsideScopeRequirement, bool includeExecutionCommand)
+    private static TempRepo CreateFixtureRepo(bool includeOutsideScopeRequirement, bool includeExecutionCommand, bool includeValidationErrorRequirement = false)
     {
         var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
@@ -198,7 +248,7 @@ public class AttestationCommandTests
         WriteSampleCoverageArtifact(repo.Path);
         WriteBenchmarkEvidence(repo.Path);
         WriteManualQaEvidence(repo.Path);
-        WriteCanonicalArtifacts(repo.Path, includeOutsideScopeRequirement);
+        WriteCanonicalArtifacts(repo.Path, includeOutsideScopeRequirement, includeValidationErrorRequirement);
 
         return repo;
     }
@@ -215,6 +265,18 @@ public class AttestationCommandTests
         })
         {
             File.Copy(Path.Combine(sourceRoot, "schemas", schema), Path.Combine(repoRoot, "schemas", schema), overwrite: true);
+        }
+
+        foreach (var schema in new[]
+        {
+            "artifact-frontmatter.schema.json",
+            "work-item-trace-fields.schema.json"
+        })
+        {
+            var source = Path.Combine(sourceRoot, "specs", "schemas", schema);
+            var destination = Path.Combine(repoRoot, "specs", "schemas", schema);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(source, destination, overwrite: true);
         }
     }
 
@@ -391,7 +453,7 @@ public class AttestationCommandTests
             """);
     }
 
-    private static void WriteCanonicalArtifacts(string repoRoot, bool includeOutsideScopeRequirement)
+    private static void WriteCanonicalArtifacts(string repoRoot, bool includeOutsideScopeRequirement, bool includeValidationErrorRequirement)
     {
         Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements", "WB"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "architecture", "WB"));
@@ -455,6 +517,29 @@ public class AttestationCommandTests
             - Code Refs:
               - src/Workbench.Core/AttestationService.cs
             """);
+
+        if (includeValidationErrorRequirement)
+        {
+            File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "WB", "SPEC-WB-GROUPED.md"), """
+                ---
+                artifact_id: SPEC-WB-GROUPED
+                artifact_type: specification
+                title: Grouped validation findings
+                domain: WB
+                capability: validation
+                status: draft
+                owner: platform
+                ---
+
+                # SPEC-WB-GROUPED - Grouped validation findings
+
+                ## REQ-WB-GROUP-0001 First grouped requirement
+                The tool MUST report repeated validation findings once.
+
+                ## REQ-WB-GROUP-0002 Second grouped requirement
+                The tool MUST report repeated validation findings once.
+                """);
+        }
 
         File.WriteAllText(Path.Combine(repoRoot, "specs", "architecture", "WB", "ARC-WB-ATTEST-0001.md"), """
             ---

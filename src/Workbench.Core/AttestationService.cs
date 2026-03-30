@@ -189,7 +189,7 @@ public static partial class AttestationService
         if (emit is "json" or "both")
         {
             jsonPath = Path.Combine(outputDirectory, "attestation.json");
-            File.WriteAllText(jsonPath, JsonSerializer.Serialize(snapshot, WorkbenchJsonContext.Default.AttestationSnapshot));
+            File.WriteAllText(jsonPath, JsonSerializer.Serialize(snapshot, AttestationJsonContext.Default.AttestationSnapshot));
         }
 
         return new AttestationRunResult(
