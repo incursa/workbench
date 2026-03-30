@@ -79,40 +79,49 @@ public class AttestationCommandTests
         Assert.IsTrue(refsRequirement.TryGetProperty("validationFindingIds", out var refsValidationFindingIds));
         Assert.IsGreaterThan(0, refsValidationFindingIds.GetArrayLength());
 
-        var summaryPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "summary.html");
-        var detailsPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "details.html");
-        var jsonPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "attestation.json");
+        var outputRoot = Path.Combine(repo.Path, "artifacts", "quality", "attestation");
+        var summaryPath = Path.Combine(outputRoot, "summary.html");
+        var indexPath = Path.Combine(outputRoot, "index.html");
+        var detailsPath = Path.Combine(outputRoot, "details.html");
+        var specPagePath = Path.Combine(outputRoot, "specs", "requirements", "WB", "SPEC-WB-ATTEST", "index.html");
+        var specRefsPagePath = Path.Combine(outputRoot, "specs", "requirements", "WB", "SPEC-WB-ATTEST-REFS", "index.html");
+        var jsonPath = Path.Combine(outputRoot, "attestation.json");
 
         Assert.IsTrue(File.Exists(summaryPath), summaryPath);
+        Assert.IsTrue(File.Exists(indexPath), indexPath);
         Assert.IsTrue(File.Exists(detailsPath), detailsPath);
+        Assert.IsTrue(File.Exists(specPagePath), specPagePath);
+        Assert.IsTrue(File.Exists(specRefsPagePath), specRefsPagePath);
         Assert.IsTrue(File.Exists(jsonPath), jsonPath);
 
         var summaryHtml = File.ReadAllText(summaryPath);
+        var indexHtml = File.ReadAllText(indexPath);
         var detailsHtml = File.ReadAllText(detailsPath);
+        var specHtml = File.ReadAllText(specPagePath);
+        var specRefsHtml = File.ReadAllText(specRefsPagePath);
 
         StringAssert.Contains(summaryHtml, "<!doctype html>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(summaryHtml, "Specifications with issues", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(summaryHtml, "SPEC-WB-ATTEST", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(summaryHtml, "SPEC-WB-ATTEST-REFS", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(indexHtml, "Specifications with issues", StringComparison.OrdinalIgnoreCase);
         Assert.IsFalse(summaryHtml.Contains("<script", StringComparison.OrdinalIgnoreCase), summaryHtml);
-
-        StringAssert.Contains(detailsHtml, "<details", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "<summary><a href=\"", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "<h2>Artifacts</h2>", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "<h2>Validation Findings</h2>", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "REQ-WB-ATTEST-0001", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "Test refs", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "Code refs", StringComparison.OrdinalIgnoreCase);
-        Assert.IsFalse(detailsHtml.Contains("Specification path", StringComparison.OrdinalIgnoreCase), detailsHtml);
-        Assert.IsFalse(detailsHtml.Contains("Has Satisfied By", StringComparison.OrdinalIgnoreCase), detailsHtml);
-        Assert.IsFalse(detailsHtml.Contains("Has Implemented By", StringComparison.OrdinalIgnoreCase), detailsHtml);
-        Assert.IsFalse(detailsHtml.Contains("Has Verified By", StringComparison.OrdinalIgnoreCase), detailsHtml);
-        Assert.IsFalse(detailsHtml.Contains("Has Test Refs", StringComparison.OrdinalIgnoreCase), detailsHtml);
-        Assert.IsFalse(detailsHtml.Contains("Has Code Refs", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        StringAssert.Contains(detailsHtml, "Specification breakdown", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "Repository Gaps", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(detailsHtml.Contains("REQ-WB-ATTEST-0001", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        StringAssert.Contains(specHtml, "No issue-bearing requirements were found in this specification.", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(specHtml.Contains("<details", StringComparison.OrdinalIgnoreCase), specHtml);
+        StringAssert.Contains(specRefsHtml, "<details", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specRefsHtml, "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specRefsHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specRefsHtml, "Test refs", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specRefsHtml, "Code refs", StringComparison.OrdinalIgnoreCase);
         Assert.IsFalse(detailsHtml.Contains("<script", StringComparison.OrdinalIgnoreCase), detailsHtml);
     }
 
     [TestMethod]
-    public void AttestationCommand_RendersValidationFindings_WithRelativeLinks()
+    public void AttestationCommand_RendersGroupedSpecificationPages_WithRelativeLinks()
     {
         using var repo = CreateFixtureRepo(includeOutsideScopeRequirement: false, includeExecutionCommand: false, includeValidationErrorRequirement: true);
 
@@ -122,23 +131,52 @@ public class AttestationCommandTests
         var result = WorkbenchCli.Run(repo.Path, "quality", "attest", "--format", "json");
         Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
 
+        using var envelope = JsonDocument.Parse(result.StdOut);
+        Assert.IsTrue(envelope.RootElement.GetProperty("ok").GetBoolean());
+
+        var snapshot = envelope.RootElement.GetProperty("data").GetProperty("snapshot");
+        var groupedRequirements = snapshot.GetProperty("requirements")
+            .EnumerateArray()
+            .Where(requirement =>
+                string.Equals(requirement.GetProperty("requirementId").GetString(), "REQ-WB-GROUP-0001", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(requirement.GetProperty("requirementId").GetString(), "REQ-WB-GROUP-0002", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        Assert.HasCount(2, groupedRequirements);
+
+        var groupedFindingIds = groupedRequirements
+            .SelectMany(requirement =>
+                requirement.TryGetProperty("validationFindingIds", out var findingIds) && findingIds.ValueKind == JsonValueKind.Array
+                    ? findingIds.EnumerateArray().Select(id => id.GetString() ?? string.Empty).Where(id => id.Length > 0).ToList()
+                    : Enumerable.Empty<string>())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        Assert.IsGreaterThan(0, groupedFindingIds.Count);
+
         var detailsPath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "details.html");
+        var specPagePath = Path.Combine(repo.Path, "artifacts", "quality", "attestation", "specs", "requirements", "WB", "SPEC-WB-GROUPED", "index.html");
         Assert.IsTrue(File.Exists(detailsPath), detailsPath);
+        Assert.IsTrue(File.Exists(specPagePath), specPagePath);
 
         var detailsHtml = File.ReadAllText(detailsPath);
+        var specHtml = File.ReadAllText(specPagePath);
         var groupedSpecPath = Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-GROUPED.md");
-        var groupedSpecLink = Path.GetRelativePath(Path.GetDirectoryName(detailsPath)!, groupedSpecPath).Replace('\\', '/');
+        var groupedSpecLink = Path.GetRelativePath(Path.GetDirectoryName(specPagePath)!, groupedSpecPath).Replace('\\', '/');
 
-        StringAssert.Contains(detailsHtml, "<h2>Validation Findings</h2>", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "<h2>Artifacts</h2>", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, $"<summary><a href=\"{groupedSpecLink}\">REQ-WB-GROUP-0001 First grouped requirement</a></summary>", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, $"<summary><a href=\"{groupedSpecLink}\">REQ-WB-GROUP-0002 Second grouped requirement</a></summary>", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "REQ-WB-GROUP-0001", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, "REQ-WB-GROUP-0002", StringComparison.OrdinalIgnoreCase);
-        StringAssert.Contains(detailsHtml, $"<a href=\"{groupedSpecLink}\">specs/requirements/WB/SPEC-WB-GROUPED.md</a>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "Specification breakdown", StringComparison.OrdinalIgnoreCase);
+        Assert.IsFalse(detailsHtml.Contains("REQ-WB-GROUP-0001", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(detailsHtml.Contains("REQ-WB-GROUP-0002", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        StringAssert.Contains(specHtml, $"<a href=\"{groupedSpecLink}\">specs/requirements/WB/SPEC-WB-GROUPED.md</a>", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specHtml, "REQ-WB-GROUP-0001", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specHtml, "REQ-WB-GROUP-0002", StringComparison.OrdinalIgnoreCase);
+        foreach (var findingId in groupedFindingIds)
+        {
+            StringAssert.Contains(specHtml, findingId, StringComparison.OrdinalIgnoreCase);
+        }
         Assert.IsFalse(detailsHtml.Contains(Path.GetFullPath(groupedSpecPath), StringComparison.OrdinalIgnoreCase), detailsHtml);
-        Assert.IsFalse(detailsHtml.Contains("Specification path", StringComparison.OrdinalIgnoreCase), detailsHtml);
+        Assert.IsFalse(specHtml.Contains(Path.GetFullPath(groupedSpecPath), StringComparison.OrdinalIgnoreCase), specHtml);
     }
 
     [TestMethod]

@@ -181,9 +181,11 @@ public static partial class AttestationService
         if (emit is "html" or "both")
         {
             summaryPath = Path.Combine(outputDirectory, "summary.html");
+            var indexPath = Path.Combine(outputDirectory, "index.html");
             detailsPath = Path.Combine(outputDirectory, "details.html");
             AttestationHtmlWriter.WriteSummary(summaryPath, snapshot, "details.html", "attestation.json");
-            AttestationHtmlWriter.WriteDetails(detailsPath, snapshot, "summary.html", "attestation.json");
+            AttestationHtmlWriter.WriteSummary(indexPath, snapshot, "details.html", "attestation.json");
+            AttestationHtmlWriter.WriteDetails(detailsPath, snapshot, "index.html", "attestation.json");
         }
 
         if (emit is "json" or "both")
