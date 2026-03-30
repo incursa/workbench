@@ -34,6 +34,7 @@ public static partial class AttestationService
         var validationIndex = BuildValidationFindingIndex(repoRoot, requirements, scopedValidationFindings);
         var artifactLookup = BuildArtifactLookup(graph);
         var verificationLookup = BuildVerificationLookup(graph);
+        var inventoryDerivedTestRefs = BuildInventoryRequirementTestRefs(repoRoot, attestationConfig, warnings);
         var artifacts = BuildArtifactCollections(graph, requirements, artifactLookup);
         var requirementsRecords = BuildRequirementRecords(
             graph,
@@ -42,7 +43,8 @@ public static partial class AttestationService
             evidence,
             attestationConfig,
             artifactLookup,
-            verificationLookup);
+            verificationLookup,
+            inventoryDerivedTestRefs);
 
         var aggregates = BuildAggregateSummary(attestationConfig, requirementsRecords, graph, artifacts, artifactLookup);
         var gaps = BuildGapSummary(requirementsRecords, scopedValidationFindings);
@@ -147,7 +149,8 @@ public static partial class AttestationService
         AttestationEvidenceSnapshot evidence,
         AttestationConfig attestationConfig,
         IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup,
-        IReadOnlyDictionary<string, VerificationNode> verificationLookup)
+        IReadOnlyDictionary<string, VerificationNode> verificationLookup,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> inventoryDerivedTestRefs)
     {
         var records = new List<AttestationRequirementRecord>();
         foreach (var requirement in requirements)
@@ -161,8 +164,9 @@ public static partial class AttestationService
             var sourceRefs = GetTraceValues(requirement.Trace, "Source Refs");
             var testRefs = GetTraceValues(requirement.Trace, "Test Refs");
             var codeRefs = GetTraceValues(requirement.Trace, "Code Refs");
+            var inventoryTestRefs = inventoryDerivedTestRefs.TryGetValue(requirement.RequirementId, out var refs) ? refs : Array.Empty<string>();
             var derivedEvidence = CollectVerificationEvidence(verifiedBy, verificationLookup);
-            var effectiveTestRefs = CombineRefs(testRefs, derivedEvidence.TestRefs);
+            var effectiveTestRefs = CombineRefs(testRefs, derivedEvidence.TestRefs, inventoryTestRefs);
             var effectiveCodeRefs = CombineRefs(codeRefs, derivedEvidence.CodeRefs);
             validationIndex.RequirementFindingIds.TryGetValue(requirement.RequirementId, out var validationFindingIds);
             validationFindingIds ??= new List<string>();
@@ -205,6 +209,59 @@ public static partial class AttestationService
         }
 
         return records;
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> BuildInventoryRequirementTestRefs(
+        string repoRoot,
+        AttestationConfig attestationConfig,
+        IList<string> warnings)
+    {
+        var inventoryPath = FindFirstExistingFile(repoRoot, attestationConfig.QualityTestingRoots, QualityService.DefaultInventoryArtifact, DefaultQualityReportRoots);
+        if (inventoryPath is null)
+        {
+            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        try
+        {
+            var inventory = QualityService.Show(repoRoot, new QualityShowOptions("inventory", inventoryPath)).Data.Inventory;
+            if (inventory is null)
+            {
+                return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            var refsByRequirement = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var test in inventory.Tests)
+            {
+                var requirementIds = GetTraitValues(test.Traits, "Requirement");
+                if (requirementIds.Count == 0)
+                {
+                    continue;
+                }
+
+                var testRef = BuildInventoryTestReference(test);
+                foreach (var requirementId in requirementIds)
+                {
+                    if (!refsByRequirement.TryGetValue(requirementId, out var refs))
+                    {
+                        refs = new List<string>();
+                        refsByRequirement[requirementId] = refs;
+                    }
+
+                    AddValue(refs, testRef);
+                }
+            }
+
+            return refsByRequirement.ToDictionary(
+                entry => entry.Key,
+                entry => (IReadOnlyList<string>)entry.Value.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
+                StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            warnings.Add($"Test inventory-derived requirement refs could not be loaded from '{NormalizeRepoPath(repoRoot, inventoryPath)}': {ex}");
+            return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     private static AttestationAggregateSummary BuildAggregateSummary(
@@ -645,18 +702,21 @@ public static partial class AttestationService
             normalized.EndsWith(".vb", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static List<string> CombineRefs(IReadOnlyList<string> first, IReadOnlyList<string> second)
+    private static List<string> CombineRefs(params IReadOnlyList<string>[] groups)
     {
-        if (first.Count == 0 && second.Count == 0)
+        if (groups.All(group => group.Count == 0))
         {
             return new List<string>();
         }
 
-        var combined = new List<string>(first.Count + second.Count);
+        var combined = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        AddRefs(first);
-        AddRefs(second);
+        foreach (var group in groups)
+        {
+            AddRefs(group);
+        }
+
         return combined;
 
         void AddRefs(IReadOnlyList<string> refs)
@@ -674,6 +734,32 @@ public static partial class AttestationService
                 }
             }
         }
+    }
+
+    private static IReadOnlyList<string> GetTraitValues(IReadOnlyDictionary<string, string[]> traits, string key)
+    {
+        foreach (var entry in traits)
+        {
+            if (!string.Equals(entry.Key, key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return entry.Value
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        return Array.Empty<string>();
+    }
+
+    private static string BuildInventoryTestReference(TestInventoryTest test)
+    {
+        return string.IsNullOrWhiteSpace(test.SourcePath)
+            ? test.DisplayName
+            : $"{test.SourcePath}::{test.DisplayName}";
     }
 
     private static string ResolveRequirementBenchmarkEvidenceStatus(

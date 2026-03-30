@@ -23,7 +23,7 @@ public class AttestationServiceTests
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithSatisfiedBy);
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithImplementedBy);
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithVerifiedBy);
-        Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithTestRefs);
+        Assert.AreEqual(2, snapshot.Aggregates.TraceCoverage.WithTestRefs);
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithCodeRefs);
         Assert.AreEqual(2, snapshot.SchemaVersion);
         Assert.AreEqual(Path.GetFileName(repo.Path), snapshot.Repository.DisplayName);
@@ -36,8 +36,9 @@ public class AttestationServiceTests
         CollectionAssert.AreEquivalent(new[] { "ARC-WB-ATTEST-0001" }, traceRequirement.Trace.SatisfiedBy.ToArray());
         CollectionAssert.AreEquivalent(new[] { "WI-WB-ATTEST-0001", "WI-WB-ATTEST-0002", "WI-WB-ATTEST-0003", "WI-WB-ATTEST-0004", "WI-WB-ATTEST-0005" }, traceRequirement.Trace.ImplementedBy.ToArray());
         CollectionAssert.AreEquivalent(new[] { "VER-WB-ATTEST-0001", "VER-WB-ATTEST-0002", "VER-WB-ATTEST-0003", "VER-WB-ATTEST-0004", "VER-WB-ATTEST-0005" }, traceRequirement.Trace.VerifiedBy.ToArray());
-        Assert.IsEmpty(traceRequirement.DirectRefs.TestRefs);
+        CollectionAssert.AreEquivalent(new[] { "tests/Sample.Tests/WidgetTests.cs::Adds_numbers" }, traceRequirement.DirectRefs.TestRefs.ToArray());
         Assert.IsEmpty(traceRequirement.DirectRefs.CodeRefs);
+        Assert.AreEqual("failing", traceRequirement.TestEvidenceStatus);
         Assert.AreEqual("passing", traceRequirement.BenchmarkEvidenceStatus);
         Assert.AreEqual("passing", traceRequirement.ManualQaStatus);
 
@@ -368,7 +369,9 @@ public class AttestationServiceTests
 
             public class WidgetTests
             {
-                [Fact] public void Adds_numbers() { }
+                [Fact]
+                [Trait("Requirement", "REQ-WB-ATTEST-0001")]
+                public void Adds_numbers() { }
                 [Fact] public void Handles_zero() { }
             }
             """);

@@ -24,6 +24,14 @@ public class QualityServiceTests
         Assert.AreEqual("failed", result.Results.Summary.Status);
         Assert.AreEqual(1, result.Results.Summary.Passed);
         Assert.AreEqual(1, result.Results.Summary.Failed);
+        var addsNumbers = result.Inventory.Tests.Single(test => string.Equals(test.DisplayName, "Adds_numbers", StringComparison.Ordinal));
+        CollectionAssert.AreEquivalent(new[] { "REQ-SAMPLE-0001" }, addsNumbers.Traits["Requirement"]);
+        CollectionAssert.AreEquivalent(new[] { "Positive" }, addsNumbers.Traits["Category"]);
+        CollectionAssert.AreEquivalent(new[] { "Fact" }, addsNumbers.Traits["framework"]);
+        var handlesZero = result.Inventory.Tests.Single(test => string.Equals(test.DisplayName, "Handles_zero", StringComparison.Ordinal));
+        CollectionAssert.AreEquivalent(new[] { "REQ-SAMPLE-0002" }, handlesZero.Traits["Requirement"]);
+        CollectionAssert.AreEquivalent(new[] { "Negative" }, handlesZero.Traits["Category"]);
+        CollectionAssert.AreEquivalent(new[] { "Theory" }, handlesZero.Traits["framework"]);
         Assert.AreEqual(0.75, result.Coverage.Summary.LineRate, 0.0001);
         Assert.AreEqual(0.5, result.Coverage.Summary.BranchRate, 0.0001);
         Assert.AreEqual("fail", result.Report.Assessment.Status);
@@ -271,11 +279,15 @@ public class QualityServiceTests
             public class WidgetTests
             {
                 [Fact]
+                [Trait("Requirement", "REQ-SAMPLE-0001")]
+                [Trait("Category", "Positive")]
                 public void Adds_numbers()
                 {
                 }
 
                 [Theory]
+                [Trait("Requirement", "REQ-SAMPLE-0002")]
+                [Trait("Category", "Negative")]
                 public void Handles_zero()
                 {
                 }

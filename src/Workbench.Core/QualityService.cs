@@ -64,6 +64,10 @@ public static class QualityService
         @"^\s*\[(?<attribute>Fact|Theory|Test|TestMethod)\b",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly Regex traitAttributeRegex = new(
+        @"^\s*\[\s*Trait\s*\(\s*""(?<key>[^""]+)""\s*,\s*""(?<value>[^""]+)""\s*\)\s*\]",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private static readonly Regex namespaceRegex = new(
         @"^\s*namespace\s+(?<namespace>[A-Za-z_][A-Za-z0-9_.]*)\s*[;{]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -1227,7 +1231,7 @@ public static class QualityService
         var results = new List<TestInventoryTest>();
         string? currentNamespace = null;
         string? currentType = null;
-        string? pendingAttribute = null;
+        var pendingTraits = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var targetFramework = targetFrameworks.FirstOrDefault() ?? "unknown";
 
         var lines = File.ReadAllLines(sourcePath);
@@ -1249,11 +1253,18 @@ public static class QualityService
             var attributeMatch = testAttributeRegex.Match(line);
             if (attributeMatch.Success)
             {
-                pendingAttribute = attributeMatch.Groups["attribute"].Value;
+                AddPendingTrait(pendingTraits, "framework", attributeMatch.Groups["attribute"].Value);
                 continue;
             }
 
-            if (pendingAttribute is null)
+            var traitMatch = traitAttributeRegex.Match(line);
+            if (traitMatch.Success)
+            {
+                AddPendingTrait(pendingTraits, traitMatch.Groups["key"].Value, traitMatch.Groups["value"].Value);
+                continue;
+            }
+
+            if (pendingTraits.Count == 0)
             {
                 continue;
             }
@@ -1275,13 +1286,44 @@ public static class QualityService
                 targetFramework,
                 normalizedSourcePath,
                 index + 1,
-                new Dictionary<string, string[]>(StringComparer.Ordinal) { ["framework"] = new[] { pendingAttribute } },
+                BuildTraitsDictionary(pendingTraits),
                 null));
 
-            pendingAttribute = null;
+            pendingTraits.Clear();
         }
 
         return results;
+    }
+
+    private static void AddPendingTrait(IDictionary<string, List<string>> pendingTraits, string key, string value)
+    {
+        var normalizedKey = key.Trim();
+        var normalizedValue = value.Trim();
+        if (normalizedKey.Length == 0 || normalizedValue.Length == 0)
+        {
+            return;
+        }
+
+        if (!pendingTraits.TryGetValue(normalizedKey, out var values))
+        {
+            values = new List<string>();
+            pendingTraits[normalizedKey] = values;
+        }
+
+        if (!values.Any(entry => string.Equals(entry, normalizedValue, StringComparison.OrdinalIgnoreCase)))
+        {
+            values.Add(normalizedValue);
+        }
+    }
+
+    private static IReadOnlyDictionary<string, string[]> BuildTraitsDictionary(IDictionary<string, List<string>> pendingTraits)
+    {
+        return pendingTraits
+            .OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+                StringComparer.OrdinalIgnoreCase);
     }
 
     private static Dictionary<string, string> BuildProjectDirectoryLookup(string repoRoot)
