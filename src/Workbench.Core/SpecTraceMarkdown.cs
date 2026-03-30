@@ -270,6 +270,148 @@ public static class SpecTraceMarkdown
             "- Replace this example with the real requirement before review.");
     }
 
+    public static string BuildRequirementSection(RequirementClause requirement)
+    {
+        var blocks = new List<string>
+        {
+            $"## {requirement.RequirementId} {requirement.Title.Trim()}",
+            NormalizeBodySection(requirement.Clause)
+        };
+
+        if (requirement.Trace is not null && requirement.Trace.Count > 0)
+        {
+            blocks.Add(string.Empty);
+            blocks.Add("Trace:");
+            foreach (var label in CanonicalRequirementTraceLabels)
+            {
+                if (!requirement.Trace.TryGetValue(label, out var values) || values.Count == 0)
+                {
+                    continue;
+                }
+
+                blocks.Add($"- {label}:");
+                blocks.AddRange(values.Select(value => $"  - {value}"));
+            }
+        }
+
+        if (requirement.Notes is not null && requirement.Notes.Count > 0)
+        {
+            blocks.Add(string.Empty);
+            blocks.Add("Notes:");
+            blocks.AddRange(requirement.Notes.Select(note => $"- {note}"));
+        }
+
+        return string.Join("\n", blocks);
+    }
+
+    public static string BackfillRequirementTestRefs(
+        string body,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> requirementTestRefs,
+        out int updatedRequirements)
+    {
+        updatedRequirements = 0;
+        if (requirementTestRefs.Count == 0)
+        {
+            return body;
+        }
+
+        var normalizedBody = NormalizeNewlines(body);
+        var lines = normalizedBody.Split('\n').ToList();
+        var headingIndices = new List<int>();
+        for (var lineIndex = 0; lineIndex < lines.Count; lineIndex++)
+        {
+            if (requirementHeadingRegex.IsMatch(lines[lineIndex].Trim()))
+            {
+                headingIndices.Add(lineIndex);
+            }
+        }
+
+        if (headingIndices.Count == 0)
+        {
+            return body;
+        }
+
+        var output = new List<string>();
+        var changed = false;
+        var consumed = 0;
+
+        for (var headingCursor = 0; headingCursor < headingIndices.Count; headingCursor++)
+        {
+            var headingIndex = headingIndices[headingCursor];
+            if (headingIndex > consumed)
+            {
+                output.AddRange(lines[consumed..headingIndex]);
+            }
+
+            var line = lines[headingIndex];
+            var headingMatch = requirementHeadingRegex.Match(line.Trim());
+            var requirementId = headingMatch.Groups["id"].Value;
+            var title = headingMatch.Groups["title"].Value.Trim();
+            var sectionStart = headingIndex + 1;
+            var sectionEnd = sectionStart;
+            var nextHeadingIndex = headingCursor + 1 < headingIndices.Count
+                ? headingIndices[headingCursor + 1]
+                : lines.Count;
+
+            while (sectionEnd < nextHeadingIndex)
+            {
+                sectionEnd++;
+            }
+
+            var sectionLines = lines[sectionStart..sectionEnd];
+            if (!TryParseRequirementSection(requirementId, title, sectionLines, out var requirement, out _))
+            {
+                output.AddRange(lines[headingIndex..sectionEnd]);
+                consumed = sectionEnd;
+                continue;
+            }
+
+            if (!requirementTestRefs.TryGetValue(requirementId, out var refs) || refs.Count == 0)
+            {
+                output.AddRange(lines[headingIndex..sectionEnd]);
+                consumed = sectionEnd;
+                continue;
+            }
+
+            var mergedTrace = MergeRequirementTrace(requirement.Trace, refs);
+            if (TraceEquals(requirement.Trace, mergedTrace))
+            {
+                output.AddRange(lines[headingIndex..sectionEnd]);
+                consumed = sectionEnd;
+                continue;
+            }
+
+            var updatedRequirement = requirement with { Trace = mergedTrace };
+            var rebuilt = BuildRequirementSection(updatedRequirement);
+            output.AddRange(NormalizeNewlines(rebuilt).Split('\n'));
+            if (sectionEnd < lines.Count)
+            {
+                output.Add(string.Empty);
+            }
+
+            updatedRequirements++;
+            changed = true;
+            consumed = sectionEnd;
+        }
+
+        if (consumed < lines.Count)
+        {
+            output.AddRange(lines[consumed..]);
+        }
+
+        if (changed && normalizedBody.EndsWith("\n", StringComparison.Ordinal) && (output.Count == 0 || !string.IsNullOrWhiteSpace(output[^1])))
+        {
+            output.Add(string.Empty);
+        }
+
+        if (!changed)
+        {
+            return body;
+        }
+
+        return string.Join("\n", output);
+    }
+
     public static string BuildSpecTemplateBody()
     {
         return string.Join(
@@ -723,6 +865,105 @@ public static class SpecTraceMarkdown
     private static List<string> GetRequirementSkeletonBlocks()
     {
         return [BuildRequirementSkeleton()];
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> MergeRequirementTrace(
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? trace,
+        IReadOnlyList<string> additionalTestRefs)
+    {
+        var merged = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        if (trace is not null)
+        {
+            foreach (var entry in trace)
+            {
+                merged[entry.Key] = entry.Value.ToList();
+            }
+        }
+
+        if (additionalTestRefs.Count > 0)
+        {
+            var mergedTestRefs = new List<string>();
+            if (merged.TryGetValue("Test Refs", out var existingTestRefs))
+            {
+                mergedTestRefs.AddRange(existingTestRefs);
+            }
+
+            foreach (var value in additionalTestRefs)
+            {
+                AddUniqueValue(mergedTestRefs, value);
+            }
+
+            merged["Test Refs"] = mergedTestRefs;
+        }
+
+        return merged.ToDictionary(
+            entry => entry.Key,
+            entry => (IReadOnlyList<string>)entry.Value.ToList().AsReadOnly(),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool TraceEquals(
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? left,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> right)
+    {
+        if (left is null)
+        {
+            return right.Count == 0;
+        }
+
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        foreach (var entry in left)
+        {
+            if (!right.TryGetValue(entry.Key, out var otherValues))
+            {
+                return false;
+            }
+
+            if (!SequenceEquals(entry.Value, otherValues))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool SequenceEquals(IReadOnlyList<string> left, IReadOnlyList<string> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.Count; index++)
+        {
+            if (!string.Equals(left[index], right[index], StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static void AddUniqueValue(ICollection<string> values, string value)
+    {
+        var normalized = value.Trim();
+        if (normalized.Length == 0)
+        {
+            return;
+        }
+
+        if (values.Any(entry => string.Equals(entry, normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        values.Add(normalized);
     }
 
     private static string NormalizeListOrPlaceholder(string text, string placeholderLine)

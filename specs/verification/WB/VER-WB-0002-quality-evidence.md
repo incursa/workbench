@@ -21,7 +21,7 @@ related_artifacts:
 
 ## Scope
 
-Authored testing intent, normalized test inventory, run summaries, coverage summaries, and quality report generation.
+Authored testing intent, normalized test inventory, canonical requirement trace backfill, run summaries, coverage summaries, and quality report generation.
 
 ## Requirements Verified
 
@@ -44,7 +44,8 @@ Documentation review, repository validation, and targeted command checks.
 
 1. Review the linked spec and architecture artifacts.
 2. Run the repo validation and command-surface checks.
-3. Confirm the expected files, paths, and outputs exist.
+3. Confirm a non-dry-run quality sync backfills canonical requirement trace refs and a dry-run sync leaves requirement docs unchanged.
+4. Confirm the expected files, paths, and outputs exist.
 
 ## Expected Result
 

@@ -229,33 +229,7 @@ public static partial class AttestationService
             {
                 return new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
             }
-
-            var refsByRequirement = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            foreach (var test in inventory.Tests)
-            {
-                var requirementIds = GetTraitValues(test.Traits, "Requirement");
-                if (requirementIds.Count == 0)
-                {
-                    continue;
-                }
-
-                var testRef = BuildInventoryTestReference(test);
-                foreach (var requirementId in requirementIds)
-                {
-                    if (!refsByRequirement.TryGetValue(requirementId, out var refs))
-                    {
-                        refs = new List<string>();
-                        refsByRequirement[requirementId] = refs;
-                    }
-
-                    AddValue(refs, testRef);
-                }
-            }
-
-            return refsByRequirement.ToDictionary(
-                entry => entry.Key,
-                entry => (IReadOnlyList<string>)entry.Value.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
-                StringComparer.OrdinalIgnoreCase);
+            return RequirementTraceSyncService.BuildRequirementTestRefs(inventory);
         }
         catch (Exception ex)
         {
@@ -734,32 +708,6 @@ public static partial class AttestationService
                 }
             }
         }
-    }
-
-    private static IReadOnlyList<string> GetTraitValues(IReadOnlyDictionary<string, string[]> traits, string key)
-    {
-        foreach (var entry in traits)
-        {
-            if (!string.Equals(entry.Key, key, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            return entry.Value
-                .Where(value => !string.IsNullOrWhiteSpace(value))
-                .Select(value => value.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        return Array.Empty<string>();
-    }
-
-    private static string BuildInventoryTestReference(TestInventoryTest test)
-    {
-        return string.IsNullOrWhiteSpace(test.SourcePath)
-            ? test.DisplayName
-            : $"{test.SourcePath}::{test.DisplayName}";
     }
 
     private static string ResolveRequirementBenchmarkEvidenceStatus(

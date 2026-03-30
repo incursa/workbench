@@ -50,6 +50,56 @@ public class QualityServiceTests
     }
 
     [TestMethod]
+    public void Sync_BackfillsRequirementTestRefsIntoCanonicalSpecTrace()
+    {
+        using var repo = CreateFixtureRepo(includeRequirementSpec: true);
+        var specPath = Path.Combine(repo.Path, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md");
+
+        var result = QualityService.Sync(
+            repo.Path,
+            new QualitySyncOptions(
+                null,
+                "artifacts/raw/test-results",
+                "artifacts/raw/coverage",
+                null,
+                false));
+
+        Assert.AreEqual("fail", result.Report.Assessment.Status);
+        var content = File.ReadAllText(specPath);
+        StringAssert.Contains(content, "Trace:", StringComparison.Ordinal);
+        StringAssert.Contains(content, "Test Refs:", StringComparison.Ordinal);
+        StringAssert.Contains(content, "tests/Sample.Tests/WidgetTests.cs::Adds_numbers", StringComparison.Ordinal);
+
+        var clauses = SpecTraceMarkdown.ParseRequirementClauses(content, out var errors);
+        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
+        var requirement = clauses.Single(clause => string.Equals(clause.RequirementId, "REQ-SAMPLE-0001", StringComparison.OrdinalIgnoreCase));
+        Assert.IsNotNull(requirement.Trace);
+        CollectionAssert.AreEquivalent(
+            new[] { "tests/Sample.Tests/WidgetTests.cs::Adds_numbers" },
+            requirement.Trace!["Test Refs"].ToArray());
+    }
+
+    [TestMethod]
+    public void Sync_DryRunDoesNotBackfillRequirementTestRefs()
+    {
+        using var repo = CreateFixtureRepo(includeRequirementSpec: true);
+        var specPath = Path.Combine(repo.Path, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md");
+        var original = File.ReadAllText(specPath);
+
+        _ = QualityService.Sync(
+            repo.Path,
+            new QualitySyncOptions(
+                null,
+                "artifacts/raw/test-results",
+                "artifacts/raw/coverage",
+                null,
+                true));
+
+        var after = File.ReadAllText(specPath);
+        Assert.AreEqual(original, after);
+    }
+
+    [TestMethod]
     public void IngestTestRunSummary_ParsesTrxIntoNormalizedResults()
     {
         using var repo = CreateFixtureRepo();
@@ -159,7 +209,7 @@ public class QualityServiceTests
         Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
     }
 
-    private static TempQualityRepo CreateFixtureRepo(string? contractContent = null, string? solutionRelativePath = null)
+    private static TempQualityRepo CreateFixtureRepo(string? contractContent = null, string? solutionRelativePath = null, bool includeRequirementSpec = false)
     {
         var repoRoot = Path.Combine(Path.GetTempPath(), "workbench-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(repoRoot);
@@ -293,6 +343,51 @@ public class QualityServiceTests
                 }
             }
             """);
+
+        if (includeRequirementSpec)
+        {
+            Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE"));
+            File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md"), """
+                ---
+                artifact_id: SPEC-SAMPLE-0001
+                artifact_type: specification
+                title: Sample test linkage
+                domain: SAMPLE
+                capability: quality
+                status: draft
+                owner: platform
+                ---
+
+                # SPEC-SAMPLE-0001 - Sample test linkage
+
+                ## Purpose
+
+                Keep sample test refs synchronized back into canonical requirement trace blocks.
+
+                ## Scope
+
+                - Discover test refs from trait metadata
+                - Backfill matching requirement trace blocks
+
+                ## Context
+
+                Sample repository fixture for quality sync backfill coverage.
+
+                ## REQ-SAMPLE-0001 Sample test linkage
+                The system MUST keep the sample test linked to its requirement.
+
+                Trace:
+                - Implemented By:
+                  - WI-SAMPLE-0001
+
+                Notes:
+                - Test refs should be backfilled by quality sync.
+
+                ## Open Questions
+
+                - None
+                """);
+        }
 
         WriteSampleResultsArtifact(repoRoot);
         WriteSampleCoverageArtifact(repoRoot);

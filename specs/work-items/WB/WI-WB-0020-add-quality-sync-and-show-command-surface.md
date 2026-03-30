@@ -46,17 +46,17 @@ Workbench's existing sync/show and JSON-envelope conventions.
 
 ## Planned Changes
 
-- `workbench quality sync` emits normalized artifacts and a standard JSON
-- summary envelope.
+- `workbench quality sync` emits normalized artifacts, backfills canonical
+  requirement trace blocks from discovered tests, and writes a standard JSON
+  summary envelope.
 - `workbench quality show` defaults to the latest quality report and can return
-- selected artifacts in table or JSON form.
+  selected artifacts in table or JSON form.
 - No extra V1 subcommands are introduced unless they are strictly required by
-- the implementation.
+  the implementation.
 
 ## Out of Scope
 
 - Unrelated feature work.
-- Changes to the linked requirement text.
 
 ## Verification Plan
 

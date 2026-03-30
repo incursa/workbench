@@ -35,7 +35,7 @@ V1 stays narrow:
 
 ## Scope
 
-- normalize test inventory, TRX results, and coverage results
+- normalize test inventory, TRX results, and coverage results, and backfill canonical requirement trace refs from discovered tests
 - generate a readable report and stable JSON artifacts
 - preserve authored intent separately from observed evidence
 - expose sync and show commands without turning Workbench into a CI/CD orchestrator
@@ -61,7 +61,7 @@ Notes:
 - link related docs, work items, and files where practical
 
 ## REQ-QE-0002 Normalize observed evidence
-The quality sync command MUST discover test inventory, ingest TRX results, ingest coverage results, and write normalized JSON artifacts plus a Markdown summary under the quality output directory.
+The quality sync command MUST discover test inventory, ingest TRX results, ingest coverage results, synchronize discovered test refs back into matching canonical requirement Trace blocks without changing unrelated trace entries when not run in dry-run mode, and write normalized JSON artifacts plus a Markdown summary under the quality output directory.
 
 Trace:
 - Implemented By:
