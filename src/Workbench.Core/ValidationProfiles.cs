@@ -10,7 +10,7 @@ public static class ValidationProfiles
     public const string Auditable = "auditable";
     public const string RepoState = "repo-state";
 
-    private static readonly IReadOnlyDictionary<string, int> ProfileLevels =
+    private static readonly IReadOnlyDictionary<string, int> profileLevels =
         new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         {
             [Core] = 0,
@@ -27,7 +27,7 @@ public static class ValidationProfiles
         }
 
         var candidate = value.Trim().ToLowerInvariant();
-        if (ProfileLevels.ContainsKey(candidate))
+        if (profileLevels.ContainsKey(candidate))
         {
             normalized = candidate;
             return true;
@@ -53,12 +53,12 @@ public static class ValidationProfiles
             return true;
         }
 
-        if (!ProfileLevels.TryGetValue(selectedProfile, out var selectedLevel))
+        if (!profileLevels.TryGetValue(selectedProfile, out var selectedLevel))
         {
             selectedLevel = 0;
         }
 
-        if (!ProfileLevels.TryGetValue(profileGroup, out var requiredLevel))
+        if (!profileLevels.TryGetValue(profileGroup, out var requiredLevel))
         {
             return false;
         }
