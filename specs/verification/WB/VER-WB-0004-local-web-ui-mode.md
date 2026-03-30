@@ -53,6 +53,7 @@ The linked requirements are satisfied by the documented repository behavior and 
 - [`src/Workbench/Pages/Index.cshtml.cs`](../../../src/Workbench/Pages/Index.cshtml.cs)
 - tests/Workbench.Tests/WorkItemEditTests.cs
 - [`tests/Workbench.IntegrationTests/CommandSurfaceTests.cs`](../../../tests/Workbench.IntegrationTests/CommandSurfaceTests.cs)
+- benchmark: not-applicable
 
 ## Status
 

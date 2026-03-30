@@ -58,6 +58,7 @@ The linked requirements are satisfied by the documented repository behavior and 
 - [`scripts/testing/verify-critical-coverage.ps1`](../../../scripts/testing/verify-critical-coverage.ps1)
 - [`tests/Workbench.Tests/QualityServiceTests.cs`](../../../tests/Workbench.Tests/QualityServiceTests.cs)
 - [`tests/Workbench.IntegrationTests/QualityCommandTests.cs`](../../../tests/Workbench.IntegrationTests/QualityCommandTests.cs)
+- benchmark: not-applicable
 
 ## Status
 

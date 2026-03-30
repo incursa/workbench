@@ -45,7 +45,8 @@ Describe the expected outcome in plain language.
 
 ## Evidence
 
-- <evidence or test reference>
+- <test reference, code reference, or benchmark marker>
+- `benchmark: not-applicable` when benchmark evidence is intentionally out of scope
 
 ## Status
 

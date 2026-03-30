@@ -120,5 +120,7 @@ internal sealed record VerificationNode(
     IReadOnlyList<string> Verifies,
     IReadOnlyList<string> BodyVerifies,
     IReadOnlyList<string> BodyRelatedArtifacts,
-    IReadOnlyList<string> RelatedArtifacts);
+    IReadOnlyList<string> RelatedArtifacts,
+    IReadOnlyList<string> EvidenceRefs,
+    bool BenchmarkNotApplicable);
 #pragma warning restore MA0048

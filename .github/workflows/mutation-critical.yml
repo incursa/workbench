@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -86,14 +86,14 @@ jobs:
 
       - name: Upload mutation metrics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-metrics
           path: metrics/mutation/mutation-metrics.json
 
       - name: Upload mutation baseline
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-baseline
           path: metrics/mutation/mutation-baseline.json
@@ -101,7 +101,7 @@ jobs:
       - name: Download baseline snapshot from main
         if: always()
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v19
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: mutation-critical.yml
@@ -113,7 +113,7 @@ jobs:
 
       - name: Upload mutation report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-report
           path: |

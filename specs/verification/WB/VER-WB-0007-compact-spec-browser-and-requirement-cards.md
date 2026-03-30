@@ -79,6 +79,7 @@ rejected before a file is written, and the preview remains hidden by default.
 
 - <browser walkthrough notes>
 - <page-level UI tests>
+- benchmark: not-applicable
 
 ## Status
 

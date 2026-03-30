@@ -33,7 +33,7 @@ jobs:
       semver: ${{ steps.git_version.outputs.semVer }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -85,7 +85,7 @@ jobs:
 
       - name: Upload version metrics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-metrics-version
           path: metrics/publish/version.json
@@ -100,12 +100,12 @@ jobs:
       publish_status: ${{ steps.nuget_metrics.outputs.publish_status }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set-up dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
           cache: true
@@ -185,7 +185,7 @@ jobs:
 
       - name: Upload NuGet package artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-packages
           path: artifacts/*.nupkg
@@ -193,7 +193,7 @@ jobs:
 
       - name: Upload NuGet metrics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-metrics-nuget
           path: metrics/publish/nuget.json
@@ -214,10 +214,10 @@ jobs:
             rid: osx-arm64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set-up dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
           cache: true
@@ -272,7 +272,7 @@ jobs:
 
       - name: Upload AOT artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: workbench-aot-bin-${{ matrix.rid }}
           path: ./artifacts/aot-binaries/workbench-${{ needs.version.outputs.semver }}-${{ matrix.rid }}*
@@ -280,7 +280,7 @@ jobs:
 
       - name: Upload AOT metrics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-metrics-aot-${{ matrix.rid }}
           path: metrics/publish/aot-${{ matrix.rid }}.json
@@ -291,10 +291,10 @@ jobs:
     needs: [version, publish-aot]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download AOT artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ./artifacts/aot-binaries
 
@@ -342,7 +342,7 @@ jobs:
 
       - name: Upload release metrics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-metrics-release
           path: metrics/publish/release.json
@@ -354,17 +354,17 @@ jobs:
     needs: [version, publish-nuget, publish-aot, release]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download workflow artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
       - name: Download baseline snapshot from main
         if: always()
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@v19
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: nuget-publish.yml
@@ -488,7 +488,7 @@ jobs:
 
       - name: Upload publish baseline
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-baseline
           path: metrics/publish/publish-baseline.json

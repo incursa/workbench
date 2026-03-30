@@ -33,6 +33,7 @@ public static partial class AttestationService
         var scopedValidationFindings = FilterValidationFindings(selectedValidation.Findings, repoRoot, effectiveScope, attestationConfig.ScopeExcludes).ToList();
         var validationIndex = BuildValidationFindingIndex(repoRoot, requirements, scopedValidationFindings);
         var artifactLookup = BuildArtifactLookup(graph);
+        var verificationLookup = BuildVerificationLookup(graph);
         var artifacts = BuildArtifactCollections(graph, requirements, artifactLookup);
         var requirementsRecords = BuildRequirementRecords(
             graph,
@@ -40,7 +41,8 @@ public static partial class AttestationService
             validationIndex,
             evidence,
             attestationConfig,
-            artifactLookup);
+            artifactLookup,
+            verificationLookup);
 
         var aggregates = BuildAggregateSummary(attestationConfig, requirementsRecords, graph, artifacts, artifactLookup);
         var gaps = BuildGapSummary(requirementsRecords, scopedValidationFindings);
@@ -144,7 +146,8 @@ public static partial class AttestationService
         ValidationFindingIndex validationIndex,
         AttestationEvidenceSnapshot evidence,
         AttestationConfig attestationConfig,
-        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup)
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup,
+        IReadOnlyDictionary<string, VerificationNode> verificationLookup)
     {
         var records = new List<AttestationRequirementRecord>();
         foreach (var requirement in requirements)
@@ -158,19 +161,22 @@ public static partial class AttestationService
             var sourceRefs = GetTraceValues(requirement.Trace, "Source Refs");
             var testRefs = GetTraceValues(requirement.Trace, "Test Refs");
             var codeRefs = GetTraceValues(requirement.Trace, "Code Refs");
+            var derivedEvidence = CollectVerificationEvidence(verifiedBy, verificationLookup);
+            var effectiveTestRefs = CombineRefs(testRefs, derivedEvidence.TestRefs);
+            var effectiveCodeRefs = CombineRefs(codeRefs, derivedEvidence.CodeRefs);
             validationIndex.RequirementFindingIds.TryGetValue(requirement.RequirementId, out var validationFindingIds);
             validationFindingIds ??= new List<string>();
 
-            var testEvidenceStatus = DetermineRequirementTestEvidenceStatus(evidence.TestResults, testRefs);
-            var coverageEvidenceStatus = DetermineRequirementCoverageEvidenceStatus(evidence.Coverage, codeRefs);
-            var benchmarkEvidenceStatus = evidence.Benchmarks.Status ?? "unknown";
+            var testEvidenceStatus = DetermineRequirementTestEvidenceStatus(evidence.TestResults, effectiveTestRefs);
+            var coverageEvidenceStatus = DetermineRequirementCoverageEvidenceStatus(evidence.Coverage, effectiveCodeRefs);
+            var benchmarkEvidenceStatus = ResolveRequirementBenchmarkEvidenceStatus(evidence.Benchmarks, derivedEvidence.BenchmarkNotApplicable);
             var manualQaStatus = evidence.ManualQa.Status ?? "unknown";
             var gaps = BuildRequirementGaps(
                 satisfiedBy,
                 implementedBy,
                 verifiedBy,
-                testRefs,
-                codeRefs,
+                effectiveTestRefs,
+                effectiveCodeRefs,
                 testEvidenceStatus,
                 coverageEvidenceStatus,
                 benchmarkEvidenceStatus,
@@ -188,7 +194,7 @@ public static partial class AttestationService
                 specification?.Artifact.Status ?? string.Empty,
                 new AttestationRequirementTraceSummary(satisfiedBy, implementedBy, verifiedBy),
                 new AttestationRequirementLineageSummary(derivedFrom, supersedes, sourceRefs, requirement.RelatedArtifacts.ToList()),
-                new AttestationRequirementDirectRefs(testRefs, codeRefs),
+                new AttestationRequirementDirectRefs(effectiveTestRefs, effectiveCodeRefs),
                 validationFindingIds.Count == 0 ? null : validationFindingIds.ToList(),
                 testEvidenceStatus,
                 coverageEvidenceStatus,
@@ -517,6 +523,171 @@ public static partial class AttestationService
             new List<string>());
     }
 
+    private static Dictionary<string, VerificationNode> BuildVerificationLookup(ValidationGraph graph)
+    {
+        var lookup = new Dictionary<string, VerificationNode>(StringComparer.OrdinalIgnoreCase);
+        foreach (var verification in graph.Verifications)
+        {
+            if (string.IsNullOrWhiteSpace(verification.Artifact.ArtifactId))
+            {
+                continue;
+            }
+
+            lookup[verification.Artifact.ArtifactId] = verification;
+        }
+
+        return lookup;
+    }
+
+    private static VerificationDerivedEvidence CollectVerificationEvidence(
+        IReadOnlyList<string> verifiedBy,
+        IReadOnlyDictionary<string, VerificationNode> verificationLookup)
+    {
+        if (verifiedBy.Count == 0 || verificationLookup.Count == 0)
+        {
+            return VerificationDerivedEvidence.Empty;
+        }
+
+        var testRefs = new List<string>();
+        var codeRefs = new List<string>();
+        var benchmarkNotApplicable = false;
+
+        foreach (var verificationId in verifiedBy.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!verificationLookup.TryGetValue(verificationId, out var verification))
+            {
+                continue;
+            }
+
+            benchmarkNotApplicable |= verification.BenchmarkNotApplicable;
+
+            foreach (var evidenceRef in verification.EvidenceRefs)
+            {
+                if (TryClassifyVerificationEvidenceReference(evidenceRef, out var refKind))
+                {
+                    if (string.Equals(refKind, "test", StringComparison.Ordinal))
+                    {
+                        AddValue(testRefs, evidenceRef);
+                    }
+                    else if (string.Equals(refKind, "code", StringComparison.Ordinal))
+                    {
+                        AddValue(codeRefs, evidenceRef);
+                    }
+                }
+            }
+        }
+
+        return new VerificationDerivedEvidence(
+            testRefs,
+            codeRefs,
+            benchmarkNotApplicable);
+    }
+
+    private static bool TryClassifyVerificationEvidenceReference(string reference, out string kind)
+    {
+        var normalized = NormalizeEvidenceReference(reference);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            kind = string.Empty;
+            return false;
+        }
+
+        if (IsTestEvidenceReference(normalized))
+        {
+            kind = "test";
+            return true;
+        }
+
+        if (IsCodeEvidenceReference(normalized))
+        {
+            kind = "code";
+            return true;
+        }
+
+        kind = string.Empty;
+        return false;
+    }
+
+    private static string NormalizeEvidenceReference(string reference)
+    {
+        var candidate = reference.Trim();
+        var fragmentIndex = candidate.IndexOf('#');
+        if (fragmentIndex >= 0)
+        {
+            candidate = candidate[..fragmentIndex];
+        }
+
+        var queryIndex = candidate.IndexOf('?');
+        if (queryIndex >= 0)
+        {
+            candidate = candidate[..queryIndex];
+        }
+
+        return candidate.Trim();
+    }
+
+    private static bool IsTestEvidenceReference(string reference)
+    {
+        var normalized = reference.Replace('\\', '/').TrimStart('/');
+        return normalized.StartsWith("tests/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("/tests/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.EndsWith("tests.cs", StringComparison.OrdinalIgnoreCase) ||
+            normalized.EndsWith(".tests.cs", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsCodeEvidenceReference(string reference)
+    {
+        var normalized = reference.Replace('\\', '/').TrimStart('/');
+        return normalized.StartsWith("src/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("/src/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+            normalized.EndsWith(".fs", StringComparison.OrdinalIgnoreCase) ||
+            normalized.EndsWith(".vb", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static List<string> CombineRefs(IReadOnlyList<string> first, IReadOnlyList<string> second)
+    {
+        if (first.Count == 0 && second.Count == 0)
+        {
+            return new List<string>();
+        }
+
+        var combined = new List<string>(first.Count + second.Count);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        AddRefs(first);
+        AddRefs(second);
+        return combined;
+
+        void AddRefs(IReadOnlyList<string> refs)
+        {
+            foreach (var reference in refs)
+            {
+                if (string.IsNullOrWhiteSpace(reference))
+                {
+                    continue;
+                }
+
+                if (seen.Add(reference))
+                {
+                    combined.Add(reference);
+                }
+            }
+        }
+    }
+
+    private static string ResolveRequirementBenchmarkEvidenceStatus(
+        AttestationSimpleEvidenceSummary benchmarks,
+        bool benchmarkNotApplicable)
+    {
+        if (benchmarkNotApplicable)
+        {
+            return "not-applicable";
+        }
+
+        return benchmarks.Status ?? "unknown";
+    }
+
     private static ValidationFindingIndex BuildValidationFindingIndex(
         string repoRoot,
         IReadOnlyList<RequirementNode> requirements,
@@ -842,6 +1013,14 @@ public static partial class AttestationService
         IReadOnlyList<AttestationValidationFindingSummary> Findings,
         IReadOnlyDictionary<string, IReadOnlyList<string>> RequirementFindingIds,
         IReadOnlyDictionary<string, AttestationValidationFindingSummary> FindingLookup);
+
+    private sealed record VerificationDerivedEvidence(
+        IReadOnlyList<string> TestRefs,
+        IReadOnlyList<string> CodeRefs,
+        bool BenchmarkNotApplicable)
+    {
+        public static VerificationDerivedEvidence Empty => new(new List<string>(), new List<string>(), false);
+    }
 
     private static string NormalizeEvidenceStatus(string? status, bool present)
     {

@@ -82,6 +82,13 @@ Trace:
 - Verified By:
   - [`VER-WB-0008`](../../verification/WB/VER-WB-0008-derived-repository-attestation-snapshot.md)
 
+Notes:
+- the derived report may harvest test and code evidence from linked verification
+  artifacts' `Evidence` sections without turning those refs into canonical
+  downstream trace edges
+- verification evidence may mark benchmark coverage as intentionally
+  `not-applicable` when a requirement does not need benchmark proof
+
 ## REQ-CLI-QUALITY-ATTEST-0005 Explicit execution opt-in
 
 `quality attest` MUST execute configured evidence refresh commands only when

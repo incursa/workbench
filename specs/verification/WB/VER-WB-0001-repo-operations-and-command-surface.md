@@ -438,6 +438,7 @@ The linked requirements are satisfied by the documented repository behavior and 
 - [`tests/Workbench.IntegrationTests/ResilienceTests.cs`](../../../tests/Workbench.IntegrationTests/ResilienceTests.cs)
 - [`specs/generated/commands.md`](../../generated/commands.md)
 - [`quality/testing-intent.yaml`](../../../quality/testing-intent.yaml)
+- benchmark: not-applicable
 
 ## Status
 

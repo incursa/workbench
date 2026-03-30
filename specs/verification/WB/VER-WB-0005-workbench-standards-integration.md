@@ -55,6 +55,7 @@ The linked requirements are satisfied by the documented repository behavior and 
 - [`authoring.md`](../../../authoring.md)
 - [`artifact-id-policy.json`](../../../artifact-id-policy.json)
 - schemas/artifact-frontmatter.schema.json
+- benchmark: not-applicable
 
 ## Status
 

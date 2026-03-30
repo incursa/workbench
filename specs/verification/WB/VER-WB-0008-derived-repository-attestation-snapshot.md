@@ -63,6 +63,7 @@ mutating canonical trace artifacts.
 - [`specs/requirements/CLI/SPEC-CLI-QUALITY-ATTEST.md`](../../requirements/CLI/SPEC-CLI-QUALITY-ATTEST.md)
 - [`specs/generated/commands.md`](../../generated/commands.md)
 - [`specs/generated/test-matrix.md`](../../generated/test-matrix.md)
+- benchmark: not-applicable
 
 ## Status
 

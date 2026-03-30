@@ -1811,7 +1811,8 @@ public class ValidationCoverageTests
         lines.Add(string.Empty);
         lines.Add("## Evidence");
         lines.Add(string.Empty);
-        lines.Add("- <evidence or test reference>");
+        lines.Add("- <test reference, code reference, or benchmark marker>");
+        lines.Add("- `benchmark: not-applicable` when benchmark evidence is intentionally out of scope");
         lines.Add(string.Empty);
         lines.Add("## Status");
         lines.Add(string.Empty);

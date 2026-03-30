@@ -59,6 +59,7 @@ The linked requirements are satisfied by the documented repository behavior and 
 - dotnet publish [`src/Workbench/Workbench.csproj`](../../../src/Workbench/Workbench.csproj) -c Release -r osx-arm64
 - artifacts/Incursa.Workbench.0.1.0.nupkg
 - src/Workbench/bin/Release/net10.0/osx-arm64/publish/Workbench
+- benchmark: not-applicable
 
 ## Status
 

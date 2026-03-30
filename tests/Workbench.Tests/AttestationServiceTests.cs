@@ -94,6 +94,25 @@ public class AttestationServiceTests
     }
 
     [TestMethod]
+    public void Generate_DerivesRequirementEvidenceFromLinkedVerificationEvidence()
+    {
+        using var repo = CreateAttestationRepo(includeOutsideScopeRequirement: false, legacyOnly: false, includeExecutionCommand: false, includeVerificationEvidenceRequirement: true);
+
+        var result = AttestationService.Generate(
+            repo.Path,
+            new AttestationRunOptions(null, ValidationProfiles.Auditable, "json", "artifacts/quality/attestation", null, null, null, null, null, false, false));
+
+        var evidenceRequirement = result.Snapshot.Requirements.Single(requirement => string.Equals(requirement.RequirementId, "REQ-WB-ATTEST-0003", StringComparison.OrdinalIgnoreCase));
+
+        Assert.IsTrue(evidenceRequirement.Trace.VerifiedBy.Contains("VER-WB-ATTEST-0006", StringComparer.OrdinalIgnoreCase));
+        Assert.IsTrue(evidenceRequirement.DirectRefs.TestRefs.Contains("tests/Sample.Tests/WidgetTests.cs", StringComparer.OrdinalIgnoreCase));
+        Assert.IsTrue(evidenceRequirement.DirectRefs.CodeRefs.Contains("src/Sample/Widget.cs", StringComparer.OrdinalIgnoreCase));
+        Assert.AreEqual("not-applicable", evidenceRequirement.BenchmarkEvidenceStatus);
+        CollectionAssert.DoesNotContain(evidenceRequirement.Gaps.ToArray(), "benchmark evidence unknown");
+        CollectionAssert.DoesNotContain(evidenceRequirement.Gaps.ToArray(), "no implementation evidence or direct refs");
+    }
+
+    [TestMethod]
     public void Generate_ScopeFiltersTheTargetSubtree()
     {
         using var repo = CreateAttestationRepo(includeOutsideScopeRequirement: true, legacyOnly: false, includeExecutionCommand: false);
@@ -203,7 +222,7 @@ public class AttestationServiceTests
         Assert.IsEmpty(legacy.Snapshot.Requirements[0].Trace.VerifiedBy);
     }
 
-    private static TempRepoRoot CreateAttestationRepo(bool includeOutsideScopeRequirement, bool legacyOnly, bool includeExecutionCommand)
+    private static TempRepoRoot CreateAttestationRepo(bool includeOutsideScopeRequirement, bool legacyOnly, bool includeExecutionCommand, bool includeVerificationEvidenceRequirement = false)
     {
         var repo = new TempRepoRoot();
         Directory.CreateDirectory(Path.Combine(repo.Path, ".git"));
@@ -227,7 +246,7 @@ public class AttestationServiceTests
         WriteSampleCoverageArtifact(repo.Path);
         WriteBenchmarkEvidence(repo.Path);
         WriteManualQaEvidence(repo.Path);
-        WriteCanonicalArtifacts(repo.Path, includeOutsideScopeRequirement, legacyOnly);
+        WriteCanonicalArtifacts(repo.Path, includeOutsideScopeRequirement, legacyOnly, includeVerificationEvidenceRequirement);
         _ = QualityService.Sync(repo.Path, new QualitySyncOptions(null, "artifacts/raw/test-results", "artifacts/raw/coverage", null, false));
         return repo;
     }
@@ -420,7 +439,7 @@ public class AttestationServiceTests
             """);
     }
 
-    private static void WriteCanonicalArtifacts(string repoRoot, bool includeOutsideScopeRequirement, bool legacyOnly)
+    private static void WriteCanonicalArtifacts(string repoRoot, bool includeOutsideScopeRequirement, bool legacyOnly, bool includeVerificationEvidenceRequirement)
     {
         Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements", "WB"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "architecture", "WB"));
@@ -511,6 +530,83 @@ public class AttestationServiceTests
             - Code Refs:
               - src/Workbench.Core/AttestationService.cs
             """);
+
+        if (includeVerificationEvidenceRequirement)
+        {
+            File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "WB", "SPEC-WB-ATTEST-EVIDENCE.md"), """
+                ---
+                artifact_id: SPEC-WB-ATTEST-EVIDENCE
+                artifact_type: specification
+                title: Verification evidence rolls up into reports
+                domain: WB
+                capability: validation
+                status: draft
+                owner: platform
+                ---
+
+                # SPEC-WB-ATTEST-EVIDENCE - Verification evidence rolls up into reports
+
+                ## REQ-WB-ATTEST-0003 Requirement title
+                The tool MUST derive report-visible test and code refs from linked verification evidence.
+
+                Trace:
+                - Verified By:
+                  - VER-WB-ATTEST-0006
+                """);
+
+            File.WriteAllText(Path.Combine(repoRoot, "specs", "verification", "WB", "VER-WB-ATTEST-0006.md"), """
+                ---
+                artifact_id: VER-WB-ATTEST-0006
+                artifact_type: verification
+                title: VER-WB-ATTEST-0006
+                domain: WB
+                status: passed
+                owner: platform
+                verifies:
+                  - REQ-WB-ATTEST-0003
+                ---
+
+                # VER-WB-ATTEST-0006 - VER-WB-ATTEST-0006
+
+                ## Scope
+
+                Verification evidence propagation through derived attestation reports.
+
+                ## Requirements Verified
+
+                - REQ-WB-ATTEST-0003
+
+                ## Verification Method
+
+                Documentation review.
+
+                ## Preconditions
+
+                - The sample repository fixtures exist.
+
+                ## Procedure or Approach
+
+                - Review the linked verification evidence entries.
+
+                ## Expected Result
+
+                - The attestation report shows the linked test and code refs and suppresses benchmark-unknown noise.
+
+                ## Evidence
+
+                - [`tests/Sample.Tests/WidgetTests.cs`](../../../tests/Sample.Tests/WidgetTests.cs)
+                - [`src/Sample/Widget.cs`](../../../src/Sample/Widget.cs)
+                - benchmark: not-applicable
+
+                ## Status
+
+                passed
+
+                ## Related Artifacts
+
+                - [`SPEC-WB-ATTEST-EVIDENCE`](../../requirements/WB/SPEC-WB-ATTEST-EVIDENCE.md)
+                """);
+        }
 
         File.WriteAllText(Path.Combine(repoRoot, "specs", "architecture", "WB", "ARC-WB-ATTEST-0001.md"), """
             ---

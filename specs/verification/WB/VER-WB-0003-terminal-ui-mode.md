@@ -55,6 +55,7 @@ This artifact remains blocked until the CLI exposes the TUI entrypoint described
 - [`src/Workbench.Cli/Program.cs`](../../../src/Workbench.Cli/Program.cs)
 - [`src/Workbench.Tui/TuiEntrypoint.cs`](../../../src/Workbench.Tui/TuiEntrypoint.cs)
 - [`src/Workbench.Tui/TuiEntrypoint.Helpers.cs`](../../../src/Workbench.Tui/TuiEntrypoint.Helpers.cs)
+- benchmark: not-applicable
 
 ## Status
 

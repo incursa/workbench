@@ -480,8 +480,19 @@ internal static partial class ValidationGraphValidator
         var relatedArtifacts = ReadStringList(data, "related_artifacts");
         var bodyVerifies = ParseLooseBulletList(SpecTraceMarkdown.ExtractSection(body, "Requirements Verified"));
         var bodyRelatedArtifacts = ParseLooseBulletList(SpecTraceMarkdown.ExtractSection(body, "Related Artifacts"));
+        var (evidenceRefs, benchmarkNotApplicable) = ParseVerificationEvidenceSection(
+            repoRoot,
+            file,
+            SpecTraceMarkdown.ExtractSection(body, "Evidence"));
 
-        graph.Verifications.Add(new VerificationNode(artifactNode, verifies, bodyVerifies, bodyRelatedArtifacts, relatedArtifacts));
+        graph.Verifications.Add(new VerificationNode(
+            artifactNode,
+            verifies,
+            bodyVerifies,
+            bodyRelatedArtifacts,
+            relatedArtifacts,
+            evidenceRefs,
+            benchmarkNotApplicable));
     }
 
     private static void EmitFrontMatterValidation(
@@ -574,6 +585,130 @@ internal static partial class ValidationGraphValidator
         }
 
         return items;
+    }
+
+    private static (IReadOnlyList<string> EvidenceRefs, bool BenchmarkNotApplicable) ParseVerificationEvidenceSection(
+        string repoRoot,
+        string file,
+        string section)
+    {
+        if (string.IsNullOrWhiteSpace(section))
+        {
+            return (Array.Empty<string>(), false);
+        }
+
+        var evidenceRefs = new List<string>();
+        var benchmarkNotApplicable = false;
+
+        foreach (var rawLine in SpecTraceMarkdown.NormalizeNewlines(section).Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            if (line.StartsWith("- ", StringComparison.Ordinal))
+            {
+                line = line[2..].Trim();
+            }
+
+            if (TryParseBenchmarkNotApplicable(line))
+            {
+                benchmarkNotApplicable = true;
+                continue;
+            }
+
+            var normalized = NormalizeVerificationEvidenceReference(repoRoot, file, line);
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                evidenceRefs.Add(normalized);
+            }
+        }
+
+        return (
+            evidenceRefs
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            benchmarkNotApplicable);
+    }
+
+    private static bool TryParseBenchmarkNotApplicable(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = value.Trim().ToLowerInvariant();
+        if (normalized.StartsWith("benchmark:", StringComparison.Ordinal))
+        {
+            normalized = normalized["benchmark:".Length..].Trim();
+        }
+
+        normalized = normalized
+            .Replace('-', '_')
+            .Replace(' ', '_');
+
+        return normalized is "not_applicable" or "n_a" or "na" or "none" or "optional" or "not_required";
+    }
+
+    private static string? NormalizeVerificationEvidenceReference(string repoRoot, string file, string reference)
+    {
+        var candidate = reference.Trim();
+        if (TryExtractMarkdownLinkTarget(candidate, out var target))
+        {
+            candidate = target;
+        }
+
+        candidate = candidate
+            .Trim()
+            .Trim('<', '>', '"', '\'')
+            .Trim();
+
+        var fragmentIndex = candidate.IndexOf('#');
+        if (fragmentIndex >= 0)
+        {
+            candidate = candidate[..fragmentIndex];
+        }
+
+        var queryIndex = candidate.IndexOf('?');
+        if (queryIndex >= 0)
+        {
+            candidate = candidate[..queryIndex];
+        }
+
+        if (string.IsNullOrWhiteSpace(candidate))
+        {
+            return null;
+        }
+
+        if (Path.IsPathRooted(candidate))
+        {
+            return NormalizeRepoRelative(repoRoot, candidate);
+        }
+
+        if (candidate.StartsWith("./", StringComparison.Ordinal) ||
+            candidate.StartsWith("../", StringComparison.Ordinal))
+        {
+            var combined = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(file) ?? repoRoot, candidate));
+            return NormalizeRepoRelative(repoRoot, combined);
+        }
+
+        return candidate.Replace('\\', '/').TrimStart('/');
+    }
+
+    private static bool TryExtractMarkdownLinkTarget(string value, out string target)
+    {
+        var open = value.IndexOf("](", StringComparison.Ordinal);
+        if (value.StartsWith("[", StringComparison.Ordinal) && open > 0 && value.EndsWith(")", StringComparison.Ordinal))
+        {
+            target = value[(open + 2)..^1].Trim();
+            return true;
+        }
+
+        target = string.Empty;
+        return false;
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> ParseTraceLinksSection(string section)
