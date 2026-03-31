@@ -4,7 +4,7 @@ namespace Workbench.Core;
 
 public static class CanonicalArtifactJsonLoader
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
@@ -18,7 +18,7 @@ public static class CanonicalArtifactJsonLoader
             throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
         }
 
-        var artifact = JsonSerializer.Deserialize<CanonicalArtifactModel>(json, JsonOptions);
+        var artifact = JsonSerializer.Deserialize<CanonicalArtifactModel>(json, jsonOptions);
         return artifact ?? throw new InvalidOperationException($"canonical artifact JSON returned no payload for '{jsonPath}'.");
     }
 
@@ -33,7 +33,7 @@ public static class CanonicalArtifactJsonLoader
 
         using var document = JsonDocument.Parse(json);
         var data = JsonElementToObjectConverter.ConvertObject(document.RootElement);
-        var artifact = JsonSerializer.Deserialize<CanonicalArtifactModel>(json, JsonOptions)
+        var artifact = JsonSerializer.Deserialize<CanonicalArtifactModel>(json, jsonOptions)
             ?? throw new InvalidOperationException($"canonical artifact JSON returned no payload for '{jsonPath}'.");
 
         return new CanonicalArtifactDocument(artifact, data, JsonWriter.Serialize(data));
