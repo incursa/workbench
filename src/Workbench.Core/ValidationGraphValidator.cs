@@ -2,17 +2,18 @@ namespace Workbench.Core;
 
 internal static partial class ValidationGraphValidator
 {
-    public static void ValidateCanonicalGraph(
+    public static ValidationGraph ValidateCanonicalGraph(
         string repoRoot,
         WorkbenchConfig config,
         ValidationOptions options,
         string selectedProfile,
         List<string> scopePrefixes,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result)
     {
         var docExcludes = NormalizePrefixes(config.Validation?.DocExclude);
-        var graph = BuildGraph(repoRoot, config, options, artifactIdPolicy, result, scopePrefixes, docExcludes);
+        var graph = BuildGraph(repoRoot, config, options, enforceArtifactIdPolicy, artifactIdPolicy, result, scopePrefixes, docExcludes);
 
         if (ValidationProfiles.IsEnabledFor(selectedProfile, ValidationProfiles.Traceable))
         {
@@ -24,5 +25,7 @@ internal static partial class ValidationGraphValidator
         {
             EmitAuditableFindings(graph, ValidationProfiles.Auditable, scopePrefixes, result);
         }
+
+        return graph;
     }
 }

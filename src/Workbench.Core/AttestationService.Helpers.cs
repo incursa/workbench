@@ -168,6 +168,12 @@ public static partial class AttestationService
             var derivedEvidence = CollectVerificationEvidence(verifiedBy, verificationLookup);
             var effectiveTestRefs = CombineRefs(testRefs, derivedEvidence.TestRefs, inventoryTestRefs);
             var effectiveCodeRefs = CombineRefs(codeRefs, derivedEvidence.CodeRefs);
+            var traceReadiness = DetermineRequirementTraceReadiness(
+                satisfiedBy,
+                implementedBy,
+                verifiedBy,
+                artifactLookup,
+                attestationConfig.StatusPolicy);
             validationIndex.RequirementFindingIds.TryGetValue(requirement.RequirementId, out var validationFindingIds);
             validationFindingIds ??= new List<string>();
 
@@ -179,6 +185,7 @@ public static partial class AttestationService
                 satisfiedBy,
                 implementedBy,
                 verifiedBy,
+                traceReadiness,
                 effectiveTestRefs,
                 effectiveCodeRefs,
                 testEvidenceStatus,
@@ -199,6 +206,7 @@ public static partial class AttestationService
                 new AttestationRequirementTraceSummary(satisfiedBy, implementedBy, verifiedBy),
                 new AttestationRequirementLineageSummary(derivedFrom, supersedes, sourceRefs, requirement.RelatedArtifacts.ToList()),
                 new AttestationRequirementDirectRefs(effectiveTestRefs, effectiveCodeRefs),
+                traceReadiness,
                 validationFindingIds.Count == 0 ? null : validationFindingIds.ToList(),
                 testEvidenceStatus,
                 coverageEvidenceStatus,
@@ -252,6 +260,7 @@ public static partial class AttestationService
         var testRefs = requirements.Count(requirement => requirement.DirectRefs.TestRefs.Count > 0);
         var codeRefs = requirements.Count(requirement => requirement.DirectRefs.CodeRefs.Count > 0);
         var downstream = requirements.Count(requirement => requirement.Trace.SatisfiedBy.Count > 0 || requirement.Trace.ImplementedBy.Count > 0 || requirement.Trace.VerifiedBy.Count > 0);
+        var traceReadiness = BuildTraceReadinessSummary(requirements);
 
         return new AttestationAggregateSummary(
             total,
@@ -273,6 +282,7 @@ public static partial class AttestationService
                 Percent(codeRefs, total),
                 downstream,
                 Percent(downstream, total)),
+            traceReadiness,
             BuildWorkItemStatusSummary(attestationConfig, requirements, artifactLookup),
             BuildVerificationStatusSummary(attestationConfig, requirements, artifactLookup));
     }
@@ -328,6 +338,7 @@ public static partial class AttestationService
         var withoutDownstream = requirements.Where(requirement => requirement.Trace.SatisfiedBy.Count == 0 && requirement.Trace.ImplementedBy.Count == 0 && requirement.Trace.VerifiedBy.Count == 0).Select(requirement => requirement.RequirementId).ToList();
         var withoutImplementation = requirements.Where(requirement => requirement.Trace.ImplementedBy.Count == 0 && requirement.DirectRefs.TestRefs.Count == 0 && requirement.DirectRefs.CodeRefs.Count == 0).Select(requirement => requirement.RequirementId).ToList();
         var withoutVerification = requirements.Where(requirement => requirement.Trace.VerifiedBy.Count == 0).Select(requirement => requirement.RequirementId).ToList();
+        var plannedDownstream = requirements.Where(requirement => requirement.TraceReadiness.Planned).Select(requirement => requirement.RequirementId).ToList();
         var failingOrStale = requirements.Where(requirement => IsProblemEvidenceStatus(requirement.TestEvidenceStatus) || IsProblemEvidenceStatus(requirement.CoverageEvidenceStatus) || IsProblemEvidenceStatus(requirement.BenchmarkEvidenceStatus) || IsProblemEvidenceStatus(requirement.ManualQaStatus)).Select(requirement => requirement.RequirementId).ToList();
 
         var orphanArtifacts = selectedValidationFindings
@@ -344,7 +355,65 @@ public static partial class AttestationService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        return new AttestationGapSummary(withoutDownstream, withoutImplementation, withoutVerification, failingOrStale, orphanArtifacts, unresolved);
+        return new AttestationGapSummary(withoutDownstream, withoutImplementation, withoutVerification, plannedDownstream, failingOrStale, orphanArtifacts, unresolved);
+    }
+
+    private static AttestationTraceReadinessSummary BuildTraceReadinessSummary(IList<AttestationRequirementRecord> requirements)
+    {
+        var total = requirements.Count;
+        var linked = requirements.Count(requirement => requirement.TraceReadiness.Linked);
+        var proofReady = requirements.Count(requirement => requirement.TraceReadiness.ProofReady);
+        var planned = requirements.Count(requirement => requirement.TraceReadiness.Planned);
+        var missing = Math.Max(0, total - linked);
+
+        return new AttestationTraceReadinessSummary(
+            total,
+            linked,
+            Percent(linked, total),
+            proofReady,
+            Percent(proofReady, total),
+            planned,
+            Percent(planned, total),
+            missing,
+            Percent(missing, total));
+    }
+
+    private static AttestationRequirementTraceReadinessSummary DetermineRequirementTraceReadiness(
+        IReadOnlyList<string> satisfiedBy,
+        IReadOnlyList<string> implementedBy,
+        IReadOnlyList<string> verifiedBy,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup,
+        AttestationStatusPolicy statusPolicy)
+    {
+        var linked = satisfiedBy.Count > 0 || implementedBy.Count > 0 || verifiedBy.Count > 0;
+        var proofReady = false;
+        if (linked)
+        {
+            proofReady =
+                HasArtifactStatus(satisfiedBy, artifactLookup, "architecture", AttestationService.ArchitectureProofStatuses) ||
+                HasArtifactStatus(implementedBy, artifactLookup, "work_item", statusPolicy.WorkItemDone) ||
+                HasArtifactStatus(verifiedBy, artifactLookup, "verification", statusPolicy.VerificationPassing);
+        }
+        var planned = linked && !proofReady;
+        var state = "missing";
+        if (linked)
+        {
+            state = proofReady ? "proof-ready" : "planned";
+        }
+
+        return new AttestationRequirementTraceReadinessSummary(linked, proofReady, planned, state);
+    }
+
+    private static bool HasArtifactStatus(
+        IReadOnlyList<string> artifactIds,
+        IReadOnlyDictionary<string, AttestationArtifactSummary> artifactLookup,
+        string expectedArtifactType,
+        IEnumerable<string> acceptedStatuses)
+    {
+        return artifactIds.Any(id =>
+            artifactLookup.TryGetValue(id, out var artifact) &&
+            string.Equals(artifact.ArtifactType, expectedArtifactType, StringComparison.OrdinalIgnoreCase) &&
+            HasStatus(acceptedStatuses, artifact.Status));
     }
 
     private static AttestationDerivedRollupSummary? BuildDerivedRollups(AttestationConfig attestationConfig, IList<AttestationRequirementRecord> requirements)
@@ -441,6 +510,7 @@ public static partial class AttestationService
         IReadOnlyList<string> satisfiedBy,
         IReadOnlyList<string> implementedBy,
         IReadOnlyList<string> verifiedBy,
+        AttestationRequirementTraceReadinessSummary traceReadiness,
         IReadOnlyList<string> testRefs,
         IReadOnlyList<string> codeRefs,
         string testEvidenceStatus,
@@ -465,6 +535,11 @@ public static partial class AttestationService
         if (verifiedBy.Count == 0)
         {
             gaps.Add("no verification coverage");
+        }
+
+        if (traceReadiness.Planned)
+        {
+            gaps.Add("planned downstream trace");
         }
 
         if (testRefs.Count > 0)

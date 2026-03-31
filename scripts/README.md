@@ -2,6 +2,10 @@
 
 Helper scripts for packaging and release automation.
 
+## Tooling bootstrap
+
+- [`scripts/Resolve-Cue.ps1`](Resolve-Cue.ps1): resolves the pinned CUE CLI for the current host, or with `-PopulateBundledAssets` hydrates the full supported RID set used by the packaged tool (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`) under `src/Workbench.Core/Tooling/Cue/runtimes/`.
+
 ## Testing
 
 - [`scripts/testing/run-quality-evidence.ps1`](testing/run-quality-evidence.ps1): builds the solution, runs the unit and integration test projects, and writes raw quality evidence to `artifacts/quality/raw/test-results/` and `artifacts/quality/raw/coverage/`.

@@ -139,7 +139,8 @@ public static class NavigationService
                     IsSpecsIndexFile(config, relative) ||
                     IsArchitectureIndexFile(config, relative) ||
                     IsDocTemplate(config, relative) ||
-                    IsWorkArtifactDoc(config, relative))
+                    IsWorkArtifactDoc(config, relative) ||
+                    HasCanonicalCueSibling(repoRoot, relative))
                 {
                     continue;
                 }
@@ -183,6 +184,36 @@ public static class NavigationService
                     section,
                     workItems,
                     githubLink));
+            }
+        }
+
+        foreach (var source in CanonicalArtifactDiscovery.EnumerateCanonicalSources(repoRoot, config)
+                     .Where(source => string.Equals(source.Format, "cue", StringComparison.OrdinalIgnoreCase)))
+        {
+            try
+            {
+                var artifact = CueCli.ExportArtifact(repoRoot, source.SourcePath);
+                var type = artifact.ArtifactType;
+                if (string.IsNullOrWhiteSpace(type))
+                {
+                    continue;
+                }
+
+                var section = GetDocSection(source.DisplayRepoRelativePath, config);
+                var githubLink = BuildGithubFileLink(config, source.DisplayRepoRelativePath);
+                entries.Add(new DocEntry(
+                    string.IsNullOrWhiteSpace(artifact.ArtifactId) ? null : artifact.ArtifactId,
+                    string.IsNullOrWhiteSpace(artifact.Title) ? Path.GetFileNameWithoutExtension(source.DisplayPath) : artifact.Title,
+                    type,
+                    string.IsNullOrWhiteSpace(artifact.Status) ? "unknown" : artifact.Status,
+                    source.DisplayRepoRelativePath,
+                    section,
+                    artifact.RelatedArtifacts?.ToList() ?? new List<string>(),
+                    githubLink));
+            }
+            catch (Exception ex)
+            {
+                warnings.Add($"{source.SourceRepoRelativePath}: {ex}");
             }
         }
 
@@ -762,6 +793,17 @@ public static class NavigationService
         var remainder = normalized[(workRoot.Length + 1)..];
         return remainder.StartsWith("items/", StringComparison.OrdinalIgnoreCase)
             || remainder.StartsWith("templates/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasCanonicalCueSibling(string repoRoot, string relativePath)
+    {
+        if (!SpecTraceLayout.IsCanonicalPath(relativePath) || !relativePath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var cuePath = Path.Combine(repoRoot, Path.ChangeExtension(relativePath, ".cue")!.Replace('/', Path.DirectorySeparatorChar));
+        return File.Exists(cuePath);
     }
 
     private static string? ExtractTitle(string body)

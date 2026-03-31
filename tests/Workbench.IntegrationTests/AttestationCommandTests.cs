@@ -38,6 +38,12 @@ public class AttestationCommandTests
         Assert.AreEqual(1, traceCoverage.GetProperty("withVerifiedBy").GetInt32());
         Assert.AreEqual(1, traceCoverage.GetProperty("withTestRefs").GetInt32());
         Assert.AreEqual(1, traceCoverage.GetProperty("withCodeRefs").GetInt32());
+        var traceReadiness = aggregates.GetProperty("traceReadiness");
+        Assert.AreEqual(2, traceReadiness.GetProperty("requirements").GetInt32());
+        Assert.AreEqual(1, traceReadiness.GetProperty("linked").GetInt32());
+        Assert.AreEqual(1, traceReadiness.GetProperty("proofReady").GetInt32());
+        Assert.AreEqual(0, traceReadiness.GetProperty("planned").GetInt32());
+        Assert.AreEqual(1, traceReadiness.GetProperty("missing").GetInt32());
 
         var evidence = snapshot.GetProperty("evidence");
         Assert.AreEqual("failed", evidence.GetProperty("testResults").GetProperty("status").GetString());
@@ -63,6 +69,7 @@ public class AttestationCommandTests
         Assert.IsFalse(traceRequirement.TryGetProperty("hasCodeRefs", out _));
         Assert.IsFalse(traceRequirement.TryGetProperty("linkedWorkItems", out _));
         Assert.IsFalse(traceRequirement.TryGetProperty("linkedVerifications", out _));
+        Assert.AreEqual("proof-ready", traceRequirement.GetProperty("traceReadiness").GetProperty("state").GetString());
         Assert.AreEqual(1, traceRequirement.GetProperty("trace").GetProperty("satisfiedBy").GetArrayLength());
         Assert.AreEqual(0, traceRequirement.GetProperty("directRefs").GetProperty("testRefs").GetArrayLength());
         Assert.IsFalse(traceRequirement.TryGetProperty("validationFindingIds", out _));
@@ -76,6 +83,7 @@ public class AttestationCommandTests
         Assert.IsFalse(refsRequirement.TryGetProperty("hasCodeRefs", out _));
         Assert.AreEqual(0, refsRequirement.GetProperty("trace").GetProperty("satisfiedBy").GetArrayLength());
         Assert.AreEqual(1, refsRequirement.GetProperty("directRefs").GetProperty("testRefs").GetArrayLength());
+        Assert.AreEqual("missing", refsRequirement.GetProperty("traceReadiness").GetProperty("state").GetString());
         Assert.IsTrue(refsRequirement.TryGetProperty("validationFindingIds", out var refsValidationFindingIds));
         Assert.IsGreaterThan(0, refsValidationFindingIds.GetArrayLength());
 
@@ -102,18 +110,21 @@ public class AttestationCommandTests
 
         StringAssert.Contains(summaryHtml, "<!doctype html>", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(summaryHtml, "Specifications with issues", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(summaryHtml, "Trace Readiness", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(summaryHtml, "SPEC-WB-ATTEST", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(summaryHtml, "SPEC-WB-ATTEST-REFS", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(indexHtml, "Specifications with issues", StringComparison.OrdinalIgnoreCase);
         Assert.IsFalse(summaryHtml.Contains("<script", StringComparison.OrdinalIgnoreCase), summaryHtml);
         StringAssert.Contains(detailsHtml, "Specification breakdown", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(detailsHtml, "Repository Gaps", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(detailsHtml, "Trace Readiness", StringComparison.OrdinalIgnoreCase);
         Assert.IsFalse(detailsHtml.Contains("REQ-WB-ATTEST-0001", StringComparison.OrdinalIgnoreCase), detailsHtml);
         Assert.IsFalse(detailsHtml.Contains("REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase), detailsHtml);
         StringAssert.Contains(specHtml, "No issue-bearing requirements were found in this specification.", StringComparison.OrdinalIgnoreCase);
         Assert.IsFalse(specHtml.Contains("<details", StringComparison.OrdinalIgnoreCase), specHtml);
         StringAssert.Contains(specRefsHtml, "<details", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(specRefsHtml, "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(specRefsHtml, "Trace readiness", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(specRefsHtml, "Validation refs", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(specRefsHtml, "Test refs", StringComparison.OrdinalIgnoreCase);
         StringAssert.Contains(specRefsHtml, "Code refs", StringComparison.OrdinalIgnoreCase);

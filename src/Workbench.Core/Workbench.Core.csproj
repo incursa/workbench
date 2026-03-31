@@ -6,7 +6,27 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <BundledCueRuntimeIdentifier Condition="'$(WorkbenchRuntimeIdentifier)' != ''">$(WorkbenchRuntimeIdentifier)</BundledCueRuntimeIdentifier>
+    <BundledCueRuntimeIdentifier Condition="'$(BundledCueRuntimeIdentifier)' == '' and '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</BundledCueRuntimeIdentifier>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="artifacts\**\*.cs" />
+    <EmbeddedResource Remove="artifacts\**\*" />
+    <None Remove="artifacts\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Tooling\Cue\version.txt" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BundledCueRuntimeIdentifier)' == ''">
+    <EmbeddedResource Include="Tooling\Cue\runtimes\**\cue*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BundledCueRuntimeIdentifier)' != ''">
+    <EmbeddedResource Include="Tooling\Cue\runtimes\$(BundledCueRuntimeIdentifier)\native\cue*" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="JsonSchema.Net" />

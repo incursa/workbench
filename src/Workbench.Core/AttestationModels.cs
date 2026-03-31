@@ -59,6 +59,17 @@ public sealed record AttestationTraceCoverageSummary(
     [property: JsonPropertyName("withDownstreamTrace")] int WithDownstreamTrace,
     [property: JsonPropertyName("downstreamTracePercent")] double DownstreamTracePercent);
 
+public sealed record AttestationTraceReadinessSummary(
+    [property: JsonPropertyName("requirements")] int Requirements,
+    [property: JsonPropertyName("linked")] int Linked,
+    [property: JsonPropertyName("linkedPercent")] double LinkedPercent,
+    [property: JsonPropertyName("proofReady")] int ProofReady,
+    [property: JsonPropertyName("proofReadyPercent")] double ProofReadyPercent,
+    [property: JsonPropertyName("planned")] int Planned,
+    [property: JsonPropertyName("plannedPercent")] double PlannedPercent,
+    [property: JsonPropertyName("missing")] int Missing,
+    [property: JsonPropertyName("missingPercent")] double MissingPercent);
+
 public sealed record AttestationWorkItemStatusSummary(
     [property: JsonPropertyName("totalArtifacts")] int TotalArtifacts,
     [property: JsonPropertyName("linkedRequirementCount")] int LinkedRequirementCount,
@@ -84,6 +95,7 @@ public sealed record AttestationAggregateSummary(
     [property: JsonPropertyName("workItems")] int WorkItems,
     [property: JsonPropertyName("verifications")] int Verifications,
     [property: JsonPropertyName("traceCoverage")] AttestationTraceCoverageSummary TraceCoverage,
+    [property: JsonPropertyName("traceReadiness")] AttestationTraceReadinessSummary TraceReadiness,
     [property: JsonPropertyName("workItemStatuses")] AttestationWorkItemStatusSummary WorkItemStatuses,
     [property: JsonPropertyName("verificationStatuses")] AttestationVerificationStatusSummary VerificationStatuses);
 
@@ -180,6 +192,12 @@ public sealed record AttestationRequirementDirectRefs(
     [property: JsonPropertyName("testRefs")] IList<string> TestRefs,
     [property: JsonPropertyName("codeRefs")] IList<string> CodeRefs);
 
+public sealed record AttestationRequirementTraceReadinessSummary(
+    [property: JsonPropertyName("linked")] bool Linked,
+    [property: JsonPropertyName("proofReady")] bool ProofReady,
+    [property: JsonPropertyName("planned")] bool Planned,
+    [property: JsonPropertyName("state")] string State);
+
 public sealed record AttestationRequirementRollupSummary(
     [property: JsonPropertyName("implemented")] bool? Implemented,
     [property: JsonPropertyName("verified")] bool? Verified,
@@ -197,6 +215,7 @@ public sealed record AttestationRequirementRecord(
     [property: JsonPropertyName("trace")] AttestationRequirementTraceSummary Trace,
     [property: JsonPropertyName("lineage")] AttestationRequirementLineageSummary Lineage,
     [property: JsonPropertyName("directRefs")] AttestationRequirementDirectRefs DirectRefs,
+    [property: JsonPropertyName("traceReadiness")] AttestationRequirementTraceReadinessSummary TraceReadiness,
     [property: JsonPropertyName("validationFindingIds")] IList<string>? ValidationFindingIds,
     [property: JsonPropertyName("testEvidenceStatus")] string TestEvidenceStatus,
     [property: JsonPropertyName("coverageEvidenceStatus")] string CoverageEvidenceStatus,
@@ -209,6 +228,7 @@ public sealed record AttestationGapSummary(
     [property: JsonPropertyName("requirementsWithoutDownstreamTrace")] IList<string> RequirementsWithoutDownstreamTrace,
     [property: JsonPropertyName("requirementsWithoutImplementationEvidence")] IList<string> RequirementsWithoutImplementationEvidence,
     [property: JsonPropertyName("requirementsWithoutVerificationCoverage")] IList<string> RequirementsWithoutVerificationCoverage,
+    [property: JsonPropertyName("requirementsWithPlannedDownstreamTrace")] IList<string> RequirementsWithPlannedDownstreamTrace,
     [property: JsonPropertyName("requirementsWithFailingOrStaleEvidence")] IList<string> RequirementsWithFailingOrStaleEvidence,
     [property: JsonPropertyName("orphanArtifacts")] IList<string> OrphanArtifacts,
     [property: JsonPropertyName("unresolvedReferences")] IList<string> UnresolvedReferences);

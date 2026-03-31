@@ -1,55 +1,43 @@
 using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace Workbench.Core;
 
 internal static partial class ValidationGraphValidator
 {
+    private static readonly Regex approvedKeywordRegex = new(
+        @"\b(?:MUST NOT|SHALL NOT|SHOULD NOT|MUST|SHALL|SHOULD|MAY)\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
+
     internal static ValidationGraph BuildGraph(
         string repoRoot,
         WorkbenchConfig config,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         List<string> scopePrefixes,
         List<string> docExcludes)
     {
         var graph = new ValidationGraph();
-        var specsRoot = ResolveRepoPath(repoRoot, string.IsNullOrWhiteSpace(config.Paths.SpecsRoot) ? SpecTraceLayout.SpecsRoot : config.Paths.SpecsRoot);
-        var requirementsRoot = Path.Combine(specsRoot, "requirements");
-        var architectureRoot = ResolveRepoPath(repoRoot, string.IsNullOrWhiteSpace(config.Paths.ArchitectureDir) ? SpecTraceLayout.ArchitectureRoot : config.Paths.ArchitectureDir);
-        var workItemsRoot = ResolveRepoPath(repoRoot, string.IsNullOrWhiteSpace(config.Paths.WorkItemsSpecsDir) ? SpecTraceLayout.WorkItemsRoot : config.Paths.WorkItemsSpecsDir);
-        var verificationRoot = Path.Combine(specsRoot, "verification");
-
-        foreach (var root in new[] { requirementsRoot, architectureRoot, workItemsRoot, verificationRoot })
+        foreach (var source in CanonicalArtifactDiscovery.EnumerateCanonicalSources(repoRoot, config))
         {
-            if (!Directory.Exists(root))
+            if (docExcludes.Count > 0 &&
+                docExcludes.Any(prefix => source.SourceRepoRelativePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
-            {
-                if (ShouldSkipCanonicalMarkdown(file))
-                {
-                    continue;
-                }
-
-                var repoRelative = NormalizeRepoRelative(repoRoot, file);
-                if (docExcludes.Count > 0 &&
-                    docExcludes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
-                {
-                    continue;
-                }
-
-                ScanCanonicalDocument(
-                    repoRoot,
-                    options,
-                    artifactIdPolicy,
-                    result,
-                    graph,
-                    file,
-                    scopePrefixes);
-            }
+            ScanCanonicalDocument(
+                repoRoot,
+                options,
+                enforceArtifactIdPolicy,
+                artifactIdPolicy,
+                result,
+                graph,
+                source,
+                scopePrefixes);
         }
 
         return graph;
@@ -58,13 +46,28 @@ internal static partial class ValidationGraphValidator
     private static void ScanCanonicalDocument(
         string repoRoot,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
-        string file,
+        CanonicalArtifactSource source,
         List<string> scopePrefixes)
     {
-        var repoRelative = NormalizeRepoRelative(repoRoot, file);
+        if (string.Equals(source.Format, "cue", StringComparison.OrdinalIgnoreCase))
+        {
+            ScanCueArtifact(
+                repoRoot,
+                enforceArtifactIdPolicy,
+                artifactIdPolicy,
+                result,
+                graph,
+                source,
+                scopePrefixes);
+            return;
+        }
+
+        var file = source.SourcePath;
+        var repoRelative = source.SourceRepoRelativePath;
         var shouldEmit = ShouldEmitForScope(repoRelative, scopePrefixes);
 
         var content = File.ReadAllText(file);
@@ -104,6 +107,7 @@ internal static partial class ValidationGraphValidator
             ScanSpecificationDocument(
                 repoRoot,
                 options,
+                enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
                 graph,
@@ -124,6 +128,7 @@ internal static partial class ValidationGraphValidator
             ScanArchitectureDocument(
                 repoRoot,
                 options,
+                enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
                 graph,
@@ -144,6 +149,7 @@ internal static partial class ValidationGraphValidator
             ScanWorkItemDocument(
                 repoRoot,
                 options,
+                enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
                 graph,
@@ -164,6 +170,7 @@ internal static partial class ValidationGraphValidator
             ScanVerificationDocument(
                 repoRoot,
                 options,
+                enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
                 graph,
@@ -179,9 +186,402 @@ internal static partial class ValidationGraphValidator
         }
     }
 
+    private static void ScanCueArtifact(
+        string repoRoot,
+        bool enforceArtifactIdPolicy,
+        ArtifactIdPolicy artifactIdPolicy,
+        ValidationResult result,
+        ValidationGraph graph,
+        CanonicalArtifactSource source,
+        List<string> scopePrefixes)
+    {
+        var shouldEmit = ShouldEmitForScope(source.SourceRepoRelativePath, scopePrefixes);
+        CueArtifactModel artifact;
+        try
+        {
+            artifact = CueCli.ExportArtifact(repoRoot, source.SourcePath);
+        }
+        catch (Exception ex)
+        {
+            if (shouldEmit)
+            {
+                result.AddError(
+                    ValidationProfiles.Core,
+                    ValidationCategories.Schema,
+                    ex.ToString(),
+                    file: source.SourcePath);
+            }
+
+            return;
+        }
+
+        var artifactType = artifact.ArtifactType;
+        if (string.IsNullOrWhiteSpace(artifactType))
+        {
+            if (shouldEmit)
+            {
+                result.AddError(
+                    ValidationProfiles.Core,
+                    ValidationCategories.Schema,
+                    "cue artifact export did not include artifact_type.",
+                    file: source.SourcePath,
+                    artifactId: artifact.ArtifactId);
+            }
+
+            return;
+        }
+
+        if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase))
+        {
+            ScanCueSpecificationDocument(
+                enforceArtifactIdPolicy,
+                artifactIdPolicy,
+                result,
+                graph,
+                source,
+                shouldEmit,
+                artifact);
+            return;
+        }
+
+        if (string.Equals(artifactType, "architecture", StringComparison.OrdinalIgnoreCase))
+        {
+            ScanCueArchitectureDocument(
+                enforceArtifactIdPolicy,
+                artifactIdPolicy,
+                result,
+                graph,
+                source,
+                shouldEmit,
+                artifact);
+            return;
+        }
+
+        if (string.Equals(artifactType, "work_item", StringComparison.OrdinalIgnoreCase))
+        {
+            ScanCueWorkItemDocument(
+                enforceArtifactIdPolicy,
+                artifactIdPolicy,
+                result,
+                graph,
+                source,
+                shouldEmit,
+                artifact);
+            return;
+        }
+
+        if (string.Equals(artifactType, "verification", StringComparison.OrdinalIgnoreCase))
+        {
+            ScanCueVerificationDocument(
+                repoRoot,
+                enforceArtifactIdPolicy,
+                artifactIdPolicy,
+                result,
+                graph,
+                source,
+                shouldEmit,
+                artifact);
+        }
+    }
+
+    private static void ScanCueSpecificationDocument(
+        bool enforceArtifactIdPolicy,
+        ArtifactIdPolicy artifactIdPolicy,
+        ValidationResult result,
+        ValidationGraph graph,
+        CanonicalArtifactSource source,
+        bool shouldEmit,
+        CueArtifactModel artifact)
+    {
+        if (shouldEmit && !SpecTraceLayout.IsSpecificationRootFile(source.SourceRepoRelativePath))
+        {
+            result.AddError(
+                ValidationProfiles.Core,
+                ValidationCategories.Placement,
+                $"specifications must live under '{SpecTraceLayout.RequirementsRoot}/<domain>/'.",
+                file: source.SourcePath,
+                artifactId: artifact.ArtifactId);
+        }
+
+        EmitCueArtifactValidation(
+            enforceArtifactIdPolicy,
+            artifactIdPolicy,
+            result,
+            shouldEmit,
+            source.SourcePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Capability);
+
+        var artifactNode = CreateArtifactNode(
+            source.SourcePath,
+            source.SourceRepoRelativePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Title,
+            artifact.Status);
+        if (!string.IsNullOrWhiteSpace(artifactNode.ArtifactId))
+        {
+            graph.AddArtifact(artifactNode);
+        }
+
+        var relatedArtifacts = NormalizeList(artifact.RelatedArtifacts);
+        var requirements = new List<RequirementNode>();
+        foreach (var clause in artifact.Requirements ?? [])
+        {
+            if (shouldEmit)
+            {
+                if (string.IsNullOrWhiteSpace(clause.Id))
+                {
+                    result.AddError(
+                        ValidationProfiles.Core,
+                        ValidationCategories.Schema,
+                        "requirement_id is missing.",
+                        file: source.SourcePath,
+                        artifactId: artifact.ArtifactId);
+                }
+
+                if (string.IsNullOrWhiteSpace(clause.Title))
+                {
+                    result.AddError(
+                        ValidationProfiles.Core,
+                        ValidationCategories.Schema,
+                        $"requirement '{clause.Id}' is missing title.",
+                        file: source.SourcePath,
+                        artifactId: artifact.ArtifactId,
+                        field: clause.Id);
+                }
+
+                if (string.IsNullOrWhiteSpace(clause.Statement))
+                {
+                    result.AddError(
+                        ValidationProfiles.Core,
+                        ValidationCategories.Schema,
+                        $"requirement '{clause.Id}' is missing statement.",
+                        file: source.SourcePath,
+                        artifactId: artifact.ArtifactId,
+                        field: clause.Id);
+                }
+
+                var keywordCount = approvedKeywordRegex.Matches(clause.Statement ?? string.Empty).Count;
+                if (keywordCount != 1)
+                {
+                    result.AddError(
+                        ValidationProfiles.Core,
+                        ValidationCategories.Keyword,
+                        $"requirement '{clause.Id}' must contain exactly one approved normative keyword, found {keywordCount}.",
+                        file: source.SourcePath,
+                        artifactId: artifact.ArtifactId,
+                        field: clause.Id);
+                }
+            }
+
+            var trace = BuildRequirementTrace(clause.Trace);
+            requirements.Add(new RequirementNode(
+                clause.Id,
+                artifactNode.ArtifactId,
+                source.SourcePath,
+                source.SourceRepoRelativePath,
+                clause.Title,
+                clause.Statement ?? string.Empty,
+                trace,
+                relatedArtifacts,
+                ReadTraceList(trace, "Source Refs"),
+                ReadTraceList(trace, "Test Refs"),
+                ReadTraceList(trace, "Code Refs")));
+        }
+
+        if (shouldEmit && requirements.Count == 0)
+        {
+            result.AddError(
+                ValidationProfiles.Core,
+                ValidationCategories.Schema,
+                "no requirement clauses found in exported specification.",
+                file: source.SourcePath,
+                artifactId: artifact.ArtifactId);
+        }
+
+        graph.Specifications.Add(new SpecificationNode(artifactNode, relatedArtifacts, requirements));
+        foreach (var requirement in requirements)
+        {
+            graph.AddRequirement(requirement);
+        }
+    }
+
+    private static void ScanCueArchitectureDocument(
+        bool enforceArtifactIdPolicy,
+        ArtifactIdPolicy artifactIdPolicy,
+        ValidationResult result,
+        ValidationGraph graph,
+        CanonicalArtifactSource source,
+        bool shouldEmit,
+        CueArtifactModel artifact)
+    {
+        if (shouldEmit && !SpecTraceLayout.IsCanonicalArchitecturePath(source.SourceRepoRelativePath))
+        {
+            result.AddError(
+                ValidationProfiles.Core,
+                ValidationCategories.Placement,
+                $"architecture artifacts must live under '{SpecTraceLayout.ArchitectureRoot}/<domain>/'.",
+                file: source.SourcePath,
+                artifactId: artifact.ArtifactId);
+        }
+
+        EmitCueArtifactValidation(
+            enforceArtifactIdPolicy,
+            artifactIdPolicy,
+            result,
+            shouldEmit,
+            source.SourcePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Capability);
+
+        var artifactNode = CreateArtifactNode(
+            source.SourcePath,
+            source.SourceRepoRelativePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Title,
+            artifact.Status);
+        if (!string.IsNullOrWhiteSpace(artifactNode.ArtifactId))
+        {
+            graph.AddArtifact(artifactNode);
+        }
+
+        var satisfies = NormalizeList(artifact.Satisfies);
+        var relatedArtifacts = NormalizeList(artifact.RelatedArtifacts);
+        graph.Architectures.Add(new ArchitectureNode(artifactNode, satisfies, satisfies, relatedArtifacts));
+    }
+
+    private static void ScanCueWorkItemDocument(
+        bool enforceArtifactIdPolicy,
+        ArtifactIdPolicy artifactIdPolicy,
+        ValidationResult result,
+        ValidationGraph graph,
+        CanonicalArtifactSource source,
+        bool shouldEmit,
+        CueArtifactModel artifact)
+    {
+        if (shouldEmit && !SpecTraceLayout.IsCanonicalWorkItemPath(source.SourceRepoRelativePath))
+        {
+            result.AddError(
+                ValidationProfiles.Core,
+                ValidationCategories.Placement,
+                $"work-item artifacts must live under '{SpecTraceLayout.WorkItemsRoot}/<domain>/'.",
+                file: source.SourcePath,
+                artifactId: artifact.ArtifactId);
+        }
+
+        EmitCueArtifactValidation(
+            enforceArtifactIdPolicy,
+            artifactIdPolicy,
+            result,
+            shouldEmit,
+            source.SourcePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Capability);
+
+        var artifactNode = CreateArtifactNode(
+            source.SourcePath,
+            source.SourceRepoRelativePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Title,
+            artifact.Status);
+        if (!string.IsNullOrWhiteSpace(artifactNode.ArtifactId))
+        {
+            graph.AddArtifact(artifactNode);
+        }
+
+        var addresses = NormalizeList(artifact.Addresses);
+        var designLinks = NormalizeList(artifact.DesignLinks);
+        var verificationLinks = NormalizeList(artifact.VerificationLinks);
+        var relatedArtifacts = NormalizeList(artifact.RelatedArtifacts);
+        graph.WorkItems.Add(new WorkItemNode(
+            artifactNode,
+            addresses,
+            designLinks,
+            verificationLinks,
+            addresses,
+            designLinks,
+            verificationLinks,
+            addresses,
+            designLinks,
+            verificationLinks,
+            relatedArtifacts));
+    }
+
+    private static void ScanCueVerificationDocument(
+        string repoRoot,
+        bool enforceArtifactIdPolicy,
+        ArtifactIdPolicy artifactIdPolicy,
+        ValidationResult result,
+        ValidationGraph graph,
+        CanonicalArtifactSource source,
+        bool shouldEmit,
+        CueArtifactModel artifact)
+    {
+        if (shouldEmit && !SpecTraceLayout.IsCanonicalVerificationPath(source.SourceRepoRelativePath))
+        {
+            result.AddError(
+                ValidationProfiles.Core,
+                ValidationCategories.Placement,
+                $"verification artifacts must live under '{SpecTraceLayout.VerificationRoot}/<domain>/'.",
+                file: source.SourcePath,
+                artifactId: artifact.ArtifactId);
+        }
+
+        EmitCueArtifactValidation(
+            enforceArtifactIdPolicy,
+            artifactIdPolicy,
+            result,
+            shouldEmit,
+            source.SourcePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Capability);
+
+        var artifactNode = CreateArtifactNode(
+            source.SourcePath,
+            source.SourceRepoRelativePath,
+            artifact.ArtifactId,
+            artifact.ArtifactType,
+            artifact.Domain,
+            artifact.Title,
+            artifact.Status);
+        if (!string.IsNullOrWhiteSpace(artifactNode.ArtifactId))
+        {
+            graph.AddArtifact(artifactNode);
+        }
+
+        var verifies = NormalizeList(artifact.Verifies);
+        var relatedArtifacts = NormalizeList(artifact.RelatedArtifacts);
+        var evidenceRefs = NormalizeEvidenceRefs(repoRoot, source.SourcePath, artifact.Evidence);
+        var benchmarkNotApplicable = artifact.Evidence?.Any(TryParseBenchmarkNotApplicable) == true;
+
+        graph.Verifications.Add(new VerificationNode(
+            artifactNode,
+            verifies,
+            verifies,
+            relatedArtifacts,
+            relatedArtifacts,
+            evidenceRefs,
+            benchmarkNotApplicable));
+    }
+
     private static void ScanSpecificationDocument(
         string repoRoot,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
@@ -208,6 +608,7 @@ internal static partial class ValidationGraphValidator
         EmitFrontMatterValidation(
             repoRoot,
             options,
+            enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
             shouldEmit,
@@ -312,6 +713,7 @@ internal static partial class ValidationGraphValidator
     private static void ScanArchitectureDocument(
         string repoRoot,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
@@ -338,6 +740,7 @@ internal static partial class ValidationGraphValidator
         EmitFrontMatterValidation(
             repoRoot,
             options,
+            enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
             shouldEmit,
@@ -364,6 +767,7 @@ internal static partial class ValidationGraphValidator
     private static void ScanWorkItemDocument(
         string repoRoot,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
@@ -390,6 +794,7 @@ internal static partial class ValidationGraphValidator
         EmitFrontMatterValidation(
             repoRoot,
             options,
+            enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
             shouldEmit,
@@ -434,6 +839,7 @@ internal static partial class ValidationGraphValidator
     private static void ScanVerificationDocument(
         string repoRoot,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
@@ -460,6 +866,7 @@ internal static partial class ValidationGraphValidator
         EmitFrontMatterValidation(
             repoRoot,
             options,
+            enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
             shouldEmit,
@@ -498,6 +905,7 @@ internal static partial class ValidationGraphValidator
     private static void EmitFrontMatterValidation(
         string repoRoot,
         ValidationOptions options,
+        bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         bool shouldEmit,
@@ -526,7 +934,8 @@ internal static partial class ValidationGraphValidator
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(artifactId) &&
+        if (enforceArtifactIdPolicy &&
+            !string.IsNullOrWhiteSpace(artifactId) &&
             !artifactIdPolicy.MatchesArtifactId(artifactType, artifactId, domain, capability))
         {
             result.AddError(
@@ -535,6 +944,38 @@ internal static partial class ValidationGraphValidator
                 $"artifact_id '{artifactId}' does not match the configured artifact ID policy.",
                 file: file,
                 artifactId: artifactId);
+        }
+    }
+
+    private static void EmitCueArtifactValidation(
+        bool enforceArtifactIdPolicy,
+        ArtifactIdPolicy artifactIdPolicy,
+        ValidationResult result,
+        bool shouldEmit,
+        string file,
+        string? artifactId,
+        string artifactType,
+        string? domain,
+        string? capability)
+    {
+        _ = enforceArtifactIdPolicy;
+        _ = artifactIdPolicy;
+        _ = artifactType;
+        _ = domain;
+        _ = capability;
+
+        if (!shouldEmit)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(artifactId))
+        {
+            result.AddError(
+                ValidationProfiles.Core,
+                ValidationCategories.Schema,
+                "cue artifact export did not include artifact_id.",
+                file: file);
         }
     }
 
@@ -806,16 +1247,6 @@ internal static partial class ValidationGraphValidator
         return trace.TryGetValue(label, out var values) ? values : Array.Empty<string>();
     }
 
-    private static string ResolveRepoPath(string repoRoot, string path)
-    {
-        if (Path.IsPathRooted(path))
-        {
-            return path;
-        }
-
-        return Path.GetFullPath(Path.Combine(repoRoot, path));
-    }
-
     private static List<string> NormalizePrefixes(IList<string>? prefixes)
     {
         if (prefixes is null || prefixes.Count == 0)
@@ -847,11 +1278,65 @@ internal static partial class ValidationGraphValidator
         return scopePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static bool ShouldSkipCanonicalMarkdown(string file)
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> BuildRequirementTrace(CueRequirementTraceModel? trace)
     {
-        var fileName = Path.GetFileName(file);
-        return fileName.Equals("_index.md", StringComparison.OrdinalIgnoreCase) ||
-               fileName.Equals("README.md", StringComparison.OrdinalIgnoreCase);
+        var values = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        AddTraceValues(values, "Satisfied By", trace?.SatisfiedBy);
+        AddTraceValues(values, "Implemented By", trace?.ImplementedBy);
+        AddTraceValues(values, "Verified By", trace?.VerifiedBy);
+        AddTraceValues(values, "Derived From", trace?.DerivedFrom);
+        AddTraceValues(values, "Supersedes", trace?.Supersedes);
+        AddTraceValues(values, "Source Refs", trace?.UpstreamRefs);
+        AddTraceValues(values, "Related", trace?.Related);
+        return values;
+    }
+
+    private static IReadOnlyList<string> NormalizeEvidenceRefs(string repoRoot, string sourcePath, IEnumerable<string>? evidence)
+    {
+        var values = new List<string>();
+        foreach (var entry in evidence ?? [])
+        {
+            if (TryParseBenchmarkNotApplicable(entry))
+            {
+                continue;
+            }
+
+            var normalized = NormalizeVerificationEvidenceReference(repoRoot, sourcePath, entry);
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                values.Add(normalized);
+            }
+        }
+
+        return values
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IReadOnlyList<string> NormalizeList(IEnumerable<string>? values)
+    {
+        if (values is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        return values
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddTraceValues(
+        IDictionary<string, IReadOnlyList<string>> output,
+        string label,
+        IEnumerable<string>? values)
+    {
+        var normalized = NormalizeList(values);
+        if (normalized.Count > 0)
+        {
+            output[label] = normalized;
+        }
     }
 
     private static bool LooksLikeFrontMatter(string content)

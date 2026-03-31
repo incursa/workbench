@@ -208,8 +208,14 @@ jobs:
         include:
           - os: windows-latest
             rid: win-x64
+          - os: windows-latest
+            rid: win-arm64
           - os: ubuntu-latest
             rid: linux-x64
+          - os: ubuntu-latest
+            rid: linux-arm64
+          - os: macos-latest
+            rid: osx-x64
           - os: macos-latest
             rid: osx-arm64
     steps:
@@ -450,7 +456,7 @@ jobs:
             echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
             echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Mutation workflow owns this gate |"
             echo "| 📦 Packaging (NuGet) | ${nuget_status} | ${package_count} package(s) | >= 1 | ${package_delta}; ${package_details} |"
-            echo "| 📦 Packaging (AOT) | ${aot_status} | ${aot_success}/${aot_total} RID builds | 3/3 | win-x64; linux-x64; osx-arm64 |"
+            echo "| 📦 Packaging (AOT) | ${aot_status} | ${aot_success}/${aot_total} RID builds | 6/6 | win-x64; win-arm64; linux-x64; linux-arm64; osx-x64; osx-arm64 |"
             echo "| 🚀 Release | ${release_status} | ${release_assets} | Draft release created | Tag v${version} |"
             echo ""
             echo "## Artifacts"

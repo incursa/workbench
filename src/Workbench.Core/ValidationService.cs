@@ -40,6 +40,7 @@ public static class ValidationService
 
         var artifactIdPolicyPath = Path.Combine(repoRoot, "artifact-id-policy.json");
         var artifactIdPolicy = ArtifactIdPolicy.Load(repoRoot, out var artifactIdPolicyError);
+        var artifactIdPolicyEnabled = File.Exists(artifactIdPolicyPath);
         if (!string.IsNullOrWhiteSpace(artifactIdPolicyError))
         {
             result.AddError(
@@ -49,18 +50,19 @@ public static class ValidationService
                 file: artifactIdPolicyPath);
         }
 
-        ValidationGraphValidator.ValidateCanonicalGraph(
+        var graph = ValidationGraphValidator.ValidateCanonicalGraph(
             repoRoot,
             config,
             options,
             selectedProfile,
             scopePrefixes,
+            artifactIdPolicyEnabled,
             artifactIdPolicy,
             result);
 
         var workItems = CollectWorkItems(repoRoot, config);
         ValidateItems(repoRoot, workItems, result);
-        result.WorkItemCount = workItems.Count;
+        result.WorkItemCount = Math.Max(graph.WorkItems.Count, workItems.Count);
 
         result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, config, result, options, scopePrefixes);
         return result;
@@ -460,7 +462,7 @@ public static class ValidationService
                     resolved = Path.GetFullPath(Path.Combine(baseDir, target));
                 }
 
-                if (!File.Exists(resolved))
+                if (!File.Exists(resolved) && !Directory.Exists(resolved))
                 {
                     result.AddError(
                         ValidationProfiles.RepoState,
@@ -484,6 +486,7 @@ public static class ValidationService
             {
                 var name = Path.GetFileName(dir);
                 if (name.Equals(".git", StringComparison.OrdinalIgnoreCase) ||
+                    name.Equals(".tools", StringComparison.OrdinalIgnoreCase) ||
                     name.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
                     name.Equals("obj", StringComparison.OrdinalIgnoreCase))
                 {

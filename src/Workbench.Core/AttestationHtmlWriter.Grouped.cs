@@ -13,6 +13,7 @@ public static partial class AttestationHtmlWriter
         int DownstreamMissing,
         int ImplementationMissing,
         int VerificationMissing,
+        int PlannedDownstreamTrace,
         int TestEvidenceIssues,
         int CoverageEvidenceIssues,
         int BenchmarkEvidenceIssues,
@@ -53,6 +54,7 @@ public static partial class AttestationHtmlWriter
         AppendRepositorySection(builder, reportPath, snapshot);
         AppendValidationSection(builder, snapshot);
         AppendCoverageSection(builder, snapshot);
+        AppendTraceReadinessSection(builder, snapshot);
         AppendWorkItemSection(builder, snapshot);
         AppendVerificationSection(builder, snapshot);
         AppendEvidenceSection(builder, snapshot);
@@ -85,6 +87,7 @@ public static partial class AttestationHtmlWriter
         AppendRepositorySection(builder, reportPath, snapshot);
         AppendValidationSection(builder, snapshot);
         AppendCoverageSection(builder, snapshot);
+        AppendTraceReadinessSection(builder, snapshot);
         AppendWorkItemSection(builder, snapshot);
         AppendVerificationSection(builder, snapshot);
         AppendEvidenceSection(builder, snapshot);
@@ -290,6 +293,7 @@ public static partial class AttestationHtmlWriter
             new[] { "Requirements without downstream trace", FormatInt(snapshot.Gaps.RequirementsWithoutDownstreamTrace.Count), includeSamples ? SummarizeList(snapshot.Gaps.RequirementsWithoutDownstreamTrace) : string.Empty },
             new[] { "Requirements without implementation evidence", FormatInt(snapshot.Gaps.RequirementsWithoutImplementationEvidence.Count), includeSamples ? SummarizeList(snapshot.Gaps.RequirementsWithoutImplementationEvidence) : string.Empty },
             new[] { "Requirements without verification coverage", FormatInt(snapshot.Gaps.RequirementsWithoutVerificationCoverage.Count), includeSamples ? SummarizeList(snapshot.Gaps.RequirementsWithoutVerificationCoverage) : string.Empty },
+            new[] { "Requirements with planned downstream trace", FormatInt(snapshot.Gaps.RequirementsWithPlannedDownstreamTrace.Count), includeSamples ? SummarizeList(snapshot.Gaps.RequirementsWithPlannedDownstreamTrace) : string.Empty },
             new[] { "Requirements with failing or stale evidence", FormatInt(snapshot.Gaps.RequirementsWithFailingOrStaleEvidence.Count), includeSamples ? SummarizeList(snapshot.Gaps.RequirementsWithFailingOrStaleEvidence) : string.Empty },
             new[] { "Orphan artifacts", FormatInt(snapshot.Gaps.OrphanArtifacts.Count), includeSamples ? SummarizeList(snapshot.Gaps.OrphanArtifacts) : string.Empty },
             new[] { "Unresolved references", FormatInt(snapshot.Gaps.UnresolvedReferences.Count), includeSamples ? SummarizeList(snapshot.Gaps.UnresolvedReferences) : string.Empty }
@@ -312,6 +316,7 @@ public static partial class AttestationHtmlWriter
             new[] { "Downstream missing", FormatInt(specification.Issues.DownstreamMissing) },
             new[] { "Implementation missing", FormatInt(specification.Issues.ImplementationMissing) },
             new[] { "Verification missing", FormatInt(specification.Issues.VerificationMissing) },
+            new[] { "Planned downstream trace", FormatInt(specification.Issues.PlannedDownstreamTrace) },
             new[] { "Validation errors", FormatInt(specification.Issues.ValidationErrors) },
             new[] { "Validation warnings", FormatInt(specification.Issues.ValidationWarnings) }
         });
@@ -328,6 +333,7 @@ public static partial class AttestationHtmlWriter
             new[] { "Requirements without downstream trace", FormatInt(specification.Issues.DownstreamMissing) },
             new[] { "Requirements without implementation evidence", FormatInt(specification.Issues.ImplementationMissing) },
             new[] { "Requirements without verification coverage", FormatInt(specification.Issues.VerificationMissing) },
+            new[] { "Requirements with planned downstream trace", FormatInt(specification.Issues.PlannedDownstreamTrace) },
             new[] { "Requirements with test evidence issues", FormatInt(specification.Issues.TestEvidenceIssues) },
             new[] { "Requirements with coverage evidence issues", FormatInt(specification.Issues.CoverageEvidenceIssues) },
             new[] { "Requirements with benchmark evidence issues", FormatInt(specification.Issues.BenchmarkEvidenceIssues) },
@@ -384,6 +390,7 @@ public static partial class AttestationHtmlWriter
             ("Source", LinkToRepoPath(reportPath, snapshot.Repository.Root, null, specification.SpecificationRepoRelativePath)),
             ("Clause", requirement.Clause),
             ("Trace", $"Satisfied {FormatInt(requirement.Trace.SatisfiedBy.Count)} · Implemented {FormatInt(requirement.Trace.ImplementedBy.Count)} · Verified {FormatInt(requirement.Trace.VerifiedBy.Count)}"),
+            ("Trace readiness", requirement.TraceReadiness.State),
             ("Direct refs", $"Tests {FormatInt(requirement.DirectRefs.TestRefs.Count)} · Code {FormatInt(requirement.DirectRefs.CodeRefs.Count)}"),
             ("Test refs", requirement.DirectRefs.TestRefs.Count == 0 ? "none" : string.Join(", ", requirement.DirectRefs.TestRefs)),
             ("Code refs", requirement.DirectRefs.CodeRefs.Count == 0 ? "none" : string.Join(", ", requirement.DirectRefs.CodeRefs)),
@@ -432,6 +439,7 @@ public static partial class AttestationHtmlWriter
         var downstreamMissing = 0;
         var implementationMissing = 0;
         var verificationMissing = 0;
+        var plannedDownstreamTrace = 0;
         var testEvidenceIssues = 0;
         var coverageEvidenceIssues = 0;
         var benchmarkEvidenceIssues = 0;
@@ -459,6 +467,12 @@ public static partial class AttestationHtmlWriter
             if (HasGap(requirement.Gaps, "no verification coverage"))
             {
                 verificationMissing++;
+                hasIssue = true;
+            }
+
+            if (HasGap(requirement.Gaps, "planned downstream trace"))
+            {
+                plannedDownstreamTrace++;
                 hasIssue = true;
             }
 
@@ -509,6 +523,7 @@ public static partial class AttestationHtmlWriter
             downstreamMissing,
             implementationMissing,
             verificationMissing,
+            plannedDownstreamTrace,
             testEvidenceIssues,
             coverageEvidenceIssues,
             benchmarkEvidenceIssues,
@@ -572,6 +587,11 @@ public static partial class AttestationHtmlWriter
         if (string.Equals(gap, "no verification coverage", StringComparison.OrdinalIgnoreCase))
         {
             return "verification missing";
+        }
+
+        if (string.Equals(gap, "planned downstream trace", StringComparison.OrdinalIgnoreCase))
+        {
+            return "downstream trace planned";
         }
 
         return gap

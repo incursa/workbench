@@ -50,10 +50,11 @@ public class QualityServiceTests
     }
 
     [TestMethod]
-    public void Sync_BackfillsRequirementTestRefsIntoCanonicalSpecTrace()
+    public void Sync_DoesNotMutateCanonicalSpecTraceArtifacts()
     {
         using var repo = CreateFixtureRepo(includeRequirementSpec: true);
         var specPath = Path.Combine(repo.Path, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md");
+        var original = File.ReadAllText(specPath);
 
         var result = QualityService.Sync(
             repo.Path,
@@ -65,22 +66,12 @@ public class QualityServiceTests
                 false));
 
         Assert.AreEqual("fail", result.Report.Assessment.Status);
-        var content = File.ReadAllText(specPath);
-        StringAssert.Contains(content, "Trace:", StringComparison.Ordinal);
-        StringAssert.Contains(content, "Test Refs:", StringComparison.Ordinal);
-        StringAssert.Contains(content, "tests/Sample.Tests/WidgetTests.cs::Adds_numbers", StringComparison.Ordinal);
-
-        var clauses = SpecTraceMarkdown.ParseRequirementClauses(content, out var errors);
-        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
-        var requirement = clauses.Single(clause => string.Equals(clause.RequirementId, "REQ-SAMPLE-0001", StringComparison.OrdinalIgnoreCase));
-        Assert.IsNotNull(requirement.Trace);
-        CollectionAssert.AreEquivalent(
-            new[] { "tests/Sample.Tests/WidgetTests.cs::Adds_numbers" },
-            requirement.Trace!["Test Refs"].ToArray());
+        var after = File.ReadAllText(specPath);
+        Assert.AreEqual(original, after);
     }
 
     [TestMethod]
-    public void Sync_DryRunDoesNotBackfillRequirementTestRefs()
+    public void Sync_DryRunDoesNotMutateCanonicalSpecTraceArtifacts()
     {
         using var repo = CreateFixtureRepo(includeRequirementSpec: true);
         var specPath = Path.Combine(repo.Path, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md");
@@ -329,14 +320,14 @@ public class QualityServiceTests
             public class WidgetTests
             {
                 [Fact]
-                [Trait("Requirement", "REQ-SAMPLE-0001")]
+                [Requirement("REQ-SAMPLE-0001")]
                 [Trait("Category", "Positive")]
                 public void Adds_numbers()
                 {
                 }
 
                 [Theory]
-                [Trait("Requirement", "REQ-SAMPLE-0002")]
+                [Requirement("REQ-SAMPLE-0002")]
                 [Trait("Category", "Negative")]
                 public void Handles_zero()
                 {
@@ -366,7 +357,7 @@ public class QualityServiceTests
 
                 ## Scope
 
-                - Discover test refs from trait metadata
+                - Discover test refs from requirement metadata
                 - Backfill matching requirement trace blocks
 
                 ## Context

@@ -87,6 +87,12 @@ public static partial class AttestationService
             "stale", "obsolete", "outdated"
         };
 
+    internal static readonly IReadOnlySet<string> ArchitectureProofStatuses =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "implemented", "verified"
+        };
+
     internal static readonly IReadOnlySet<string> PassingVerificationStatuses =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -132,6 +138,7 @@ public static partial class AttestationService
         var validationScope = effectiveScope.Count > 0 ? effectiveScope : new List<string>();
 
         var artifactIdPolicy = ArtifactIdPolicy.Load(repoRoot, out var artifactIdPolicyError);
+        var artifactIdPolicyEnabled = File.Exists(Path.Combine(repoRoot, "artifact-id-policy.json"));
         if (!string.IsNullOrWhiteSpace(artifactIdPolicyError))
         {
             warnings.Add(artifactIdPolicyError);
@@ -146,6 +153,7 @@ public static partial class AttestationService
             repoRoot,
             workbenchConfig,
             new ValidationOptions(Array.Empty<string>(), Array.Empty<string>(), false, selectedProfile, validationScope),
+            artifactIdPolicyEnabled,
             artifactIdPolicy,
             new ValidationResult(),
             validationScope,

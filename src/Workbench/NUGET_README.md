@@ -2,6 +2,10 @@
 
 Incursa Workbench is a .NET CLI tool for teams that manage engineering work in-repo and want consistent, structured documentation and work item workflows.
 
+The tool package embeds the pinned CUE CLI for `win-x64`, `win-arm64`,
+`linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64`, so CUE-backed
+validation works without a separate `cue` installation.
+
 It provides commands to:
 
 - scaffold and maintain the canonical Spec Trace artifact families and repository guidance

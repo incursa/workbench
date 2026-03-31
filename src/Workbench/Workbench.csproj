@@ -25,11 +25,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="artifacts\**\*.cs" />
+    <Content Remove="artifacts\**\*" />
+    <EmbeddedResource Remove="artifacts\**\*" />
+    <None Remove="artifacts\**\*" />
     <EmbeddedResource Include="wwwroot\**\*" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Workbench.Cli\Workbench.Cli.csproj" />
+    <ProjectReference Include="..\Workbench.Cli\Workbench.Cli.csproj" AdditionalProperties="WorkbenchRuntimeIdentifier=$(RuntimeIdentifier)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,5 +44,27 @@
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
     <PackageReference Include="Markdig" />
   </ItemGroup>
+
+  <Target Name="NormalizeRidStaticWebAssetPackFiles"
+          BeforeTargets="Pack"
+          Condition="'$(RuntimeIdentifier)' != ''">
+    <PropertyGroup>
+      <RidStaticWebAssetsDir>$(IntermediateOutputPath)staticwebassets\</RidStaticWebAssetsDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <RidStaticWebAssetPackFile Include="$(RidStaticWebAssetsDir)msbuild.$(PackageId).$(RuntimeIdentifier).Microsoft.AspNetCore.StaticWebAssetEndpoints.props">
+        <TargetFileName>msbuild.$(PackageId).Microsoft.AspNetCore.StaticWebAssetEndpoints.props</TargetFileName>
+      </RidStaticWebAssetPackFile>
+      <RidStaticWebAssetPackFile Include="$(RidStaticWebAssetsDir)msbuild.$(PackageId).$(RuntimeIdentifier).Microsoft.AspNetCore.StaticWebAssets.props">
+        <TargetFileName>msbuild.$(PackageId).Microsoft.AspNetCore.StaticWebAssets.props</TargetFileName>
+      </RidStaticWebAssetPackFile>
+    </ItemGroup>
+
+    <Copy SourceFiles="@(RidStaticWebAssetPackFile)"
+          DestinationFiles="@(RidStaticWebAssetPackFile->'$(RidStaticWebAssetsDir)%(TargetFileName)')"
+          Condition="Exists('%(RidStaticWebAssetPackFile.Identity)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>

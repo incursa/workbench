@@ -25,6 +25,11 @@ public class AttestationServiceTests
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithVerifiedBy);
         Assert.AreEqual(2, snapshot.Aggregates.TraceCoverage.WithTestRefs);
         Assert.AreEqual(1, snapshot.Aggregates.TraceCoverage.WithCodeRefs);
+        Assert.AreEqual(2, snapshot.Aggregates.TraceReadiness.Requirements);
+        Assert.AreEqual(1, snapshot.Aggregates.TraceReadiness.Linked);
+        Assert.AreEqual(1, snapshot.Aggregates.TraceReadiness.ProofReady);
+        Assert.AreEqual(0, snapshot.Aggregates.TraceReadiness.Planned);
+        Assert.AreEqual(1, snapshot.Aggregates.TraceReadiness.Missing);
         Assert.AreEqual(2, snapshot.SchemaVersion);
         Assert.AreEqual(Path.GetFileName(repo.Path), snapshot.Repository.DisplayName);
 
@@ -32,6 +37,10 @@ public class AttestationServiceTests
         var refsRequirement = snapshot.Requirements.Single(requirement => string.Equals(requirement.RequirementId, "REQ-WB-ATTEST-0002", StringComparison.OrdinalIgnoreCase));
 
         Assert.AreEqual("specs/requirements/WB/SPEC-WB-ATTEST.md", traceRequirement.SpecificationRepoRelativePath);
+        Assert.AreEqual("proof-ready", traceRequirement.TraceReadiness.State);
+        Assert.IsTrue(traceRequirement.TraceReadiness.Linked);
+        Assert.IsTrue(traceRequirement.TraceReadiness.ProofReady);
+        Assert.IsFalse(traceRequirement.TraceReadiness.Planned);
         Assert.IsNull(traceRequirement.ValidationFindingIds);
         CollectionAssert.AreEquivalent(new[] { "ARC-WB-ATTEST-0001" }, traceRequirement.Trace.SatisfiedBy.ToArray());
         CollectionAssert.AreEquivalent(new[] { "WI-WB-ATTEST-0001", "WI-WB-ATTEST-0002", "WI-WB-ATTEST-0003", "WI-WB-ATTEST-0004", "WI-WB-ATTEST-0005" }, traceRequirement.Trace.ImplementedBy.ToArray());
@@ -43,6 +52,10 @@ public class AttestationServiceTests
         Assert.AreEqual("passing", traceRequirement.ManualQaStatus);
 
         Assert.AreEqual("specs/requirements/WB/SPEC-WB-ATTEST-REFS.md", refsRequirement.SpecificationRepoRelativePath);
+        Assert.AreEqual("missing", refsRequirement.TraceReadiness.State);
+        Assert.IsFalse(refsRequirement.TraceReadiness.Linked);
+        Assert.IsFalse(refsRequirement.TraceReadiness.ProofReady);
+        Assert.IsFalse(refsRequirement.TraceReadiness.Planned);
         CollectionAssert.AreEquivalent(new[] { "tests/Workbench.Tests/AttestationServiceTests.cs" }, refsRequirement.DirectRefs.TestRefs.ToArray());
         CollectionAssert.AreEquivalent(new[] { "src/Workbench.Core/AttestationService.cs" }, refsRequirement.DirectRefs.CodeRefs.ToArray());
         Assert.IsNotNull(refsRequirement.ValidationFindingIds);
@@ -80,6 +93,7 @@ public class AttestationServiceTests
         Assert.IsTrue(requirement0.TryGetProperty("specificationRepoRelativePath", out _));
         Assert.IsTrue(requirement0.TryGetProperty("trace", out _));
         Assert.IsTrue(requirement0.TryGetProperty("directRefs", out _));
+        Assert.IsTrue(requirement0.TryGetProperty("traceReadiness", out _));
         Assert.IsFalse(requirement0.TryGetProperty("specificationPath", out _));
         Assert.IsFalse(requirement0.TryGetProperty("validationFindingIds", out _));
         Assert.IsFalse(requirement0.TryGetProperty("hasSatisfiedBy", out _));
@@ -105,6 +119,10 @@ public class AttestationServiceTests
 
         var evidenceRequirement = result.Snapshot.Requirements.Single(requirement => string.Equals(requirement.RequirementId, "REQ-WB-ATTEST-0003", StringComparison.OrdinalIgnoreCase));
 
+        Assert.AreEqual("proof-ready", evidenceRequirement.TraceReadiness.State);
+        Assert.IsTrue(evidenceRequirement.TraceReadiness.Linked);
+        Assert.IsTrue(evidenceRequirement.TraceReadiness.ProofReady);
+        Assert.IsFalse(evidenceRequirement.TraceReadiness.Planned);
         Assert.IsTrue(evidenceRequirement.Trace.VerifiedBy.Contains("VER-WB-ATTEST-0006", StringComparer.OrdinalIgnoreCase));
         Assert.IsTrue(evidenceRequirement.DirectRefs.TestRefs.Contains("tests/Sample.Tests/WidgetTests.cs", StringComparer.OrdinalIgnoreCase));
         Assert.IsTrue(evidenceRequirement.DirectRefs.CodeRefs.Contains("src/Sample/Widget.cs", StringComparer.OrdinalIgnoreCase));
@@ -370,7 +388,7 @@ public class AttestationServiceTests
             public class WidgetTests
             {
                 [Fact]
-                [Trait("Requirement", "REQ-WB-ATTEST-0001")]
+                [Requirement("REQ-WB-ATTEST-0001")]
                 public void Adds_numbers() { }
                 [Fact] public void Handles_zero() { }
             }

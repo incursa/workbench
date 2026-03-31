@@ -153,6 +153,22 @@ public static partial class AttestationHtmlWriter
         builder.AppendLine("</section>");
     }
 
+    private static void AppendTraceReadinessSection(StringBuilder builder, AttestationSnapshot snapshot)
+    {
+        var readiness = snapshot.Aggregates.TraceReadiness;
+        builder.AppendLine("<section>");
+        builder.AppendLine("<h2>Trace Readiness</h2>");
+        AppendTable(builder, new[]
+        {
+            new[] { "Requirements", FormatInt(readiness.Requirements) },
+            new[] { "Trace linked", $"{readiness.Linked} ({FormatPercent(readiness.LinkedPercent)})" },
+            new[] { "Proof-ready", $"{readiness.ProofReady} ({FormatPercent(readiness.ProofReadyPercent)})" },
+            new[] { "Planned", $"{readiness.Planned} ({FormatPercent(readiness.PlannedPercent)})" },
+            new[] { "Missing", $"{readiness.Missing} ({FormatPercent(readiness.MissingPercent)})" }
+        });
+        builder.AppendLine("</section>");
+    }
+
     private static void AppendWorkItemSection(StringBuilder builder, AttestationSnapshot snapshot)
     {
         var workItems = snapshot.Aggregates.WorkItemStatuses;

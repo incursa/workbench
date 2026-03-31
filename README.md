@@ -13,6 +13,11 @@ source control. The canonical model for authored intent is Spec Trace:
 GitHub remains an optional sync and mirror layer, not the primary system of
 record.
 
+Canonical spec-trace artifacts may now be authored either as legacy Markdown
+with front matter or as canonical CUE documents that export an `artifact`
+value. When both exist side by side, Workbench treats the `.cue` file as the
+canonical source and the sibling Markdown as a rendered view surface.
+
 ## Operating model
 
 - Keep canonical requirements in `specs/requirements/`.
@@ -70,6 +75,7 @@ record.
 ## Requirements
 
 - .NET SDK `10.0.100` (see [`global.json`](global.json)).
+- Installed `Incursa.Workbench` tool packages bundle the matching CUE CLI for supported `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64` targets. Users do not need a separate CUE install.
 - Optional: GitHub CLI for the GH-dependent integration tests.
 
 ## Common commands
@@ -90,6 +96,18 @@ Run tests:
 
 ```bash
 dotnet test --solution Workbench.slnx
+```
+
+Resolve the pinned CUE CLI used for repo-local authoring and validation:
+
+```powershell
+pwsh -File scripts/Resolve-Cue.ps1
+```
+
+Refresh the six vendored CUE binaries that ship inside the tool package:
+
+```powershell
+pwsh -File scripts/Resolve-Cue.ps1 -PopulateBundledAssets
 ```
 
 Run unit tests only:
@@ -122,11 +140,15 @@ Run GitHub CLI-dependent integration tests:
 WORKBENCH_RUN_GH_TESTS=1 dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
 ```
 
-Pack the .NET tool:
+Pack the .NET tool. The package embeds the pinned CUE CLI for `win-x64`,
+`win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64`, so
+`dotnet tool install` does not require a separate `cue` install:
 
 ```bash
 dotnet pack src/Workbench/Workbench.csproj -c Release
 ```
+
+The packed tool embeds the vendored CUE payloads from `src/Workbench.Core/Tooling/Cue/runtimes/`. RID-specific `dotnet build` or `dotnet publish -r <rid>` flows embed only the matching CUE binary in the produced output.
 
 Publish a self-contained single-file binary:
 
@@ -168,7 +190,7 @@ normalizes raw test and coverage evidence into `artifacts/quality/testing/`.
 `artifacts/quality/attestation/` that rolls up requirement coverage, trace
 completeness, direct refs, work-item status, verification status, and evidence
 health. Neither command mutates canonical trace or turns direct refs into
-canonical downstream edges.
+canonical downstream edges, including for CUE-backed canonical artifacts.
 
 Happy path:
 

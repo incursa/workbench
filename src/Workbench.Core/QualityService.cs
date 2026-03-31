@@ -68,6 +68,10 @@ public static class QualityService
         @"^\s*\[\s*Trait\s*\(\s*""(?<key>[^""]+)""\s*,\s*""(?<value>[^""]+)""\s*\)\s*\]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+    private static readonly Regex requirementAttributeRegex = new(
+        @"^\s*\[\s*Requirement(?:Attribute)?\s*\(\s*""(?<value>[^""]+)""\s*\)\s*\]",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     private static readonly Regex namespaceRegex = new(
         @"^\s*namespace\s+(?<namespace>[A-Za-z_][A-Za-z0-9_.]*)\s*[;{]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -90,7 +94,6 @@ public static class QualityService
         var outputDirectory = ResolvePath(repoRoot, options.OutDir ?? DefaultOutputDirectory);
         var authored = LoadAuthoredIntent(repoRoot, contractPath);
         var inventory = DiscoverTestInventory(repoRoot, authored, "workbench quality sync");
-        var requirementTestRefs = RequirementTraceSyncService.BuildRequirementTestRefs(inventory);
         var results = IngestTestRunSummary(
             repoRoot,
             options.ResultsPath,
@@ -134,8 +137,6 @@ public static class QualityService
             WriteArtifact(repoRoot, coveragePath, coverage, WorkbenchJsonContext.Default.CoverageSummary, "schemas/coverage-summary.schema.json");
             WriteArtifact(repoRoot, reportPath, report, WorkbenchJsonContext.Default.QualityReport, "schemas/quality-report.schema.json");
             File.WriteAllText(markdownPath, markdown);
-            var requirementBackfill = RequirementTraceSyncService.SyncRequirementTestRefs(repoRoot, requirementTestRefs, dryRun: false);
-            warnings.AddRange(requirementBackfill.Warnings);
         }
 
         var data = new QualitySyncData(
@@ -1256,6 +1257,13 @@ public static class QualityService
             if (attributeMatch.Success)
             {
                 AddPendingTrait(pendingTraits, "framework", attributeMatch.Groups["attribute"].Value);
+                continue;
+            }
+
+            var requirementMatch = requirementAttributeRegex.Match(line);
+            if (requirementMatch.Success)
+            {
+                AddPendingTrait(pendingTraits, "Requirement", requirementMatch.Groups["value"].Value);
                 continue;
             }
 
