@@ -13,6 +13,8 @@ public static class SpecTraceLayout
     public const string GeneratedRoot = "specs/generated";
     public const string TemplatesRoot = "specs/templates";
     public const string SchemasRoot = "specs/schemas";
+    public const string ModelRoot = "model";
+    public const string ModelSchemaPath = "model/model.schema.json";
 
     public static string GetDefaultDomain(string repoRoot)
     {

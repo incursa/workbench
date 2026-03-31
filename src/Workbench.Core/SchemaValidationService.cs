@@ -149,12 +149,42 @@ public static class SchemaValidationService
         return ValidateJsonAgainstSchema(json, schemaPath, context, jsonIsContent: true);
     }
 
+    public static IList<string> ValidateCanonicalArtifactJson(string repoRoot, string artifactPath)
+    {
+        return ValidateCanonicalArtifactJson(repoRoot, artifactPath, json: null);
+    }
+
+    public static IList<string> ValidateCanonicalArtifactJson(string repoRoot, string artifactPath, string? json)
+    {
+        var schemaPath = ResolveCanonicalArtifactSchemaPath(repoRoot);
+        if (schemaPath is null)
+        {
+            var expectedPath = Path.Combine(repoRoot, SpecTraceLayout.ModelSchemaPath.Replace('/', Path.DirectorySeparatorChar));
+            return new List<string> { $"{artifactPath}: canonical artifact schema not found at {expectedPath}" };
+        }
+
+        return json is null
+            ? ValidateJsonAgainstSchema(artifactPath, schemaPath, artifactPath)
+            : ValidateJsonAgainstSchema(json, schemaPath, artifactPath, jsonIsContent: true);
+    }
+
     public static IList<string> ValidateJsonContent(string repoRoot, string schemaRelativePath, string context, string json)
     {
         var schemaPath = Path.IsPathRooted(schemaRelativePath)
             ? schemaRelativePath
             : Path.Combine(repoRoot, schemaRelativePath.Replace('/', Path.DirectorySeparatorChar));
         return ValidateJsonAgainstSchema(json, schemaPath, context, jsonIsContent: true);
+    }
+
+    private static string? ResolveCanonicalArtifactSchemaPath(string repoRoot)
+    {
+        var candidates = new[]
+        {
+            Path.Combine(repoRoot, SpecTraceLayout.ModelSchemaPath.Replace('/', Path.DirectorySeparatorChar)),
+            Path.Combine(repoRoot, "publish", "model", "model.schema.json"),
+        };
+
+        return candidates.FirstOrDefault(File.Exists);
     }
 
     private static List<string> ValidateJsonAgainstSchema(

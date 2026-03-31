@@ -1,15 +1,8 @@
 using System.Collections;
-using System.Text.RegularExpressions;
-
 namespace Workbench.Core;
 
 internal static partial class ValidationGraphValidator
 {
-    private static readonly Regex approvedKeywordRegex = new(
-        @"\b(?:MUST NOT|SHALL NOT|SHOULD NOT|MUST|SHALL|SHOULD|MAY)\b",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant,
-        TimeSpan.FromSeconds(1));
-
     internal static ValidationGraph BuildGraph(
         string repoRoot,
         WorkbenchConfig config,
@@ -53,9 +46,9 @@ internal static partial class ValidationGraphValidator
         CanonicalArtifactSource source,
         List<string> scopePrefixes)
     {
-        if (string.Equals(source.Format, "cue", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(source.Format, "json", StringComparison.OrdinalIgnoreCase))
         {
-            ScanCueArtifact(
+            ScanJsonArtifact(
                 repoRoot,
                 enforceArtifactIdPolicy,
                 artifactIdPolicy,
@@ -186,7 +179,7 @@ internal static partial class ValidationGraphValidator
         }
     }
 
-    private static void ScanCueArtifact(
+    private static void ScanJsonArtifact(
         string repoRoot,
         bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
@@ -196,10 +189,10 @@ internal static partial class ValidationGraphValidator
         List<string> scopePrefixes)
     {
         var shouldEmit = ShouldEmitForScope(source.SourceRepoRelativePath, scopePrefixes);
-        CueArtifactModel artifact;
+        CanonicalArtifactModel artifact;
         try
         {
-            artifact = CueCli.ExportArtifact(repoRoot, source.SourcePath);
+            artifact = CanonicalArtifactJsonLoader.Load(repoRoot, source.SourcePath);
         }
         catch (Exception ex)
         {
@@ -223,7 +216,7 @@ internal static partial class ValidationGraphValidator
                 result.AddError(
                     ValidationProfiles.Core,
                     ValidationCategories.Schema,
-                    "cue artifact export did not include artifact_type.",
+                    "canonical artifact JSON did not include artifact_type.",
                     file: source.SourcePath,
                     artifactId: artifact.ArtifactId);
             }
@@ -233,7 +226,7 @@ internal static partial class ValidationGraphValidator
 
         if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase))
         {
-            ScanCueSpecificationDocument(
+            ScanJsonSpecificationDocument(
                 enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
@@ -246,7 +239,7 @@ internal static partial class ValidationGraphValidator
 
         if (string.Equals(artifactType, "architecture", StringComparison.OrdinalIgnoreCase))
         {
-            ScanCueArchitectureDocument(
+            ScanJsonArchitectureDocument(
                 enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
@@ -259,7 +252,7 @@ internal static partial class ValidationGraphValidator
 
         if (string.Equals(artifactType, "work_item", StringComparison.OrdinalIgnoreCase))
         {
-            ScanCueWorkItemDocument(
+            ScanJsonWorkItemDocument(
                 enforceArtifactIdPolicy,
                 artifactIdPolicy,
                 result,
@@ -272,7 +265,7 @@ internal static partial class ValidationGraphValidator
 
         if (string.Equals(artifactType, "verification", StringComparison.OrdinalIgnoreCase))
         {
-            ScanCueVerificationDocument(
+            ScanJsonVerificationDocument(
                 repoRoot,
                 enforceArtifactIdPolicy,
                 artifactIdPolicy,
@@ -284,14 +277,14 @@ internal static partial class ValidationGraphValidator
         }
     }
 
-    private static void ScanCueSpecificationDocument(
+    private static void ScanJsonSpecificationDocument(
         bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
         CanonicalArtifactSource source,
         bool shouldEmit,
-        CueArtifactModel artifact)
+        CanonicalArtifactModel artifact)
     {
         if (shouldEmit && !SpecTraceLayout.IsSpecificationRootFile(source.SourceRepoRelativePath))
         {
@@ -303,7 +296,7 @@ internal static partial class ValidationGraphValidator
                 artifactId: artifact.ArtifactId);
         }
 
-        EmitCueArtifactValidation(
+        EmitCanonicalArtifactValidation(
             enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
@@ -331,53 +324,6 @@ internal static partial class ValidationGraphValidator
         var requirements = new List<RequirementNode>();
         foreach (var clause in artifact.Requirements ?? [])
         {
-            if (shouldEmit)
-            {
-                if (string.IsNullOrWhiteSpace(clause.Id))
-                {
-                    result.AddError(
-                        ValidationProfiles.Core,
-                        ValidationCategories.Schema,
-                        "requirement_id is missing.",
-                        file: source.SourcePath,
-                        artifactId: artifact.ArtifactId);
-                }
-
-                if (string.IsNullOrWhiteSpace(clause.Title))
-                {
-                    result.AddError(
-                        ValidationProfiles.Core,
-                        ValidationCategories.Schema,
-                        $"requirement '{clause.Id}' is missing title.",
-                        file: source.SourcePath,
-                        artifactId: artifact.ArtifactId,
-                        field: clause.Id);
-                }
-
-                if (string.IsNullOrWhiteSpace(clause.Statement))
-                {
-                    result.AddError(
-                        ValidationProfiles.Core,
-                        ValidationCategories.Schema,
-                        $"requirement '{clause.Id}' is missing statement.",
-                        file: source.SourcePath,
-                        artifactId: artifact.ArtifactId,
-                        field: clause.Id);
-                }
-
-                var keywordCount = approvedKeywordRegex.Matches(clause.Statement ?? string.Empty).Count;
-                if (keywordCount != 1)
-                {
-                    result.AddError(
-                        ValidationProfiles.Core,
-                        ValidationCategories.Keyword,
-                        $"requirement '{clause.Id}' must contain exactly one approved normative keyword, found {keywordCount}.",
-                        file: source.SourcePath,
-                        artifactId: artifact.ArtifactId,
-                        field: clause.Id);
-                }
-            }
-
             var trace = BuildRequirementTrace(clause.Trace);
             requirements.Add(new RequirementNode(
                 clause.Id,
@@ -398,7 +344,7 @@ internal static partial class ValidationGraphValidator
             result.AddError(
                 ValidationProfiles.Core,
                 ValidationCategories.Schema,
-                "no requirement clauses found in exported specification.",
+                "no requirement clauses found in canonical specification JSON.",
                 file: source.SourcePath,
                 artifactId: artifact.ArtifactId);
         }
@@ -410,14 +356,14 @@ internal static partial class ValidationGraphValidator
         }
     }
 
-    private static void ScanCueArchitectureDocument(
+    private static void ScanJsonArchitectureDocument(
         bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
         CanonicalArtifactSource source,
         bool shouldEmit,
-        CueArtifactModel artifact)
+        CanonicalArtifactModel artifact)
     {
         if (shouldEmit && !SpecTraceLayout.IsCanonicalArchitecturePath(source.SourceRepoRelativePath))
         {
@@ -429,7 +375,7 @@ internal static partial class ValidationGraphValidator
                 artifactId: artifact.ArtifactId);
         }
 
-        EmitCueArtifactValidation(
+        EmitCanonicalArtifactValidation(
             enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
@@ -458,14 +404,14 @@ internal static partial class ValidationGraphValidator
         graph.Architectures.Add(new ArchitectureNode(artifactNode, satisfies, satisfies, relatedArtifacts));
     }
 
-    private static void ScanCueWorkItemDocument(
+    private static void ScanJsonWorkItemDocument(
         bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
         ValidationGraph graph,
         CanonicalArtifactSource source,
         bool shouldEmit,
-        CueArtifactModel artifact)
+        CanonicalArtifactModel artifact)
     {
         if (shouldEmit && !SpecTraceLayout.IsCanonicalWorkItemPath(source.SourceRepoRelativePath))
         {
@@ -477,7 +423,7 @@ internal static partial class ValidationGraphValidator
                 artifactId: artifact.ArtifactId);
         }
 
-        EmitCueArtifactValidation(
+        EmitCanonicalArtifactValidation(
             enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
@@ -519,7 +465,7 @@ internal static partial class ValidationGraphValidator
             relatedArtifacts));
     }
 
-    private static void ScanCueVerificationDocument(
+    private static void ScanJsonVerificationDocument(
         string repoRoot,
         bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
@@ -527,7 +473,7 @@ internal static partial class ValidationGraphValidator
         ValidationGraph graph,
         CanonicalArtifactSource source,
         bool shouldEmit,
-        CueArtifactModel artifact)
+        CanonicalArtifactModel artifact)
     {
         if (shouldEmit && !SpecTraceLayout.IsCanonicalVerificationPath(source.SourceRepoRelativePath))
         {
@@ -539,7 +485,7 @@ internal static partial class ValidationGraphValidator
                 artifactId: artifact.ArtifactId);
         }
 
-        EmitCueArtifactValidation(
+        EmitCanonicalArtifactValidation(
             enforceArtifactIdPolicy,
             artifactIdPolicy,
             result,
@@ -947,7 +893,7 @@ internal static partial class ValidationGraphValidator
         }
     }
 
-    private static void EmitCueArtifactValidation(
+    private static void EmitCanonicalArtifactValidation(
         bool enforceArtifactIdPolicy,
         ArtifactIdPolicy artifactIdPolicy,
         ValidationResult result,
@@ -974,7 +920,7 @@ internal static partial class ValidationGraphValidator
             result.AddError(
                 ValidationProfiles.Core,
                 ValidationCategories.Schema,
-                "cue artifact export did not include artifact_id.",
+                "canonical artifact JSON did not include artifact_id.",
                 file: file);
         }
     }
@@ -1278,7 +1224,7 @@ internal static partial class ValidationGraphValidator
         return scopePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> BuildRequirementTrace(CueRequirementTraceModel? trace)
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> BuildRequirementTrace(CanonicalRequirementTraceModel? trace)
     {
         var values = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
         AddTraceValues(values, "Satisfied By", trace?.SatisfiedBy);

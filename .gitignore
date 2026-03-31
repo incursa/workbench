@@ -15,6 +15,7 @@
 appsettings.Local.json
 *.1p.json
 development.1p.json
+.tools/
 
 # Config Doctor output
 config-doctor-output/

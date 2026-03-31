@@ -13,10 +13,11 @@ source control. The canonical model for authored intent is Spec Trace:
 GitHub remains an optional sync and mirror layer, not the primary system of
 record.
 
-Canonical spec-trace artifacts may now be authored either as legacy Markdown
-with front matter or as canonical CUE documents that export an `artifact`
-value. When both exist side by side, Workbench treats the `.cue` file as the
-canonical source and the sibling Markdown as a rendered view surface.
+Canonical spec-trace artifacts are JSON documents validated against the target
+repository's `model/model.schema.json`. Legacy Markdown with front matter is
+still supported for repo docs and older local content, but when a canonical
+JSON artifact exists beside a Markdown sibling, Workbench treats the JSON file
+as the authoritative source.
 
 ## Operating model
 
@@ -26,7 +27,8 @@ canonical source and the sibling Markdown as a rendered view surface.
 - Keep verification artifacts in `specs/verification/`.
 - Keep generated repository views under `specs/generated/`.
 - Keep canonical templates under `specs/templates/`.
-- Keep canonical schemas under `specs/schemas/`.
+- Keep canonical JSON Schema under `model/` when the repo authors canonical
+  JSON artifacts.
 - Keep the quality intent contract in [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
 - Keep the attestation config in [`quality/attestation.yaml`](quality/attestation.yaml) when you want repo-local evidence rollup defaults.
 - Treat `overview/`, `contracts/`, `decisions/`, `work/`, and the old root
@@ -75,7 +77,7 @@ canonical source and the sibling Markdown as a rendered view surface.
 ## Requirements
 
 - .NET SDK `10.0.100` (see [`global.json`](global.json)).
-- Installed `Incursa.Workbench` tool packages bundle the matching CUE CLI for supported `win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64` targets. Users do not need a separate CUE install.
+- Canonical JSON validation expects a repository-local `model/model.schema.json`.
 - Optional: GitHub CLI for the GH-dependent integration tests.
 
 ## Common commands
@@ -98,16 +100,10 @@ Run tests:
 dotnet test --solution Workbench.slnx
 ```
 
-Resolve the pinned CUE CLI used for repo-local authoring and validation:
+Validate canonical JSON artifacts against the repository schema:
 
 ```powershell
-pwsh -File scripts/Resolve-Cue.ps1
-```
-
-Refresh the six vendored CUE binaries that ship inside the tool package:
-
-```powershell
-pwsh -File scripts/Resolve-Cue.ps1 -PopulateBundledAssets
+pwsh -File scripts/Validate-SpecTraceJson.ps1 -RepoRoot C:\path\to\repo -Profiles core,traceable
 ```
 
 Run unit tests only:
@@ -140,15 +136,11 @@ Run GitHub CLI-dependent integration tests:
 WORKBENCH_RUN_GH_TESTS=1 dotnet test --project tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj
 ```
 
-Pack the .NET tool. The package embeds the pinned CUE CLI for `win-x64`,
-`win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, and `osx-arm64`, so
-`dotnet tool install` does not require a separate `cue` install:
+Pack the .NET tool:
 
 ```bash
 dotnet pack src/Workbench/Workbench.csproj -c Release
 ```
-
-The packed tool embeds the vendored CUE payloads from `src/Workbench.Core/Tooling/Cue/runtimes/`. RID-specific `dotnet build` or `dotnet publish -r <rid>` flows embed only the matching CUE binary in the produced output.
 
 Publish a self-contained single-file binary:
 
@@ -178,7 +170,7 @@ Expected warnings:
 - Verification artifacts: `specs/verification/`
 - Work items: `specs/work-items/`
 - Templates: `specs/templates/`
-- Schemas: `specs/schemas/`
+- Schemas: `model/` and `specs/schemas/`
 - Canonical CLI help snapshot: [`specs/generated/commands.md`](specs/generated/commands.md)
 - Quality intent contract: [`quality/testing-intent.yaml`](quality/testing-intent.yaml)
 
@@ -190,7 +182,7 @@ normalizes raw test and coverage evidence into `artifacts/quality/testing/`.
 `artifacts/quality/attestation/` that rolls up requirement coverage, trace
 completeness, direct refs, work-item status, verification status, and evidence
 health. Neither command mutates canonical trace or turns direct refs into
-canonical downstream edges, including for CUE-backed canonical artifacts.
+canonical downstream edges for canonical artifacts.
 
 Happy path:
 
@@ -223,7 +215,7 @@ replace authored requirements or canonical trace.
 
 - `workbench voice workitem` records audio, transcribes it, and generates a
   work item.
-- `workbench voice doc --type <specification|architecture|verification|work_item> [--out <path>] [--title "<...>"]` records audio, transcribes it, and generates a canonical artifact with front matter.
+- `workbench voice doc --type <specification|architecture|verification|work_item> [--out <path>] [--title "<...>"]` records audio, transcribes it, and generates a canonical artifact payload.
 - While recording, press ENTER to stop or ESC to cancel.
 
 Requirements:

@@ -23,7 +23,16 @@ namespace Workbench.IntegrationTests
         {
             var repoRoot = FindRepoRoot();
             var projectPath = System.IO.Path.Combine(repoRoot, "src", "Workbench", "Workbench.csproj");
-            var buildResult = ProcessRunner.Run(repoRoot, "dotnet", "build", projectPath, "-c", "Debug");
+            var buildResult = ProcessRunner.Run(
+                repoRoot,
+                "dotnet",
+                "build",
+                projectPath,
+                "-c",
+                "Debug",
+                "-m:1",
+                "-nr:false",
+                "-p:UseSharedCompilation=false");
             if (buildResult.ExitCode != 0)
             {
                 throw new InvalidOperationException($"dotnet build failed: {buildResult.StdErr}\n{buildResult.StdOut}");

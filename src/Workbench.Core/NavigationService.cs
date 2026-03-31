@@ -140,7 +140,7 @@ public static class NavigationService
                     IsArchitectureIndexFile(config, relative) ||
                     IsDocTemplate(config, relative) ||
                     IsWorkArtifactDoc(config, relative) ||
-                    HasCanonicalCueSibling(repoRoot, relative))
+                    HasCanonicalJsonSibling(repoRoot, relative))
                 {
                     continue;
                 }
@@ -166,7 +166,7 @@ public static class NavigationService
                 var type = GetString(data, "artifact_type") ?? GetString(workbench, "type") ?? InferDocType(relative, config);
                 var status = GetString(data, "status") ?? "unknown";
                 var title = GetString(data, "title") ?? ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(path);
-                var workItems = GetStringList(data, "related_artifacts");
+                var workItems = FilterWorkItemArtifactIds(GetStringList(data, "related_artifacts"));
                 if (workItems.Count == 0)
                 {
                     workItems = GetStringList(workbench, "workItems");
@@ -188,13 +188,14 @@ public static class NavigationService
         }
 
         foreach (var source in CanonicalArtifactDiscovery.EnumerateCanonicalSources(repoRoot, config)
-                     .Where(source => string.Equals(source.Format, "cue", StringComparison.OrdinalIgnoreCase)))
+                     .Where(source => string.Equals(source.Format, "json", StringComparison.OrdinalIgnoreCase)))
         {
             try
             {
-                var artifact = CueCli.ExportArtifact(repoRoot, source.SourcePath);
+                var artifact = CanonicalArtifactJsonLoader.Load(repoRoot, source.SourcePath);
                 var type = artifact.ArtifactType;
-                if (string.IsNullOrWhiteSpace(type))
+                if (string.IsNullOrWhiteSpace(type) ||
+                    string.Equals(type, "work_item", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -208,7 +209,7 @@ public static class NavigationService
                     string.IsNullOrWhiteSpace(artifact.Status) ? "unknown" : artifact.Status,
                     source.DisplayRepoRelativePath,
                     section,
-                    artifact.RelatedArtifacts?.ToList() ?? new List<string>(),
+                    FilterWorkItemArtifactIds(artifact.RelatedArtifacts),
                     githubLink));
             }
             catch (Exception ex)
@@ -795,15 +796,15 @@ public static class NavigationService
             || remainder.StartsWith("templates/", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool HasCanonicalCueSibling(string repoRoot, string relativePath)
+    private static bool HasCanonicalJsonSibling(string repoRoot, string relativePath)
     {
         if (!SpecTraceLayout.IsCanonicalPath(relativePath) || !relativePath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        var cuePath = Path.Combine(repoRoot, Path.ChangeExtension(relativePath, ".cue")!.Replace('/', Path.DirectorySeparatorChar));
-        return File.Exists(cuePath);
+        var jsonPath = Path.Combine(repoRoot, Path.ChangeExtension(relativePath, ".json")!.Replace('/', Path.DirectorySeparatorChar));
+        return File.Exists(jsonPath);
     }
 
     private static string? ExtractTitle(string body)
@@ -818,6 +819,17 @@ public static class NavigationService
             }
         }
         return null;
+    }
+
+    private static List<string> FilterWorkItemArtifactIds(IEnumerable<string>? values)
+    {
+        return values?
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Where(value => value.StartsWith("WI-", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            ?? new List<string>();
     }
 
     private static string GetDocSection(string relativePath, WorkbenchConfig config)

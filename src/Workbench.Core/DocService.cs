@@ -284,6 +284,11 @@ public static class DocService
             throw new InvalidOperationException($"Doc not found: {reference}");
         }
 
+        if (docPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Editing canonical JSON artifacts through `workbench doc/spec edit` is not supported. Edit the JSON file directly.");
+        }
+
         var content = File.ReadAllText(docPath);
         if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
         {
@@ -696,7 +701,7 @@ public static class DocService
         bool apply = true)
     {
         var docPath = ResolveDocPath(repoRoot, link);
-        if (!File.Exists(docPath) || !docPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        if (!File.Exists(docPath))
         {
             return false;
         }
@@ -718,6 +723,50 @@ public static class DocService
             return false;
         }
         if (IsWorkItemDocumentPath(repoRoot, config, fullDocPath))
+        {
+            return false;
+        }
+
+        if (docPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            var document = CanonicalArtifactJsonLoader.LoadDocument(repoRoot, docPath);
+            var data = new Dictionary<string, object?>(document.Data, StringComparer.OrdinalIgnoreCase);
+            var relatedArtifacts = GetStringList(data, "related_artifacts");
+            var changed = false;
+
+            if (add)
+            {
+                if (!relatedArtifacts.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
+                {
+                    relatedArtifacts.Add(workItemId);
+                    changed = true;
+                }
+            }
+            else
+            {
+                var before = relatedArtifacts.Count;
+                relatedArtifacts.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
+                changed = relatedArtifacts.Count != before;
+            }
+
+            if (changed && apply)
+            {
+                if (relatedArtifacts.Count > 0)
+                {
+                    data["related_artifacts"] = relatedArtifacts;
+                }
+                else
+                {
+                    _ = data.Remove("related_artifacts");
+                }
+
+                File.WriteAllText(docPath, JsonWriter.Serialize(data));
+            }
+
+            return changed;
+        }
+
+        if (!docPath.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
@@ -1013,6 +1062,24 @@ public static class DocService
             return false;
         }
 
+        foreach (var source in CanonicalArtifactDiscovery.EnumerateCanonicalSources(repoRoot, config)
+                     .Where(source => string.Equals(source.Format, "json", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (TryGetDocumentArtifactId(source.SourcePath, out var currentArtifactId) &&
+                string.Equals(currentArtifactId, normalizedArtifactId, StringComparison.OrdinalIgnoreCase))
+            {
+                docPath = source.SourcePath;
+                return true;
+            }
+
+            var stem = Path.GetFileNameWithoutExtension(source.SourcePath);
+            if (stem.Equals(normalizedArtifactId, StringComparison.OrdinalIgnoreCase))
+            {
+                docPath = source.SourcePath;
+                return true;
+            }
+        }
+
         foreach (var rootInfo in new[]
                  {
                       (Root: Path.Combine(repoRoot, config.Paths.SpecsRoot), Search: SearchOption.TopDirectoryOnly),
@@ -1071,6 +1138,30 @@ public static class DocService
         if (!File.Exists(path))
         {
             return false;
+        }
+
+        if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+#pragma warning disable ERP022
+            try
+            {
+                var repoRoot = FindRepoRootForCanonicalFile(path);
+                var document = CanonicalArtifactJsonLoader.LoadDocument(repoRoot, path);
+                var data = new Dictionary<string, object?>(document.Data, StringComparer.OrdinalIgnoreCase);
+                artifactId = NormalizeArtifactId(GetString(data, "artifact_id") ?? GetString(data, "artifactId"));
+            }
+            catch
+            {
+                artifactId = null;
+            }
+#pragma warning restore ERP022
+
+            if (string.IsNullOrWhiteSpace(artifactId))
+            {
+                artifactId = Path.GetFileNameWithoutExtension(path);
+            }
+
+            return true;
         }
 
         var content = File.ReadAllText(path);
@@ -1721,14 +1812,26 @@ public static class DocService
 
     private static DocShowData LoadDocShowData(string docPath)
     {
-        var content = File.ReadAllText(docPath);
-        var data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-        var body = content;
-
-        if (FrontMatter.TryParse(content, out var frontMatter, out _))
+        Dictionary<string, object?> data;
+        string body;
+        if (docPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
         {
-            data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
-            body = frontMatter.Body;
+            var repoRoot = FindRepoRootForCanonicalFile(docPath);
+            var document = CanonicalArtifactJsonLoader.LoadDocument(repoRoot, docPath);
+            data = new Dictionary<string, object?>(document.Data, StringComparer.OrdinalIgnoreCase);
+            body = document.SourceText;
+        }
+        else
+        {
+            var content = File.ReadAllText(docPath);
+            data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            body = content;
+
+            if (FrontMatter.TryParse(content, out var frontMatter, out _))
+            {
+                data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
+                body = frontMatter.Body;
+            }
         }
 
         var workbench = GetNestedMap(data, "workbench");
@@ -1739,7 +1842,11 @@ public static class DocService
         var capability = GetString(data, "capability");
         var status = GetString(data, "status") ?? GetString(workbench, "status");
         var owner = GetString(data, "owner");
-        var workItems = GetStringList(workbench, "workItems");
+        var workItems = FilterWorkItemArtifactIds(GetStringList(data, "related_artifacts"));
+        if (workItems.Count == 0)
+        {
+            workItems = GetStringList(workbench, "workItems");
+        }
         var codeRefs = GetStringList(workbench, "codeRefs");
 
         return new DocShowData(
@@ -1754,6 +1861,35 @@ public static class DocService
             workItems,
             codeRefs,
             body);
+    }
+
+    private static string FindRepoRootForCanonicalFile(string path)
+    {
+        var current = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(path)) ?? Path.GetFullPath(path));
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "Workbench.slnx")) ||
+                Directory.Exists(Path.Combine(current.FullName, SpecTraceLayout.SpecsRoot)) ||
+                Directory.Exists(Path.Combine(current.FullName, "model")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new InvalidOperationException($"Could not resolve a repository root for '{path}'.");
+    }
+
+    private static List<string> FilterWorkItemArtifactIds(IEnumerable<string>? values)
+    {
+        return values?
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Where(value => value.StartsWith("WI-", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            ?? new List<string>();
     }
 
     private static string BuildBody(string type, string title)

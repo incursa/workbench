@@ -62,6 +62,46 @@ public sealed partial class WorkbenchWorkspace
             }
         }
 
+        foreach (var source in CanonicalArtifactDiscovery.EnumerateCanonicalSources(RepoRoot, Config)
+                     .Where(source => string.Equals(source.Format, "json", StringComparison.OrdinalIgnoreCase)))
+        {
+            RepoDocSummary? summary = null;
+#pragma warning disable ERP022
+            try
+            {
+                var document = CanonicalArtifactJsonLoader.LoadDocument(RepoRoot, source.SourcePath);
+                if (!string.Equals(document.Artifact.ArtifactType, "work_item", StringComparison.OrdinalIgnoreCase))
+                {
+                    summary = BuildDocSummary(
+                        source.DisplayRepoRelativePath,
+                        (IDictionary<string, object?>)document.Data,
+                        document.Artifact.Context ?? document.Artifact.Purpose ?? document.SourceText);
+                }
+            }
+            catch
+            {
+                summary = null;
+            }
+#pragma warning restore ERP022
+
+            if (summary is null)
+            {
+                continue;
+            }
+
+            if (!DocTypeMatchesFilter(summary.Type, typeFilter))
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(query) && !MatchesQuery(summary, query))
+            {
+                continue;
+            }
+
+            docs.Add(summary);
+        }
+
         return docs
             .OrderBy(doc => doc.Section, StringComparer.OrdinalIgnoreCase)
             .ThenBy(doc => doc.Type, StringComparer.OrdinalIgnoreCase)
@@ -81,13 +121,24 @@ public sealed partial class WorkbenchWorkspace
             return null;
         }
 
-        var content = File.ReadAllText(resolvedPath);
-        var data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-        var body = content;
-        if (FrontMatter.TryParse(content, out var frontMatter, out _))
+        Dictionary<string, object?> data;
+        string body;
+        if (resolvedPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
         {
-            data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
-            body = frontMatter.Body;
+            var document = CanonicalArtifactJsonLoader.LoadDocument(RepoRoot, resolvedPath);
+            data = new Dictionary<string, object?>(document.Data, StringComparer.OrdinalIgnoreCase);
+            body = document.SourceText;
+        }
+        else
+        {
+            var content = File.ReadAllText(resolvedPath);
+            data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            body = content;
+            if (FrontMatter.TryParse(content, out var frontMatter, out _))
+            {
+                data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
+                body = frontMatter.Body;
+            }
         }
 
         var relative = NormalizePath(Path.GetRelativePath(RepoRoot, resolvedPath));
@@ -234,9 +285,13 @@ public sealed partial class WorkbenchWorkspace
         var workbench = GetNestedMap(data, "workbench");
         var type = GetString(data, "artifact_type") ?? GetString(workbench, "type") ?? InferDocType(relative);
         var status = GetString(data, "status") ?? GetString(workbench, "status") ?? "unknown";
-        var title = ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(relative);
+        var title = GetString(data, "title") ?? ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(relative);
         var section = GetDocSection(relative);
-        var workItems = GetStringList(workbench, "workItems");
+        var workItems = FilterWorkItemArtifactIds(GetStringList(data, "related_artifacts"));
+        if (workItems.Count == 0)
+        {
+            workItems = GetStringList(workbench, "workItems");
+        }
         var excerpt = ExtractExcerpt(body);
         var artifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId");
         var domain = GetString(data, "domain");
@@ -506,6 +561,17 @@ public sealed partial class WorkbenchWorkspace
     private static string NormalizePath(string path)
     {
         return path.Replace('\\', '/');
+    }
+
+    private static List<string> FilterWorkItemArtifactIds(IEnumerable<string>? values)
+    {
+        return values?
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Where(value => value.StartsWith("WI-", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList()
+            ?? new List<string>();
     }
 
     private static bool IsWorkItemArtifactDoc(string relativePath)

@@ -1,10 +1,10 @@
 # Scripts
 
-Helper scripts for packaging and release automation.
+Helper scripts for canonical SpecTrace validation, packaging, and release automation.
 
-## Tooling bootstrap
+## Canonical JSON
 
-- [`scripts/Resolve-Cue.ps1`](Resolve-Cue.ps1): resolves the pinned CUE CLI for the current host, or with `-PopulateBundledAssets` hydrates the full supported RID set used by the packaged tool (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`) under `src/Workbench.Core/Tooling/Cue/runtimes/`.
+- [`scripts/Validate-SpecTraceJson.ps1`](Validate-SpecTraceJson.ps1): validates a target repository's canonical JSON artifacts against `model/model.schema.json` by running Workbench from local source. Optionally syncs navigation after validation.
 
 ## Testing
 

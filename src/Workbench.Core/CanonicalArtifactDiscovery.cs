@@ -2,7 +2,7 @@ namespace Workbench.Core;
 
 #pragma warning disable MA0048
 
-internal static class CanonicalArtifactDiscovery
+public static class CanonicalArtifactDiscovery
 {
     public static IReadOnlyList<CanonicalArtifactSource> EnumerateCanonicalSources(string repoRoot, WorkbenchConfig config)
     {
@@ -14,18 +14,18 @@ internal static class CanonicalArtifactDiscovery
                 continue;
             }
 
-            var cueFiles = Directory
-                .EnumerateFiles(root, "*.cue", SearchOption.AllDirectories)
+            var jsonFiles = Directory
+                .EnumerateFiles(root, "*.json", SearchOption.AllDirectories)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var cueBasePaths = cueFiles
+            var jsonBasePaths = jsonFiles
                 .Select(path => Path.ChangeExtension(Path.GetFullPath(path), null))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var cueFile in cueFiles)
+            foreach (var jsonFile in jsonFiles)
             {
-                sources.Add(CreateSource(repoRoot, cueFile, "cue"));
+                sources.Add(CreateSource(repoRoot, jsonFile, "json"));
             }
 
             foreach (var markdownFile in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories).OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
@@ -36,7 +36,7 @@ internal static class CanonicalArtifactDiscovery
                 }
 
                 var basePath = Path.ChangeExtension(Path.GetFullPath(markdownFile), null);
-                if (cueBasePaths.Contains(basePath))
+                if (jsonBasePaths.Contains(basePath))
                 {
                     continue;
                 }
@@ -53,7 +53,7 @@ internal static class CanonicalArtifactDiscovery
     private static CanonicalArtifactSource CreateSource(string repoRoot, string sourcePath, string format)
     {
         var displayPath = sourcePath;
-        if (string.Equals(format, "cue", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
         {
             var markdownPath = Path.ChangeExtension(sourcePath, ".md");
             if (File.Exists(markdownPath))
@@ -97,7 +97,7 @@ internal static class CanonicalArtifactDiscovery
     }
 }
 
-internal sealed record CanonicalArtifactSource(
+public sealed record CanonicalArtifactSource(
     string SourcePath,
     string SourceRepoRelativePath,
     string DisplayPath,
