@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Workbench.Cli\Workbench.Cli.csproj" AdditionalProperties="WorkbenchRuntimeIdentifier=$(RuntimeIdentifier)" />
+    <ProjectReference Include="..\Workbench.Cli\Workbench.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>
