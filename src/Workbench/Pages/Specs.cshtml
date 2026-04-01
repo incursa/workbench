@@ -2,6 +2,7 @@
 @model Workbench.Pages.SpecsModel
 @{
     ViewData["Title"] = "Specs";
+    ViewData["DisableCustomStyles"] = true;
 }
 
 <div class="inc-stack inc-stack--gap-lg">
@@ -21,291 +22,565 @@
         </section>
     }
 
-    <div class="inc-grid inc-grid--cols-2 inc-grid--gap-lg">
-        <aside class="inc-card inc-stack inc-stack--gap-lg">
-            <div class="inc-stack inc-stack--gap-sm">
-                <div>
-                    <p class="inc-key-value__label">Catalog</p>
-                    <h2>Specifications</h2>
-                    <p>Browse schema-backed specifications and open one to edit repo-native files directly.</p>
-                </div>
-                <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Specs" asp-route-createMode="true" asp-route-selectedReference="new" asp-route-query="@Model.Query">New spec</a>
-            </div>
-
-            <form method="get" class="inc-filter-bar">
-                <input type="hidden" name="selectedReference" value="@Model.SelectedReference" />
-                <input type="hidden" name="createMode" value="false" />
-                <div class="inc-filter-bar__main">
-                    <label class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow">
-                        <span class="inc-form__label">Search</span>
-                        <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Artifact ID, title, requirement, related artifact" />
-                        <span class="inc-form__hint">Filter by artifact ID, title, requirement text, or linked artifacts.</span>
-                    </label>
-                </div>
-                <div class="inc-filter-bar__actions">
-                    <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Apply</button>
-                </div>
-            </form>
-
-            @if (Model.Specs.Count == 0)
-            {
-                <div class="inc-empty-state">
-                    <div class="inc-empty-state__content">
-                        <div class="inc-empty-state__icon">?</div>
-                        <h3 class="inc-heading inc-heading--h3">No specifications</h3>
-                        <p class="inc-text inc-text--regular inc-text--muted">No specifications match the current filters.</p>
+    <div class="row g-4 align-items-start">
+        <aside class="col-12 col-xl-4">
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    <div class="inc-stack inc-stack--gap-sm">
+                        <div>
+                            <p class="inc-key-value__label mb-1">Catalog</p>
+                            <h2 class="mb-2">Specifications</h2>
+                            <p class="mb-0">Browse schema-backed specifications and open one to edit repo-native files directly.</p>
+                        </div>
+                        <a class="inc-btn inc-btn--primary inc-btn--sm align-self-start" asp-page="/Specs" asp-route-createMode="true" asp-route-selectedReference="new" asp-route-query="@Model.Query">New spec</a>
                     </div>
+
+                    <form method="get" class="inc-filter-bar">
+                        <input type="hidden" name="selectedReference" value="@Model.SelectedReference" />
+                        <input type="hidden" name="createMode" value="false" />
+                        <div class="inc-filter-bar__main">
+                            <div class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow mb-0">
+                                <label class="inc-form__label" for="query">Find spec</label>
+                                <input id="query" class="inc-form__control" name="query" value="@Model.Query" placeholder="Artifact ID or title" />
+                            </div>
+                        </div>
+                        <div class="inc-filter-bar__actions">
+                            <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Search</button>
+                        </div>
+                    </form>
+
+                    @if (Model.Specs.Count == 0)
+                    {
+                        <div class="inc-empty-state">
+                            <div class="inc-empty-state__content">
+                                <div class="inc-empty-state__icon">?</div>
+                                <h3 class="inc-heading inc-heading--h3">No specifications</h3>
+                                <p class="inc-text inc-text--regular inc-text--muted">No specifications match the current filters.</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @await Html.PartialAsync("_TreeBranch", Model.Tree)
+                    }
                 </div>
-            }
-            else
-            {
-                @await Html.PartialAsync("_TreeBranch", Model.Tree)
-            }
+            </section>
         </aside>
 
-        <div class="inc-stack inc-stack--gap-lg">
-            <section class="inc-card inc-stack inc-stack--gap-lg">
-                <div class="inc-stack inc-stack--gap-sm">
-                    <div>
-                        <p class="inc-key-value__label">@(Model.IsCreateMode ? "Create specification" : "Edit specification")</p>
-                        <h2>@(Model.IsCreateMode ? "Schema-backed specification editor" : Model.Edit.Title)</h2>
-                        <p>@Model.SpecIdPolicySummary</p>
+        <div class="col-12 col-xl-8">
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    <div class="inc-stack inc-stack--gap-sm">
+                        <div>
+                            <p class="inc-key-value__label mb-1">@(Model.IsCreateMode ? "Create specification" : "Edit specification")</p>
+                            <h2 class="mb-2">@(Model.IsCreateMode ? "Schema-backed specification editor" : Model.Edit.Title)</h2>
+                            <p class="mb-0">@Model.SpecIdPolicySummary</p>
+                        </div>
                     </div>
-                </div>
 
-                <div class="inc-key-value-grid">
-                    <div class="inc-key-value inc-key-value--card">
-                        <div class="inc-key-value__label">Path</div>
-                        <div class="inc-key-value__value inc-key-value__value--data">@Model.PathPreview</div>
-                    </div>
-                    <div class="inc-key-value inc-key-value--card">
-                        <div class="inc-key-value__label">Format</div>
-                        <div class="inc-key-value__value">@Model.Edit.SourceFormat</div>
-                    </div>
-                    <div class="inc-key-value inc-key-value--card">
-                        <div class="inc-key-value__label">Visible specs</div>
-                        <div class="inc-key-value__value">@Model.Specs.Count</div>
-                    </div>
-                </div>
-
-                @if (Model.IsLegacyMarkdownSpec)
-                {
-                    <section class="inc-state-panel inc-state-panel--results">
-                        <div class="inc-state-panel__head">
-                            <div class="inc-state-panel__icon">M</div>
-                            <div>
-                                <h3 class="inc-state-panel__title">Markdown-backed source</h3>
-                                <p class="inc-state-panel__body">This file still saves as Markdown. The editor stays structured, but Workbench will preserve the existing Markdown format until the artifact is migrated to canonical JSON.</p>
+                    <div class="inc-key-value-grid">
+                        <div class="inc-key-value inc-key-value--card">
+                            <div class="inc-key-value__label">Path</div>
+                            <div class="inc-key-value__value inc-key-value__value--data">
+                                @if (Model.SelectedSpec is not null)
+                                {
+                                    <a class="text-truncate d-inline-block mw-100" asp-page="/Files" asp-route-selectedPath="@Model.SelectedSpec.Summary.Path">@Model.PathPreview</a>
+                                }
+                                else
+                                {
+                                    <span class="text-truncate d-inline-block mw-100">@Model.PathPreview</span>
+                                }
                             </div>
                         </div>
-                    </section>
-                }
-
-                <form method="post" asp-page-handler="Save" class="inc-stack inc-stack--gap-lg">
-                    <partial name="_ValidationSummary" />
-                    <input type="hidden" asp-for="CreateMode" />
-                    <input type="hidden" asp-for="SelectedReference" />
-                    <input type="hidden" asp-for="Query" />
-                    <input type="hidden" asp-for="Edit.Path" />
-                    <input type="hidden" asp-for="Edit.SourceFormat" />
-                    <input type="hidden" asp-for="Edit.SchemaReference" />
-                    <input type="hidden" asp-for="Edit.ExtensionJson" />
-
-                    <inc-disclosure class="inc-card" summary="Artifact" open>
-                        <div slot="content" class="inc-stack inc-stack--gap-md">
-                            <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
-                                <inc-field label="Artifact ID">
-                                    <input class="inc-form__control mono" asp-for="Edit.ArtifactId" placeholder="SPEC-PAY-ACH" />
-                                </inc-field>
-                                <inc-field label="Domain">
-                                    <input class="inc-form__control mono" asp-for="Edit.Domain" placeholder="payments" />
-                                </inc-field>
-                            </div>
-
-                            <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
-                                <inc-field label="Capability">
-                                    <input class="inc-form__control" asp-for="Edit.Capability" placeholder="ach-transfers" />
-                                </inc-field>
-                                <inc-field label="Status">
-                                    <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" />
-                                </inc-field>
-                            </div>
-
-                            <inc-field label="Title">
-                                <input class="inc-form__control" asp-for="Edit.Title" />
-                            </inc-field>
-
-                            <inc-field label="Owner">
-                                <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or maintainer" />
-                            </inc-field>
+                        <div class="inc-key-value inc-key-value--card">
+                            <div class="inc-key-value__label">Requirements</div>
+                            <div class="inc-key-value__value">@Model.Edit.Requirements.Count</div>
                         </div>
-                    </inc-disclosure>
-
-                    <inc-disclosure class="inc-card" summary="Narrative" open>
-                        <div slot="content" class="inc-stack inc-stack--gap-md">
-                            <inc-field label="Purpose">
-                                <textarea class="inc-form__control" asp-for="Edit.Purpose" rows="4"></textarea>
-                            </inc-field>
-                            <inc-field label="Scope">
-                                <textarea class="inc-form__control" asp-for="Edit.Scope" rows="4"></textarea>
-                            </inc-field>
-                            <inc-field label="Context">
-                                <textarea class="inc-form__control" asp-for="Edit.Context" rows="5"></textarea>
-                            </inc-field>
+                        <div class="inc-key-value inc-key-value--card">
+                            <div class="inc-key-value__label">Visible specs</div>
+                            <div class="inc-key-value__value">@Model.Specs.Count</div>
                         </div>
-                    </inc-disclosure>
+                    </div>
 
-                    <inc-disclosure class="inc-card" summary="Requirements" open>
-                        <div slot="content" class="inc-stack inc-stack--gap-md">
-                            <div>
-                                <button type="submit" asp-page-handler="AddRequirement" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add requirement</button>
+                    @if (Model.IsLegacyMarkdownSpec)
+                    {
+                        <section class="inc-state-panel inc-state-panel--results">
+                            <div class="inc-state-panel__head">
+                                <div class="inc-state-panel__icon">M</div>
+                                <div>
+                                    <h3 class="inc-state-panel__title">Markdown-backed source</h3>
+                                    <p class="inc-state-panel__body">This file still saves as Markdown. The editor stays structured, but Workbench will preserve the existing Markdown format until the artifact is migrated to canonical JSON.</p>
+                                </div>
                             </div>
+                        </section>
+                    }
 
-                            @for (var i = 0; i < Model.Edit.Requirements.Count; i++)
-                            {
-                                <section class="inc-card inc-stack inc-stack--gap-md">
-                                    <input type="hidden" asp-for="Edit.Requirements[i].ExtensionJson" />
-                                    <input type="hidden" asp-for="Edit.Requirements[i].Trace.ExtensionJson" />
+                    <form method="post" asp-page-handler="Save" class="inc-stack inc-stack--gap-lg">
+                        <partial name="_ValidationSummary" />
+                        <input type="hidden" asp-for="CreateMode" />
+                        <input type="hidden" asp-for="SelectedReference" />
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="Edit.Path" />
+                        <input type="hidden" asp-for="Edit.SourceFormat" />
+                        <input type="hidden" asp-for="Edit.SchemaReference" />
+                        <input type="hidden" asp-for="Edit.ExtensionJson" />
 
-                                    <div class="inc-stack inc-stack--gap-sm">
-                                        <div>
-                                            <p class="inc-key-value__label">Requirement @(i + 1)</p>
-                                            <h4>@(string.IsNullOrWhiteSpace(Model.Edit.Requirements[i].Id) ? "New requirement" : Model.Edit.Requirements[i].Id)</h4>
+                        <section class="inc-filter-bar">
+                            <div class="inc-filter-bar__main">
+                                <div>
+                                    <div class="fw-semibold">Saving writes the entire specification file.</div>
+                                    <div class="small text-body-secondary">Requirement edits, trace links, and metadata save together.</div>
+                                </div>
+                            </div>
+                            <div class="inc-filter-bar__actions">
+                                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create spec" : "Save spec")</button>
+                            </div>
+                        </section>
+
+                        <details class="inc-disclosure">
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Artifact</span>
+                                <span class="inc-disclosure__meta">Collapsed by default</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                <div class="inc-stack inc-stack--gap-md">
+                                    <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                        <div class="inc-form__group">
+                                            <label class="inc-form__label" asp-for="Edit.ArtifactId">Artifact ID</label>
+                                            <input class="inc-form__control font-monospace" asp-for="Edit.ArtifactId" placeholder="SPEC-PAY-ACH" />
                                         </div>
-                                        <div>
-                                            <button type="submit" asp-page-handler="RemoveRequirement" name="index" value="@i" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                        <div class="inc-form__group">
+                                            <label class="inc-form__label" asp-for="Edit.Domain">Domain</label>
+                                            <input class="inc-form__control font-monospace" asp-for="Edit.Domain" placeholder="payments" />
                                         </div>
                                     </div>
 
                                     <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
-                                        <inc-field label="Requirement ID">
-                                            <input class="inc-form__control mono" asp-for="Edit.Requirements[i].Id" placeholder="REQ-PAY-ACH-0001" />
-                                        </inc-field>
-                                        <inc-field label="Title">
-                                            <input class="inc-form__control" asp-for="Edit.Requirements[i].Title" />
-                                        </inc-field>
+                                        <div class="inc-form__group">
+                                            <label class="inc-form__label" asp-for="Edit.Capability">Capability</label>
+                                            <input class="inc-form__control" asp-for="Edit.Capability" placeholder="ach-transfers" />
+                                        </div>
+                                        <div class="inc-form__group">
+                                            <label class="inc-form__label" asp-for="Edit.Status">Status</label>
+                                            <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" />
+                                        </div>
                                     </div>
 
-                                    <inc-field label="Statement">
-                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Statement" rows="3"></textarea>
-                                    </inc-field>
-
-                                    <inc-field label="Notes">
-                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].NotesText" rows="3" placeholder="One note per line"></textarea>
-                                    </inc-field>
-
-                                    <div class="inc-grid inc-grid--cols-3 inc-grid--gap-md">
-                                        <inc-field label="Satisfied By">
-                                            <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.SatisfiedByText" rows="2" placeholder="ARC-... one per line"></textarea>
-                                        </inc-field>
-                                        <inc-field label="Implemented By">
-                                            <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.ImplementedByText" rows="2" placeholder="WI-... one per line"></textarea>
-                                        </inc-field>
-                                        <inc-field label="Verified By">
-                                            <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.VerifiedByText" rows="2" placeholder="VER-... one per line"></textarea>
-                                        </inc-field>
-                                        <inc-field label="Derived From">
-                                            <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.DerivedFromText" rows="2" placeholder="REQ-... one per line"></textarea>
-                                        </inc-field>
-                                        <inc-field label="Supersedes">
-                                            <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.SupersedesText" rows="2" placeholder="REQ-... one per line"></textarea>
-                                        </inc-field>
-                                        <inc-field label="Upstream Refs">
-                                            <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.UpstreamRefsText" rows="2" placeholder="External refs, one per line"></textarea>
-                                        </inc-field>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Title">Title</label>
+                                        <input class="inc-form__control" asp-for="Edit.Title" />
                                     </div>
 
-                                    <inc-field label="Related">
-                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.RelatedText" rows="2" placeholder="SPEC/ARC/WI/VER IDs, one per line"></textarea>
-                                    </inc-field>
-                                </section>
-                            }
-                        </div>
-                    </inc-disclosure>
-
-                    <inc-disclosure class="inc-card" summary="Supplemental Sections" open>
-                        <div slot="content" class="inc-stack inc-stack--gap-md">
-                            <div>
-                                <button type="submit" asp-page-handler="AddSupplementalSection" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add section</button>
-                            </div>
-
-                            @if (Model.Edit.SupplementalSections.Count == 0)
-                            {
-                                <div class="inc-empty-state">
-                                    <div class="inc-empty-state__content">
-                                        <div class="inc-empty-state__icon">+</div>
-                                        <h3 class="inc-heading inc-heading--h3">No supplemental sections</h3>
-                                        <p class="inc-text inc-text--regular inc-text--muted">Add optional sections only when the schema needs extra narrative beyond purpose, scope, context, and requirements.</p>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Owner">Owner</label>
+                                        <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or maintainer" />
                                     </div>
                                 </div>
-                            }
-                            else
-                            {
-                                @for (var i = 0; i < Model.Edit.SupplementalSections.Count; i++)
-                                {
-                                    <section class="inc-card inc-stack inc-stack--gap-md">
-                                        <input type="hidden" asp-for="Edit.SupplementalSections[i].ExtensionJson" />
+                            </div>
+                        </details>
 
-                                        <div class="inc-stack inc-stack--gap-sm">
+                        <details class="inc-disclosure">
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Narrative</span>
+                                <span class="inc-disclosure__meta">Collapsed by default</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                <div class="inc-stack inc-stack--gap-md">
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Purpose">Purpose</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.Purpose" rows="4"></textarea>
+                                    </div>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Scope">Scope</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.Scope" rows="4"></textarea>
+                                    </div>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Context">Context</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.Context" rows="5"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="inc-disclosure">
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Requirements</span>
+                                <span class="inc-disclosure__meta">@Model.Edit.Requirements.Count entries</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                <div class="inc-stack inc-stack--gap-md">
+                                    <section class="inc-filter-bar">
+                                        <div class="inc-filter-bar__main">
                                             <div>
-                                                <p class="inc-key-value__label">Section @(i + 1)</p>
-                                                <h4>@(string.IsNullOrWhiteSpace(Model.Edit.SupplementalSections[i].Heading) ? "Untitled section" : Model.Edit.SupplementalSections[i].Heading)</h4>
-                                            </div>
-                                            <div>
-                                                <button type="submit" asp-page-handler="RemoveSupplementalSection" name="index" value="@i" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                <div class="fw-semibold">Requirement edits save with the full specification.</div>
+                                                <div class="small text-body-secondary">Expand only the requirements you need to change.</div>
                                             </div>
                                         </div>
-
-                                        <inc-field label="Heading">
-                                            <input class="inc-form__control" asp-for="Edit.SupplementalSections[i].Heading" />
-                                        </inc-field>
-
-                                        <inc-field label="Content">
-                                            <textarea class="inc-form__control" asp-for="Edit.SupplementalSections[i].Content" rows="4"></textarea>
-                                        </inc-field>
+                                        <div class="inc-filter-bar__actions">
+                                            <button type="submit" asp-page-handler="AddRequirement" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add requirement</button>
+                                        </div>
                                     </section>
-                                }
-                            }
-                        </div>
-                    </inc-disclosure>
 
-                    <inc-disclosure class="inc-card" summary="Artifact Links" open>
-                        <div slot="content" class="inc-stack inc-stack--gap-md">
-                            <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
-                                <inc-field label="Tags">
-                                    <textarea class="inc-form__control" asp-for="Edit.TagsText" rows="3" placeholder="One tag per line"></textarea>
-                                </inc-field>
-                                <inc-field label="Related Artifacts">
-                                    <textarea class="inc-form__control" asp-for="Edit.RelatedArtifactsText" rows="3" placeholder="SPEC/ARC/WI/VER IDs, one per line"></textarea>
-                                </inc-field>
+                                    @for (var i = 0; i < Model.Edit.Requirements.Count; i++)
+                                    {
+                                        var requirement = Model.Edit.Requirements[i];
+                                        var displayId = Model.GetRequirementDisplayId(requirement);
+                                        var summaryTitle = SpecsModel.GetRequirementSummaryTitle(requirement);
+                                        var summaryPreview = SpecsModel.GetRequirementSummaryPreview(requirement);
+                                        var trace = requirement.Trace;
+
+                                        <details class="inc-disclosure">
+                                            <summary class="inc-disclosure__summary">
+                                                <span class="d-flex flex-column gap-1 min-w-0">
+                                                    <span class="d-flex flex-wrap align-items-baseline gap-2 min-w-0">
+                                                        <span class="font-monospace">@displayId</span>
+                                                        @if (!string.IsNullOrWhiteSpace(summaryTitle))
+                                                        {
+                                                            <span class="text-truncate">@summaryTitle</span>
+                                                        }
+                                                    </span>
+                                                    <span class="small text-body-secondary text-truncate">@summaryPreview</span>
+                                                </span>
+                                                <span class="inc-disclosure__meta">Expand</span>
+                                            </summary>
+                                            <div class="inc-disclosure__content">
+                                                <div class="inc-stack inc-stack--gap-md">
+                                                    <input type="hidden" asp-for="Edit.Requirements[i].ExtensionJson" />
+                                                    <input type="hidden" asp-for="Edit.Requirements[i].Trace.ExtensionJson" />
+
+                                                    <div class="d-flex justify-content-end">
+                                                        <button type="submit" asp-page-handler="RemoveRequirement" name="index" value="@i" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                    </div>
+
+                                                    <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].IdSuffix">
+                                                                <span>Requirement ID suffix</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Only enter the local suffix. Workbench supplies the REQ prefix from the current specification.">i</span>
+                                                            </label>
+                                                            <div class="inc-input-group">
+                                                                <span class="inc-input-group__text font-monospace">@Model.RequirementIdPrefix</span>
+                                                                <input class="inc-form__control font-monospace"
+                                                                       asp-for="Edit.Requirements[i].IdSuffix"
+                                                                       placeholder="0001"
+                                                                       pattern="^(?=.*\d$)[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$" />
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Title">
+                                                                <span>Title</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="A short human-readable summary that appears in the collapsed requirement list.">i</span>
+                                                            </label>
+                                                            <input class="inc-form__control" asp-for="Edit.Requirements[i].Title" />
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="inc-form__group">
+                                                        <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Statement">
+                                                            <span>Statement</span>
+                                                            <span class="inc-badge inc-badge--pill inc-badge--info" title="The normative requirement clause. This is the text reviewers will read first.">i</span>
+                                                        </label>
+                                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Statement" rows="3"></textarea>
+                                                    </div>
+
+                                                    <div class="inc-form__group">
+                                                        <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].NotesText">
+                                                            <span>Notes</span>
+                                                            <span class="inc-badge inc-badge--pill inc-badge--info" title="Optional editor notes. Enter one note per line.">i</span>
+                                                        </label>
+                                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].NotesText" rows="3" placeholder="One note per line"></textarea>
+                                                    </div>
+
+                                                    <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.SelectedSatisfiedBy">
+                                                                <span>Satisfied By</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Architecture artifacts that satisfy this requirement.">i</span>
+                                                            </label>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <select class="inc-form__select" asp-for="Edit.Requirements[i].Trace.SelectedSatisfiedBy" asp-items="Model.ArchitectureOptions">
+                                                                    <option value="">Choose architecture item</option>
+                                                                </select>
+                                                                <button type="submit" asp-page-handler="AddTraceValue" asp-route-index="@i" asp-route-field="SatisfiedBy" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                                            </div>
+                                                            @{
+                                                                var satisfiedByValues = SpecsModel.GetTraceValues(trace.SatisfiedByText);
+                                                            }
+                                                            @if (satisfiedByValues.Count > 0)
+                                                            {
+                                                                <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                                                    @foreach (var value in satisfiedByValues)
+                                                                    {
+                                                                        <li class="d-flex flex-wrap align-items-center gap-2">
+                                                                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.ArchitectureOptions)</span>
+                                                                            <button type="submit" asp-page-handler="RemoveTraceValue" asp-route-index="@i" asp-route-field="SatisfiedBy" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.SelectedImplementedBy">
+                                                                <span>Implemented By</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Work items or delivery artifacts that implement this requirement.">i</span>
+                                                            </label>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <select class="inc-form__select" asp-for="Edit.Requirements[i].Trace.SelectedImplementedBy" asp-items="Model.WorkItemOptions">
+                                                                    <option value="">Choose work item</option>
+                                                                </select>
+                                                                <button type="submit" asp-page-handler="AddTraceValue" asp-route-index="@i" asp-route-field="ImplementedBy" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                                            </div>
+                                                            @{
+                                                                var implementedByValues = SpecsModel.GetTraceValues(trace.ImplementedByText);
+                                                            }
+                                                            @if (implementedByValues.Count > 0)
+                                                            {
+                                                                <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                                                    @foreach (var value in implementedByValues)
+                                                                    {
+                                                                        <li class="d-flex flex-wrap align-items-center gap-2">
+                                                                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.WorkItemOptions)</span>
+                                                                            <button type="submit" asp-page-handler="RemoveTraceValue" asp-route-index="@i" asp-route-field="ImplementedBy" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.SelectedVerifiedBy">
+                                                                <span>Verified By</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Verification artifacts that prove this requirement.">i</span>
+                                                            </label>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <select class="inc-form__select" asp-for="Edit.Requirements[i].Trace.SelectedVerifiedBy" asp-items="Model.VerificationOptions">
+                                                                    <option value="">Choose verification item</option>
+                                                                </select>
+                                                                <button type="submit" asp-page-handler="AddTraceValue" asp-route-index="@i" asp-route-field="VerifiedBy" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                                            </div>
+                                                            @{
+                                                                var verifiedByValues = SpecsModel.GetTraceValues(trace.VerifiedByText);
+                                                            }
+                                                            @if (verifiedByValues.Count > 0)
+                                                            {
+                                                                <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                                                    @foreach (var value in verifiedByValues)
+                                                                    {
+                                                                        <li class="d-flex flex-wrap align-items-center gap-2">
+                                                                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.VerificationOptions)</span>
+                                                                            <button type="submit" asp-page-handler="RemoveTraceValue" asp-route-index="@i" asp-route-field="VerifiedBy" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.SelectedDerivedFrom">
+                                                                <span>Derived From</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Other requirements this requirement depends on or specializes.">i</span>
+                                                            </label>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <select class="inc-form__select" asp-for="Edit.Requirements[i].Trace.SelectedDerivedFrom" asp-items="Model.RequirementOptions">
+                                                                    <option value="">Choose requirement</option>
+                                                                </select>
+                                                                <button type="submit" asp-page-handler="AddTraceValue" asp-route-index="@i" asp-route-field="DerivedFrom" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                                            </div>
+                                                            @{
+                                                                var derivedFromValues = SpecsModel.GetTraceValues(trace.DerivedFromText);
+                                                            }
+                                                            @if (derivedFromValues.Count > 0)
+                                                            {
+                                                                <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                                                    @foreach (var value in derivedFromValues)
+                                                                    {
+                                                                        <li class="d-flex flex-wrap align-items-center gap-2">
+                                                                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.RequirementOptions)</span>
+                                                                            <button type="submit" asp-page-handler="RemoveTraceValue" asp-route-index="@i" asp-route-field="DerivedFrom" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.SelectedSupersedes">
+                                                                <span>Supersedes</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Earlier requirements replaced by this one.">i</span>
+                                                            </label>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <select class="inc-form__select" asp-for="Edit.Requirements[i].Trace.SelectedSupersedes" asp-items="Model.RequirementOptions">
+                                                                    <option value="">Choose requirement</option>
+                                                                </select>
+                                                                <button type="submit" asp-page-handler="AddTraceValue" asp-route-index="@i" asp-route-field="Supersedes" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                                            </div>
+                                                            @{
+                                                                var supersedesValues = SpecsModel.GetTraceValues(trace.SupersedesText);
+                                                            }
+                                                            @if (supersedesValues.Count > 0)
+                                                            {
+                                                                <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                                                    @foreach (var value in supersedesValues)
+                                                                    {
+                                                                        <li class="d-flex flex-wrap align-items-center gap-2">
+                                                                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.RequirementOptions)</span>
+                                                                            <button type="submit" asp-page-handler="RemoveTraceValue" asp-route-index="@i" asp-route-field="Supersedes" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+
+                                                        <div class="inc-form__group">
+                                                            <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.SelectedRelated">
+                                                                <span>Related</span>
+                                                                <span class="inc-badge inc-badge--pill inc-badge--info" title="Related specs, architecture, work items, verification artifacts, or requirements.">i</span>
+                                                            </label>
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <select class="inc-form__select" asp-for="Edit.Requirements[i].Trace.SelectedRelated" asp-items="Model.RelatedArtifactOptions">
+                                                                    <option value="">Choose related artifact</option>
+                                                                </select>
+                                                                <button type="submit" asp-page-handler="AddTraceValue" asp-route-index="@i" asp-route-field="Related" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                                            </div>
+                                                            @{
+                                                                var relatedValues = SpecsModel.GetTraceValues(trace.RelatedText);
+                                                            }
+                                                            @if (relatedValues.Count > 0)
+                                                            {
+                                                                <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                                                    @foreach (var value in relatedValues)
+                                                                    {
+                                                                        <li class="d-flex flex-wrap align-items-center gap-2">
+                                                                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.RelatedArtifactOptions)</span>
+                                                                            <button type="submit" asp-page-handler="RemoveTraceValue" asp-route-index="@i" asp-route-field="Related" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="inc-form__group">
+                                                        <label class="inc-form__label d-flex align-items-center gap-2" asp-for="Edit.Requirements[i].Trace.UpstreamRefsText">
+                                                            <span>Source Refs</span>
+                                                            <span class="inc-badge inc-badge--pill inc-badge--info" title="External section or sentence references. Enter one reference per line.">i</span>
+                                                        </label>
+                                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Trace.UpstreamRefsText" rows="2" placeholder="RFC 8999 section 5.1"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </details>
+                                    }
+                                </div>
                             </div>
+                        </details>
 
-                            <inc-field label="Open Questions">
-                                <textarea class="inc-form__control" asp-for="Edit.OpenQuestionsText" rows="3" placeholder="One question per line"></textarea>
-                            </inc-field>
+                        <details class="inc-disclosure">
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Supplemental Sections</span>
+                                <span class="inc-disclosure__meta">Collapsed by default</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                <div class="inc-stack inc-stack--gap-md">
+                                    <div>
+                                        <button type="submit" asp-page-handler="AddSupplementalSection" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add section</button>
+                                    </div>
+
+                                    @if (Model.Edit.SupplementalSections.Count == 0)
+                                    {
+                                        <div class="inc-empty-state">
+                                            <div class="inc-empty-state__content">
+                                                <div class="inc-empty-state__icon">+</div>
+                                                <h3 class="inc-heading inc-heading--h3">No supplemental sections</h3>
+                                                <p class="inc-text inc-text--regular inc-text--muted">Add optional sections only when the schema needs extra narrative beyond purpose, scope, context, and requirements.</p>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        @for (var i = 0; i < Model.Edit.SupplementalSections.Count; i++)
+                                        {
+                                            <section class="inc-card">
+                                                <div class="inc-card__body inc-stack inc-stack--gap-md">
+                                                    <input type="hidden" asp-for="Edit.SupplementalSections[i].ExtensionJson" />
+
+                                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                                        <div>
+                                                            <p class="inc-key-value__label mb-1">Section @(i + 1)</p>
+                                                            <h4 class="mb-0">@(string.IsNullOrWhiteSpace(Model.Edit.SupplementalSections[i].Heading) ? "Untitled section" : Model.Edit.SupplementalSections[i].Heading)</h4>
+                                                        </div>
+                                                        <button type="submit" asp-page-handler="RemoveSupplementalSection" name="index" value="@i" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                    </div>
+
+                                                    <div class="inc-form__group">
+                                                        <label class="inc-form__label" asp-for="Edit.SupplementalSections[i].Heading">Heading</label>
+                                                        <input class="inc-form__control" asp-for="Edit.SupplementalSections[i].Heading" />
+                                                    </div>
+
+                                                    <div class="inc-form__group">
+                                                        <label class="inc-form__label" asp-for="Edit.SupplementalSections[i].Content">Content</label>
+                                                        <textarea class="inc-form__control" asp-for="Edit.SupplementalSections[i].Content" rows="4"></textarea>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="inc-disclosure">
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Artifact Links</span>
+                                <span class="inc-disclosure__meta">Collapsed by default</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                <div class="inc-stack inc-stack--gap-md">
+                                    <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                        <div class="inc-form__group">
+                                            <label class="inc-form__label" asp-for="Edit.TagsText">Tags</label>
+                                            <textarea class="inc-form__control" asp-for="Edit.TagsText" rows="3" placeholder="One tag per line"></textarea>
+                                        </div>
+                                        <div class="inc-form__group">
+                                            <label class="inc-form__label" asp-for="Edit.RelatedArtifactsText">Related Artifacts</label>
+                                            <textarea class="inc-form__control" asp-for="Edit.RelatedArtifactsText" rows="3" placeholder="SPEC/ARC/WI/VER IDs, one per line"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.OpenQuestionsText">Open Questions</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.OpenQuestionsText" rows="3" placeholder="One question per line"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create spec" : "Save spec")</button>
                         </div>
-                    </inc-disclosure>
 
-                    <div>
-                        <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create spec" : "Save spec")</button>
                         @if (!Model.IsCreateMode && Model.SelectedSpec is not null)
                         {
-                            <button type="submit" asp-page-handler="Delete" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Delete</button>
+                            <details class="inc-disclosure">
+                                <summary class="inc-disclosure__summary">
+                                    <span class="inc-disclosure__title">Delete specification</span>
+                                    <span class="inc-disclosure__meta">Removes the file and linked work item refs</span>
+                                </summary>
+                                <div class="inc-disclosure__content">
+                                    <div class="inc-stack inc-stack--gap-md">
+                                        <p class="mb-0">Delete is intentionally separate from save. This removes the current specification file and updates linked work items locally.</p>
+                                        <div>
+                                            <button type="submit" asp-page-handler="Delete" formnovalidate class="inc-btn inc-btn--danger inc-btn--sm">Delete spec</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
                         }
-                    </div>
-                </form>
+                    </form>
+                </div>
             </section>
-
-            @if (Model.SelectedSpec is not null)
-            {
-                <section class="inc-card inc-stack inc-stack--gap-md">
-                    <div>
-                        <p class="inc-key-value__label">Stored Source</p>
-                        <h3>@Model.SelectedSpec.Summary.Path</h3>
-                    </div>
-                    <pre class="mono">@Model.SelectedSpecSource</pre>
-                </section>
-            }
         </div>
     </div>
 </div>

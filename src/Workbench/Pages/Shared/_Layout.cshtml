@@ -1,3 +1,9 @@
+@{
+    var disableCustomStyles = ViewData.TryGetValue("DisableCustomStyles", out var disableCustomStylesValue) &&
+        disableCustomStylesValue is bool disableStyles &&
+        disableStyles;
+}
+
 <!DOCTYPE html>
 <html lang="en" data-inc-theme-mode="system">
 <head>
@@ -30,53 +36,60 @@
     </script>
     <link rel="stylesheet" href="~/lib/incursa-ui-kit/inc-design-language.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/incursa-ui-kit/web-components/style.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (!disableCustomStyles)
+    {
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    }
 </head>
 <body>
-    <inc-app-shell class="app-shell">
-        <inc-navbar slot="header" class="shell-header" app breakpoint="lg">
-            <div slot="brand" class="brand-lockup">
-                <a class="brand-link" asp-page="/Index" aria-label="Workbench home">
-                    <span class="brand-mark">WB</span>
-                    <span class="brand-copy">
-                        <span class="brand-name">Workbench</span>
-                        <span class="brand-subtitle">Repo-native document tooling</span>
-                    </span>
-                </a>
-                <div class="shell-metadata">
-                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["RepoRoot"] ?? "Local repo").ToString())</span>
-                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["ProfileName"] ?? "Local profile").ToString())</span>
-                </div>
-            </div>
+    <inc-app-shell>
+        <header slot="header" class="inc-app-shell__header">
+            <nav class="inc-navbar inc-navbar--app inc-navbar--expand-lg">
+                <div class="inc-section-container d-flex flex-wrap align-items-center gap-3 py-3">
+                    <a class="inc-navbar__brand d-inline-flex align-items-center gap-2 text-decoration-none" asp-page="/Index" aria-label="Workbench home">
+                        <span class="inc-badge inc-badge--pill inc-badge--info">WB</span>
+                        <span>
+                            <span class="d-block fw-semibold text-body">Workbench</span>
+                            <span class="d-block small text-body-secondary">Repo-native document tooling</span>
+                        </span>
+                    </a>
 
-            <nav slot="nav" class="shell-nav" aria-label="Primary">
-                <a class="nav-link inc-nav-link @(IsActivePage("Items") ? "active" : string.Empty)" asp-page="/Index">Items</a>
-                <a class="nav-link inc-nav-link @(IsActivePage("Create") ? "active" : string.Empty)" asp-page="/Create">Create item</a>
-                <a class="nav-link inc-nav-link @(IsActivePage("Specs") ? "active" : string.Empty)" asp-page="/Specs">Specs</a>
-                <a class="nav-link inc-nav-link @(IsActivePage("Docs") ? "active" : string.Empty)" asp-page="/Docs">Docs</a>
-                <a class="nav-link inc-nav-link @(IsActivePage("Files") ? "active" : string.Empty)" asp-page="/Files">Files</a>
-                <a class="nav-link inc-nav-link @(IsActivePage("Settings") ? "active" : string.Empty)" asp-page="/Settings">Settings</a>
+                    <div class="inc-navbar__collapse d-flex flex-grow-1 flex-wrap align-items-center justify-content-between gap-3">
+                        <div class="inc-navbar__nav" role="navigation" aria-label="Primary">
+                            <a class="inc-nav-link @(IsActivePage("Items") ? "active" : string.Empty)" asp-page="/Index">Items</a>
+                            <a class="inc-nav-link @(IsActivePage("Create") ? "active" : string.Empty)" asp-page="/Create">Create item</a>
+                            <a class="inc-nav-link @(IsActivePage("Specs") ? "active" : string.Empty)" asp-page="/Specs">Specs</a>
+                            <a class="inc-nav-link @(IsActivePage("Docs") ? "active" : string.Empty)" asp-page="/Docs">Docs</a>
+                            <a class="inc-nav-link @(IsActivePage("Files") ? "active" : string.Empty)" asp-page="/Files">Files</a>
+                            <a class="inc-nav-link @(IsActivePage("Settings") ? "active" : string.Empty)" asp-page="/Settings">Settings</a>
+                        </div>
+
+                        <div class="inc-navbar__utilities d-flex flex-wrap align-items-center gap-2">
+                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["RepoRoot"] ?? "Local repo").ToString())</span>
+                            <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["ProfileName"] ?? "Local profile not set").ToString())</span>
+                            <inc-theme-switcher variant="navbar" label="Theme"></inc-theme-switcher>
+                        </div>
+                    </div>
+                </div>
             </nav>
+        </header>
 
-            <div slot="utilities" class="shell-actions">
-                <inc-theme-switcher variant="navbar" label="Theme"></inc-theme-switcher>
-            </div>
-        </inc-navbar>
+        <inc-page slot="main">
+            <div slot="body" class="inc-section-container py-4">
+                <section class="inc-page-header">
+                    <div class="inc-page-header__title">
+                        <p class="text-uppercase small fw-semibold text-primary mb-1">Workbench</p>
+                        <h1 class="mb-0">@ViewData["Title"]</h1>
+                    </div>
+                    <div class="inc-page-header__body">
+                        <p class="mb-0">@(ViewData["ProfileSummary"] ?? "Local repo UI")</p>
+                    </div>
+                    <div class="inc-page-header__actions d-flex flex-wrap gap-2">
+                        <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["RepoRoot"] ?? "Repo unavailable").ToString())</span>
+                        <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["ProfileName"] ?? "Local profile not set").ToString())</span>
+                    </div>
+                </section>
 
-        <inc-page slot="main" class="shell-body page-shell">
-            <inc-page-header slot="header" class="page-header">
-                <div slot="title" class="page-header-copy">
-                    <div class="eyebrow">Workbench</div>
-                    <h1>@ViewData["Title"]</h1>
-                </div>
-                <p slot="body" class="page-summary">@(ViewData["ProfileSummary"] ?? "Local repo UI")</p>
-                <div slot="actions" class="page-header-meta">
-                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["RepoRoot"] ?? "Repo unavailable").ToString())</span>
-                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["ProfileName"] ?? "Local profile not set").ToString())</span>
-                </div>
-            </inc-page-header>
-
-            <div slot="body" class="page-body">
                 @RenderBody()
             </div>
         </inc-page>
