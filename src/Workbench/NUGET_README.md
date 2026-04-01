@@ -3,8 +3,8 @@
 Incursa Workbench is a .NET CLI tool for teams that manage engineering work
 in-repo and want consistent, structured documentation and work item workflows.
 
-Canonical SpecTrace artifacts are JSON documents validated against the target
-repository's `model/model.schema.json`.
+Canonical SpecTrace artifacts are JSON documents validated against the
+SpecTrace model snapshot pinned into the Workbench build.
 
 It provides commands to:
 

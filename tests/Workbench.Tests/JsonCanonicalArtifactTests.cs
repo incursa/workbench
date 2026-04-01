@@ -34,11 +34,14 @@ public class JsonCanonicalArtifactTests
             Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-BROKEN.json"),
             """
             {
+              "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
               "artifact_id": "SPEC-WB-BROKEN",
               "artifact_type": "specification",
               "title": "Broken spec",
-              "domain": "WB",
+              "domain": "wb",
+              "capability": "validation",
               "status": "draft",
+              "purpose": "Confirm the pinned canonical schema rejects incomplete specification payloads.",
               "requirements": [
                 {
                   "id": "REQ-WB-BROKEN-0001",
@@ -56,18 +59,31 @@ public class JsonCanonicalArtifactTests
         Assert.IsTrue(errors.Any(error => error.Contains("owner", StringComparison.OrdinalIgnoreCase)), string.Join(Environment.NewLine, errors));
     }
 
+    [TestMethod]
+    public void CanonicalArtifactJsonLoader_IgnoresRepoLocalSchemaFiles()
+    {
+        using var repo = new TempJsonRepo();
+        repo.WriteCanonicalArtifacts();
+        Directory.CreateDirectory(Path.Combine(repo.Path, "model"));
+        File.WriteAllText(Path.Combine(repo.Path, "model", "model.schema.json"), "{ not-valid-json");
+
+        var errors = SchemaValidationService.ValidateCanonicalArtifactJson(
+            repo.Path,
+            Path.Combine(repo.Path, "specs", "requirements", "WB", "SPEC-WB-JSON.json"));
+
+        Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
+    }
+
     private sealed class TempJsonRepo : IDisposable
     {
         public TempJsonRepo()
         {
             Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "workbench-json-tests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path);
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "model"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "requirements", "WB"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "architecture", "WB"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "work-items", "WB"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "verification", "WB"));
-            File.WriteAllText(System.IO.Path.Combine(Path, "model", "model.schema.json"), BuildSchema());
         }
 
         public string Path { get; }
@@ -76,13 +92,17 @@ public class JsonCanonicalArtifactTests
         {
             File.WriteAllText(System.IO.Path.Combine(Path, "specs", "requirements", "WB", "SPEC-WB-JSON.json"), """
                 {
+                  "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
                   "artifact_id": "SPEC-WB-JSON",
                   "artifact_type": "specification",
                   "title": "Json-backed validation",
-                  "domain": "WB",
+                  "domain": "wb",
                   "capability": "validation",
                   "status": "draft",
                   "owner": "platform",
+                  "purpose": "Exercise canonical JSON validation using the schema pinned into Workbench.",
+                  "scope": "Cover the minimal cross-artifact graph needed by the validation tests.",
+                  "context": "Canonical JSON artifacts should load without a repo-local model schema file.",
                   "related_artifacts": [
                     "ARC-WB-JSON-0001",
                     "WI-WB-JSON-0001",
@@ -111,13 +131,15 @@ public class JsonCanonicalArtifactTests
 
             File.WriteAllText(System.IO.Path.Combine(Path, "specs", "architecture", "WB", "ARC-WB-JSON-0001.json"), """
                 {
+                  "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
                   "artifact_id": "ARC-WB-JSON-0001",
                   "artifact_type": "architecture",
                   "title": "Json-backed architecture",
-                  "domain": "WB",
-                  "capability": "validation",
+                  "domain": "wb",
                   "status": "implemented",
                   "owner": "platform",
+                  "purpose": "Describe how Workbench validates canonical JSON with a pinned schema snapshot.",
+                  "design_summary": "Workbench loads the pinned schema from its own assembly resources and validates artifacts against that snapshot.",
                   "satisfies": [
                     "REQ-WB-JSON-0001"
                   ]
@@ -126,11 +148,11 @@ public class JsonCanonicalArtifactTests
 
             File.WriteAllText(System.IO.Path.Combine(Path, "specs", "work-items", "WB", "WI-WB-JSON-0001.json"), """
                 {
+                  "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
                   "artifact_id": "WI-WB-JSON-0001",
                   "artifact_type": "work_item",
                   "title": "Json-backed work item",
-                  "domain": "WB",
-                  "capability": "validation",
+                  "domain": "wb",
                   "status": "complete",
                   "owner": "platform",
                   "addresses": [
@@ -141,22 +163,32 @@ public class JsonCanonicalArtifactTests
                   ],
                   "verification_links": [
                     "VER-WB-JSON-0001"
-                  ]
+                  ],
+                  "summary": "Update Workbench to validate canonical JSON against its pinned schema snapshot.",
+                  "planned_changes": "Load the schema from embedded resources instead of searching the target repository for a model directory.",
+                  "verification_plan": "Exercise repo validation and direct canonical artifact validation without a repo-local model schema file."
                 }
                 """);
 
             File.WriteAllText(System.IO.Path.Combine(Path, "specs", "verification", "WB", "VER-WB-JSON-0001.json"), """
                 {
+                  "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
                   "artifact_id": "VER-WB-JSON-0001",
                   "artifact_type": "verification",
                   "title": "Json-backed verification",
-                  "domain": "WB",
-                  "capability": "validation",
+                  "domain": "wb",
                   "status": "passed",
                   "owner": "platform",
                   "verifies": [
                     "REQ-WB-JSON-0001"
-                  ]
+                  ],
+                  "scope": "Confirm the pinned schema validates the canonical JSON graph.",
+                  "verification_method": "Run Workbench validation over a minimal repository containing only canonical JSON artifacts.",
+                  "procedure": [
+                    "Create the minimal canonical JSON artifact set.",
+                    "Run the validation entry point against the repository."
+                  ],
+                  "expected_result": "The repository validates without depending on a repo-local model schema file."
                 }
                 """);
         }
@@ -176,200 +208,6 @@ public class JsonCanonicalArtifactTests
                 // Best-effort cleanup.
             }
 #pragma warning restore ERP022
-        }
-
-        private static string BuildSchema()
-        {
-            return """
-                {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "oneOf": [
-                    {
-                      "$ref": "#/$defs/specificationArtifact"
-                    },
-                    {
-                      "$ref": "#/$defs/architectureArtifact"
-                    },
-                    {
-                      "$ref": "#/$defs/workItemArtifact"
-                    },
-                    {
-                      "$ref": "#/$defs/verificationArtifact"
-                    }
-                  ],
-                  "$defs": {
-                    "nonEmptyString": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "stringList": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/$defs/nonEmptyString"
-                      },
-                      "minItems": 1
-                    },
-                    "artifactBase": {
-                      "type": "object",
-                      "required": [
-                        "artifact_id",
-                        "artifact_type",
-                        "title",
-                        "domain",
-                        "status",
-                        "owner"
-                      ],
-                      "properties": {
-                        "artifact_id": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "artifact_type": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "title": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "domain": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "capability": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "status": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "owner": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "related_artifacts": {
-                          "$ref": "#/$defs/stringList"
-                        }
-                      },
-                      "additionalProperties": true
-                    },
-                    "requirement": {
-                      "type": "object",
-                      "required": [
-                        "id",
-                        "title",
-                        "statement"
-                      ],
-                      "properties": {
-                        "id": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "title": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "statement": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "trace": {
-                          "type": "object",
-                          "additionalProperties": true
-                        }
-                      },
-                      "additionalProperties": true
-                    },
-                    "specificationArtifact": {
-                      "allOf": [
-                        {
-                          "$ref": "#/$defs/artifactBase"
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "artifact_type": {
-                              "const": "specification"
-                            },
-                            "requirements": {
-                              "type": "array",
-                              "minItems": 1,
-                              "items": {
-                                "$ref": "#/$defs/requirement"
-                              }
-                            }
-                          },
-                          "required": [
-                            "requirements"
-                          ]
-                        }
-                      ]
-                    },
-                    "architectureArtifact": {
-                      "allOf": [
-                        {
-                          "$ref": "#/$defs/artifactBase"
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "artifact_type": {
-                              "const": "architecture"
-                            },
-                            "satisfies": {
-                              "$ref": "#/$defs/stringList"
-                            }
-                          },
-                          "required": [
-                            "satisfies"
-                          ]
-                        }
-                      ]
-                    },
-                    "workItemArtifact": {
-                      "allOf": [
-                        {
-                          "$ref": "#/$defs/artifactBase"
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "artifact_type": {
-                              "const": "work_item"
-                            },
-                            "addresses": {
-                              "$ref": "#/$defs/stringList"
-                            },
-                            "design_links": {
-                              "$ref": "#/$defs/stringList"
-                            },
-                            "verification_links": {
-                              "$ref": "#/$defs/stringList"
-                            }
-                          },
-                          "required": [
-                            "addresses",
-                            "design_links",
-                            "verification_links"
-                          ]
-                        }
-                      ]
-                    },
-                    "verificationArtifact": {
-                      "allOf": [
-                        {
-                          "$ref": "#/$defs/artifactBase"
-                        },
-                        {
-                          "type": "object",
-                          "properties": {
-                            "artifact_type": {
-                              "const": "verification"
-                            },
-                            "verifies": {
-                              "$ref": "#/$defs/stringList"
-                            }
-                          },
-                          "required": [
-                            "verifies"
-                          ]
-                        }
-                      ]
-                    }
-                  }
-                }
-                """;
         }
     }
 }

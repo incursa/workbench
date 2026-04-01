@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <PinnedSpecTraceSchemaVersion>79371b948e6bb83ca25136490d18615ad3ebf704</PinnedSpecTraceSchemaVersion>
+    <PinnedSpecTraceSchemaUrl>https://raw.githubusercontent.com/incursa/spec-trace/$(PinnedSpecTraceSchemaVersion)/model/model.schema.json</PinnedSpecTraceSchemaUrl>
+    <PinnedSpecTraceSchemaPath>$(MSBuildProjectDirectory)\obj\PinnedSpecTrace\$(PinnedSpecTraceSchemaVersion)\model.schema.json</PinnedSpecTraceSchemaPath>
+    <PinnedSpecTraceSchemaResourceName>Workbench.Core.PinnedSchemas.SpecTrace.model.schema.json</PinnedSpecTraceSchemaResourceName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,10 +19,26 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="$(PinnedSpecTraceSchemaPath)" LogicalName="$(PinnedSpecTraceSchemaResourceName)" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="JsonSchema.Net" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
     <PackageReference Include="Octokit" />
     <PackageReference Include="PortAudioSharp2" />
   </ItemGroup>
+
+  <Target Name="DownloadPinnedSpecTraceSchema" BeforeTargets="PrepareResourceNames">
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(PinnedSpecTraceSchemaPath)'))" />
+    <DownloadFile
+      Condition="!Exists('$(PinnedSpecTraceSchemaPath)')"
+      SourceUrl="$(PinnedSpecTraceSchemaUrl)"
+      DestinationFolder="$([System.IO.Path]::GetDirectoryName('$(PinnedSpecTraceSchemaPath)'))"
+      DestinationFileName="model.schema.json" />
+    <ItemGroup>
+      <FileWrites Include="$(PinnedSpecTraceSchemaPath)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

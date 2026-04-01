@@ -62,9 +62,7 @@ public class JsonDocCoverageTests
             Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "workbench-json-doc-tests", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(Path);
             Directory.CreateDirectory(System.IO.Path.Combine(Path, ".git"));
-            Directory.CreateDirectory(System.IO.Path.Combine(Path, "model"));
             Directory.CreateDirectory(System.IO.Path.Combine(Path, "specs", "requirements", "WB"));
-            File.WriteAllText(System.IO.Path.Combine(Path, "model", "model.schema.json"), BuildSchema());
         }
 
         public string Path { get; }
@@ -75,6 +73,7 @@ public class JsonDocCoverageTests
                 System.IO.Path.Combine(Path, "specs", "requirements", "WB", "SPEC-WB-JSONDOC.json"),
                 """
                 {
+                  "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
                   "artifact_id": "SPEC-WB-JSONDOC",
                   "artifact_type": "specification",
                   "title": "Json doc coverage",
@@ -111,119 +110,6 @@ public class JsonDocCoverageTests
                 // Best-effort cleanup.
             }
 #pragma warning restore ERP022
-        }
-
-        private static string BuildSchema()
-        {
-            return """
-                {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "oneOf": [
-                    {
-                      "$ref": "#/$defs/specificationArtifact"
-                    }
-                  ],
-                  "$defs": {
-                    "nonEmptyString": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "artifactId": {
-                      "type": "string",
-                      "pattern": "^SPEC-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*$"
-                    },
-                    "requirementId": {
-                      "type": "string",
-                      "pattern": "^REQ-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-\\d{4,}$"
-                    },
-                    "artifactRefList": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "pattern": "^(?:SPEC|ARC|WI|VER)-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*(?:-\\d{4,})?$"
-                      },
-                      "minItems": 1
-                    },
-                    "requirement": {
-                      "type": "object",
-                      "required": [
-                        "id",
-                        "title",
-                        "statement"
-                      ],
-                      "properties": {
-                        "id": {
-                          "$ref": "#/$defs/requirementId"
-                        },
-                        "title": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "statement": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        }
-                      },
-                      "additionalProperties": false
-                    },
-                    "specificationArtifact": {
-                      "type": "object",
-                      "required": [
-                        "artifact_id",
-                        "artifact_type",
-                        "title",
-                        "domain",
-                        "capability",
-                        "status",
-                        "owner",
-                        "purpose",
-                        "requirements"
-                      ],
-                      "properties": {
-                        "artifact_id": {
-                          "$ref": "#/$defs/artifactId"
-                        },
-                        "artifact_type": {
-                          "const": "specification"
-                        },
-                        "title": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "domain": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "capability": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "status": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "owner": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "related_artifacts": {
-                          "$ref": "#/$defs/artifactRefList"
-                        },
-                        "purpose": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "scope": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "context": {
-                          "$ref": "#/$defs/nonEmptyString"
-                        },
-                        "requirements": {
-                          "type": "array",
-                          "items": {
-                            "$ref": "#/$defs/requirement"
-                          },
-                          "minItems": 1
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  }
-                }
-                """;
         }
     }
 }

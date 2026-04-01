@@ -4,7 +4,7 @@ Helper scripts for canonical SpecTrace validation, packaging, and release automa
 
 ## Canonical JSON
 
-- [`scripts/Validate-SpecTraceJson.ps1`](Validate-SpecTraceJson.ps1): validates a target repository's canonical JSON artifacts against `model/model.schema.json` by running Workbench from local source. Optionally syncs navigation after validation.
+- [`scripts/Validate-SpecTraceJson.ps1`](Validate-SpecTraceJson.ps1): validates a target repository's canonical JSON artifacts against the SpecTrace schema snapshot pinned into the local Workbench build. Optionally syncs navigation after validation.
 
 ## Testing
 

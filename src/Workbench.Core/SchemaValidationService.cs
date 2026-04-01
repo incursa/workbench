@@ -8,6 +8,9 @@ namespace Workbench.Core;
 
 public static class SchemaValidationService
 {
+    private const string PinnedCanonicalArtifactSchemaResourceName = "Workbench.Core.PinnedSchemas.SpecTrace.model.schema.json";
+    private static readonly Lazy<JsonSchema> pinnedCanonicalArtifactSchema = new(LoadPinnedCanonicalArtifactSchema);
+
     public static IList<string> ValidateConfig(string repoRoot)
     {
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
@@ -156,16 +159,11 @@ public static class SchemaValidationService
 
     public static IList<string> ValidateCanonicalArtifactJson(string repoRoot, string artifactPath, string? json)
     {
-        var schemaPath = ResolveCanonicalArtifactSchemaPath(repoRoot);
-        if (schemaPath is null)
-        {
-            var expectedPath = Path.Combine(repoRoot, SpecTraceLayout.ModelSchemaPath.Replace('/', Path.DirectorySeparatorChar));
-            return new List<string> { $"{artifactPath}: canonical artifact schema not found at {expectedPath}" };
-        }
+        _ = repoRoot;
 
         return json is null
-            ? ValidateJsonAgainstSchema(artifactPath, schemaPath, artifactPath)
-            : ValidateJsonAgainstSchema(json, schemaPath, artifactPath, jsonIsContent: true);
+            ? ValidateJsonAgainstSchema(artifactPath, () => pinnedCanonicalArtifactSchema.Value, artifactPath)
+            : ValidateJsonAgainstSchema(json, () => pinnedCanonicalArtifactSchema.Value, artifactPath, jsonIsContent: true);
     }
 
     public static IList<string> ValidateJsonContent(string repoRoot, string schemaRelativePath, string context, string json)
@@ -176,34 +174,35 @@ public static class SchemaValidationService
         return ValidateJsonAgainstSchema(json, schemaPath, context, jsonIsContent: true);
     }
 
-    private static string? ResolveCanonicalArtifactSchemaPath(string repoRoot)
-    {
-        var candidates = new[]
-        {
-            Path.Combine(repoRoot, SpecTraceLayout.ModelSchemaPath.Replace('/', Path.DirectorySeparatorChar)),
-            Path.Combine(repoRoot, "publish", "model", "model.schema.json"),
-        };
-
-        return candidates.FirstOrDefault(File.Exists);
-    }
-
     private static List<string> ValidateJsonAgainstSchema(
         string jsonOrPath,
         string schemaPath,
         string context,
         bool jsonIsContent = false)
     {
-        var errors = new List<string>();
         if (!File.Exists(schemaPath))
         {
-            errors.Add($"{context}: schema not found at {schemaPath}");
-            return errors;
+            return new List<string> { $"{context}: schema not found at {schemaPath}" };
         }
+
+        return ValidateJsonAgainstSchema(jsonOrPath, () =>
+        {
+            var schemaText = File.ReadAllText(schemaPath);
+            return JsonSchema.FromText(schemaText);
+        }, context, jsonIsContent);
+    }
+
+    private static List<string> ValidateJsonAgainstSchema(
+        string jsonOrPath,
+        Func<JsonSchema> schemaFactory,
+        string context,
+        bool jsonIsContent = false)
+    {
+        var errors = new List<string>();
 
         try
         {
-            var schemaText = File.ReadAllText(schemaPath);
-            var schema = JsonSchema.FromText(schemaText);
+            var schema = schemaFactory();
             var jsonText = jsonIsContent ? jsonOrPath : File.ReadAllText(jsonOrPath);
             using var doc = JsonDocument.Parse(jsonText);
             var result = schema.Evaluate(doc.RootElement, new EvaluationOptions
@@ -222,6 +221,15 @@ public static class SchemaValidationService
         }
 
         return errors;
+    }
+
+    private static JsonSchema LoadPinnedCanonicalArtifactSchema()
+    {
+        var assembly = typeof(SchemaValidationService).Assembly;
+        using var stream = assembly.GetManifestResourceStream(PinnedCanonicalArtifactSchemaResourceName)
+            ?? throw new InvalidOperationException($"Pinned canonical artifact schema resource '{PinnedCanonicalArtifactSchemaResourceName}' was not found.");
+        using var reader = new StreamReader(stream);
+        return JsonSchema.FromText(reader.ReadToEnd());
     }
 
     private static void CollectErrors(EvaluationResults results, List<string> errors, string context)

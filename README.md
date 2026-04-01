@@ -13,11 +13,13 @@ source control. The canonical model for authored intent is Spec Trace:
 GitHub remains an optional sync and mirror layer, not the primary system of
 record.
 
-Canonical spec-trace artifacts are JSON documents validated against the target
-repository's `model/model.schema.json`. Legacy Markdown with front matter is
-still supported for repo docs and older local content, but when a canonical
-JSON artifact exists beside a Markdown sibling, Workbench treats the JSON file
-as the authoritative source.
+Canonical spec-trace artifacts are JSON documents validated against the
+SpecTrace model snapshot pinned into the Workbench build. Authored artifacts
+may still reference the published remote schema URL for editor assistance and
+external tooling, but Workbench does not depend on a repository-local schema
+copy. Legacy Markdown with front matter is still supported for repo docs and
+older local content, but when a canonical JSON artifact exists beside a
+Markdown sibling, Workbench treats the JSON file as the authoritative source.
 
 ## Operating model
 
@@ -27,8 +29,6 @@ as the authoritative source.
 - Keep verification artifacts in `specs/verification/`.
 - Keep generated repository views under `specs/generated/`.
 - Keep canonical templates under `specs/templates/`.
-- Keep canonical JSON Schema under `model/` when the repo authors canonical
-  JSON artifacts.
 - Keep the quality intent contract in [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
 - Keep the attestation config in [`quality/attestation.yaml`](quality/attestation.yaml) when you want repo-local evidence rollup defaults.
 - Treat `overview/`, `contracts/`, `decisions/`, `work/`, and the old root
@@ -77,7 +77,8 @@ as the authoritative source.
 ## Requirements
 
 - .NET SDK `10.0.100` (see [`global.json`](global.json)).
-- Canonical JSON validation expects a repository-local `model/model.schema.json`.
+- Canonical JSON validation uses the SpecTrace schema snapshot pinned in
+  [`src/Workbench.Core/Workbench.Core.csproj`](src/Workbench.Core/Workbench.Core.csproj).
 - Optional: GitHub CLI for the GH-dependent integration tests.
 
 ## Common commands
@@ -100,7 +101,7 @@ Run tests:
 dotnet test --solution Workbench.slnx
 ```
 
-Validate canonical JSON artifacts against the repository schema:
+Validate canonical JSON artifacts against the schema snapshot pinned into Workbench:
 
 ```powershell
 pwsh -File scripts/Validate-SpecTraceJson.ps1 -RepoRoot C:\path\to\repo -Profiles core,traceable
@@ -170,7 +171,7 @@ Expected warnings:
 - Verification artifacts: `specs/verification/`
 - Work items: `specs/work-items/`
 - Templates: `specs/templates/`
-- Schemas: `model/` and `specs/schemas/`
+- Schemas: `specs/schemas/` and the pinned SpecTrace model embedded in Workbench
 - Canonical CLI help snapshot: [`specs/generated/commands.md`](specs/generated/commands.md)
 - Quality intent contract: [`quality/testing-intent.yaml`](quality/testing-intent.yaml)
 
