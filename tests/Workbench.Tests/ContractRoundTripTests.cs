@@ -48,6 +48,7 @@ public class ContractRoundTripTests
             "Spec",
             "draft",
             "platform",
+            new List<string> { "ARC-WB-0001" },
             new List<string> { "WI-WB-0001" },
             new List<string> { "src/Workbench.Core/ValidationService.cs#L1-L5" },
             "## REQ-WB-0001 Example\nThe tool MUST stay deterministic.");

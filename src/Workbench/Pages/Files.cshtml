@@ -4,7 +4,7 @@
     ViewData["Title"] = "Files";
 }
 
-<section class="hero inc-card">
+<inc-card class="hero">
     <div class="hero-copy">
         <div class="eyebrow">Local file explorer</div>
         <h2>Browse the repo and preview markdown inline.</h2>
@@ -18,44 +18,42 @@
         </div>
     </div>
     <div class="hero-stats">
-        <div class="inc-card stat-card accent">
+        <inc-card class="stat-card accent">
             <span class="stat-label">Files found</span>
             <span class="stat-value">@Model.Files.Count</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Markdown</span>
             <span class="stat-value">@Model.MarkdownCount</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Text</span>
             <span class="stat-value">@Model.TextCount</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Binary</span>
             <span class="stat-value">@Model.BinaryCount</span>
-        </div>
+        </inc-card>
     </div>
-</section>
+</inc-card>
 
 <div class="workspace files-layout">
-    <aside class="inc-card panel sidebar">
+    <inc-card class="panel sidebar">
         <div class="panel-head">
             <h3>Browse files</h3>
             <form method="get" class="inline-filter files-filter">
                 <input type="hidden" name="selectedPath" value="@Model.SelectedPath" />
-                <label class="inc-form__group">
-                    <span class="field-label">Search</span>
+                <inc-field label="Search">
                     <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Path, name, excerpt, kind" />
-                </label>
-                <label class="inc-form__group">
-                    <span class="field-label">Type</span>
+                </inc-field>
+                <inc-field label="Type">
                     <select class="inc-form__select" asp-for="TypeFilter">
                         @foreach (var type in global::Workbench.Pages.FilesModel.TypeOptions)
                         {
                             <option value="@type">@type</option>
                         }
                     </select>
-                </label>
+                </inc-field>
                 <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
             </form>
         </div>
@@ -70,9 +68,9 @@
                 @await Html.PartialAsync("_TreeBranch", Model.Tree)
             }
         </div>
-    </aside>
+    </inc-card>
 
-    <section class="inc-card panel detail">
+    <inc-card class="panel detail">
         @if (Model.SelectedFile is null)
         {
             <div class="empty-state large">Select a file to preview it here.</div>
@@ -91,7 +89,7 @@
                 </div>
             </div>
 
-            <section class="inc-card snapshot">
+            <inc-card class="snapshot">
                 <div class="snapshot-head">
                     <h4>Metadata</h4>
                     <span class="muted">@Model.SelectedFile.Summary.LastModifiedUtc.ToString("u")</span>
@@ -110,28 +108,30 @@
                         <div class="muted">@Model.SelectedFile.Summary.Excerpt</div>
                     </div>
                 </div>
-            </section>
+            </inc-card>
 
-            <section class="doc-viewer">
-                <div class="panel-head compact">
+            <inc-disclosure class="doc-viewer" summary="Preview" open>
+                <div slot="summary" class="panel-head compact">
                     <h4>Preview</h4>
                     <span class="muted">Local read-only preview</span>
                 </div>
-                @if (Model.SelectedFile.IsBinary)
-                {
-                    <div class="empty-state">Binary files are listed here but not rendered inline.</div>
-                }
-                else if (Model.SelectedFile.IsMarkdown)
-                {
-                    <div class="markdown-body">
-                        @Html.Raw(Model.SelectedFileHtml)
-                    </div>
-                }
-                else
-                {
-                    <pre class="doc-body">@Model.SelectedFile.Body</pre>
-                }
-            </section>
+                <div slot="content">
+                    @if (Model.SelectedFile.IsBinary)
+                    {
+                        <div class="empty-state">Binary files are listed here but not rendered inline.</div>
+                    }
+                    else if (Model.SelectedFile.IsMarkdown)
+                    {
+                        <div class="markdown-body">
+                            @Html.Raw(Model.SelectedFileHtml)
+                        </div>
+                    }
+                    else
+                    {
+                        <pre class="doc-body">@Model.SelectedFile.Body</pre>
+                    }
+                </div>
+            </inc-disclosure>
         }
-    </section>
+    </inc-card>
 </div>

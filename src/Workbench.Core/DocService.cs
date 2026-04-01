@@ -81,6 +81,7 @@ public static class DocService
                 $"Unable to generate an artifact ID for '{docPath}'. Provide --artifact-id or the metadata required by the configured artifact ID policy.");
         }
 
+#pragma warning disable S1871
         if (canonicalType is not null)
         {
             var canonicalRelatedArtifacts = canonicalType.Equals("work_item", StringComparison.OrdinalIgnoreCase)
@@ -178,7 +179,9 @@ public static class DocService
         string? artifactId = null,
         string? domain = null,
         string? capability = null,
-        string? owner = null)
+        string? owner = null,
+        IList<string>? satisfies = null,
+        IList<string>? verifies = null)
     {
         if (!allowedTypes.Contains(type))
         {
@@ -225,6 +228,8 @@ public static class DocService
             owner,
             source,
             now,
+            satisfies: satisfies,
+            verifies: verifies,
             relatedArtifacts: GetCanonicalRelatedArtifacts(canonicalType, workItems, related));
 
         Directory.CreateDirectory(Path.GetDirectoryName(docPath) ?? repoRoot);
@@ -250,6 +255,7 @@ public static class DocService
     /// <param name="StatusUpdated">True when the status changed.</param>
     /// <param name="OwnerUpdated">True when the owner changed.</param>
     /// <param name="BodyUpdated">True when the Markdown body changed.</param>
+    /// <param name="RelatedArtifactsUpdated">True when the related artifact list changed.</param>
     /// <param name="WorkItemsUpdated">True when linked work items changed.</param>
     /// <param name="CodeRefsUpdated">True when code refs changed.</param>
     public sealed record DocEditResult(
@@ -262,10 +268,11 @@ public static class DocService
         bool DomainUpdated,
         bool CapabilityUpdated,
         bool BodyUpdated,
+        bool RelatedArtifactsUpdated,
         bool WorkItemsUpdated,
         bool CodeRefsUpdated);
 
-    public static DocEditResult EditDoc(
+    private static DocEditResult EditDocCore(
         string repoRoot,
         WorkbenchConfig config,
         string reference,
@@ -276,8 +283,12 @@ public static class DocService
         string? domain,
         string? capability,
         string? body,
+        IList<string>? relatedArtifacts,
+        IList<string>? tags,
         IList<string>? workItems,
-        IList<string>? codeRefs)
+        IList<string>? codeRefs,
+        IList<string>? satisfies = null,
+        IList<string>? verifies = null)
     {
         if (!TryResolveDocPath(repoRoot, config, reference, out var docPath))
         {
@@ -433,23 +444,40 @@ public static class DocService
 
         if (canonicalType is not null)
         {
-            var relatedArtifacts = GetStringList(data, "related_artifacts");
+            var canonicalTypeName = canonicalType.ToLowerInvariant();
             var relatedArtifactsListChanged = false;
+            var tagsListChanged = false;
+            var satisfiesListChanged = false;
+            var verifiesListChanged = false;
 
-            if (workItems is not null)
+            if (canonicalTypeName.Equals("specification", StringComparison.OrdinalIgnoreCase))
             {
-                var normalizedRelatedArtifacts = workItems
-                    .Select(entry => entry.Trim())
-                    .Where(entry => entry.Length > 0)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                relatedArtifactsListChanged = UpdateCanonicalListField(data, "related_artifacts", relatedArtifacts ?? workItems);
+                tagsListChanged = UpdateCanonicalListField(data, "tags", tags);
+            }
+            else if (canonicalTypeName.Equals("architecture", StringComparison.OrdinalIgnoreCase))
+            {
+                relatedArtifactsListChanged = UpdateCanonicalListField(data, "related_artifacts", relatedArtifacts);
+                satisfiesListChanged = UpdateCanonicalListField(
+                    data,
+                    "satisfies",
+                    satisfies,
+                    "Architecture docs require at least one requirement in `satisfies`.");
+            }
+            else if (canonicalTypeName.Equals("verification", StringComparison.OrdinalIgnoreCase))
+            {
+                relatedArtifactsListChanged = UpdateCanonicalListField(data, "related_artifacts", relatedArtifacts);
 
-                if (normalizedRelatedArtifacts.Count > 0 &&
-                    !relatedArtifacts.SequenceEqual(normalizedRelatedArtifacts, StringComparer.OrdinalIgnoreCase))
-                {
-                    data["related_artifacts"] = normalizedRelatedArtifacts;
-                    relatedArtifactsListChanged = true;
-                }
+                verifiesListChanged = UpdateCanonicalListField(
+                    data,
+                    "verifies",
+                    verifies,
+                    "Verification docs require at least one requirement in `verifies`.");
+            }
+            else
+            {
+                relatedArtifactsListChanged = UpdateCanonicalListField(data, "related_artifacts", relatedArtifacts ?? workItems);
+                tagsListChanged = UpdateCanonicalListField(data, "tags", tags);
             }
 
             var canonicalEffectiveBody = frontMatter.Body;
@@ -459,7 +487,7 @@ public static class DocService
                 bodyUpdated = !string.Equals(frontMatter.Body, canonicalEffectiveBody, StringComparison.Ordinal);
             }
 
-            if (artifactIdUpdated || titleUpdated || statusUpdated || ownerUpdated || domainUpdated || capabilityUpdated || body is not null || relatedArtifactsListChanged)
+            if (artifactIdUpdated || titleUpdated || statusUpdated || ownerUpdated || domainUpdated || capabilityUpdated || body is not null || relatedArtifactsListChanged || tagsListChanged || satisfiesListChanged || verifiesListChanged)
             {
                 frontMatter = new FrontMatter(data, canonicalEffectiveBody);
                 File.WriteAllText(docPath, frontMatter.Serialize());
@@ -476,10 +504,62 @@ public static class DocService
                 capabilityUpdated,
                 bodyUpdated,
                 relatedArtifactsListChanged,
+                false,
                 false);
         }
+#pragma warning restore S1871
 
         var workbench = EnsureWorkbench(frontMatter!, InferDocType(docPath), out var workbenchChanged);
+        var relatedArtifactsChanged = false;
+        var currentRelatedArtifacts = GetStringList(data, "related_artifacts");
+        if (relatedArtifacts is not null)
+        {
+            var normalizedRelatedArtifacts = relatedArtifacts
+                .Select(entry => entry.Trim())
+                .Where(entry => entry.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!currentRelatedArtifacts.SequenceEqual(normalizedRelatedArtifacts, StringComparer.OrdinalIgnoreCase))
+            {
+                if (normalizedRelatedArtifacts.Count > 0)
+                {
+                    data["related_artifacts"] = normalizedRelatedArtifacts;
+                }
+                else
+                {
+                    _ = data.Remove("related_artifacts");
+                }
+
+                relatedArtifactsChanged = true;
+            }
+        }
+
+        var tagsChanged = false;
+        var currentTags = GetStringList(data, "tags");
+        if (tags is not null)
+        {
+            var normalizedTags = tags
+                .Select(entry => entry.Trim())
+                .Where(entry => entry.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!currentTags.SequenceEqual(normalizedTags, StringComparer.OrdinalIgnoreCase))
+            {
+                if (normalizedTags.Count > 0)
+                {
+                    data["tags"] = normalizedTags;
+                }
+                else
+                {
+                    _ = data.Remove("tags");
+                }
+
+                tagsChanged = true;
+            }
+        }
+
         var resolvedWorkItems = EnsureStringList(workbench, "workItems", out var workItemsListChanged);
         var resolvedCodeRefs = EnsureStringList(workbench, "codeRefs", out var codeRefsListChanged);
 
@@ -529,7 +609,7 @@ public static class DocService
             data["updated"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
-        if (artifactIdUpdated || titleUpdated || statusUpdated || ownerUpdated || domainUpdated || capabilityUpdated || body is not null || workItemsListChanged || codeRefsListChanged || workbenchChanged)
+        if (artifactIdUpdated || titleUpdated || statusUpdated || ownerUpdated || domainUpdated || capabilityUpdated || body is not null || relatedArtifactsChanged || tagsChanged || workItemsListChanged || codeRefsListChanged || workbenchChanged)
         {
             frontMatter = new FrontMatter(data, effectiveBody);
             File.WriteAllText(docPath, frontMatter.Serialize());
@@ -545,8 +625,422 @@ public static class DocService
             domainUpdated,
             capabilityUpdated,
             bodyUpdated,
+            relatedArtifactsChanged,
             workItemsListChanged,
             codeRefsListChanged);
+    }
+
+    public static DocEditResult EditDoc(
+        string repoRoot,
+        WorkbenchConfig config,
+        string reference,
+        string? artifactId,
+        string? title,
+        string? status,
+        string? owner,
+        string? domain,
+        string? capability,
+        string? body,
+        IList<string>? relatedArtifacts,
+        IList<string>? tags,
+        IList<string>? workItems,
+        IList<string>? codeRefs)
+    {
+        if (!TryResolveDocPath(repoRoot, config, reference, out var docPath))
+        {
+            throw new InvalidOperationException($"Doc not found: {reference}");
+        }
+
+        if (docPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Editing canonical JSON artifacts through `workbench doc/spec edit` is not supported. Edit the JSON file directly.");
+        }
+
+        var content = File.ReadAllText(docPath);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            throw new InvalidOperationException(error);
+        }
+
+        var data = new Dictionary<string, object?>(frontMatter!.Data, StringComparer.OrdinalIgnoreCase);
+        var originalArtifactId = NormalizeArtifactId(GetString(data, "artifact_id") ?? GetString(data, "artifactId"));
+        var artifactIdUpdated = false;
+        var titleUpdated = false;
+        var statusUpdated = false;
+        var ownerUpdated = false;
+        var domainUpdated = false;
+        var capabilityUpdated = false;
+        var bodyUpdated = false;
+
+        if (artifactId is not null)
+        {
+            var normalizedArtifactId = NormalizeArtifactId(artifactId);
+            if (!string.Equals(originalArtifactId, normalizedArtifactId, StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(normalizedArtifactId))
+                {
+                    _ = data.Remove("artifact_id");
+                    _ = data.Remove("artifactId");
+                }
+                else
+                {
+                    data["artifact_id"] = normalizedArtifactId;
+                }
+
+                artifactIdUpdated = true;
+            }
+        }
+
+        if (title is not null)
+        {
+            var normalizedTitle = title.Trim();
+            var currentTitle = GetString(data, "title") ?? ExtractTitle(frontMatter.Body) ?? string.Empty;
+            if (!string.Equals(currentTitle, normalizedTitle, StringComparison.Ordinal))
+            {
+                data["title"] = normalizedTitle;
+                titleUpdated = true;
+            }
+        }
+
+        if (status is not null)
+        {
+            var normalizedStatus = status.Trim();
+            var currentStatus = GetString(data, "status") ?? string.Empty;
+            if (!string.Equals(currentStatus, normalizedStatus, StringComparison.Ordinal))
+            {
+                if (string.IsNullOrWhiteSpace(normalizedStatus))
+                {
+                    _ = data.Remove("status");
+                }
+                else
+                {
+                    data["status"] = normalizedStatus;
+                }
+                statusUpdated = true;
+            }
+        }
+
+        if (domain is not null)
+        {
+            var normalizedDomain = domain.Trim();
+            var currentDomain = GetString(data, "domain") ?? string.Empty;
+            if (!string.Equals(currentDomain, normalizedDomain, StringComparison.Ordinal))
+            {
+                if (string.IsNullOrWhiteSpace(normalizedDomain))
+                {
+                    _ = data.Remove("domain");
+                }
+                else
+                {
+                    data["domain"] = normalizedDomain;
+                }
+                domainUpdated = true;
+            }
+        }
+
+        if (capability is not null)
+        {
+            var normalizedCapability = capability.Trim();
+            var currentCapability = GetString(data, "capability") ?? string.Empty;
+            if (!string.Equals(currentCapability, normalizedCapability, StringComparison.Ordinal))
+            {
+                if (string.IsNullOrWhiteSpace(normalizedCapability))
+                {
+                    _ = data.Remove("capability");
+                }
+                else
+                {
+                    data["capability"] = normalizedCapability;
+                }
+                capabilityUpdated = true;
+            }
+        }
+
+        if (owner is not null)
+        {
+            var normalizedOwner = owner.Trim();
+            var currentOwner = GetString(data, "owner") ?? string.Empty;
+            if (!string.Equals(currentOwner, normalizedOwner, StringComparison.Ordinal))
+            {
+                if (string.IsNullOrWhiteSpace(normalizedOwner))
+                {
+                    _ = data.Remove("owner");
+                }
+                else
+                {
+                    data["owner"] = normalizedOwner;
+                }
+                ownerUpdated = true;
+            }
+        }
+
+        if (SpecTraceMarkdown.GetCanonicalArtifactType(GetString(data, "artifact_type") ?? string.Empty) is not null)
+        {
+            var canonicalRelatedArtifactsCurrent = GetStringList(data, "related_artifacts");
+            var relatedArtifactsListChanged = false;
+            var effectiveRelatedArtifacts = relatedArtifacts ?? workItems;
+
+            if (effectiveRelatedArtifacts is not null)
+            {
+                var normalizedRelatedArtifacts = effectiveRelatedArtifacts
+                    .Select(entry => entry.Trim())
+                    .Where(entry => entry.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (normalizedRelatedArtifacts.Count > 0 &&
+                    !canonicalRelatedArtifactsCurrent.SequenceEqual(normalizedRelatedArtifacts, StringComparer.OrdinalIgnoreCase))
+                {
+                    data["related_artifacts"] = normalizedRelatedArtifacts;
+                    relatedArtifactsListChanged = true;
+                }
+                else if (normalizedRelatedArtifacts.Count == 0 && canonicalRelatedArtifactsCurrent.Count > 0)
+                {
+                    _ = data.Remove("related_artifacts");
+                    relatedArtifactsListChanged = true;
+                }
+            }
+
+            var canonicalTagsCurrent = GetStringList(data, "tags");
+            var tagsListChanged = false;
+            if (tags is not null)
+            {
+                var normalizedTags = tags
+                    .Select(entry => entry.Trim())
+                    .Where(entry => entry.Length > 0)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (!canonicalTagsCurrent.SequenceEqual(normalizedTags, StringComparer.OrdinalIgnoreCase))
+                {
+                    if (normalizedTags.Count > 0)
+                    {
+                        data["tags"] = normalizedTags;
+                    }
+                    else
+                    {
+                        _ = data.Remove("tags");
+                    }
+
+                    tagsListChanged = true;
+                }
+            }
+
+            var canonicalEffectiveBody = frontMatter.Body;
+            if (body is not null)
+            {
+                canonicalEffectiveBody = body.TrimEnd() + "\n";
+                bodyUpdated = !string.Equals(frontMatter.Body, canonicalEffectiveBody, StringComparison.Ordinal);
+            }
+
+            if (artifactIdUpdated || titleUpdated || statusUpdated || ownerUpdated || domainUpdated || capabilityUpdated || body is not null || relatedArtifactsListChanged || tagsListChanged)
+            {
+                frontMatter = new FrontMatter(data, canonicalEffectiveBody);
+                File.WriteAllText(docPath, frontMatter.Serialize());
+            }
+
+            return new DocEditResult(
+                docPath,
+                NormalizeArtifactId(GetString(data, "artifact_id") ?? GetString(data, "artifactId")) ?? originalArtifactId,
+                artifactIdUpdated,
+                titleUpdated,
+                statusUpdated,
+                ownerUpdated,
+                domainUpdated,
+                capabilityUpdated,
+                bodyUpdated,
+                relatedArtifactsListChanged,
+                false,
+                false);
+        }
+
+        var workbench = EnsureWorkbench(frontMatter!, InferDocType(docPath), out var workbenchChanged);
+        var relatedArtifactsChanged = false;
+        var currentRelatedArtifacts = GetStringList(data, "related_artifacts");
+        if (relatedArtifacts is not null)
+        {
+            var normalizedRelatedArtifacts = relatedArtifacts
+                .Select(entry => entry.Trim())
+                .Where(entry => entry.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!currentRelatedArtifacts.SequenceEqual(normalizedRelatedArtifacts, StringComparer.OrdinalIgnoreCase))
+            {
+                if (normalizedRelatedArtifacts.Count > 0)
+                {
+                    data["related_artifacts"] = normalizedRelatedArtifacts;
+                }
+                else
+                {
+                    _ = data.Remove("related_artifacts");
+                }
+
+                relatedArtifactsChanged = true;
+            }
+        }
+
+        var tagsChanged = false;
+        var currentTags = GetStringList(data, "tags");
+        if (tags is not null)
+        {
+            var normalizedTags = tags
+                .Select(entry => entry.Trim())
+                .Where(entry => entry.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!currentTags.SequenceEqual(normalizedTags, StringComparer.OrdinalIgnoreCase))
+            {
+                if (normalizedTags.Count > 0)
+                {
+                    data["tags"] = normalizedTags;
+                }
+                else
+                {
+                    _ = data.Remove("tags");
+                }
+
+                tagsChanged = true;
+            }
+        }
+
+        var resolvedWorkItems = EnsureStringList(workbench, "workItems", out var workItemsListChanged);
+        var resolvedCodeRefs = EnsureStringList(workbench, "codeRefs", out var codeRefsListChanged);
+
+        if (workItems is not null)
+        {
+            var normalizedWorkItems = workItems
+                .Select(entry => entry.Trim())
+                .Where(entry => entry.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!resolvedWorkItems.SequenceEqual(normalizedWorkItems, StringComparer.OrdinalIgnoreCase))
+            {
+                workbench["workItems"] = normalizedWorkItems;
+                workItemsListChanged = true;
+            }
+        }
+
+        if (codeRefs is not null)
+        {
+            var normalizedCodeRefs = codeRefs
+                .Select(entry => entry.Trim())
+                .Where(entry => entry.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!resolvedCodeRefs.SequenceEqual(normalizedCodeRefs, StringComparer.OrdinalIgnoreCase))
+            {
+                workbench["codeRefs"] = normalizedCodeRefs;
+                codeRefsListChanged = true;
+            }
+        }
+
+        var effectiveBody = frontMatter.Body;
+        if (body is not null)
+        {
+            effectiveBody = body.TrimEnd() + "\n";
+            bodyUpdated = !string.Equals(frontMatter.Body, effectiveBody, StringComparison.Ordinal);
+        }
+
+        if (data.ContainsKey("updated_utc"))
+        {
+            data["updated_utc"] = DateTimeOffset.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+        }
+        else if (data.ContainsKey("updated"))
+        {
+            data["updated"] = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+
+        if (artifactIdUpdated || titleUpdated || statusUpdated || ownerUpdated || domainUpdated || capabilityUpdated || body is not null || relatedArtifactsChanged || tagsChanged || workItemsListChanged || codeRefsListChanged || workbenchChanged)
+        {
+            frontMatter = new FrontMatter(data, effectiveBody);
+            File.WriteAllText(docPath, frontMatter.Serialize());
+        }
+
+        return new DocEditResult(
+            docPath,
+            NormalizeArtifactId(GetString(data, "artifact_id") ?? GetString(data, "artifactId")) ?? originalArtifactId,
+            artifactIdUpdated,
+            titleUpdated,
+            statusUpdated,
+            ownerUpdated,
+            domainUpdated,
+            capabilityUpdated,
+            bodyUpdated,
+            relatedArtifactsChanged,
+            workItemsListChanged,
+            codeRefsListChanged);
+    }
+
+    public static DocEditResult EditDoc(
+        string repoRoot,
+        WorkbenchConfig config,
+        string reference,
+        string? artifactId,
+        string? title,
+        string? status,
+        string? owner,
+        string? domain,
+        string? capability,
+        string? body,
+        IList<string>? workItems,
+        IList<string>? codeRefs)
+    {
+        return EditDocCore(
+            repoRoot,
+            config,
+            reference,
+            artifactId,
+            title,
+            status,
+            owner,
+            domain,
+            capability,
+            body,
+            relatedArtifacts: null,
+            tags: null,
+            workItems,
+            codeRefs);
+    }
+
+    public static DocEditResult EditDoc(
+        string repoRoot,
+        WorkbenchConfig config,
+        string reference,
+        string? artifactId,
+        string? title,
+        string? status,
+        string? owner,
+        string? domain,
+        string? capability,
+        string? body,
+        IList<string>? satisfies,
+        IList<string>? verifies,
+        IList<string>? relatedArtifacts,
+        IList<string>? tags,
+        IList<string>? workItems,
+        IList<string>? codeRefs)
+    {
+        return EditDocCore(
+            repoRoot,
+            config,
+            reference,
+            artifactId,
+            title,
+            status,
+            owner,
+            domain,
+            capability,
+            body,
+            relatedArtifacts,
+            tags,
+            workItems,
+            codeRefs,
+            satisfies,
+            verifies);
     }
 
     public static DocShowData GetDocShowData(
@@ -731,29 +1225,29 @@ public static class DocService
         {
             var document = CanonicalArtifactJsonLoader.LoadDocument(repoRoot, docPath);
             var data = new Dictionary<string, object?>(document.Data, StringComparer.OrdinalIgnoreCase);
-            var relatedArtifacts = GetStringList(data, "related_artifacts");
+            var jsonRelatedArtifacts = GetStringList(data, "related_artifacts");
             var changed = false;
 
             if (add)
             {
-                if (!relatedArtifacts.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
+                if (!jsonRelatedArtifacts.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
                 {
-                    relatedArtifacts.Add(workItemId);
+                    jsonRelatedArtifacts.Add(workItemId);
                     changed = true;
                 }
             }
             else
             {
-                var before = relatedArtifacts.Count;
-                relatedArtifacts.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
-                changed = relatedArtifacts.Count != before;
+                var before = jsonRelatedArtifacts.Count;
+                jsonRelatedArtifacts.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
+                changed = jsonRelatedArtifacts.Count != before;
             }
 
             if (changed && apply)
             {
-                if (relatedArtifacts.Count > 0)
+                if (jsonRelatedArtifacts.Count > 0)
                 {
-                    data["related_artifacts"] = relatedArtifacts;
+                    data["related_artifacts"] = jsonRelatedArtifacts;
                 }
                 else
                 {
@@ -784,32 +1278,32 @@ public static class DocService
         var artifactType = GetString(frontMatter!.Data, "artifact_type");
         if (SpecTraceMarkdown.GetCanonicalArtifactType(artifactType ?? string.Empty) is not null)
         {
-            var relatedArtifacts = GetStringList(frontMatter.Data, "related_artifacts");
-            var relatedArtifactsChanged = false;
+            var canonicalRelatedArtifacts = GetStringList(frontMatter.Data, "related_artifacts");
+            var canonicalRelatedArtifactsChanged = false;
 
             if (add)
             {
-                if (!relatedArtifacts.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
+                if (!canonicalRelatedArtifacts.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
                 {
-                    relatedArtifacts.Add(workItemId);
-                    relatedArtifactsChanged = true;
+                    canonicalRelatedArtifacts.Add(workItemId);
+                    canonicalRelatedArtifactsChanged = true;
                 }
             }
             else
             {
-                var before = relatedArtifacts.Count;
-                relatedArtifacts.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
-                if (relatedArtifacts.Count != before)
+                var before = canonicalRelatedArtifacts.Count;
+                canonicalRelatedArtifacts.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
+                if (canonicalRelatedArtifacts.Count != before)
                 {
-                    relatedArtifactsChanged = true;
+                    canonicalRelatedArtifactsChanged = true;
                 }
             }
 
-            if (createdFrontMatter || relatedArtifactsChanged)
+            if (createdFrontMatter || canonicalRelatedArtifactsChanged)
             {
                 if (apply)
                 {
-                    frontMatter!.Data["related_artifacts"] = relatedArtifacts;
+                    frontMatter!.Data["related_artifacts"] = canonicalRelatedArtifacts;
                     File.WriteAllText(docPath, frontMatter.Serialize());
                 }
 
@@ -820,12 +1314,23 @@ public static class DocService
         }
 
         var workbench = EnsureWorkbench(frontMatter!, InferDocType(docPath), out var docChanged);
+        var relatedArtifactsKey = frontMatter!.Data.ContainsKey("related_artifacts")
+            ? "related_artifacts"
+            : "related";
+        var relatedLinks = GetStringList(frontMatter!.Data, relatedArtifactsKey);
+        var relatedLinksChanged = false;
         var workItems = EnsureStringList(workbench, "workItems", out var listChanged);
         var pathChanged = EnsureDocPathMetadata(workbench, repoRoot, docPath, out _, out _);
         var updated = false;
 
         if (add)
         {
+            if (!relatedLinks.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
+            {
+                relatedLinks.Add(workItemId);
+                relatedLinksChanged = true;
+            }
+
             if (!workItems.Contains(workItemId, StringComparer.OrdinalIgnoreCase))
             {
                 workItems.Add(workItemId);
@@ -834,18 +1339,37 @@ public static class DocService
         }
         else
         {
-            var before = workItems.Count;
+            var beforeRelatedArtifacts = relatedLinks.Count;
+            relatedLinks.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
+            if (relatedLinks.Count != beforeRelatedArtifacts)
+            {
+                relatedLinksChanged = true;
+            }
+
+            var beforeWorkItems = workItems.Count;
             workItems.RemoveAll(entry => entry.Equals(workItemId, StringComparison.OrdinalIgnoreCase));
-            if (workItems.Count != before)
+            if (workItems.Count != beforeWorkItems)
             {
                 listChanged = true;
             }
         }
 
-        if (createdFrontMatter || docChanged || listChanged || pathChanged)
+        if (createdFrontMatter || docChanged || relatedLinksChanged || listChanged || pathChanged)
         {
             if (apply)
             {
+                if (relatedLinksChanged)
+                {
+                    if (relatedLinks.Count > 0)
+                    {
+                        frontMatter!.Data[relatedArtifactsKey] = relatedLinks;
+                    }
+                    else
+                    {
+                        _ = frontMatter!.Data.Remove(relatedArtifactsKey);
+                    }
+                }
+
                 File.WriteAllText(docPath, frontMatter!.Serialize());
             }
             updated = true;
@@ -1842,7 +2366,13 @@ public static class DocService
         var capability = GetString(data, "capability");
         var status = GetString(data, "status") ?? GetString(workbench, "status");
         var owner = GetString(data, "owner");
-        var workItems = FilterWorkItemArtifactIds(GetStringList(data, "related_artifacts"));
+        var relatedArtifacts = GetStringList(data, "related_artifacts");
+        if (relatedArtifacts.Count == 0)
+        {
+            relatedArtifacts = GetStringList(data, "related");
+        }
+
+        var workItems = FilterWorkItemArtifactIds(relatedArtifacts);
         if (workItems.Count == 0)
         {
             workItems = GetStringList(workbench, "workItems");
@@ -1858,6 +2388,7 @@ public static class DocService
             title,
             status,
             owner,
+            relatedArtifacts,
             workItems,
             codeRefs,
             body);
@@ -1895,6 +2426,46 @@ public static class DocService
     private static string BuildBody(string type, string title)
     {
         return DocBodyBuilder.BuildSkeleton(type, title);
+    }
+
+    private static bool UpdateCanonicalListField(
+        IDictionary<string, object?> data,
+        string fieldName,
+        IEnumerable<string>? values,
+        string? requiredMessage = null)
+    {
+        if (values is null)
+        {
+            return false;
+        }
+
+        var currentValues = GetStringList(data, fieldName);
+        var normalizedValues = values
+            .Select(entry => entry.Trim())
+            .Where(entry => entry.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (requiredMessage is not null && normalizedValues.Count == 0)
+        {
+            throw new InvalidOperationException(requiredMessage);
+        }
+
+        if (currentValues.SequenceEqual(normalizedValues, StringComparer.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (normalizedValues.Count > 0)
+        {
+            data[fieldName] = normalizedValues;
+        }
+        else
+        {
+            _ = data.Remove(fieldName);
+        }
+
+        return true;
     }
 
     private static IList<string>? GetCanonicalRelatedArtifacts(

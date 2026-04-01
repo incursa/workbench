@@ -163,7 +163,7 @@ public static class DocFrontMatterBuilder
             ["created_utc"] = now.ToString("o", CultureInfo.InvariantCulture),
             ["updated_utc"] = now.ToString("o", CultureInfo.InvariantCulture),
             ["tags"] = Deduplicate(tags).Cast<object?>().ToList(),
-            ["related"] = Deduplicate(related).Cast<object?>().ToList(),
+            ["related_artifacts"] = Deduplicate(related).Cast<object?>().ToList(),
             ["workbench"] = new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["type"] = docType,

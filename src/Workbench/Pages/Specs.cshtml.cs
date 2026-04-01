@@ -96,6 +96,34 @@ public class SpecsModel : RepoPageModel
         }
     }
 
+    public IActionResult OnPostDelete()
+    {
+        try
+        {
+            if (IsCreateMode || SelectedSpec is null)
+            {
+                throw new InvalidOperationException("A specification must be selected before delete.");
+            }
+
+            var deleted = Workspace.DeleteDoc(SelectedSpec.Summary.Path, keepLinks: false);
+            SetBanner(
+                "Spec deleted",
+                $"{SelectedSpec.Summary.Path} removed locally.\nLinked work items updated: {deleted.ItemsUpdated}");
+            return RedirectToPage(new
+            {
+                selectedReference = string.Empty,
+                query = Query,
+                createMode = false
+            });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, FormatError(ex));
+            LoadPage(populateEditor: false);
+            return Page();
+        }
+    }
+
     private void LoadPage(bool populateEditor)
     {
         if (!string.IsNullOrWhiteSpace(SelectedReference))

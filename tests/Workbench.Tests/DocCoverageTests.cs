@@ -230,6 +230,8 @@ public class DocCoverageTests
             Updated body.
             """,
             new List<string> { workItem.Id, "WI-WB-0002" },
+            null,
+            null,
             null);
 
         Assert.IsTrue(canonicalEdit.ArtifactIdUpdated);
@@ -239,7 +241,8 @@ public class DocCoverageTests
         Assert.IsTrue(canonicalEdit.DomainUpdated);
         Assert.IsTrue(canonicalEdit.CapabilityUpdated);
         Assert.IsTrue(canonicalEdit.BodyUpdated);
-        Assert.IsTrue(canonicalEdit.WorkItemsUpdated);
+        Assert.IsTrue(canonicalEdit.RelatedArtifactsUpdated);
+        Assert.IsFalse(canonicalEdit.WorkItemsUpdated);
         Assert.IsFalse(canonicalEdit.CodeRefsUpdated);
 
         var editedCanonical = File.ReadAllText(canonical.Path);
@@ -298,12 +301,15 @@ public class DocCoverageTests
 
             Updated body.
             """,
+            new List<string> { "tracking/reference.md", "VER-WB-0002" },
+            null,
             new List<string> { workItem.Id, "WI-WB-0002" },
             new List<string> { "src/Workbench.Core/DocService.cs#L1-L10" });
 
         Assert.IsTrue(legacyEdit.ArtifactIdUpdated);
         Assert.IsTrue(legacyEdit.TitleUpdated);
         Assert.IsTrue(legacyEdit.BodyUpdated);
+        Assert.IsTrue(legacyEdit.RelatedArtifactsUpdated);
         Assert.IsTrue(legacyEdit.WorkItemsUpdated);
         Assert.IsTrue(legacyEdit.CodeRefsUpdated);
 
@@ -315,6 +321,165 @@ public class DocCoverageTests
 
         Assert.IsTrue(DocService.TryUpdateDocWorkItemLink(repo.Path, WorkbenchConfig.Default, legacy.Path, workItem.Id, add: false));
         Assert.IsTrue(DocService.TryUpdateDocWorkItemLink(repo.Path, WorkbenchConfig.Default, legacy.Path, workItem.Id, add: true));
+    }
+
+    [TestMethod]
+    public void DocService_CreateGeneratedDoc_EditDoc_CoversArchitectureAndVerificationBranches()
+    {
+        using var repo = CreateRepoRoot();
+        ScaffoldService.Scaffold(repo.Path, force: true);
+
+        var architecture = DocService.CreateGeneratedDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            "architecture",
+            "Generated architecture",
+            """
+            ## Purpose
+
+            Original architecture body.
+            """,
+            path: null,
+            workItems: new List<string>(),
+            codeRefs: new List<string>(),
+            tags: new List<string>(),
+            related: new List<string> { "SPEC-WB-ARCH-0001" },
+            status: "draft",
+            source: null,
+            force: false,
+            artifactId: "ARC-WB-ARCH-0001",
+            domain: "WB",
+            capability: "architecture",
+            owner: "platform",
+            satisfies: new List<string> { "REQ-WB-ARCH-0001", "REQ-WB-ARCH-0002" });
+
+        Assert.IsTrue(File.Exists(architecture.Path), architecture.Path);
+        var architectureContent = File.ReadAllText(architecture.Path);
+        StringAssert.Contains(architectureContent, "artifact_type: architecture", StringComparison.Ordinal);
+        StringAssert.Contains(architectureContent, "artifact_id: ARC-WB-ARCH-0001", StringComparison.Ordinal);
+        StringAssert.Contains(architectureContent, "satisfies:", StringComparison.Ordinal);
+        StringAssert.Contains(architectureContent, "REQ-WB-ARCH-0002", StringComparison.Ordinal);
+        StringAssert.Contains(architectureContent, "related_artifacts:", StringComparison.Ordinal);
+        StringAssert.Contains(architectureContent, "SPEC-WB-ARCH-0001", StringComparison.Ordinal);
+
+        var architectureEdit = DocService.EditDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            architecture.Path,
+            "ARC-WB-ARCH-0002",
+            "Edited architecture",
+            "approved",
+            "release",
+            "WB-OPS",
+            "architecture-plus",
+            """
+            ## Purpose
+
+            Updated architecture body.
+            """,
+            new List<string> { "REQ-WB-ARCH-0001", "REQ-WB-ARCH-0003" },
+            null,
+            new List<string> { "SPEC-WB-ARCH-0001", "ARC-WB-ARCH-0009" },
+            null,
+            null,
+            null);
+
+        Assert.IsTrue(architectureEdit.ArtifactIdUpdated);
+        Assert.IsTrue(architectureEdit.TitleUpdated);
+        Assert.IsTrue(architectureEdit.StatusUpdated);
+        Assert.IsTrue(architectureEdit.OwnerUpdated);
+        Assert.IsTrue(architectureEdit.DomainUpdated);
+        Assert.IsTrue(architectureEdit.CapabilityUpdated);
+        Assert.IsTrue(architectureEdit.BodyUpdated);
+        Assert.IsTrue(architectureEdit.RelatedArtifactsUpdated);
+        Assert.IsFalse(architectureEdit.WorkItemsUpdated);
+        Assert.IsFalse(architectureEdit.CodeRefsUpdated);
+
+        var editedArchitecture = File.ReadAllText(architecture.Path);
+        StringAssert.Contains(editedArchitecture, "artifact_id: ARC-WB-ARCH-0002", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "title: Edited architecture", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "status: approved", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "owner: release", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "domain: WB-OPS", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "capability: architecture-plus", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "REQ-WB-ARCH-0003", StringComparison.Ordinal);
+        StringAssert.Contains(editedArchitecture, "ARC-WB-ARCH-0009", StringComparison.Ordinal);
+
+        var verification = DocService.CreateGeneratedDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            "verification",
+            "Generated verification",
+            """
+            ## Purpose
+
+            Original verification body.
+            """,
+            path: null,
+            workItems: new List<string>(),
+            codeRefs: new List<string>(),
+            tags: new List<string>(),
+            related: new List<string> { "ARC-WB-VER-0001" },
+            status: "planned",
+            source: null,
+            force: false,
+            artifactId: "VER-WB-VER-0001",
+            domain: "WB",
+            capability: "verification",
+            owner: "platform",
+            verifies: new List<string> { "REQ-WB-VER-0001", "REQ-WB-VER-0002" });
+
+        Assert.IsTrue(File.Exists(verification.Path), verification.Path);
+        var verificationContent = File.ReadAllText(verification.Path);
+        StringAssert.Contains(verificationContent, "artifact_type: verification", StringComparison.Ordinal);
+        StringAssert.Contains(verificationContent, "artifact_id: VER-WB-VER-0001", StringComparison.Ordinal);
+        StringAssert.Contains(verificationContent, "verifies:", StringComparison.Ordinal);
+        StringAssert.Contains(verificationContent, "REQ-WB-VER-0002", StringComparison.Ordinal);
+        StringAssert.Contains(verificationContent, "related_artifacts:", StringComparison.Ordinal);
+        StringAssert.Contains(verificationContent, "ARC-WB-VER-0001", StringComparison.Ordinal);
+
+        var verificationEdit = DocService.EditDoc(
+            repo.Path,
+            WorkbenchConfig.Default,
+            verification.Path,
+            "VER-WB-VER-0002",
+            "Edited verification",
+            "passed",
+            "release",
+            "WB-OPS",
+            "verification-plus",
+            """
+            ## Purpose
+
+            Updated verification body.
+            """,
+            null,
+            new List<string> { "REQ-WB-VER-0001", "REQ-WB-VER-0003" },
+            new List<string> { "ARC-WB-VER-0001", "VER-WB-VER-0009" },
+            null,
+            null,
+            null);
+
+        Assert.IsTrue(verificationEdit.ArtifactIdUpdated);
+        Assert.IsTrue(verificationEdit.TitleUpdated);
+        Assert.IsTrue(verificationEdit.StatusUpdated);
+        Assert.IsTrue(verificationEdit.OwnerUpdated);
+        Assert.IsTrue(verificationEdit.DomainUpdated);
+        Assert.IsTrue(verificationEdit.CapabilityUpdated);
+        Assert.IsTrue(verificationEdit.BodyUpdated);
+        Assert.IsTrue(verificationEdit.RelatedArtifactsUpdated);
+        Assert.IsFalse(verificationEdit.WorkItemsUpdated);
+        Assert.IsFalse(verificationEdit.CodeRefsUpdated);
+
+        var editedVerification = File.ReadAllText(verification.Path);
+        StringAssert.Contains(editedVerification, "artifact_id: VER-WB-VER-0002", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "title: Edited verification", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "status: passed", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "owner: release", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "domain: WB-OPS", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "capability: verification-plus", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "REQ-WB-VER-0003", StringComparison.Ordinal);
+        StringAssert.Contains(editedVerification, "VER-WB-VER-0009", StringComparison.Ordinal);
     }
 
     [TestMethod]

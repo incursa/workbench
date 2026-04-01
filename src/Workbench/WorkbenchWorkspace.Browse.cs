@@ -287,17 +287,30 @@ public sealed partial class WorkbenchWorkspace
         var status = GetString(data, "status") ?? GetString(workbench, "status") ?? "unknown";
         var title = GetString(data, "title") ?? ExtractTitle(body) ?? Path.GetFileNameWithoutExtension(relative);
         var section = GetDocSection(relative);
-        var workItems = FilterWorkItemArtifactIds(GetStringList(data, "related_artifacts"));
+        var relatedArtifacts = GetStringList(data, "related_artifacts");
+        if (relatedArtifacts.Count == 0)
+        {
+            relatedArtifacts = GetStringList(data, "related");
+        }
+        if (relatedArtifacts.Count == 0)
+        {
+            relatedArtifacts = GetStringList(workbench, "workItems");
+        }
+
+        var workItems = FilterWorkItemArtifactIds(relatedArtifacts);
         if (workItems.Count == 0)
         {
             workItems = GetStringList(workbench, "workItems");
         }
+        var tags = GetStringList(data, "tags");
+        var satisfies = GetStringList(data, "satisfies");
+        var verifies = GetStringList(data, "verifies");
         var excerpt = ExtractExcerpt(body);
         var artifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId");
         var domain = GetString(data, "domain");
         var capability = GetString(data, "capability");
 
-        return new RepoDocSummary(relative, artifactId, domain, capability, title, type, status, section, excerpt, workItems);
+        return new RepoDocSummary(relative, artifactId, domain, capability, title, type, status, section, excerpt, workItems, relatedArtifacts, tags, satisfies, verifies);
     }
 
     private static RepoFileSummary? BuildFileSummary(string path, string relative)
@@ -338,7 +351,11 @@ public sealed partial class WorkbenchWorkspace
             || doc.Status.Contains(query, StringComparison.OrdinalIgnoreCase)
             || doc.Section.Contains(query, StringComparison.OrdinalIgnoreCase)
             || doc.Excerpt.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || doc.WorkItems.Any(item => item.Contains(query, StringComparison.OrdinalIgnoreCase));
+            || doc.WorkItems.Any(item => item.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || doc.RelatedArtifacts.Any(item => item.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || doc.Tags.Any(item => item.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || doc.Satisfies.Any(item => item.Contains(query, StringComparison.OrdinalIgnoreCase))
+            || doc.Verifies.Any(item => item.Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool MatchesQuery(RepoFileSummary file, string query)

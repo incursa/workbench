@@ -4,12 +4,12 @@
     ViewData["Title"] = "Specs";
 }
 
-<section class="hero inc-card">
+<inc-card class="hero">
     <div class="hero-copy">
         <div class="eyebrow">Specification editor</div>
-        <h2>Write and manage repository-native specifications with canonical requirement clauses and stable IDs.</h2>
+        <h2>Write and manage repository-native specifications with schema-backed metadata, canonical requirement clauses, and stable IDs.</h2>
         <p>
-            Specifications stay Markdown-first, but the editor keeps the file shape explicit so Workbench can interpret, link, and refresh them without guesswork.
+            Specifications stay Markdown-first, but the editor keeps required fields explicit and lets you reorder optional tags and related artifacts so the form mirrors the front-matter schema.
         </p>
         <div class="muted">@Model.SpecIdPolicySummary</div>
         <div class="hero-links">
@@ -19,28 +19,28 @@
         </div>
     </div>
     <div class="hero-stats">
-        <div class="inc-card stat-card accent">
+        <inc-card class="stat-card accent">
             <span class="stat-label">Specs found</span>
             <span class="stat-value">@Model.Specs.Count</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Query</span>
             <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.Query) ? "all" : Model.Query)</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Repo root</span>
             <span class="stat-value">@Model.RepoRoot</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Profile</span>
             <span class="stat-value">@Model.ProfileName</span>
-        </div>
+        </inc-card>
     </div>
-</section>
+</inc-card>
 
 @if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
 {
-    <section class="inc-card panel banner">
+    <inc-card class="panel banner">
         <div class="panel-head compact">
             <h3>@Model.BannerTitle</h3>
         </div>
@@ -48,20 +48,19 @@
         {
             <div class="muted">@line</div>
         }
-    </section>
+    </inc-card>
 }
 
 <div class="workspace docs-layout">
-    <aside class="inc-card panel sidebar">
+    <inc-card class="panel sidebar">
         <div class="panel-head">
             <h3>Browse specs</h3>
             <form method="get" class="inline-filter docs-filter">
                 <input type="hidden" name="selectedReference" value="@Model.SelectedReference" />
                 <input type="hidden" name="createMode" value="@Model.CreateMode" />
-                <label class="inc-form__group">
-                    <span class="field-label">Search</span>
-                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Artifact ID, title, body, work item" />
-                </label>
+                <inc-field label="Search">
+                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Artifact ID, title, body, tag, related artifact" />
+                </inc-field>
                 <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
             </form>
         </div>
@@ -76,9 +75,9 @@
                 @await Html.PartialAsync("_TreeBranch", Model.Tree)
             }
         </div>
-    </aside>
+    </inc-card>
 
-    <section class="inc-card panel detail">
+    <inc-card class="panel detail">
         @if (Model.SelectedSpec is null && !Model.IsCreateMode)
         {
             <div class="empty-state large">Select a spec to edit it here or start a new one with the create button above.</div>
@@ -89,7 +88,7 @@
                 <div>
                     <div class="eyebrow">@(Model.IsCreateMode ? "Create spec" : "Selected spec")</div>
                     <h3>@(Model.IsCreateMode ? "Create a new specification" : Model.Edit.Title)</h3>
-                    <p>@(Model.IsCreateMode ? "Workbench will save the new specification under specs/<domain>/ unless you choose a path." : Model.SelectedSpec!.Summary.Path)</p>
+                    <p>@(Model.IsCreateMode ? "Workbench will save the new specification under specs/requirements/<domain>/ unless you choose a path." : Model.SelectedSpec!.Summary.Path)</p>
                 </div>
                 <div class="detail-badges">
                     @if (Model.IsCreateMode)
@@ -105,7 +104,7 @@
                 </div>
             </div>
 
-            <section class="inc-card snapshot">
+            <inc-card class="snapshot">
                 <div class="snapshot-head">
                     <h4>@(Model.IsCreateMode ? "Creation hints" : "Metadata")</h4>
                     <span class="muted">@Model.SpecIdPolicySummary</span>
@@ -131,18 +130,38 @@
                         <div class="mono">@(string.IsNullOrWhiteSpace(Model.Edit.Capability) ? "-" : Model.Edit.Capability)</div>
                     </div>
                     <div>
-                        <div class="field-label">Related artifacts</div>
+                        <div class="field-label">Tags</div>
                         @if (Model.IsCreateMode)
                         {
-                            <div class="muted">Draft links will appear after save.</div>
+                            <div class="muted">Draft tags will appear after save.</div>
                         }
-                        else if (Model.SelectedSpec!.Summary.WorkItems.Count == 0)
+                        else if (Model.SelectedSpec!.Summary.Tags.Count == 0)
                         {
                             <div class="muted">None</div>
                         }
                         else
                         {
-                            foreach (var id in Model.SelectedSpec.Summary.WorkItems)
+                            <div class="detail-badges">
+                                @foreach (var tag in Model.SelectedSpec.Summary.Tags)
+                                {
+                                    <span class="pill">@tag</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <div class="field-label">Related artifacts</div>
+                        @if (Model.IsCreateMode)
+                        {
+                            <div class="muted">Draft links will appear after save.</div>
+                        }
+                        else if (Model.SelectedSpec!.Summary.RelatedArtifacts.Count == 0)
+                        {
+                            <div class="muted">None</div>
+                        }
+                        else
+                        {
+                            foreach (var id in Model.SelectedSpec.Summary.RelatedArtifacts)
                             {
                                 <div class="mono">@id</div>
                             }
@@ -150,7 +169,7 @@
                     </div>
                     <div>
                         <div class="field-label">Path</div>
-                        <div class="mono">@(Model.IsCreateMode ? "specs/CLI/SPEC-CLI-....md" : Model.SelectedSpec!.Summary.Path)</div>
+                        <div class="mono">@(Model.IsCreateMode ? "specs/requirements/<DOMAIN>/SPEC-<DOMAIN>-....md" : Model.SelectedSpec!.Summary.Path)</div>
                     </div>
                     @if (!Model.IsCreateMode)
                     {
@@ -160,126 +179,99 @@
                         </div>
                     }
                 </div>
-            </section>
+            </inc-card>
 
-            <section class="inc-card panel">
-                <div class="panel-head compact">
-                    <h4>@(Model.IsCreateMode ? "Create spec" : "Edit spec")</h4>
-                    <span class="muted">Sections are saved back as Markdown with clickable repository links.</span>
-                </div>
-                <div class="muted">@(Model.IsCreateMode ? "Leave Artifact ID blank to use the repository policy. Workbench will choose the default specs path from the title when you leave Path empty." : "The editor keeps the structured body and traceability links in sync with the file on disk. Repo doc paths and artifact IDs are converted into clickable links when possible.")</div>
+            <form method="post" asp-page-handler="Save" class="editor-stack">
+                <partial name="_ValidationSummary" />
+                <input type="hidden" asp-for="CreateMode" />
+                <input type="hidden" asp-for="Edit.Path" />
 
-                <form method="post" asp-page-handler="Save" class="editor-stack">
-                    <div asp-validation-summary="All" class="validation-summary"></div>
-                    <input type="hidden" asp-for="CreateMode" />
-                    <input type="hidden" asp-for="Edit.Path" />
-
-                    <section class="inc-card editor-section">
-                        <div class="editor-section-head">
-                            <h4>Identity</h4>
-                            <span class="muted">Stable document identifiers and publishing metadata.</span>
-                        </div>
-                        <div class="muted">Leave the artifact ID blank to let Workbench regenerate it from the document metadata when you save. For related doc fields, paste a repo path or artifact ID and Workbench will turn it into a clickable link when it can resolve the target.</div>
-                        <div class="editor-grid editor-grid-two">
-                            <label class="inc-form__group">
-                                <span class="field-label">Artifact ID</span>
-                                <input class="inc-form__control mono" asp-for="Edit.ArtifactId" placeholder="SPEC-CLI-ONBOARDING" />
-                            </label>
-                            <label class="inc-form__group">
-                                <span class="field-label">Domain</span>
-                                <input class="inc-form__control mono" asp-for="Edit.Domain" placeholder="CLI" />
-                            </label>
-                            <label class="inc-form__group">
-                                <span class="field-label">Capability</span>
-                                <input class="inc-form__control mono" asp-for="Edit.Capability" placeholder="ONBOARDING" />
-                            </label>
-                            <label class="inc-form__group">
-                                <span class="field-label">Status</span>
-                                <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" />
-                            </label>
-                            <label class="inc-form__group span-2">
-                                <span class="field-label">Title</span>
-                                <input class="inc-form__control" asp-for="Edit.Title" />
-                            </label>
-                            <label class="inc-form__group span-2">
-                                <span class="field-label">Owner</span>
-                                <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or person" />
-                            </label>
-                        </div>
-                    </section>
-
-                    <details class="inc-card editor-section">
-                        <summary class="editor-section-head">
-                            <h4>Core narrative</h4>
-                            <span class="muted">Purpose, scope, and context frame the grouped requirement clauses. Edit</span>
-                        </summary>
-                        <div class="editor-stack">
-                            <label class="inc-form__group">
-                                <span class="field-label">Purpose</span>
-                                <textarea class="inc-form__control" asp-for="Edit.Purpose" rows="4"></textarea>
-                            </label>
-                            <label class="inc-form__group">
-                                <span class="field-label">Scope</span>
-                                <textarea class="inc-form__control" asp-for="Edit.Scope" rows="4"></textarea>
-                            </label>
-                            <label class="inc-form__group">
-                                <span class="field-label">Context</span>
-                                <textarea class="inc-form__control" asp-for="Edit.Context" rows="5"></textarea>
-                            </label>
-                        </div>
-                    </details>
-
-                    <section class="inc-card editor-section">
-                        <div class="editor-section-head">
-                            <h4>Requirements</h4>
-                            <span class="muted">Enter canonical REQ-... blocks with an immediate clause and optional Trace/Notes sections.</span>
-                        </div>
-                        <label class="inc-form__group">
-                            <span class="field-label">Requirement clauses</span>
-                            <textarea class="inc-form__control" asp-for="Edit.Requirements" rows="20"></textarea>
-                        </label>
-                    </section>
-
-                    <details class="inc-card editor-section">
-                        <summary class="editor-section-head">
-                            <h4>Related artifacts</h4>
-                            <span class="muted">Optional artifact IDs that should be linked from the specification front matter. Edit</span>
-                        </summary>
-                        <label class="inc-form__group">
-                            <span class="field-label">Related artifacts</span>
-                            <textarea class="inc-form__control mono" asp-for="Edit.RelatedArtifacts" rows="6" placeholder="ARC-PAY-ACH-0002"></textarea>
-                        </label>
-                    </details>
-
-                    <details class="inc-card editor-section">
-                        <summary class="editor-section-head">
-                            <h4>Open questions</h4>
-                            <span class="muted">Keep unresolved items visible instead of burying them in prose. Edit</span>
-                        </summary>
-                        <label class="inc-form__group">
-                            <span class="field-label">Open questions</span>
-                            <textarea class="inc-form__control" asp-for="Edit.OpenQuestions" rows="4"></textarea>
-                        </label>
-                    </details>
-
-                    <div class="button-row">
-                        <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create spec" : "Save spec")</button>
+                <inc-disclosure class="inc-card editor-section" summary="Identity" open>
+                    <div slot="content" class="editor-grid editor-grid-two">
+                        <inc-field label="Artifact ID">
+                            <input class="inc-form__control mono" asp-for="Edit.ArtifactId" placeholder="SPEC-CLI-ONBOARDING" />
+                        </inc-field>
+                        <inc-field label="Domain">
+                            <input class="inc-form__control mono" asp-for="Edit.Domain" placeholder="CLI" required />
+                        </inc-field>
+                        <inc-field label="Capability">
+                            <input class="inc-form__control mono" asp-for="Edit.Capability" placeholder="ONBOARDING" required />
+                        </inc-field>
+                        <inc-field label="Status">
+                            <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" required />
+                        </inc-field>
+                        <inc-field class="span-2" label="Title">
+                            <input class="inc-form__control" asp-for="Edit.Title" required />
+                        </inc-field>
+                        <inc-field class="span-2" label="Owner">
+                            <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or person" required />
+                        </inc-field>
                     </div>
-                </form>
-            </section>
+                </inc-disclosure>
+
+                <inc-disclosure class="inc-card editor-section" summary="Core narrative" open>
+                    <div slot="content" class="editor-stack">
+                        <inc-field label="Purpose">
+                            <textarea class="inc-form__control" asp-for="Edit.Purpose" rows="4"></textarea>
+                        </inc-field>
+                        <inc-field label="Scope">
+                            <textarea class="inc-form__control" asp-for="Edit.Scope" rows="4"></textarea>
+                        </inc-field>
+                        <inc-field label="Context">
+                            <textarea class="inc-form__control" asp-for="Edit.Context" rows="5"></textarea>
+                        </inc-field>
+                    </div>
+                </inc-disclosure>
+
+                <inc-disclosure class="inc-card editor-section" summary="Requirements" open>
+                    <div slot="content">
+                        <inc-field label="Requirement clauses">
+                            <textarea class="inc-form__control" asp-for="Edit.Requirements" rows="20"></textarea>
+                        </inc-field>
+                    </div>
+                </inc-disclosure>
+
+                <inc-disclosure class="inc-card editor-section" summary="Schema metadata" open>
+                    <div slot="content" class="editor-stack">
+                        <div class="inc-form__field" data-array-editor data-array-label="Tag">
+                            <span class="inc-form__label">Tags</span>
+                            <span class="inc-form__hint">Topical tags improve search and navigation. Use the controls to add, remove, and reorder entries.</span>
+                            <input type="hidden" asp-for="Edit.Tags" data-array-input data-array-placeholder="release" />
+                            <div class="array-editor__list" data-array-list></div>
+                            <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add tag</button>
+                        </div>
+
+                        <div class="inc-form__field" data-array-editor data-array-label="Related artifact">
+                            <span class="inc-form__label">Related artifacts</span>
+                            <span class="inc-form__hint">Add SPEC, ARC, WI, or VER IDs one per line. Use the controls to add, remove, and reorder entries.</span>
+                            <input type="hidden" asp-for="Edit.RelatedArtifacts" data-array-input data-array-placeholder="ARC-PAY-ACH-0002" />
+                            <div class="array-editor__list" data-array-list></div>
+                            <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add artifact</button>
+                        </div>
+                    </div>
+                </inc-disclosure>
+
+                <inc-disclosure class="inc-card editor-section" summary="Open questions" open>
+                    <div slot="content">
+                        <inc-field label="Open questions">
+                            <textarea class="inc-form__control" asp-for="Edit.OpenQuestions" rows="4"></textarea>
+                        </inc-field>
+                    </div>
+                </inc-disclosure>
+
+                <div class="button-row">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create spec" : "Save spec")</button>
+                </div>
+            </form>
 
             @if (!Model.IsCreateMode)
             {
-                <details class="inc-card doc-viewer">
-                    <summary class="panel-head compact">
-                        <h4>Rendered preview</h4>
-                        <span class="muted">Collapsed by default</span>
-                    </summary>
-                    <div class="markdown-body">
+                <inc-disclosure class="doc-viewer" summary="Rendered preview" open>
+                    <div slot="content" class="markdown-body">
                         @Html.Raw(Model.SelectedSpecHtml)
                     </div>
-                </details>
+                </inc-disclosure>
             }
         }
-    </section>
+    </inc-card>
 </div>

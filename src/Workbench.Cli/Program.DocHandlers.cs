@@ -172,6 +172,8 @@ public partial class Program
                 domain,
                 capability,
                 effectiveBody,
+                null,
+                null,
                 workItems.Length == 0 ? null : workItems.ToList(),
                 codeRefs.Length == 0 ? null : codeRefs.ToList());
 

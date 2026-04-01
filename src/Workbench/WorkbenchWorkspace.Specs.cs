@@ -31,28 +31,31 @@ public sealed partial class WorkbenchWorkspace
         var relatedArtifacts = GetDocStringList(doc.FrontMatter, "related_artifacts");
         if (relatedArtifacts.Count == 0)
         {
-            relatedArtifacts = doc.Summary.WorkItems.ToList();
+            relatedArtifacts = doc.Summary.RelatedArtifacts.ToList();
+        }
+
+        var tags = GetDocStringList(doc.FrontMatter, "tags");
+        if (tags.Count == 0)
+        {
+            tags = doc.Summary.Tags.ToList();
         }
 
         return new SpecEditorInput
         {
             Path = doc.Summary.Path,
-            ArtifactId = GetDocString(doc.FrontMatter, "artifact_id") ?? GetDocString(doc.FrontMatter, "artifactId"),
-            Domain = GetDocString(doc.FrontMatter, "domain"),
-            Capability = GetDocString(doc.FrontMatter, "capability"),
+            ArtifactId = GetDocString(doc.FrontMatter, "artifact_id") ?? GetDocString(doc.FrontMatter, "artifactId") ?? doc.Summary.ArtifactId,
+            Domain = GetDocString(doc.FrontMatter, "domain") ?? doc.Summary.Domain,
+            Capability = GetDocString(doc.FrontMatter, "capability") ?? doc.Summary.Capability,
             Title = GetDocString(doc.FrontMatter, "title") ?? doc.Summary.Title,
-            Status = GetDocString(doc.FrontMatter, "status") ?? GetDocString(workbench, "status") ?? "draft",
+            Status = GetDocString(doc.FrontMatter, "status") ?? GetDocString(workbench, "status") ?? doc.Summary.Status,
             Owner = GetDocString(doc.FrontMatter, "owner"),
             Purpose = purpose,
-            Summary = purpose,
             Scope = ExtractSection(doc.Body, "Scope"),
             Context = ExtractSection(doc.Body, "Context"),
             Requirements = SpecTraceMarkdown.ExtractRequirementBlocks(doc.Body),
+            Tags = string.Join(Environment.NewLine, tags),
             RelatedArtifacts = string.Join(Environment.NewLine, relatedArtifacts),
-            RelatedArchitectureDocs = string.Join(Environment.NewLine, relatedArtifacts),
-            RelatedWorkItems = string.Join(Environment.NewLine, relatedArtifacts),
             OpenQuestions = ExtractSection(doc.Body, "Open Questions"),
-            CodeRefs = string.Join(Environment.NewLine, GetDocStringList(workbench, "codeRefs"))
         };
     }
 
@@ -85,8 +88,9 @@ public sealed partial class WorkbenchWorkspace
         }
 
         var body = BuildSpecBody(input);
-        var workItemIds = ParseWorkItemIds(input);
-        var relatedArtifacts = ParseArtifactIds(input);
+        var relatedArtifacts = ParseSpecLineList(input.RelatedArtifacts);
+        var tags = ParseSpecLineList(input.Tags);
+        var workItemIds = ParseWorkItemIds(relatedArtifacts);
         var created = DocService.CreateGeneratedDoc(
             RepoRoot,
             Config,
@@ -96,7 +100,7 @@ public sealed partial class WorkbenchWorkspace
             input.Path,
             workItemIds,
             Array.Empty<string>(),
-            Array.Empty<string>(),
+            tags,
             relatedArtifacts,
             input.Status,
             source: null,
@@ -122,7 +126,7 @@ public sealed partial class WorkbenchWorkspace
         }
 
         var body = BuildSpecBody(input);
-        var relatedArtifacts = ParseArtifactIds(input);
+        var relatedArtifacts = ParseSpecLineList(input.RelatedArtifacts);
 
         return DocService.EditDoc(
             RepoRoot,
@@ -136,12 +140,14 @@ public sealed partial class WorkbenchWorkspace
             input.Capability,
             body,
             relatedArtifacts,
+            ParseSpecLineList(input.Tags),
+            null,
             null);
     }
 
     private static string BuildSpecBody(SpecEditorInput input)
     {
-        var purpose = string.IsNullOrWhiteSpace(input.Purpose) ? input.Summary : input.Purpose;
+        var purpose = input.Purpose;
         var requirements = string.IsNullOrWhiteSpace(input.Requirements)
             ? SpecTraceMarkdown.BuildRequirementSkeleton()
             : input.Requirements;
@@ -166,16 +172,10 @@ public sealed partial class WorkbenchWorkspace
         return body;
     }
 
-    private static List<string> ParseArtifactIds(SpecEditorInput input)
+    private static List<string> ParseSpecLineList(string text)
     {
         var candidates = new List<string>();
-        AddLines(candidates, input.RelatedArtifacts);
-
-        if (candidates.Count == 0)
-        {
-            AddLines(candidates, input.RelatedWorkItems);
-            AddLines(candidates, input.RelatedArchitectureDocs);
-        }
+        AddLines(candidates, text);
 
         return candidates
             .Select(entry => entry.Trim())
@@ -184,14 +184,12 @@ public sealed partial class WorkbenchWorkspace
             .ToList();
     }
 
-    private static List<string> ParseWorkItemIds(SpecEditorInput input)
+    private static List<string> ParseWorkItemIds(IEnumerable<string> artifactIds)
     {
-        var candidates = new List<string>();
-        AddLines(candidates, input.RelatedWorkItems);
-
-        return candidates
+        return artifactIds
             .Select(entry => entry.Trim())
             .Where(entry => entry.Length > 0)
+            .Where(entry => entry.StartsWith("WI-", StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }

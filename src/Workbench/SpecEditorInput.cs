@@ -18,21 +18,15 @@ public sealed class SpecEditorInput
 
     public string Purpose { get; set; } = string.Empty;
 
-    public string Summary { get; set; } = string.Empty;
-
     public string Scope { get; set; } = string.Empty;
 
     public string Context { get; set; } = string.Empty;
 
     public string Requirements { get; set; } = string.Empty;
 
+    public string Tags { get; set; } = string.Empty;
+
     public string RelatedArtifacts { get; set; } = string.Empty;
 
-    public string RelatedArchitectureDocs { get; set; } = string.Empty;
-
-    public string RelatedWorkItems { get; set; } = string.Empty;
-
     public string OpenQuestions { get; set; } = string.Empty;
-
-    public string CodeRefs { get; set; } = string.Empty;
 }

@@ -65,8 +65,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          workbench sync --docs --nav --include-done --force
-          workbench item normalize --include-done
+          workbench sync --docs --nav --include-terminal-items --force
+          workbench item normalize --include-terminal-items
           workbench validate --strict
 
       - name: Run active-mode sync
@@ -76,12 +76,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          args=(sync --items --docs --nav --include-done --force)
+          args=(sync --items --docs --nav --include-terminal-items --force)
           if [[ "${{ inputs.import_issues }}" == "true" ]]; then
             args+=(--import-issues)
           fi
           workbench "${args[@]}"
-          workbench item normalize --include-done
+          workbench item normalize --include-terminal-items
           workbench validate --strict
 
       - name: Resolve sync mode label

@@ -87,6 +87,40 @@ public class IndexModel : RepoPageModel
         }
     }
 
+    public IActionResult OnPostDelete()
+    {
+        try
+        {
+            var selectedId = SelectedId ?? Edit.Path;
+            if (string.IsNullOrWhiteSpace(selectedId))
+            {
+                throw new InvalidOperationException("A work item must be selected before delete.");
+            }
+
+            var deleted = Workspace.DeleteItem(selectedId, keepLinks: false);
+            SetBanner(
+                "Work item deleted",
+                $"{deleted.Item.Id} removed locally.",
+                new[]
+                {
+                    $"Backlinks removed from docs: {deleted.DocsUpdated}"
+                });
+            return RedirectToPage(new
+            {
+                selectedId = string.Empty,
+                statusFilter = StatusFilter,
+                query = Query,
+                includeDone = IncludeDone
+            });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, FormatError(ex));
+            LoadPage(populateEditor: false);
+            return Page();
+        }
+    }
+
     public async Task<IActionResult> OnPostSyncNavigationAsync()
     {
         try

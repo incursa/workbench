@@ -1,0 +1,31 @@
+@{
+    var validationMessages = new System.Collections.Generic.List<string>();
+
+    foreach (var entry in ViewData.ModelState)
+    {
+        foreach (var error in entry.Value.Errors)
+        {
+            var message = string.IsNullOrWhiteSpace(error.ErrorMessage)
+                ? error.Exception?.Message
+                : error.ErrorMessage;
+
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                validationMessages.Add(message);
+            }
+        }
+    }
+}
+
+@if (validationMessages.Count > 0)
+{
+    <inc-validation-summary class="validation-summary" count="@validationMessages.Count">
+        <h3 slot="title">Please fix the validation errors</h3>
+        <ul class="inc-form__error-summary-list">
+            @foreach (var message in validationMessages)
+            {
+                <li>@message</li>
+            }
+        </ul>
+    </inc-validation-summary>
+}

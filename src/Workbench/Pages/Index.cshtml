@@ -4,7 +4,7 @@
     ViewData["Title"] = "Items";
 }
 
-<section class="hero inc-card">
+<inc-card class="hero">
     <div class="hero-copy">
         <div class="eyebrow">Primary landing page</div>
         <h2>Manage repo-native work items without remembering commands.</h2>
@@ -18,28 +18,28 @@
         </div>
     </div>
     <div class="hero-stats">
-        <div class="inc-card stat-card accent">
+        <inc-card class="stat-card accent">
             <span class="stat-label">Visible items</span>
             <span class="stat-value">@Model.Items.Count</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Planned</span>
             <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">In progress</span>
             <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Complete</span>
             <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</span>
-        </div>
+        </inc-card>
     </div>
-</section>
+</inc-card>
 
 @if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
 {
-    <section class="banner">
+    <inc-card class="banner">
         <div class="banner-title">@Model.BannerTitle</div>
         <div class="banner-message">@Model.BannerMessage</div>
         @if (Model.BannerLines.Count > 0)
@@ -51,29 +51,27 @@
                 }
             </ul>
         }
-    </section>
+    </inc-card>
 }
 
 <div class="workspace">
-    <aside class="inc-card panel sidebar">
+    <inc-card class="panel sidebar">
         <div class="panel-head">
             <h3>Work items</h3>
             <form method="get" class="inline-filter">
                 <input type="hidden" name="selectedId" value="@Model.SelectedId" />
-                <label class="inc-form__group">
-                    <span class="field-label">Search</span>
+                <inc-field label="Search">
                     <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, ID, owner, text" />
-                </label>
-                    <label class="inc-form__group">
-                        <span class="field-label">Status</span>
-                        <select class="inc-form__select" asp-for="StatusFilter">
-                            <option value="all">All</option>
-                            @foreach (var status in StatusOptions)
-                            {
+                </inc-field>
+                <inc-field label="Status">
+                    <select class="inc-form__select" asp-for="StatusFilter">
+                        <option value="all">All</option>
+                        @foreach (var status in StatusOptions)
+                        {
                             <option value="@status">@StatusLabel(status)</option>
-                            }
-                        </select>
-                    </label>
+                        }
+                    </select>
+                </inc-field>
                 <label class="inc-form__check checkbox-row">
                     <input class="inc-form__check__input" asp-for="IncludeDone" />
                     <span class="inc-form__check__label">Include terminal items</span>
@@ -112,9 +110,9 @@
                 }
             }
         </div>
-    </aside>
+    </inc-card>
 
-    <section class="inc-card panel detail">
+    <inc-card class="panel detail">
         @if (Model.SelectedItem is null)
         {
             <div class="empty-state large">
@@ -136,95 +134,98 @@
             </div>
 
             <form method="post" asp-page-handler="Save" class="editor-stack">
+                <partial name="_ValidationSummary" />
                 <input type="hidden" asp-for="Edit.Path" />
                 <input type="hidden" asp-for="SelectedId" />
                 <input type="hidden" asp-for="StatusFilter" />
                 <input type="hidden" asp-for="Query" />
                 <input type="hidden" asp-for="IncludeDone" />
-                <div asp-validation-summary="All" class="validation-summary"></div>
-                <section class="inc-card editor-section">
+
+                <inc-card class="editor-section">
                     <div class="editor-section-head">
                         <h4>Identity</h4>
                         <span class="muted">@Model.SelectedItem.Path</span>
                     </div>
                     <div class="editor-grid editor-grid-two">
-                        <label class="inc-form__group span-2">
-                            <span class="field-label">Title</span>
+                        <inc-field class="span-2" label="Title">
                             <input class="inc-form__control" asp-for="Edit.Title" />
-                        </label>
-                        <label class="inc-form__group">
-                            <span class="field-label">Type</span>
-                            <div class="readonly-field">@Model.SelectedItem.Type</div>
-                        </label>
-                        <label class="inc-form__group">
-                            <span class="field-label">Owner / team</span>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Title"></span>
+                        </inc-field>
+                        <inc-field label="Type">
+                            <input class="inc-form__control" value="@Model.SelectedItem.Type" readonly />
+                        </inc-field>
+                        <inc-field label="Owner / team">
                             <input class="inc-form__control" asp-for="Edit.Owner" placeholder="optional team or person" />
-                        </label>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Owner"></span>
+                        </inc-field>
                     </div>
-                </section>
-                <section class="inc-card editor-section">
+                </inc-card>
+
+                <inc-card class="editor-section">
                     <div class="editor-section-head">
                         <h4>Workflow</h4>
                         <span class="muted">Status, priority, and file behavior.</span>
                     </div>
                     <div class="editor-grid editor-grid-two">
-                        <label class="inc-form__group">
-                            <span class="field-label">Status</span>
+                        <inc-field label="Status">
                             <select class="inc-form__select" asp-for="Edit.Status">
                                 @foreach (var status in StatusOptions)
                                 {
                                     <option value="@status">@StatusLabel(status)</option>
                                 }
                             </select>
-                        </label>
-                        <label class="inc-form__group">
-                            <span class="field-label">Priority</span>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Status"></span>
+                        </inc-field>
+                        <inc-field label="Priority">
                             <select class="inc-form__select" asp-for="Edit.Priority">
                                 @foreach (var priority in PriorityOptions)
                                 {
                                     <option value="@(string.IsNullOrWhiteSpace(priority) ? string.Empty : priority)">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
                                 }
                             </select>
-                        </label>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Priority"></span>
+                        </inc-field>
                         <label class="inc-form__check checkbox-row span-2">
                             <input class="inc-form__check__input" asp-for="Edit.RenameFile" />
                             <span class="inc-form__check__label">Rename the file when the title changes</span>
                         </label>
                     </div>
-                </section>
-                <section class="inc-card editor-section">
+                </inc-card>
+
+                <inc-card class="editor-section">
                     <div class="editor-section-head">
                         <h4>Content</h4>
                         <span class="muted">The narrative and acceptance criteria.</span>
                     </div>
                     <div class="editor-grid">
-                        <label class="inc-form__group span-2">
-                            <span class="field-label">Summary</span>
+                        <inc-field class="span-2" label="Summary">
                             <textarea class="inc-form__control" asp-for="Edit.Summary" rows="6"></textarea>
-                        </label>
-                        <label class="inc-form__group span-2">
-                            <span class="field-label">Acceptance criteria</span>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Summary"></span>
+                        </inc-field>
+                        <inc-field class="span-2" label="Acceptance criteria">
                             <textarea class="inc-form__control" asp-for="Edit.AcceptanceCriteria" rows="8"></textarea>
-                        </label>
-                        <label class="inc-form__group span-2">
-                            <span class="field-label">Append note</span>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.AcceptanceCriteria"></span>
+                        </inc-field>
+                        <inc-field class="span-2" label="Append note">
                             <textarea class="inc-form__control" asp-for="Edit.AppendNote" rows="4" placeholder="Optional note appended to the item body"></textarea>
-                        </label>
+                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.AppendNote"></span>
+                        </inc-field>
                     </div>
-                </section>
+                </inc-card>
+
                 <div class="button-row">
                     <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save item</button>
                 </div>
             </form>
 
-            <section class="inc-card snapshot">
+            <inc-card class="snapshot">
                 <div class="snapshot-head">
                     <h4>Related links</h4>
                     <span class="muted">@Model.SelectedItem.Path</span>
                 </div>
-                    <div class="link-grid">
+                <div class="link-grid">
                     <div>
-                    <div class="field-label">Specs</div>
+                        <div class="field-label">Specs</div>
                         @if (Model.SelectedItem.Related.Specs.Count == 0)
                         {
                             <div class="muted">None</div>
@@ -294,16 +295,16 @@
                         }
                     </div>
                 </div>
-            </section>
+            </inc-card>
         }
 
-        <section class="inc-card actions">
+        <inc-card class="actions">
             <div class="panel-head compact">
                 <h3>Repo actions</h3>
                 <span class="muted">Shortcuts for the same core services as the CLI.</span>
             </div>
             <div class="action-grid">
-                <div class="inc-card action-tile">
+                <inc-card class="action-tile">
                     <div class="action-title">Sync issue links</div>
                     <div class="action-copy">Pull GitHub issue backlinks into the local item metadata.</div>
                     <form method="post" asp-page-handler="SyncIssues">
@@ -313,8 +314,8 @@
                         <input type="hidden" asp-for="IncludeDone" />
                         <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
                     </form>
-                </div>
-                <div class="inc-card action-tile">
+                </inc-card>
+                <inc-card class="action-tile">
                     <div class="action-title">Sync navigation</div>
                     <div class="action-copy">Regenerate indexes and backlinks from repo state.</div>
                     <form method="post" asp-page-handler="SyncNavigation">
@@ -324,8 +325,8 @@
                         <input type="hidden" asp-for="IncludeDone" />
                         <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
                     </form>
-                </div>
-                <div class="inc-card action-tile">
+                </inc-card>
+                <inc-card class="action-tile">
                     <div class="action-title">Validate repo</div>
                     <div class="action-copy">Check local docs, links, IDs, and work item structure.</div>
                     <form method="post" asp-page-handler="Validate">
@@ -335,8 +336,8 @@
                         <input type="hidden" asp-for="IncludeDone" />
                         <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
                     </form>
-                </div>
+                </inc-card>
             </div>
-        </section>
-    </section>
+        </inc-card>
+    </inc-card>
 </div>

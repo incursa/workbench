@@ -4,48 +4,66 @@
     ViewData["Title"] = "Docs";
 }
 
-<section class="hero inc-card">
+<inc-card class="hero">
     <div class="hero-copy">
-        <div class="eyebrow">Local document browser</div>
-        <h2>Inspect specifications, architecture docs, work items, and repo docs without leaving the repo.</h2>
+        <div class="eyebrow">Document editor</div>
+        <h2>Manage architecture, verification, runbooks, and repo docs from the browser.</h2>
         <p>
-            This page scans the local markdown tree, renders a nested folder navigator, and lets you open the raw content with no login or external service.
+            The docs page supports browse, create, edit, and delete flows against the repo-native doc service. Schema-backed arrays stay editable line by line, and the same form pipeline handles both new and existing files.
         </p>
         <div class="hero-links">
-            <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Index">Items</a>
+            <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Docs" asp-route-createMode="true" asp-route-selectedReference="new" asp-route-typeFilter="@Model.TypeFilter" asp-route-query="@Model.Query">Create doc</a>
             <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Specs">Specs</a>
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Create">Create item</a>
+            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Index">Items</a>
         </div>
     </div>
     <div class="hero-stats">
-        <div class="inc-card stat-card accent">
-            <span class="stat-label">Docs found</span>
+        <inc-card class="stat-card accent">
+            <span class="stat-label">Visible docs</span>
             <span class="stat-value">@Model.Docs.Count</span>
-        </div>
-        <div class="inc-card stat-card">
-            <span class="stat-label">Type filter</span>
-            <span class="stat-value">@Model.TypeFilter</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
+            <span class="stat-label">Filter</span>
+            <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.TypeFilter) ? "all" : Model.TypeFilter)</span>
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Repo root</span>
             <span class="stat-value">@Model.RepoRoot</span>
-        </div>
-        <div class="inc-card stat-card">
+        </inc-card>
+        <inc-card class="stat-card">
             <span class="stat-label">Profile</span>
             <span class="stat-value">@Model.ProfileName</span>
-        </div>
+        </inc-card>
     </div>
-</section>
+</inc-card>
+
+@if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
+{
+    <section class="banner">
+        <div class="banner-title">@Model.BannerTitle</div>
+        <div class="banner-message">@Model.BannerMessage</div>
+        @if (Model.BannerLines.Count > 0)
+        {
+            <ul class="banner-lines">
+                @foreach (var line in Model.BannerLines)
+                {
+                    <li>@line</li>
+                }
+            </ul>
+        }
+    </section>
+}
 
 <div class="workspace docs-layout">
     <aside class="inc-card panel sidebar">
         <div class="panel-head">
             <h3>Browse docs</h3>
             <form method="get" class="inline-filter docs-filter">
-                <input type="hidden" name="selectedPath" value="@Model.SelectedPath" />
+                <input type="hidden" name="selectedReference" value="@Model.SelectedReference" />
+                <input type="hidden" name="createMode" value="false" />
                 <label class="inc-form__group">
                     <span class="field-label">Search</span>
-                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, body, path, work item" />
+                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, artifact ID, requirement IDs, body, path" />
                 </label>
                 <label class="inc-form__group">
                     <span class="field-label">Type</span>
@@ -73,72 +91,376 @@
     </aside>
 
     <section class="inc-card panel detail">
-        @if (Model.SelectedDoc is null)
+        @if (Model.SelectedDoc is null && !Model.IsCreateMode)
         {
-            <div class="empty-state large">Select a document to preview it here.</div>
+            <div class="empty-state large">Select a document to edit it here or start a new one with the create button above.</div>
         }
         else
         {
             <div class="detail-header">
                 <div>
-                    <div class="eyebrow">Selected doc</div>
-                    <h3>@Model.SelectedDoc.Summary.Title</h3>
-                    <p>@Model.SelectedDoc.Summary.Path</p>
+                    <div class="eyebrow">@(Model.IsCreateMode ? "Create doc" : "Selected doc")</div>
+                    <h3>@(Model.IsCreateMode ? "Create a new document" : Model.SelectedDoc!.Summary.Title)</h3>
+                    <p>@(Model.IsCreateMode ? "Workbench will save the new document under the repo path you choose." : Model.SelectedDoc!.Summary.Path)</p>
                 </div>
                 <div class="detail-badges">
-                    <span class="pill">@Model.SelectedDoc.Summary.Type</span>
-                    <span class="pill">@Model.SelectedDoc.Summary.Status</span>
+                    @if (Model.IsCreateMode)
+                    {
+                        <span class="pill">document</span>
+                        <span class="pill">create</span>
+                    }
+                    else
+                    {
+                        <span class="pill">@Model.SelectedDoc!.Summary.Type</span>
+                        <span class="pill">@Model.SelectedDoc!.Summary.Status</span>
+                    }
                 </div>
+            </div>
+
+            <div class="button-row page-header-actions">
+                <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs" asp-route-createMode="true" asp-route-selectedReference="new" asp-route-typeFilter="@Model.TypeFilter" asp-route-query="@Model.Query">Create doc</a>
+                @if (!Model.IsCreateMode)
+                {
+                    <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-doc-delete-open="doc-delete-dialog">Delete doc</button>
+                }
             </div>
 
             <section class="inc-card snapshot">
                 <div class="snapshot-head">
-                    <h4>Metadata</h4>
-                    <span class="muted">@Model.SelectedDoc.Summary.Section</span>
+                    <h4>@(Model.IsCreateMode ? "Creation hints" : "Metadata")</h4>
+                    <span class="muted">@Model.SnapshotHint</span>
                 </div>
                 <div class="link-grid">
                     <div>
-                        <div class="field-label">Work items</div>
-                        @if (Model.SelectedDoc.Summary.WorkItems.Count == 0)
+                        <div class="field-label">Path</div>
+                        <div class="mono">@Model.PathPreview</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Artifact ID</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.Edit.ArtifactId) ? "-" : Model.Edit.ArtifactId)</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Domain</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.Edit.Domain) ? "-" : Model.Edit.Domain)</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Status</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.Edit.Status) ? "-" : Model.Edit.Status)</div>
+                    </div>
+                    <div>
+                        <div class="field-label">Owner</div>
+                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.Edit.Owner) ? "-" : Model.Edit.Owner)</div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Edit.Capability))
+                    {
+                        <div>
+                            <div class="field-label">Capability</div>
+                            <div class="mono">@Model.Edit.Capability</div>
+                        </div>
+                    }
+                    @if (Model.IsSchemaEditor)
+                    {
+                        <div>
+                            <div class="field-label">@Model.PrimaryArrayLabel</div>
+                            @if (Model.IsCreateMode)
+                            {
+                                <div class="muted">Required links will be stored after save.</div>
+                            }
+                            else if (Model.IsArchitectureEditor && string.IsNullOrWhiteSpace(Model.Edit.Satisfies))
+                            {
+                                <div class="muted">None</div>
+                            }
+                            else if (Model.IsVerificationEditor && string.IsNullOrWhiteSpace(Model.Edit.Verifies))
+                            {
+                                <div class="muted">None</div>
+                            }
+                            else if (Model.IsArchitectureEditor)
+                            {
+                                foreach (var requirement in Model.Edit.Satisfies.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                {
+                                    <div class="mono">@requirement</div>
+                                }
+                            }
+                            else
+                            {
+                                foreach (var requirement in Model.Edit.Verifies.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                {
+                                    <div class="mono">@requirement</div>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div>
+                            <div class="field-label">Work items</div>
+                            @if (Model.IsCreateMode)
+                            {
+                                <div class="muted">Linked items will show after save.</div>
+                            }
+                            else if (string.IsNullOrWhiteSpace(Model.Edit.WorkItems))
+                            {
+                                <div class="muted">None</div>
+                            }
+                            else
+                            {
+                                foreach (var item in Model.Edit.WorkItems.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                {
+                                    <div class="mono">@item</div>
+                                }
+                            }
+                        </div>
+                        <div>
+                            <div class="field-label">Code refs</div>
+                            @if (Model.IsCreateMode)
+                            {
+                                <div class="muted">Code references will show after save.</div>
+                            }
+                            else if (string.IsNullOrWhiteSpace(Model.Edit.CodeRefs))
+                            {
+                                <div class="muted">None</div>
+                            }
+                            else
+                            {
+                                foreach (var item in Model.Edit.CodeRefs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                {
+                                    <div class="mono">@item</div>
+                                }
+                            }
+                        </div>
+                    }
+                    <div>
+                        <div class="field-label">Related artifacts</div>
+                        @if (Model.IsCreateMode)
+                        {
+                            <div class="muted">Optional links can be entered in the editor.</div>
+                        }
+                        else if (string.IsNullOrWhiteSpace(Model.Edit.RelatedArtifacts))
                         {
                             <div class="muted">None</div>
                         }
                         else
                         {
-                            foreach (var id in Model.SelectedDoc.Summary.WorkItems)
+                            foreach (var item in Model.Edit.RelatedArtifacts.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                             {
-                                <div class="mono">@id</div>
+                                <div class="mono">@item</div>
                             }
                         }
-                    </div>
-                    <div>
-                        <div class="field-label">Excerpt</div>
-                        <div class="muted">@Model.SelectedDoc.Summary.Excerpt</div>
-                    </div>
-                    <div>
-                        <div class="field-label">Artifact ID</div>
-                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.SelectedDoc.Summary.ArtifactId) ? "-" : Model.SelectedDoc.Summary.ArtifactId)</div>
-                    </div>
-                    <div>
-                        <div class="field-label">Domain</div>
-                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.SelectedDoc.Summary.Domain) ? "-" : Model.SelectedDoc.Summary.Domain)</div>
-                    </div>
-                    <div>
-                        <div class="field-label">Capability</div>
-                        <div class="mono">@(string.IsNullOrWhiteSpace(Model.SelectedDoc.Summary.Capability) ? "-" : Model.SelectedDoc.Summary.Capability)</div>
                     </div>
                 </div>
             </section>
 
-            <section class="doc-viewer">
-                <div class="panel-head compact">
-                    <h4>Rendered preview</h4>
-                    <span class="muted">Read-only local preview</span>
+            <form method="post" asp-page-handler="Save" class="editor-stack">
+                <partial name="_ValidationSummary" />
+                <input type="hidden" asp-for="CreateMode" />
+                <input type="hidden" asp-for="SelectedReference" />
+                <input type="hidden" asp-for="Query" />
+                <input type="hidden" asp-for="TypeFilter" />
+                <input type="hidden" asp-for="Edit.Path" />
+
+                <inc-disclosure class="inc-card editor-section" summary="Identity" open>
+                    <div slot="content" class="editor-grid editor-grid-two">
+                        <inc-field class="span-2" label="Title">
+                            <input class="inc-form__control" asp-for="Edit.Title" required />
+                        </inc-field>
+                        <inc-field label="Type">
+                            <select class="inc-form__select" asp-for="Edit.Type">
+                                @foreach (var type in WorkbenchWorkspace.ManagedDocTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                            <span slot="hint" class="inc-form__hint">Managed docs include architecture, verification, runbooks, and general docs.</span>
+                        </inc-field>
+                        <inc-field label="Path">
+                            <input class="inc-form__control mono" asp-for="Edit.Path" placeholder="@Model.PathHint" />
+                            <span slot="hint" class="inc-form__hint">Leave blank while creating if you want Workbench to derive the default path.</span>
+                            <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Path"></span>
+                        </inc-field>
+                        @if (Model.IsSchemaEditor)
+                        {
+                            <inc-field label="Status">
+                                <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" required />
+                                <span slot="hint" class="inc-form__hint">@Model.StatusHint</span>
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Status"></span>
+                            </inc-field>
+                            <inc-field label="Owner">
+                                <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or person" required />
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Owner"></span>
+                            </inc-field>
+                            <inc-field label="Artifact ID">
+                                <input class="inc-form__control mono" asp-for="Edit.ArtifactId" placeholder="ARC-PLATFORM-0001" />
+                                <span slot="hint" class="inc-form__hint">Leave blank if the repo can generate one for the selected type.</span>
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.ArtifactId"></span>
+                            </inc-field>
+                            <inc-field label="Domain">
+                                <input class="inc-form__control mono" asp-for="Edit.Domain" placeholder="platform" required />
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Domain"></span>
+                            </inc-field>
+                        }
+                        else
+                        {
+                            <inc-field label="Status">
+                                <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" />
+                                <span slot="hint" class="inc-form__hint">@Model.StatusHint</span>
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Status"></span>
+                            </inc-field>
+                            <inc-field label="Owner">
+                                <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or person" />
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Owner"></span>
+                            </inc-field>
+                            <inc-field label="Artifact ID">
+                                <input class="inc-form__control mono" asp-for="Edit.ArtifactId" placeholder="ARC-PLATFORM-0001" />
+                                <span slot="hint" class="inc-form__hint">Leave blank if the repo can generate one for the selected type.</span>
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.ArtifactId"></span>
+                            </inc-field>
+                            <inc-field label="Domain">
+                                <input class="inc-form__control mono" asp-for="Edit.Domain" placeholder="platform" />
+                                <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Domain"></span>
+                            </inc-field>
+                        }
+                        <inc-field>
+                            <span slot="label" class="field-label">Capability</span>
+                            <input slot="control" class="inc-form__control mono" asp-for="Edit.Capability" placeholder="observability" />
+                            <span slot="hint" class="inc-form__hint">Used only when your artifact ID policy groups docs by capability.</span>
+                            <span slot="error" class="inc-form__invalid-feedback" asp-validation-for="Edit.Capability"></span>
+                        </inc-field>
+                    </div>
+                </inc-disclosure>
+
+                <inc-disclosure class="inc-card editor-section" summary="@Model.TraceSectionTitle" open>
+                    <div slot="content" class="editor-stack">
+                        @if (Model.IsArchitectureEditor)
+                        {
+                            <div class="inc-form__field" data-array-editor data-array-label="Requirement">
+                                <span class="inc-form__label">Satisfies</span>
+                                <span class="inc-form__hint">Requirement IDs satisfied by this architecture. Use the controls to add, remove, and reorder entries.</span>
+                                <input type="hidden" asp-for="Edit.Satisfies" data-array-input data-array-placeholder="@Model.PrimaryArrayPlaceholder" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add requirement</button>
+                            </div>
+
+                            <div class="inc-form__field" data-array-editor data-array-label="Related artifact">
+                                <span class="inc-form__label">Related artifacts</span>
+                                <span class="inc-form__hint">@DocsModel.RelatedArtifactsHint</span>
+                                <input type="hidden" asp-for="Edit.RelatedArtifacts" data-array-input data-array-placeholder="SPEC-<DOMAIN>[-<GROUPING>...]" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add artifact</button>
+                            </div>
+                        }
+                        else if (Model.IsVerificationEditor)
+                        {
+                            <div class="inc-form__field" data-array-editor data-array-label="Requirement">
+                                <span class="inc-form__label">Verifies</span>
+                                <span class="inc-form__hint">Requirement IDs verified by this artifact. Use the controls to add, remove, and reorder entries.</span>
+                                <input type="hidden" asp-for="Edit.Verifies" data-array-input data-array-placeholder="@Model.PrimaryArrayPlaceholder" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add requirement</button>
+                            </div>
+
+                            <div class="inc-form__field" data-array-editor data-array-label="Related artifact">
+                                <span class="inc-form__label">Related artifacts</span>
+                                <span class="inc-form__hint">@DocsModel.RelatedArtifactsHint</span>
+                                <input type="hidden" asp-for="Edit.RelatedArtifacts" data-array-input data-array-placeholder="SPEC-<DOMAIN>[-<GROUPING>...]" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add artifact</button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="inc-form__field" data-array-editor data-array-label="Work item">
+                                <span class="inc-form__label">Work items</span>
+                                <span class="inc-form__hint">List linked work item IDs, one per line. Use the controls to add, remove, and reorder entries.</span>
+                                <input type="hidden" asp-for="Edit.WorkItems" data-array-input data-array-placeholder="@Model.PrimaryArrayPlaceholder" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add work item</button>
+                            </div>
+
+                            <div class="inc-form__field" data-array-editor data-array-label="Code reference">
+                                <span class="inc-form__label">Code refs</span>
+                                <span class="inc-form__hint">@DocsModel.CodeRefsHint</span>
+                                <input type="hidden" asp-for="Edit.CodeRefs" data-array-input data-array-placeholder="src/Workbench.Core/DocService.cs#L1-L5" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add code ref</button>
+                            </div>
+
+                            <div class="inc-form__field" data-array-editor data-array-label="Related artifact">
+                                <span class="inc-form__label">Related artifacts</span>
+                                <span class="inc-form__hint">@DocsModel.RelatedArtifactsHint</span>
+                                <input type="hidden" asp-for="Edit.RelatedArtifacts" data-array-input data-array-placeholder="SPEC-<DOMAIN>[-<GROUPING>...]" />
+                                <div class="array-editor__list" data-array-list></div>
+                                <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-array-action="add">Add artifact</button>
+                            </div>
+                        }
+                    </div>
+                </inc-disclosure>
+
+                <inc-disclosure class="inc-card editor-section" summary="Body" open>
+                    <div slot="content">
+                        <inc-field label="Document body">
+                            <textarea class="inc-form__control" asp-for="Edit.Body" rows="18"></textarea>
+                            <span slot="hint" class="inc-form__hint">Keep headings, tables, and links in Markdown so the preview stays readable.</span>
+                        </inc-field>
+                    </div>
+                </inc-disclosure>
+
+                <div class="button-row">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">@(Model.IsCreateMode ? "Create doc" : "Save doc")</button>
                 </div>
-                <div class="markdown-body">
-                    @Html.Raw(Model.SelectedDocHtml)
-                </div>
-            </section>
+            </form>
+
+            @if (!Model.IsCreateMode && Model.SelectedDoc is not null)
+            {
+                <inc-disclosure class="doc-viewer" summary="Rendered preview" open>
+                    <div slot="content" class="markdown-body">
+                        @Html.Raw(Model.SelectedDocHtml)
+                    </div>
+                </inc-disclosure>
+            }
         }
     </section>
 </div>
+
+@if (!Model.IsCreateMode && Model.SelectedDoc is not null)
+{
+    <inc-dialog id="doc-delete-dialog" label="Delete document" dismissible modal>
+        <div slot="body">
+            <p>Delete <span class="mono">@Model.SelectedDoc.Summary.Path</span>?</p>
+            <p class="muted">Workbench will remove the file and update any linked metadata before returning you to the browser.</p>
+        </div>
+        <div slot="footer" class="button-row">
+            <button type="button" class="inc-btn inc-btn--secondary inc-btn--sm" data-inc-dialog-close>Cancel</button>
+            <button type="submit" form="doc-delete-form" class="inc-btn inc-btn--secondary inc-btn--sm">Delete document</button>
+        </div>
+    </inc-dialog>
+
+    <form id="doc-delete-form" method="post" asp-page-handler="Delete" hidden>
+        <input type="hidden" asp-for="CreateMode" />
+        <input type="hidden" asp-for="SelectedReference" />
+        <input type="hidden" asp-for="Query" />
+        <input type="hidden" asp-for="TypeFilter" />
+    </form>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener("click", (event) => {
+            const trigger = event.target.closest("[data-doc-delete-open]");
+            if (!trigger) {
+                return;
+            }
+
+            const dialog = document.getElementById(trigger.getAttribute("data-doc-delete-open"));
+            if (!dialog) {
+                return;
+            }
+
+            if (typeof dialog.showModal === "function") {
+                dialog.showModal();
+                return;
+            }
+
+            dialog.setAttribute("open", "");
+        });
+    </script>
+}

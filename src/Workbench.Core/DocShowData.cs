@@ -11,10 +11,11 @@ namespace Workbench.Core;
 /// <param name="Title">Document title.</param>
 /// <param name="Status">Document status.</param>
 /// <param name="Owner">Document owner.</param>
+/// <param name="RelatedArtifacts">Linked related artifact IDs.</param>
 /// <param name="WorkItems">Linked work item IDs.</param>
 /// <param name="CodeRefs">Linked code references.</param>
 /// <param name="Body">Markdown body content.</param>
-public sealed record DocShowData(
+public sealed partial record DocShowData(
     [property: JsonPropertyName("path")] string Path,
     [property: JsonPropertyName("artifactId")] string? ArtifactId,
     [property: JsonPropertyName("domain")] string? Domain,
@@ -23,6 +24,7 @@ public sealed record DocShowData(
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("status")] string? Status,
     [property: JsonPropertyName("owner")] string? Owner,
+    [property: JsonPropertyName("relatedArtifacts")] IList<string> RelatedArtifacts,
     [property: JsonPropertyName("workItems")] IList<string> WorkItems,
     [property: JsonPropertyName("codeRefs")] IList<string> CodeRefs,
     [property: JsonPropertyName("body")] string Body);
