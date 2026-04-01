@@ -97,8 +97,8 @@ public class WorkbenchWorkspaceManagementTests
 
         var created = workspace.CreateSpec(new SpecEditorInput
         {
-            ArtifactId = "SPEC-WB-SCHEMA-0001",
-            Domain = "WB",
+            ArtifactId = "SPEC-WB-SCHEMA",
+            Domain = "wb",
             Capability = "schema",
             Title = "Workspace spec schema",
             Status = "draft",
@@ -106,41 +106,55 @@ public class WorkbenchWorkspaceManagementTests
             Purpose = "Describe the schema-driven workflow.",
             Scope = "Scope.",
             Context = "Context.",
-            Requirements = """
-                ## REQ-WB-SCHEMA-0001 Schema requirement
-
-                The system MUST persist schema metadata.
-                """,
-            Tags = """
+            TagsText = """
                 alpha
                 beta
                 """,
-            RelatedArtifacts = string.Join(Environment.NewLine, "ARC-WB-0001", workItem.Id)
+            RelatedArtifactsText = string.Join(Environment.NewLine, "ARC-WB-0001", workItem.Id),
+            Requirements =
+            [
+                new SpecRequirementEditorInput
+                {
+                    Id = "REQ-WB-SCHEMA-0001",
+                    Title = "Schema requirement",
+                    Statement = "The system MUST persist schema metadata.",
+                    NotesText = "One note",
+                    Trace = new SpecRequirementTraceEditorInput
+                    {
+                        ImplementedByText = workItem.Id,
+                        RelatedText = "ARC-WB-0001"
+                    }
+                }
+            ]
         });
 
         Assert.IsTrue(File.Exists(Path.Combine(repo.Path, created.Summary.Path)));
-        StringAssert.Contains(File.ReadAllText(Path.Combine(repo.Path, created.Summary.Path)), "tags:", StringComparison.Ordinal);
-        StringAssert.Contains(File.ReadAllText(Path.Combine(repo.Path, created.Summary.Path)), "related_artifacts:", StringComparison.Ordinal);
+        StringAssert.EndsWith(created.Summary.Path.Replace('\\', '/'), ".json", StringComparison.OrdinalIgnoreCase);
+        StringAssert.Contains(File.ReadAllText(Path.Combine(repo.Path, created.Summary.Path)), "\"tags\"", StringComparison.Ordinal);
+        StringAssert.Contains(File.ReadAllText(Path.Combine(repo.Path, created.Summary.Path)), "\"requirements\"", StringComparison.Ordinal);
 
         var editor = workspace.CreateSpecEditorInput(created.Summary.Path)!;
-        Assert.IsTrue(editor.Tags.Contains("alpha", StringComparison.OrdinalIgnoreCase));
-        Assert.IsTrue(editor.Tags.Contains("beta", StringComparison.OrdinalIgnoreCase));
-        Assert.IsTrue(editor.RelatedArtifacts.Contains(workItem.Id, StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual("json", editor.SourceFormat);
+        Assert.IsTrue(editor.TagsText.Contains("alpha", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(editor.TagsText.Contains("beta", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(editor.RelatedArtifactsText.Contains(workItem.Id, StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual("REQ-WB-SCHEMA-0001", editor.Requirements.Single().Id);
 
-        editor.Tags = string.Join(Environment.NewLine, "alpha", "release");
-        editor.RelatedArtifacts = string.Join(Environment.NewLine, "ARC-WB-0001", "VER-WB-0001");
+        editor.TagsText = string.Join(Environment.NewLine, "alpha", "release");
+        editor.RelatedArtifactsText = string.Join(Environment.NewLine, "ARC-WB-0001", "VER-WB-0001");
         editor.Status = "approved";
+        editor.Requirements[0].Trace.VerifiedByText = "VER-WB-0001";
 
         var saved = workspace.SaveSpec(editor);
         var savedContent = File.ReadAllText(saved.Path);
-        StringAssert.Contains(savedContent, "tags:", StringComparison.Ordinal);
-        StringAssert.Contains(savedContent, "release", StringComparison.Ordinal);
-        StringAssert.Contains(savedContent, "related_artifacts:", StringComparison.Ordinal);
-        StringAssert.Contains(savedContent, "VER-WB-0001", StringComparison.Ordinal);
+        StringAssert.Contains(savedContent, "\"release\"", StringComparison.Ordinal);
+        StringAssert.Contains(savedContent, "\"related_artifacts\"", StringComparison.Ordinal);
+        StringAssert.Contains(savedContent, "\"VER-WB-0001\"", StringComparison.Ordinal);
 
         var reloaded = workspace.CreateSpecEditorInput(saved.Path)!;
-        Assert.IsTrue(reloaded.Tags.Contains("release", StringComparison.OrdinalIgnoreCase));
-        Assert.IsTrue(reloaded.RelatedArtifacts.Contains("VER-WB-0001", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(reloaded.TagsText.Contains("release", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(reloaded.RelatedArtifactsText.Contains("VER-WB-0001", StringComparison.OrdinalIgnoreCase));
+        Assert.IsTrue(reloaded.Requirements[0].Trace.VerifiedByText.Contains("VER-WB-0001", StringComparison.OrdinalIgnoreCase));
 
         var tagFiltered = workspace.ListDocs("specification", "release");
         Assert.IsTrue(tagFiltered.Any(doc => doc.Path.Equals(reloaded.Path, StringComparison.OrdinalIgnoreCase)));

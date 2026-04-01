@@ -17,23 +17,31 @@
             <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Create">Create item</a>
         </div>
     </div>
-    <div class="hero-stats">
-        <inc-card class="stat-card accent">
-            <span class="stat-label">Files found</span>
-            <span class="stat-value">@Model.Files.Count</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Markdown</span>
-            <span class="stat-value">@Model.MarkdownCount</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Text</span>
-            <span class="stat-value">@Model.TextCount</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Binary</span>
-            <span class="stat-value">@Model.BinaryCount</span>
-        </inc-card>
+    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
+        <article class="inc-summary-block stat-card accent">
+            <div class="inc-summary-block__header stat-label">Files found</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Files.Count</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Markdown</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.MarkdownCount</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Text</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.TextCount</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Binary</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.BinaryCount</div>
+            </div>
+        </article>
     </div>
 </inc-card>
 
@@ -41,27 +49,37 @@
     <inc-card class="panel sidebar">
         <div class="panel-head">
             <h3>Browse files</h3>
-            <form method="get" class="inline-filter files-filter">
+            <form method="get" class="inc-filter-bar files-filter">
                 <input type="hidden" name="selectedPath" value="@Model.SelectedPath" />
-                <inc-field label="Search">
-                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Path, name, excerpt, kind" />
-                </inc-field>
-                <inc-field label="Type">
-                    <select class="inc-form__select" asp-for="TypeFilter">
-                        @foreach (var type in global::Workbench.Pages.FilesModel.TypeOptions)
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
-                </inc-field>
-                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+                <div class="inc-filter-bar__main">
+                    <inc-field class="inc-filter-bar__field inc-filter-bar__field--grow" label="Search">
+                        <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Path, name, excerpt, kind" />
+                    </inc-field>
+                    <inc-field class="inc-filter-bar__field" label="Type">
+                        <select class="inc-form__select" asp-for="TypeFilter">
+                            @foreach (var type in global::Workbench.Pages.FilesModel.TypeOptions)
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </select>
+                    </inc-field>
+                </div>
+                <div class="inc-filter-bar__actions">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+                </div>
             </form>
         </div>
 
         <div class="tree-list">
             @if (Model.Files.Count == 0)
             {
-                <div class="empty-state">No files match the current filters.</div>
+                <div class="inc-empty-state">
+                    <div class="inc-empty-state__content">
+                        <div class="inc-empty-state__icon">?</div>
+                        <h3 class="inc-heading inc-heading--h3">No files</h3>
+                        <p class="inc-text inc-text--regular inc-text--muted">No files match the current filters.</p>
+                    </div>
+                </div>
             }
             else
             {
@@ -73,7 +91,13 @@
     <inc-card class="panel detail">
         @if (Model.SelectedFile is null)
         {
-            <div class="empty-state large">Select a file to preview it here.</div>
+            <div class="inc-empty-state">
+                <div class="inc-empty-state__content">
+                    <div class="inc-empty-state__icon">i</div>
+                    <h3 class="inc-heading inc-heading--h3">Select a file</h3>
+                    <p class="inc-text inc-text--regular inc-text--muted">Choose a file on the left to preview it here.</p>
+                </div>
+            </div>
         }
         else
         {
@@ -84,8 +108,8 @@
                     <p>@Model.SelectedFile.Summary.Path</p>
                 </div>
                 <div class="detail-badges">
-                    <span class="pill">@Model.SelectedFile.Summary.FileType</span>
-                    <span class="pill">@Model.SelectedFile.Summary.Extension</span>
+                    <span class="inc-badge inc-badge--pill @Workbench.Pages.FilesModel.FileTypeBadgeClass(Model.SelectedFile.Summary.FileType)">@Model.SelectedFile.Summary.FileType</span>
+                    <span class="inc-badge inc-badge--pill inc-badge--info">@Model.SelectedFile.Summary.Extension</span>
                 </div>
             </div>
 
@@ -118,7 +142,13 @@
                 <div slot="content">
                     @if (Model.SelectedFile.IsBinary)
                     {
-                        <div class="empty-state">Binary files are listed here but not rendered inline.</div>
+                        <div class="inc-empty-state">
+                            <div class="inc-empty-state__content">
+                                <div class="inc-empty-state__icon">B</div>
+                                <h3 class="inc-heading inc-heading--h3">Binary file</h3>
+                                <p class="inc-text inc-text--regular inc-text--muted">Binary files are listed here but not rendered inline.</p>
+                            </div>
+                        </div>
                     }
                     else if (Model.SelectedFile.IsMarkdown)
                     {

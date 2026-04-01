@@ -232,29 +232,29 @@ public class IndexModel : RepoPageModel
         };
     }
 
-    public static string StatusClass(string status)
+    public static string StatusBadgeClass(string status)
     {
         return status.ToLowerInvariant() switch
         {
-            "planned" => "status-planned",
-            "in_progress" => "status-progress",
-            "blocked" => "status-blocked",
-            "complete" => "status-complete",
-            "cancelled" => "status-cancelled",
-            "superseded" => "status-superseded",
-            _ => "status-default"
+            "planned" => "inc-badge--info",
+            "in_progress" => "inc-badge--warning",
+            "blocked" => "inc-badge--danger",
+            "complete" => "inc-badge--success",
+            "cancelled" => "inc-badge--warning",
+            "superseded" => "inc-badge--info",
+            _ => "inc-badge--info"
         };
     }
 
-    public static string PriorityClass(string? priority)
+    public static string PriorityBadgeClass(string? priority)
     {
         return priority?.ToLowerInvariant() switch
         {
-            "critical" => "priority-critical",
-            "high" => "priority-high",
-            "medium" => "priority-medium",
-            "low" => "priority-low",
-            _ => "priority-default"
+            "critical" => "inc-badge--danger",
+            "high" => "inc-badge--warning",
+            "medium" => "inc-badge--info",
+            "low" => "inc-badge--success",
+            _ => "inc-badge--info"
         };
     }
 

@@ -4,6 +4,12 @@ public sealed class SpecEditorInput
 {
     public string Path { get; set; } = string.Empty;
 
+    public string SourceFormat { get; set; } = "json";
+
+    public string SchemaReference { get; set; } = string.Empty;
+
+    public string ExtensionJson { get; set; } = string.Empty;
+
     public string? ArtifactId { get; set; }
 
     public string? Domain { get; set; }
@@ -22,11 +28,13 @@ public sealed class SpecEditorInput
 
     public string Context { get; set; } = string.Empty;
 
-    public string Requirements { get; set; } = string.Empty;
+    public string TagsText { get; set; } = string.Empty;
 
-    public string Tags { get; set; } = string.Empty;
+    public string RelatedArtifactsText { get; set; } = string.Empty;
 
-    public string RelatedArtifacts { get; set; } = string.Empty;
+    public string OpenQuestionsText { get; set; } = string.Empty;
 
-    public string OpenQuestions { get; set; } = string.Empty;
+    public IList<SpecSupplementalSectionEditorInput> SupplementalSections { get; set; } = [];
+
+    public IList<SpecRequirementEditorInput> Requirements { get; set; } = [SpecRequirementEditorInput.CreateBlank()];
 }

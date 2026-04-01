@@ -17,88 +17,111 @@
             <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Files">Files</a>
         </div>
     </div>
-    <div class="hero-stats">
-        <inc-card class="stat-card accent">
-            <span class="stat-label">Visible items</span>
-            <span class="stat-value">@Model.Items.Count</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Planned</span>
-            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">In progress</span>
-            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Complete</span>
-            <span class="stat-value">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</span>
-        </inc-card>
+    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
+        <article class="inc-summary-block stat-card accent">
+            <div class="inc-summary-block__header stat-label">Visible items</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Planned</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">In progress</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Complete</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</div>
+            </div>
+        </article>
     </div>
 </inc-card>
 
 @if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
 {
-    <inc-card class="banner">
-        <div class="banner-title">@Model.BannerTitle</div>
-        <div class="banner-message">@Model.BannerMessage</div>
+    <section class="inc-state-panel inc-state-panel--results">
+        <div class="inc-state-panel__head">
+            <div class="inc-state-panel__icon">i</div>
+            <div>
+                <h2 class="inc-state-panel__title">@Model.BannerTitle</h2>
+                <p class="inc-state-panel__body">@Model.BannerMessage</p>
+            </div>
+        </div>
         @if (Model.BannerLines.Count > 0)
         {
-            <ul class="banner-lines">
+            <ul class="inc-list-group inc-list-group--flush">
                 @foreach (var line in Model.BannerLines)
                 {
-                    <li>@line</li>
+                    <li class="inc-list-group__item">@line</li>
                 }
             </ul>
         }
-    </inc-card>
+    </section>
 }
 
 <div class="workspace">
     <inc-card class="panel sidebar">
         <div class="panel-head">
             <h3>Work items</h3>
-            <form method="get" class="inline-filter">
+            <form method="get" class="inc-filter-bar">
                 <input type="hidden" name="selectedId" value="@Model.SelectedId" />
-                <inc-field label="Search">
-                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, ID, owner, text" />
-                </inc-field>
-                <inc-field label="Status">
-                    <select class="inc-form__select" asp-for="StatusFilter">
-                        <option value="all">All</option>
-                        @foreach (var status in StatusOptions)
-                        {
-                            <option value="@status">@StatusLabel(status)</option>
-                        }
-                    </select>
-                </inc-field>
-                <label class="inc-form__check checkbox-row">
-                    <input class="inc-form__check__input" asp-for="IncludeDone" />
-                    <span class="inc-form__check__label">Include terminal items</span>
-                </label>
-                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+                <div class="inc-filter-bar__main">
+                    <inc-field class="inc-filter-bar__field inc-filter-bar__field--grow" label="Search">
+                        <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, ID, owner, text" />
+                    </inc-field>
+                    <inc-field class="inc-filter-bar__field" label="Status">
+                        <select class="inc-form__select" asp-for="StatusFilter">
+                            <option value="all">All</option>
+                            @foreach (var status in StatusOptions)
+                            {
+                                <option value="@status">@StatusLabel(status)</option>
+                            }
+                        </select>
+                    </inc-field>
+                    <label class="inc-form__check inc-filter-bar__field">
+                        <input class="inc-form__check__input" asp-for="IncludeDone" />
+                        <span class="inc-form__check__label">Include terminal items</span>
+                    </label>
+                </div>
+                <div class="inc-filter-bar__actions">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+                </div>
             </form>
         </div>
 
         <div class="item-list">
             @if (Model.Items.Count == 0)
             {
-                <div class="empty-state">No work items match the current filters.</div>
+                <div class="inc-empty-state">
+                    <div class="inc-empty-state__content">
+                        <div class="inc-empty-state__icon">?</div>
+                        <h3 class="inc-heading inc-heading--h3">No work items</h3>
+                        <p class="inc-text inc-text--regular inc-text--muted">No work items match the current filters.</p>
+                    </div>
+                </div>
             }
             else
             {
                 foreach (var item in Model.Items)
                 {
                     <a class="inc-card item-card @(Model.SelectedItem?.Id == item.Id ? "selected" : string.Empty)"
-                       asp-page="/Index"
-                       asp-route-selectedId="@item.Id"
-                       asp-route-statusFilter="@Model.StatusFilter"
-                       asp-route-query="@Model.Query"
-                       asp-route-includeDone="@Model.IncludeDone">
+                        asp-page="/Index"
+                        asp-route-selectedId="@item.Id"
+                        asp-route-statusFilter="@Model.StatusFilter"
+                        asp-route-query="@Model.Query"
+                        asp-route-includeDone="@Model.IncludeDone">
                         <div class="inc-card__body">
                             <div class="item-card-top">
                                 <span class="item-id">@item.Id</span>
-                                <span class="pill @StatusClass(item.Status)">@StatusLabel(item.Status)</span>
+                                <span class="inc-badge inc-badge--pill @StatusBadgeClass(item.Status)">@StatusLabel(item.Status)</span>
                             </div>
                             <div class="item-title">@item.Title</div>
                             <div class="item-meta">
@@ -115,8 +138,16 @@
     <inc-card class="panel detail">
         @if (Model.SelectedItem is null)
         {
-            <div class="empty-state large">
-                Pick a work item to edit or create a new one below.
+            <div class="inc-empty-state">
+                <div class="inc-empty-state__content">
+                    <div class="inc-empty-state__icon">i</div>
+                    <h3 class="inc-heading inc-heading--h3">Pick a work item</h3>
+                    <p class="inc-text inc-text--regular inc-text--muted">Select an item on the left to edit it, or create a new one below.</p>
+                    <div class="inc-empty-state__actions">
+                        <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Create">Create item</a>
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Browse docs</a>
+                    </div>
+                </div>
             </div>
         }
         else
@@ -128,8 +159,8 @@
                     <p>@Model.SelectedItem.Title</p>
                 </div>
                 <div class="detail-badges">
-                    <span class="pill @StatusClass(Model.SelectedItem.Status)">@StatusLabel(Model.SelectedItem.Status)</span>
-                    <span class="pill @PriorityClass(Model.SelectedItem.Priority)">@(!string.IsNullOrWhiteSpace(Model.SelectedItem.Priority) ? Model.SelectedItem.Priority : "unprioritized")</span>
+                    <span class="inc-badge inc-badge--pill @StatusBadgeClass(Model.SelectedItem.Status)">@StatusLabel(Model.SelectedItem.Status)</span>
+                    <span class="inc-badge inc-badge--pill @PriorityBadgeClass(Model.SelectedItem.Priority)">@(!string.IsNullOrWhiteSpace(Model.SelectedItem.Priority) ? Model.SelectedItem.Priority : "unprioritized")</span>
                 </div>
             </div>
 

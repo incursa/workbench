@@ -44,8 +44,8 @@
                     </span>
                 </a>
                 <div class="shell-metadata">
-                    <span class="shell-chip">@((ViewData["RepoRoot"] ?? "Local repo").ToString())</span>
-                    <span class="shell-chip">@((ViewData["ProfileName"] ?? "Local profile").ToString())</span>
+                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["RepoRoot"] ?? "Local repo").ToString())</span>
+                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["ProfileName"] ?? "Local profile").ToString())</span>
                 </div>
             </div>
 
@@ -71,8 +71,8 @@
                 </div>
                 <p slot="body" class="page-summary">@(ViewData["ProfileSummary"] ?? "Local repo UI")</p>
                 <div slot="actions" class="page-header-meta">
-                    <span class="page-pill">@((ViewData["RepoRoot"] ?? "Repo unavailable").ToString())</span>
-                    <span class="page-pill">@((ViewData["ProfileName"] ?? "Local profile not set").ToString())</span>
+                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["RepoRoot"] ?? "Repo unavailable").ToString())</span>
+                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@((ViewData["ProfileName"] ?? "Local profile not set").ToString())</span>
                 </div>
             </inc-page-header>
 
@@ -85,7 +85,6 @@
     <script src="~/lib/incursa-ui-kit/inc-design-language.js" asp-append-version="true"></script>
     <script type="module" src="~/lib/incursa-ui-kit/web-components/index.js" asp-append-version="true"></script>
     <script type="module" src="~/js/editor-arrays.js" asp-append-version="true"></script>
-    <script type="module" src="~/js/array-editor.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

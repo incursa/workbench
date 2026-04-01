@@ -5,14 +5,23 @@ namespace Workbench.Pages;
 
 public class SpecsModel : RepoPageModel
 {
-    private static readonly IReadOnlyList<string> documentTypes = ["specification"];
+    private const string DefaultSpecTraceSchemaReference = "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json";
+
+    public static IReadOnlyList<string> LifecycleStatusOptions { get; } =
+    [
+        "draft",
+        "proposed",
+        "approved",
+        "implemented",
+        "verified",
+        "superseded",
+        "retired"
+    ];
 
     public SpecsModel(WorkbenchWorkspace workspace, WorkbenchUserProfileStore profileStore)
         : base(workspace, profileStore)
     {
     }
-
-    public static IReadOnlyList<string> TypeOptions => documentTypes;
 
     [BindProperty(SupportsGet = true)]
     public string? Query { get; set; }
@@ -32,7 +41,7 @@ public class SpecsModel : RepoPageModel
     [TempData]
     public string? BannerMessage { get; set; }
 
-    public IReadOnlyList<RepoDocSummary> Specs { get; private set; } = Array.Empty<RepoDocSummary>();
+    public IReadOnlyList<RepoDocSummary> Specs { get; private set; } = [];
 
     public RepoTreeBranch Tree { get; private set; } = new("Specifications", string.Empty, 0, Array.Empty<RepoTreeBranch>(), Array.Empty<RepoTreeEntry>());
 
@@ -42,9 +51,13 @@ public class SpecsModel : RepoPageModel
 
     public string SpecIdPolicySummary { get; private set; } = string.Empty;
 
-    public string SelectedSpecHtml => SelectedSpec is null
-        ? string.Empty
-        : RepoContentRenderer.RenderMarkdown(SelectedSpec.Body);
+    public string PathPreview { get; private set; } = string.Empty;
+
+    public bool IsJsonEditor => string.Equals(Edit.SourceFormat, "json", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsLegacyMarkdownSpec => !IsCreateMode && SelectedSpec is not null && SelectedSpec.Summary.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
+
+    public string SelectedSpecSource => SelectedSpec?.Body ?? string.Empty;
 
     public IReadOnlyList<string> BannerLines =>
         string.IsNullOrWhiteSpace(BannerMessage)
@@ -62,31 +75,14 @@ public class SpecsModel : RepoPageModel
         try
         {
             var created = ShouldCreateSpec();
-            RepoDocDetail? selectedSpec;
-            if (created)
-            {
-                selectedSpec = Workspace.CreateSpec(Edit);
-            }
-            else
-            {
-                var result = Workspace.SaveSpec(Edit);
-                selectedSpec = Workspace.GetDoc(result.Path);
-            }
-
-            if (selectedSpec is null)
+            var saved = created ? Workspace.CreateSpec(Edit) : Workspace.GetDoc(Workspace.SaveSpec(Edit).Path);
+            if (saved is null)
             {
                 throw new InvalidOperationException("Failed to reload spec.");
             }
 
-            SetBanner(
-                created ? "Spec created" : "Spec saved",
-                $"{selectedSpec.Summary.Path} updated locally.");
-            return RedirectToPage(new
-            {
-                selectedReference = selectedSpec.Summary.ArtifactId ?? selectedSpec.Summary.Path,
-                query = Query,
-                createMode = false
-            });
+            SetBanner(created ? "Spec created" : "Spec saved", $"{saved.Summary.Path} updated locally.");
+            return RedirectToPage(new { selectedReference = saved.Summary.ArtifactId ?? saved.Summary.Path, query = Query, createMode = false });
         }
         catch (Exception ex)
         {
@@ -106,15 +102,8 @@ public class SpecsModel : RepoPageModel
             }
 
             var deleted = Workspace.DeleteDoc(SelectedSpec.Summary.Path, keepLinks: false);
-            SetBanner(
-                "Spec deleted",
-                $"{SelectedSpec.Summary.Path} removed locally.\nLinked work items updated: {deleted.ItemsUpdated}");
-            return RedirectToPage(new
-            {
-                selectedReference = string.Empty,
-                query = Query,
-                createMode = false
-            });
+            SetBanner("Spec deleted", $"{SelectedSpec.Summary.Path} removed locally.\nLinked work items updated: {deleted.ItemsUpdated}");
+            return RedirectToPage(new { selectedReference = string.Empty, query = Query, createMode = false });
         }
         catch (Exception ex)
         {
@@ -122,6 +111,51 @@ public class SpecsModel : RepoPageModel
             LoadPage(populateEditor: false);
             return Page();
         }
+    }
+
+    public IActionResult OnPostAddRequirement()
+    {
+        ApplyChrome("Specs");
+        Edit.Requirements.Add(SpecRequirementEditorInput.CreateBlank());
+        LoadPage(populateEditor: false);
+        return Page();
+    }
+
+    public IActionResult OnPostRemoveRequirement(int index)
+    {
+        ApplyChrome("Specs");
+        if (index >= 0 && index < Edit.Requirements.Count)
+        {
+            Edit.Requirements.RemoveAt(index);
+        }
+
+        if (Edit.Requirements.Count == 0)
+        {
+            Edit.Requirements.Add(SpecRequirementEditorInput.CreateBlank());
+        }
+
+        LoadPage(populateEditor: false);
+        return Page();
+    }
+
+    public IActionResult OnPostAddSupplementalSection()
+    {
+        ApplyChrome("Specs");
+        Edit.SupplementalSections.Add(SpecSupplementalSectionEditorInput.CreateBlank());
+        LoadPage(populateEditor: false);
+        return Page();
+    }
+
+    public IActionResult OnPostRemoveSupplementalSection(int index)
+    {
+        ApplyChrome("Specs");
+        if (index >= 0 && index < Edit.SupplementalSections.Count)
+        {
+            Edit.SupplementalSections.RemoveAt(index);
+        }
+
+        LoadPage(populateEditor: false);
+        return Page();
     }
 
     private void LoadPage(bool populateEditor)
@@ -133,20 +167,13 @@ public class SpecsModel : RepoPageModel
 
         Specs = Workspace.ListDocs("specification", Query);
         IsCreateMode = ResolveCreateMode();
-
-        var selected = IsCreateMode ? null : ResolveSelectedSpec();
-        SelectedSpec = selected;
+        SelectedSpec = IsCreateMode ? null : ResolveSelectedSpec();
 
         if (populateEditor)
         {
-            if (IsCreateMode || selected is null)
-            {
-                Edit = CreateBlankSpecEditorInput();
-            }
-            else
-            {
-                Edit = Workspace.CreateSpecEditorInput(selected);
-            }
+            Edit = IsCreateMode || SelectedSpec is null
+                ? CreateBlankSpecEditorInput()
+                : Workspace.CreateSpecEditorInput(SelectedSpec);
         }
 
         if (SelectedSpec is not null)
@@ -159,41 +186,54 @@ public class SpecsModel : RepoPageModel
         }
 
         SpecIdPolicySummary = Workspace.GetSpecIdPolicySummary();
+        PathPreview = BuildPathPreview();
         Tree = BuildSpecTree(
             Specs,
             doc => Url.Page("/Specs", new { selectedReference = doc.ArtifactId ?? doc.Path, query = Query }) ?? doc.Path,
             IsCreateMode ? null : SelectedReference);
     }
 
-    private static RepoTreeBranch BuildSpecTree(
-        IReadOnlyList<RepoDocSummary> specs,
-        Func<RepoDocSummary, string> hrefFactory,
-        string? selectedReference)
+    private string BuildPathPreview()
+    {
+        if (!string.IsNullOrWhiteSpace(Edit.Path))
+        {
+            return Edit.Path.Replace('\\', '/');
+        }
+
+        if (!string.Equals(Edit.SourceFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            return "specs/requirements/<domain>/<artifact-id>.md";
+        }
+
+        var domain = string.IsNullOrWhiteSpace(Edit.Domain) ? "<domain>" : Edit.Domain.Trim().ToLowerInvariant().Replace(' ', '-');
+        var artifactId = string.IsNullOrWhiteSpace(Edit.ArtifactId) ? "SPEC-<DOMAIN>-<GROUPING>" : Edit.ArtifactId.Trim();
+        return $"specs/requirements/{domain}/{artifactId}.json";
+    }
+
+    private static RepoTreeBranch BuildSpecTree(IReadOnlyList<RepoDocSummary> specs, Func<RepoDocSummary, string> hrefFactory, string? selectedReference)
     {
         var branches = specs
             .GroupBy(GetSpecGroupName, StringComparer.OrdinalIgnoreCase)
             .OrderBy(group => group.Key.Equals("Ungrouped", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
             .ThenBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
-            .Select(group =>
-            {
-                var entries = group
-                    .OrderBy(spec => spec.ArtifactId ?? spec.Path, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new RepoTreeBranch(
+                group.Key,
+                group.Key,
+                group.Count(),
+                Array.Empty<RepoTreeBranch>(),
+                group.OrderBy(spec => spec.ArtifactId ?? spec.Path, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(spec => spec.Title, StringComparer.OrdinalIgnoreCase)
                     .Select(spec => new RepoTreeEntry(
                         spec.Path,
                         spec.Title,
                         string.IsNullOrWhiteSpace(spec.ArtifactId) ? spec.Domain ?? spec.Type : spec.ArtifactId,
-                        string.Empty,
+                        Path.GetExtension(spec.Path).TrimStart('.'),
                         null,
                         hrefFactory(spec),
                         IsSelected: !string.IsNullOrWhiteSpace(selectedReference) &&
                             (spec.Path.Equals(selectedReference, StringComparison.OrdinalIgnoreCase) ||
-                             (!string.IsNullOrWhiteSpace(spec.ArtifactId) &&
-                              spec.ArtifactId.Equals(selectedReference, StringComparison.OrdinalIgnoreCase)))))
-                    .ToList();
-
-                return new RepoTreeBranch(group.Key, group.Key, entries.Count, Array.Empty<RepoTreeBranch>(), entries);
-            })
+                             (!string.IsNullOrWhiteSpace(spec.ArtifactId) && spec.ArtifactId.Equals(selectedReference, StringComparison.OrdinalIgnoreCase)))))
+                    .ToList()))
             .ToList();
 
         return new RepoTreeBranch("Specifications", string.Empty, specs.Count, branches, Array.Empty<RepoTreeEntry>());
@@ -206,30 +246,8 @@ public class SpecsModel : RepoPageModel
             return spec.Domain.Trim().ToUpperInvariant();
         }
 
-        if (!string.IsNullOrWhiteSpace(spec.ArtifactId))
-        {
-            var artifactId = spec.ArtifactId.Trim();
-            if (artifactId.StartsWith("SPEC-", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = artifactId.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (parts.Length >= 3)
-                {
-                    return parts[1].ToUpperInvariant();
-                }
-            }
-        }
-
         var folder = Path.GetDirectoryName(spec.Path);
-        if (!string.IsNullOrWhiteSpace(folder))
-        {
-            var name = Path.GetFileName(folder);
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                return name.ToUpperInvariant();
-            }
-        }
-
-        return "Ungrouped";
+        return string.IsNullOrWhiteSpace(folder) ? "Ungrouped" : Path.GetFileName(folder)!.ToUpperInvariant();
     }
 
     private RepoDocDetail? ResolveSelectedSpec()
@@ -244,7 +262,6 @@ public class SpecsModel : RepoPageModel
             var selected = Specs.FirstOrDefault(spec =>
                 spec.Path.Equals(SelectedReference, StringComparison.OrdinalIgnoreCase) ||
                 (!string.IsNullOrWhiteSpace(spec.ArtifactId) && spec.ArtifactId.Equals(SelectedReference, StringComparison.OrdinalIgnoreCase)));
-
             if (selected is not null)
             {
                 return Workspace.GetDoc(selected.ArtifactId ?? selected.Path);
@@ -262,16 +279,21 @@ public class SpecsModel : RepoPageModel
 
     private bool ResolveCreateMode()
     {
-        return CreateMode
-            || string.Equals(SelectedReference, "new", StringComparison.OrdinalIgnoreCase)
-            || (Specs.Count == 0 && string.IsNullOrWhiteSpace(Query));
+        return CreateMode || string.Equals(SelectedReference, "new", StringComparison.OrdinalIgnoreCase) || (Specs.Count == 0 && string.IsNullOrWhiteSpace(Query));
     }
 
     private SpecEditorInput CreateBlankSpecEditorInput()
     {
+        var sourceFormat = Workspace.GetPreferredSpecFormat();
+
         return new SpecEditorInput
         {
-            Owner = Profile.DefaultOwner ?? Profile.EffectiveAuthor
+            Owner = Profile.DefaultOwner ?? Profile.EffectiveAuthor,
+            SourceFormat = sourceFormat,
+            SchemaReference = string.Equals(sourceFormat, "json", StringComparison.OrdinalIgnoreCase)
+                ? DefaultSpecTraceSchemaReference
+                : string.Empty,
+            Requirements = [SpecRequirementEditorInput.CreateBlank()]
         };
     }
 

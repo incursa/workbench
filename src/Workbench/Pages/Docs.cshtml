@@ -17,37 +17,50 @@
             <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Index">Items</a>
         </div>
     </div>
-    <div class="hero-stats">
-        <inc-card class="stat-card accent">
-            <span class="stat-label">Visible docs</span>
-            <span class="stat-value">@Model.Docs.Count</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Filter</span>
-            <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.TypeFilter) ? "all" : Model.TypeFilter)</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Repo root</span>
-            <span class="stat-value">@Model.RepoRoot</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Profile</span>
-            <span class="stat-value">@Model.ProfileName</span>
-        </inc-card>
+    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
+        <article class="inc-summary-block stat-card accent">
+            <div class="inc-summary-block__header stat-label">Visible docs</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Docs.Count</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Filter</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@(string.IsNullOrWhiteSpace(Model.TypeFilter) ? "all" : Model.TypeFilter)</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Repo root</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--small stat-value">@Model.RepoRoot</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Profile</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.ProfileName</div>
+            </div>
+        </article>
     </div>
 </inc-card>
 
 @if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
 {
-    <section class="banner">
-        <div class="banner-title">@Model.BannerTitle</div>
-        <div class="banner-message">@Model.BannerMessage</div>
+    <section class="inc-state-panel inc-state-panel--results">
+        <div class="inc-state-panel__head">
+            <div class="inc-state-panel__icon">i</div>
+            <div>
+                <h2 class="inc-state-panel__title">@Model.BannerTitle</h2>
+                <p class="inc-state-panel__body">@Model.BannerMessage</p>
+            </div>
+        </div>
         @if (Model.BannerLines.Count > 0)
         {
-            <ul class="banner-lines">
+            <ul class="inc-list-group inc-list-group--flush">
                 @foreach (var line in Model.BannerLines)
                 {
-                    <li>@line</li>
+                    <li class="inc-list-group__item">@line</li>
                 }
             </ul>
         }
@@ -58,30 +71,40 @@
     <aside class="inc-card panel sidebar">
         <div class="panel-head">
             <h3>Browse docs</h3>
-            <form method="get" class="inline-filter docs-filter">
+            <form method="get" class="inc-filter-bar docs-filter">
                 <input type="hidden" name="selectedReference" value="@Model.SelectedReference" />
                 <input type="hidden" name="createMode" value="false" />
-                <label class="inc-form__group">
-                    <span class="field-label">Search</span>
-                    <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, artifact ID, requirement IDs, body, path" />
-                </label>
-                <label class="inc-form__group">
-                    <span class="field-label">Type</span>
-                    <select class="inc-form__select" asp-for="TypeFilter">
-                        @foreach (var type in global::Workbench.Pages.DocsModel.TypeOptions)
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
-                </label>
-                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+                <div class="inc-filter-bar__main">
+                    <label class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow">
+                        <span class="field-label">Search</span>
+                        <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, artifact ID, requirement IDs, body, path" />
+                    </label>
+                    <label class="inc-form__group inc-filter-bar__field">
+                        <span class="field-label">Type</span>
+                        <select class="inc-form__select" asp-for="TypeFilter">
+                            @foreach (var type in global::Workbench.Pages.DocsModel.TypeOptions)
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+                <div class="inc-filter-bar__actions">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
+                </div>
             </form>
         </div>
 
         <div class="tree-list">
             @if (Model.Docs.Count == 0)
             {
-                <div class="empty-state">No documents match the current filters.</div>
+                <div class="inc-empty-state">
+                    <div class="inc-empty-state__content">
+                        <div class="inc-empty-state__icon">?</div>
+                        <h3 class="inc-heading inc-heading--h3">No documents</h3>
+                        <p class="inc-text inc-text--regular inc-text--muted">No documents match the current filters.</p>
+                    </div>
+                </div>
             }
             else
             {
@@ -93,7 +116,16 @@
     <section class="inc-card panel detail">
         @if (Model.SelectedDoc is null && !Model.IsCreateMode)
         {
-            <div class="empty-state large">Select a document to edit it here or start a new one with the create button above.</div>
+            <div class="inc-empty-state">
+                <div class="inc-empty-state__content">
+                    <div class="inc-empty-state__icon">i</div>
+                    <h3 class="inc-heading inc-heading--h3">Select a document</h3>
+                    <p class="inc-text inc-text--regular inc-text--muted">Select a document to edit it here or start a new one with the create button above.</p>
+                    <div class="inc-empty-state__actions">
+                        <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Docs" asp-route-createMode="true" asp-route-selectedReference="new" asp-route-typeFilter="@Model.TypeFilter" asp-route-query="@Model.Query">Create doc</a>
+                    </div>
+                </div>
+            </div>
         }
         else
         {
@@ -106,13 +138,13 @@
                 <div class="detail-badges">
                     @if (Model.IsCreateMode)
                     {
-                        <span class="pill">document</span>
-                        <span class="pill">create</span>
+                        <span class="inc-badge inc-badge--pill inc-badge--info">document</span>
+                        <span class="inc-badge inc-badge--pill inc-badge--info">create</span>
                     }
                     else
                     {
-                        <span class="pill">@Model.SelectedDoc!.Summary.Type</span>
-                        <span class="pill">@Model.SelectedDoc!.Summary.Status</span>
+                        <span class="inc-badge inc-badge--pill inc-badge--info">@Model.SelectedDoc!.Summary.Type</span>
+                        <span class="inc-badge inc-badge--pill inc-badge--info">@Model.SelectedDoc!.Summary.Status</span>
                     }
                 </div>
             </div>

@@ -35,6 +35,17 @@ public class FilesModel : RepoPageModel
 
     public int BinaryCount { get; private set; }
 
+    public static string FileTypeBadgeClass(string? fileType)
+    {
+        return fileType?.ToLowerInvariant() switch
+        {
+            "markdown" => "inc-badge--info",
+            "text" => "inc-badge--success",
+            "binary" => "inc-badge--warning",
+            _ => "inc-badge--info"
+        };
+    }
+
     public void OnGet()
     {
         ApplyChrome("Files");

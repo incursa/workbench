@@ -16,23 +16,31 @@
             <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
         </div>
     </div>
-    <div class="hero-stats">
-        <inc-card class="stat-card accent">
-            <span class="stat-label">Type</span>
-            <span class="stat-value">work_item</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Default status</span>
-            <span class="stat-value">planned</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Owner</span>
-            <span class="stat-value">local profile</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Mode</span>
-            <span class="stat-value">local</span>
-        </inc-card>
+    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
+        <article class="inc-summary-block stat-card accent">
+            <div class="inc-summary-block__header stat-label">Type</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">work_item</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Default status</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">planned</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Owner</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">local profile</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Mode</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">local</div>
+            </div>
+        </article>
     </div>
 </inc-card>
 

@@ -37,7 +37,7 @@ else
                 <a class="inc-card tree-entry @(entry.IsSelected ? "selected" : string.Empty)" href="@entry.Href">
                     <div class="inc-card__body">
                         <div class="tree-entry-top">
-                            <span class="pill">@entry.Badge</span>
+                            <span class="inc-badge inc-badge--pill inc-badge--info">@entry.Badge</span>
                         </div>
                         <div class="tree-entry-title">@entry.Title</div>
                         @if (!string.IsNullOrWhiteSpace(entry.Secondary))

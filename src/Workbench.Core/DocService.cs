@@ -1720,6 +1720,17 @@ public static class DocService
         return !string.IsNullOrWhiteSpace(artifactId);
     }
 
+    public static string? TryGenerateArtifactId(
+        string repoRoot,
+        WorkbenchConfig config,
+        string docType,
+        string title,
+        string? domain,
+        string? capability)
+    {
+        return TryGenerateDocArtifactId(repoRoot, config, docType, title, domain, capability);
+    }
+
     private static string? TryGenerateDocArtifactId(
         string repoRoot,
         WorkbenchConfig config,
@@ -1811,8 +1822,15 @@ public static class DocService
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
+            foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             {
+                var extension = Path.GetExtension(file);
+                if (!extension.Equals(".md", StringComparison.OrdinalIgnoreCase) &&
+                    !extension.Equals(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (IsWorkItemDocumentPath(repoRoot, config, file))
                 {
                     continue;

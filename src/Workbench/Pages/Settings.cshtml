@@ -16,23 +16,31 @@
             <inc-state-panel variant="success" title="Saved" body="@Model.Message"></inc-state-panel>
         }
     </div>
-    <div class="hero-stats">
-        <inc-card class="stat-card accent">
-            <span class="stat-label">Profile file</span>
-            <span class="stat-value">@Model.ProfilePath</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Display name</span>
-            <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.DisplayName) ? "unset" : Model.DisplayName)</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Default owner</span>
-            <span class="stat-value">@(string.IsNullOrWhiteSpace(Model.DefaultOwner) ? "unset" : Model.DefaultOwner)</span>
-        </inc-card>
-        <inc-card class="stat-card">
-            <span class="stat-label">Effective author</span>
-            <span class="stat-value">@Model.EffectiveAuthorDisplay</span>
-        </inc-card>
+    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
+        <article class="inc-summary-block stat-card accent">
+            <div class="inc-summary-block__header stat-label">Profile file</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--small stat-value">@Model.ProfilePath</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Display name</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@(string.IsNullOrWhiteSpace(Model.DisplayName) ? "unset" : Model.DisplayName)</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Default owner</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@(string.IsNullOrWhiteSpace(Model.DefaultOwner) ? "unset" : Model.DefaultOwner)</div>
+            </div>
+        </article>
+        <article class="inc-summary-block stat-card">
+            <div class="inc-summary-block__header stat-label">Effective author</div>
+            <div class="inc-summary-block__body inc-summary-block__body--left">
+                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.EffectiveAuthorDisplay</div>
+            </div>
+        </article>
     </div>
 </section>
 
