@@ -22,6 +22,8 @@
         </section>
     }
 
+    @if (!Model.UseRequirementBrowserMode)
+    {
     <div class="row g-4 align-items-start">
         <aside class="col-12 col-xl-4">
             <section class="inc-card">
@@ -583,4 +585,776 @@
             </section>
         </div>
     </div>
+    }
+    else
+    {
+        <section class="inc-card">
+            <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                    <div>
+                        <p class="inc-key-value__label mb-1">Catalog</p>
+                        <h2 class="mb-2">Specifications</h2>
+                        <p class="mb-0">Browse specifications first, then drill into one spec’s requirements with server-side paging.</p>
+                    </div>
+                    <a class="inc-btn inc-btn--primary inc-btn--sm align-self-start"
+                       asp-page="/Specs"
+                       asp-route-createMode="true"
+                       asp-route-selectedReference="new"
+                       asp-route-query="@Model.Query">New spec</a>
+                </div>
+
+                <form method="get" class="inc-filter-bar">
+                    <input type="hidden" name="createMode" value="false" />
+                    <input type="hidden" name="requirementQuery" value="" />
+                    <input type="hidden" name="requirementPage" value="1" />
+                    <input type="hidden" name="selectedRequirementReference" value="" />
+                    <div class="inc-filter-bar__main">
+                        <div class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow mb-0">
+                            <label class="inc-form__label" for="query">Find spec</label>
+                            <input id="query" class="inc-form__control" name="query" value="@Model.Query" placeholder="Artifact ID or title" />
+                        </div>
+                    </div>
+                    <div class="inc-filter-bar__actions">
+                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Search</button>
+                    </div>
+                </form>
+
+                @if (Model.Specs.Count == 0)
+                {
+                    <div class="inc-empty-state">
+                        <div class="inc-empty-state__content">
+                            <div class="inc-empty-state__icon">?</div>
+                            <h3 class="inc-heading inc-heading--h3">No specifications</h3>
+                            <p class="inc-text inc-text--regular inc-text--muted">No specifications match the current filters.</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="inc-table-container">
+                        <div class="inc-table-responsive">
+                            <table class="table inc-table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Specification</th>
+                                        <th scope="col">Domain</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Path</th>
+                                        <th scope="col" class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var spec in Model.Specs.OrderBy(spec => spec.ArtifactId ?? spec.Path, StringComparer.OrdinalIgnoreCase))
+                                    {
+                                        var isSelected = string.Equals(Model.SelectedReference, spec.ArtifactId ?? spec.Path, StringComparison.OrdinalIgnoreCase);
+
+                                        <tr class="@(isSelected ? "inc-table__row--selected" : null)">
+                                            <td>
+                                                <div class="inc-table__bundle">
+                                                    <div class="inc-table__bundle-title font-monospace">@(spec.ArtifactId ?? spec.Path)</div>
+                                                    <div class="inc-table__bundle-hint">@(string.IsNullOrWhiteSpace(spec.Title) ? "Untitled specification" : spec.Title)</div>
+                                                </div>
+                                            </td>
+                                            <td>@(string.IsNullOrWhiteSpace(spec.Domain) ? "-" : spec.Domain)</td>
+                                            <td>@(string.IsNullOrWhiteSpace(spec.Status) ? "-" : spec.Status)</td>
+                                            <td class="text-break small text-body-secondary">@spec.Path</td>
+                                            <td class="text-end">
+                                                <a class="inc-btn inc-btn--secondary inc-btn--sm"
+                                                   asp-page="/Specs"
+                                                   asp-route-selectedReference="@(spec.ArtifactId ?? spec.Path)"
+                                                   asp-route-query="@Model.Query"
+                                                   asp-route-requirementQuery="@Model.RequirementQuery"
+                                                   asp-route-requirementPage="1"
+                                                   asp-route-requirementPageSize="@Model.RequirementPageSize"
+                                                   asp-route-selectedRequirementReference="">Open</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="inc-card">
+            <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                    <div>
+                        <p class="inc-key-value__label mb-1">Selected specification</p>
+                        <h2 class="mb-2">@Model.Edit.Title</h2>
+                        <p class="mb-0">@Model.SpecIdPolicySummary</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-start">
+                        <span class="inc-badge inc-badge--pill inc-badge--info">@Model.Edit.Status</span>
+                        @if (Model.IsLegacyMarkdownSpec)
+                        {
+                            <span class="inc-badge inc-badge--pill inc-badge--secondary">markdown-backed</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="inc-key-value-grid">
+                    <div class="inc-key-value inc-key-value--card">
+                        <div class="inc-key-value__label">Path</div>
+                        <div class="inc-key-value__value inc-key-value__value--data">
+                            <a class="text-truncate d-inline-block mw-100" asp-page="/Files" asp-route-selectedPath="@Model.SelectedSpec!.Summary.Path">@Model.PathPreview</a>
+                        </div>
+                    </div>
+                    <div class="inc-key-value inc-key-value--card">
+                        <div class="inc-key-value__label">Requirements</div>
+                        <div class="inc-key-value__value">@Model.TotalRequirementCount</div>
+                    </div>
+                    <div class="inc-key-value inc-key-value--card">
+                        <div class="inc-key-value__label">Filtered</div>
+                        <div class="inc-key-value__value">@Model.FilteredRequirementCount</div>
+                    </div>
+                    <div class="inc-key-value inc-key-value--card">
+                        <div class="inc-key-value__label">Owner</div>
+                        <div class="inc-key-value__value">@(string.IsNullOrWhiteSpace(Model.Edit.Owner) ? "-" : Model.Edit.Owner)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="inc-card">
+            <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                <div>
+                    <p class="inc-key-value__label mb-1">Requirements</p>
+                    <h3 class="mb-2">Paged requirement list</h3>
+                    <p class="mb-0">Use the list view to browse a large specification, then open one requirement at a time for detailed editing.</p>
+                </div>
+
+                <form method="get" class="inc-filter-bar">
+                    <input type="hidden" name="selectedReference" value="@Model.SelectedReference" />
+                    <input type="hidden" name="query" value="@Model.Query" />
+                    <input type="hidden" name="createMode" value="false" />
+                    <div class="inc-filter-bar__main">
+                        <div class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow mb-0">
+                            <label class="inc-form__label" for="requirementQuery">Find requirement</label>
+                            <input id="requirementQuery" class="inc-form__control" name="requirementQuery" value="@Model.RequirementQuery" placeholder="ID, title, statement, notes, trace" />
+                        </div>
+                        <div class="inc-form__group inc-filter-bar__field mb-0">
+                            <label class="inc-form__label" asp-for="RequirementPageSize">Page size</label>
+                            <select class="inc-form__select" asp-for="RequirementPageSize" asp-items="Model.RequirementPageSizeOptions" name="requirementPageSize"></select>
+                        </div>
+                    </div>
+                    <div class="inc-filter-bar__actions">
+                        <input type="hidden" name="requirementPage" value="1" />
+                        <input type="hidden" name="selectedRequirementReference" value="@Model.SelectedRequirementReference" />
+                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Search</button>
+                        <button type="submit"
+                                formaction="@Url.Page("/Specs", new { selectedReference = Model.SelectedReference, query = Model.Query, requirementQuery = Model.RequirementQuery, requirementPage = Model.RequirementPage, requirementPageSize = Model.RequirementPageSize, selectedRequirementReference = "new", createMode = false })"
+                                formmethod="get"
+                                class="inc-btn inc-btn--primary inc-btn--sm">Add requirement</button>
+                    </div>
+                </form>
+
+                @if (Model.FilteredRequirementCount == 0)
+                {
+                    <div class="inc-empty-state">
+                        <div class="inc-empty-state__content">
+                            <div class="inc-empty-state__icon">?</div>
+                            <h3 class="inc-heading inc-heading--h3">No matching requirements</h3>
+                            <p class="inc-text inc-text--regular inc-text--muted">Adjust the filter or add a new requirement.</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="inc-table-container">
+                        <div class="inc-table-responsive">
+                            <table class="table inc-table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Requirement</th>
+                                        <th scope="col">Title</th>
+                                        <th scope="col">Statement</th>
+                                        <th scope="col">Trace</th>
+                                        <th scope="col" class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var requirement in Model.VisibleRequirements)
+                                    {
+                                        <tr class="@(requirement.IsSelected ? "inc-table__row--selected" : null)">
+                                            <td class="font-monospace">@requirement.DisplayId</td>
+                                            <td>
+                                                <div class="inc-table__bundle">
+                                                    <div class="inc-table__bundle-title">@(string.IsNullOrWhiteSpace(requirement.Title) ? "Untitled requirement" : requirement.Title)</div>
+                                                </div>
+                                            </td>
+                                            <td class="small text-body-secondary">@requirement.SummaryPreview</td>
+                                            <td>@requirement.TraceCount</td>
+                                            <td class="text-end">
+                                                <a class="inc-btn inc-btn--secondary inc-btn--sm"
+                                                   asp-page="/Specs"
+                                                   asp-route-selectedReference="@Model.SelectedReference"
+                                                   asp-route-query="@Model.Query"
+                                                   asp-route-requirementQuery="@Model.RequirementQuery"
+                                                   asp-route-requirementPage="@Model.RequirementPage"
+                                                   asp-route-requirementPageSize="@Model.RequirementPageSize"
+                                                   asp-route-selectedRequirementReference="@requirement.Reference">Edit</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="inc-table-responsive__footer">
+                        <div class="small text-body-secondary">
+                            Showing @Model.RequirementRangeStart-@Model.RequirementRangeEnd of @Model.FilteredRequirementCount requirement@(Model.FilteredRequirementCount == 1 ? "" : "s")
+                        </div>
+
+                        @if (Model.RequirementPageCount > 1)
+                        {
+                            <nav aria-label="Requirements pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item @(Model.RequirementPage <= 1 ? "disabled" : null)">
+                                        <a class="page-link"
+                                           asp-page="/Specs"
+                                           asp-route-selectedReference="@Model.SelectedReference"
+                                           asp-route-query="@Model.Query"
+                                           asp-route-requirementQuery="@Model.RequirementQuery"
+                                           asp-route-requirementPage="@(Model.RequirementPage - 1)"
+                                           asp-route-requirementPageSize="@Model.RequirementPageSize"
+                                           asp-route-selectedRequirementReference="@Model.SelectedRequirementReference">Previous</a>
+                                    </li>
+                                    @for (var pageNumber = Math.Max(1, Model.RequirementPage - 2); pageNumber <= Math.Min(Model.RequirementPageCount, Model.RequirementPage + 2); pageNumber++)
+                                    {
+                                        <li class="page-item @(pageNumber == Model.RequirementPage ? "active" : null)">
+                                            <a class="page-link"
+                                               asp-page="/Specs"
+                                               asp-route-selectedReference="@Model.SelectedReference"
+                                               asp-route-query="@Model.Query"
+                                               asp-route-requirementQuery="@Model.RequirementQuery"
+                                               asp-route-requirementPage="@pageNumber"
+                                               asp-route-requirementPageSize="@Model.RequirementPageSize"
+                                               asp-route-selectedRequirementReference="@Model.SelectedRequirementReference">@pageNumber</a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(Model.RequirementPage >= Model.RequirementPageCount ? "disabled" : null)">
+                                        <a class="page-link"
+                                           asp-page="/Specs"
+                                           asp-route-selectedReference="@Model.SelectedReference"
+                                           asp-route-query="@Model.Query"
+                                           asp-route-requirementQuery="@Model.RequirementQuery"
+                                           asp-route-requirementPage="@(Model.RequirementPage + 1)"
+                                           asp-route-requirementPageSize="@Model.RequirementPageSize"
+                                           asp-route-selectedRequirementReference="@Model.SelectedRequirementReference">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+
+        @if (Model.HasSelectedRequirement)
+        {
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                        <div>
+                            <p class="inc-key-value__label mb-1">@(Model.IsSelectedRequirementNew ? "New requirement" : "Requirement editor")</p>
+                            <h3 class="mb-2">@Model.GetRequirementDisplayId(Model.RequirementEdit)</h3>
+                            <p class="mb-0 text-body-secondary">@SpecsModel.GetRequirementSummaryPreview(Model.RequirementEdit)</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-start">
+                            <a class="inc-btn inc-btn--secondary inc-btn--sm"
+                               asp-page="/Specs"
+                               asp-route-selectedReference="@Model.SelectedReference"
+                               asp-route-query="@Model.Query"
+                               asp-route-requirementQuery="@Model.RequirementQuery"
+                               asp-route-requirementPage="@Model.RequirementPage"
+                               asp-route-requirementPageSize="@Model.RequirementPageSize"
+                               asp-route-selectedRequirementReference="">Close</a>
+                        </div>
+                    </div>
+
+                    <form method="post" asp-page-handler="SaveRequirement" class="inc-stack inc-stack--gap-lg">
+                        <partial name="_ValidationSummary" />
+                        <input type="hidden" asp-for="SelectedReference" />
+                        <input type="hidden" asp-for="Query" />
+                        <input type="hidden" asp-for="RequirementQuery" />
+                        <input type="hidden" asp-for="RequirementPage" />
+                        <input type="hidden" asp-for="RequirementPageSize" />
+                        <input type="hidden" asp-for="SelectedRequirementReference" />
+                        <input type="hidden" asp-for="RequirementEdit.ExtensionJson" />
+                        <input type="hidden" asp-for="RequirementEdit.Trace.ExtensionJson" />
+
+                        <section class="inc-filter-bar">
+                            <div class="inc-filter-bar__main">
+                                <div>
+                                    <div class="fw-semibold">Saving this requirement writes the full specification file.</div>
+                                    <div class="small text-body-secondary">The editor is scoped to one requirement, but Workbench still saves the repo-native specification artifact.</div>
+                                </div>
+                            </div>
+                            <div class="inc-filter-bar__actions">
+                                <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save requirement</button>
+                                <button type="submit" asp-page-handler="DeleteSelectedRequirement" formnovalidate class="inc-btn inc-btn--danger inc-btn--sm">@(Model.IsSelectedRequirementNew ? "Discard draft" : "Delete requirement")</button>
+                            </div>
+                        </section>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-6">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.IdSuffix">
+                                        <span>Requirement ID suffix</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Only enter the local suffix. Workbench supplies the REQ prefix from the current specification.">i</span>
+                                    </label>
+                                    <div class="inc-input-group">
+                                        <span class="inc-input-group__text font-monospace">@Model.RequirementIdPrefix</span>
+                                        <input class="inc-form__control font-monospace"
+                                               asp-for="RequirementEdit.IdSuffix"
+                                               placeholder="0001"
+                                               pattern="^(?=.*\d$)[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Title">
+                                        <span>Title</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="A short human-readable summary that appears in the requirement list.">i</span>
+                                    </label>
+                                    <input class="inc-form__control" asp-for="RequirementEdit.Title" />
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Statement">
+                                        <span>Statement</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="The normative requirement clause.">i</span>
+                                    </label>
+                                    <textarea class="inc-form__control" asp-for="RequirementEdit.Statement" rows="4"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.NotesText">
+                                        <span>Notes</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Optional editor notes. Enter one note per line.">i</span>
+                                    </label>
+                                    <textarea class="inc-form__control" asp-for="RequirementEdit.NotesText" rows="3" placeholder="One note per line"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.SelectedSatisfiedBy">
+                                        <span>Satisfied By</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Architecture artifacts that satisfy this requirement.">i</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <select class="inc-form__select" asp-for="RequirementEdit.Trace.SelectedSatisfiedBy" asp-items="Model.ArchitectureOptions">
+                                            <option value="">Choose architecture item</option>
+                                        </select>
+                                        <button type="submit" asp-page-handler="AddSelectedTraceValue" asp-route-field="SatisfiedBy" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                    </div>
+                                    @{
+                                        var selectedSatisfiedBy = SpecsModel.GetTraceValues(Model.RequirementEdit.Trace.SatisfiedByText);
+                                    }
+                                    @if (selectedSatisfiedBy.Count > 0)
+                                    {
+                                        <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                            @foreach (var value in selectedSatisfiedBy)
+                                            {
+                                                <li class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.ArchitectureOptions)</span>
+                                                    <button type="submit" asp-page-handler="RemoveSelectedTraceValue" asp-route-field="SatisfiedBy" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.SelectedImplementedBy">
+                                        <span>Implemented By</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Work items that implement this requirement.">i</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <select class="inc-form__select" asp-for="RequirementEdit.Trace.SelectedImplementedBy" asp-items="Model.WorkItemOptions">
+                                            <option value="">Choose work item</option>
+                                        </select>
+                                        <button type="submit" asp-page-handler="AddSelectedTraceValue" asp-route-field="ImplementedBy" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                    </div>
+                                    @{
+                                        var selectedImplementedBy = SpecsModel.GetTraceValues(Model.RequirementEdit.Trace.ImplementedByText);
+                                    }
+                                    @if (selectedImplementedBy.Count > 0)
+                                    {
+                                        <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                            @foreach (var value in selectedImplementedBy)
+                                            {
+                                                <li class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.WorkItemOptions)</span>
+                                                    <button type="submit" asp-page-handler="RemoveSelectedTraceValue" asp-route-field="ImplementedBy" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.SelectedVerifiedBy">
+                                        <span>Verified By</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Verification artifacts that prove this requirement.">i</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <select class="inc-form__select" asp-for="RequirementEdit.Trace.SelectedVerifiedBy" asp-items="Model.VerificationOptions">
+                                            <option value="">Choose verification item</option>
+                                        </select>
+                                        <button type="submit" asp-page-handler="AddSelectedTraceValue" asp-route-field="VerifiedBy" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                    </div>
+                                    @{
+                                        var selectedVerifiedBy = SpecsModel.GetTraceValues(Model.RequirementEdit.Trace.VerifiedByText);
+                                    }
+                                    @if (selectedVerifiedBy.Count > 0)
+                                    {
+                                        <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                            @foreach (var value in selectedVerifiedBy)
+                                            {
+                                                <li class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.VerificationOptions)</span>
+                                                    <button type="submit" asp-page-handler="RemoveSelectedTraceValue" asp-route-field="VerifiedBy" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.SelectedDerivedFrom">
+                                        <span>Derived From</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Other requirements this requirement depends on or specializes.">i</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <select class="inc-form__select" asp-for="RequirementEdit.Trace.SelectedDerivedFrom" asp-items="Model.RequirementOptions">
+                                            <option value="">Choose requirement</option>
+                                        </select>
+                                        <button type="submit" asp-page-handler="AddSelectedTraceValue" asp-route-field="DerivedFrom" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                    </div>
+                                    @{
+                                        var selectedDerivedFrom = SpecsModel.GetTraceValues(Model.RequirementEdit.Trace.DerivedFromText);
+                                    }
+                                    @if (selectedDerivedFrom.Count > 0)
+                                    {
+                                        <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                            @foreach (var value in selectedDerivedFrom)
+                                            {
+                                                <li class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.RequirementOptions)</span>
+                                                    <button type="submit" asp-page-handler="RemoveSelectedTraceValue" asp-route-field="DerivedFrom" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.SelectedSupersedes">
+                                        <span>Supersedes</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Earlier requirements replaced by this one.">i</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <select class="inc-form__select" asp-for="RequirementEdit.Trace.SelectedSupersedes" asp-items="Model.RequirementOptions">
+                                            <option value="">Choose requirement</option>
+                                        </select>
+                                        <button type="submit" asp-page-handler="AddSelectedTraceValue" asp-route-field="Supersedes" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                    </div>
+                                    @{
+                                        var selectedSupersedes = SpecsModel.GetTraceValues(Model.RequirementEdit.Trace.SupersedesText);
+                                    }
+                                    @if (selectedSupersedes.Count > 0)
+                                    {
+                                        <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                            @foreach (var value in selectedSupersedes)
+                                            {
+                                                <li class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.RequirementOptions)</span>
+                                                    <button type="submit" asp-page-handler="RemoveSelectedTraceValue" asp-route-field="Supersedes" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-xl-6">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.SelectedRelated">
+                                        <span>Related</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="Related specs, architecture, work items, verification artifacts, or requirements.">i</span>
+                                    </label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <select class="inc-form__select" asp-for="RequirementEdit.Trace.SelectedRelated" asp-items="Model.RelatedArtifactOptions">
+                                            <option value="">Choose related artifact</option>
+                                        </select>
+                                        <button type="submit" asp-page-handler="AddSelectedTraceValue" asp-route-field="Related" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add</button>
+                                    </div>
+                                    @{
+                                        var selectedRelated = SpecsModel.GetTraceValues(Model.RequirementEdit.Trace.RelatedText);
+                                    }
+                                    @if (selectedRelated.Count > 0)
+                                    {
+                                        <ul class="list-unstyled mb-0 mt-2 d-flex flex-column gap-2">
+                                            @foreach (var value in selectedRelated)
+                                            {
+                                                <li class="d-flex flex-wrap align-items-center gap-2">
+                                                    <span class="inc-badge inc-badge--pill inc-badge--secondary">@SpecsModel.ResolveOptionLabel(value, Model.RelatedArtifactOptions)</span>
+                                                    <button type="submit" asp-page-handler="RemoveSelectedTraceValue" asp-route-field="Related" asp-route-value="@value" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label d-flex align-items-center gap-2" asp-for="RequirementEdit.Trace.UpstreamRefsText">
+                                        <span>Source Refs</span>
+                                        <span class="inc-badge inc-badge--pill inc-badge--info" title="External section or sentence references. Enter one reference per line.">i</span>
+                                    </label>
+                                    <textarea class="inc-form__control" asp-for="RequirementEdit.Trace.UpstreamRefsText" rows="3" placeholder="RFC 8999 section 5.1"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        }
+
+        <section class="inc-card">
+            <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                <div>
+                    <p class="inc-key-value__label mb-1">Specification metadata</p>
+                    <h3 class="mb-2">Metadata and narrative</h3>
+                    <p class="mb-0">These sections edit the selected specification itself. Requirement editing is handled separately above.</p>
+                </div>
+
+                @if (Model.IsLegacyMarkdownSpec)
+                {
+                    <section class="inc-state-panel inc-state-panel--results">
+                        <div class="inc-state-panel__head">
+                            <div class="inc-state-panel__icon">M</div>
+                            <div>
+                                <h3 class="inc-state-panel__title">Markdown-backed source</h3>
+                                <p class="inc-state-panel__body">This file still saves as Markdown. Workbench will preserve the existing Markdown format until the artifact is migrated to canonical JSON.</p>
+                            </div>
+                        </div>
+                    </section>
+                }
+
+                <form method="post" asp-page-handler="Save" class="inc-stack inc-stack--gap-lg">
+                    <partial name="_ValidationSummary" />
+                    <input type="hidden" asp-for="CreateMode" />
+                    <input type="hidden" asp-for="SelectedReference" />
+                    <input type="hidden" asp-for="SelectedRequirementReference" />
+                    <input type="hidden" asp-for="Query" />
+                    <input type="hidden" asp-for="RequirementQuery" />
+                    <input type="hidden" asp-for="RequirementPage" />
+                    <input type="hidden" asp-for="RequirementPageSize" />
+                    <input type="hidden" asp-for="Edit.Path" />
+                    <input type="hidden" asp-for="Edit.SourceFormat" />
+                    <input type="hidden" asp-for="Edit.SchemaReference" />
+                    <input type="hidden" asp-for="Edit.ExtensionJson" />
+
+                    <section class="inc-filter-bar">
+                        <div class="inc-filter-bar__main">
+                            <div>
+                                <div class="fw-semibold">Saving writes the selected specification file.</div>
+                                <div class="small text-body-secondary">Metadata and narrative changes save separately from the requirement editor above.</div>
+                            </div>
+                        </div>
+                        <div class="inc-filter-bar__actions">
+                            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save spec</button>
+                        </div>
+                    </section>
+
+                    <details class="inc-disclosure">
+                        <summary class="inc-disclosure__summary">
+                            <span class="inc-disclosure__title">Artifact</span>
+                            <span class="inc-disclosure__meta">Collapsed by default</span>
+                        </summary>
+                        <div class="inc-disclosure__content">
+                            <div class="inc-stack inc-stack--gap-md">
+                                <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.ArtifactId">Artifact ID</label>
+                                        <input class="inc-form__control font-monospace" asp-for="Edit.ArtifactId" placeholder="SPEC-PAY-ACH" />
+                                    </div>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Domain">Domain</label>
+                                        <input class="inc-form__control font-monospace" asp-for="Edit.Domain" placeholder="payments" />
+                                    </div>
+                                </div>
+
+                                <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Capability">Capability</label>
+                                        <input class="inc-form__control" asp-for="Edit.Capability" placeholder="ach-transfers" />
+                                    </div>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.Status">Status</label>
+                                        <input class="inc-form__control" asp-for="Edit.Status" placeholder="draft" />
+                                    </div>
+                                </div>
+
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label" asp-for="Edit.Title">Title</label>
+                                    <input class="inc-form__control" asp-for="Edit.Title" />
+                                </div>
+
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label" asp-for="Edit.Owner">Owner</label>
+                                    <input class="inc-form__control" asp-for="Edit.Owner" placeholder="team or maintainer" />
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="inc-disclosure">
+                        <summary class="inc-disclosure__summary">
+                            <span class="inc-disclosure__title">Narrative</span>
+                            <span class="inc-disclosure__meta">Collapsed by default</span>
+                        </summary>
+                        <div class="inc-disclosure__content">
+                            <div class="inc-stack inc-stack--gap-md">
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label" asp-for="Edit.Purpose">Purpose</label>
+                                    <textarea class="inc-form__control" asp-for="Edit.Purpose" rows="4"></textarea>
+                                </div>
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label" asp-for="Edit.Scope">Scope</label>
+                                    <textarea class="inc-form__control" asp-for="Edit.Scope" rows="4"></textarea>
+                                </div>
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label" asp-for="Edit.Context">Context</label>
+                                    <textarea class="inc-form__control" asp-for="Edit.Context" rows="5"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="inc-disclosure">
+                        <summary class="inc-disclosure__summary">
+                            <span class="inc-disclosure__title">Supplemental Sections</span>
+                            <span class="inc-disclosure__meta">Collapsed by default</span>
+                        </summary>
+                        <div class="inc-disclosure__content">
+                            <div class="inc-stack inc-stack--gap-md">
+                                <div>
+                                    <button type="submit" asp-page-handler="AddSupplementalSection" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Add section</button>
+                                </div>
+
+                                @if (Model.Edit.SupplementalSections.Count == 0)
+                                {
+                                    <div class="inc-empty-state">
+                                        <div class="inc-empty-state__content">
+                                            <div class="inc-empty-state__icon">+</div>
+                                            <h3 class="inc-heading inc-heading--h3">No supplemental sections</h3>
+                                            <p class="inc-text inc-text--regular inc-text--muted">Add optional sections only when the schema needs extra narrative beyond purpose, scope, context, and requirements.</p>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    @for (var i = 0; i < Model.Edit.SupplementalSections.Count; i++)
+                                    {
+                                        <section class="inc-card">
+                                            <div class="inc-card__body inc-stack inc-stack--gap-md">
+                                                <input type="hidden" asp-for="Edit.SupplementalSections[i].ExtensionJson" />
+
+                                                <div class="d-flex justify-content-between align-items-start gap-3">
+                                                    <div>
+                                                        <p class="inc-key-value__label mb-1">Section @(i + 1)</p>
+                                                        <h4 class="mb-0">@(string.IsNullOrWhiteSpace(Model.Edit.SupplementalSections[i].Heading) ? "Untitled section" : Model.Edit.SupplementalSections[i].Heading)</h4>
+                                                    </div>
+                                                    <button type="submit" asp-page-handler="RemoveSupplementalSection" name="index" value="@i" formnovalidate class="inc-btn inc-btn--secondary inc-btn--sm">Remove</button>
+                                                </div>
+
+                                                <div class="inc-form__group">
+                                                    <label class="inc-form__label" asp-for="Edit.SupplementalSections[i].Heading">Heading</label>
+                                                    <input class="inc-form__control" asp-for="Edit.SupplementalSections[i].Heading" />
+                                                </div>
+
+                                                <div class="inc-form__group">
+                                                    <label class="inc-form__label" asp-for="Edit.SupplementalSections[i].Content">Content</label>
+                                                    <textarea class="inc-form__control" asp-for="Edit.SupplementalSections[i].Content" rows="4"></textarea>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="inc-disclosure">
+                        <summary class="inc-disclosure__summary">
+                            <span class="inc-disclosure__title">Artifact Links</span>
+                            <span class="inc-disclosure__meta">Collapsed by default</span>
+                        </summary>
+                        <div class="inc-disclosure__content">
+                            <div class="inc-stack inc-stack--gap-md">
+                                <div class="inc-grid inc-grid--cols-2 inc-grid--gap-md">
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.TagsText">Tags</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.TagsText" rows="3" placeholder="One tag per line"></textarea>
+                                    </div>
+                                    <div class="inc-form__group">
+                                        <label class="inc-form__label" asp-for="Edit.RelatedArtifactsText">Related Artifacts</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.RelatedArtifactsText" rows="3" placeholder="SPEC/ARC/WI/VER IDs, one per line"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="inc-form__group">
+                                    <label class="inc-form__label" asp-for="Edit.OpenQuestionsText">Open Questions</label>
+                                    <textarea class="inc-form__control" asp-for="Edit.OpenQuestionsText" rows="3" placeholder="One question per line"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </form>
+
+                <details class="inc-disclosure">
+                    <summary class="inc-disclosure__summary">
+                        <span class="inc-disclosure__title">Delete specification</span>
+                        <span class="inc-disclosure__meta">Removes the file and linked work item refs</span>
+                    </summary>
+                    <div class="inc-disclosure__content">
+                        <form method="post" asp-page-handler="Delete" class="inc-stack inc-stack--gap-md">
+                            <input type="hidden" asp-for="SelectedReference" />
+                            <input type="hidden" asp-for="Query" />
+                            <input type="hidden" asp-for="RequirementQuery" />
+                            <input type="hidden" asp-for="RequirementPage" />
+                            <input type="hidden" asp-for="RequirementPageSize" />
+                            <p class="mb-0">Delete is intentionally separate from save. This removes the current specification file and updates linked work items locally.</p>
+                            <div>
+                                <button type="submit" class="inc-btn inc-btn--danger inc-btn--sm">Delete spec</button>
+                            </div>
+                        </form>
+                    </div>
+                </details>
+            </div>
+        </section>
+    }
 </div>

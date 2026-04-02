@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -21,6 +22,8 @@ public class SpecsModel : RepoPageModel
         "retired"
     ];
 
+    public static IReadOnlyList<int> RequirementPageSizes { get; } = [25, 50, 100, 250];
+
     public SpecsModel(WorkbenchWorkspace workspace, WorkbenchUserProfileStore profileStore)
         : base(workspace, profileStore)
     {
@@ -35,8 +38,23 @@ public class SpecsModel : RepoPageModel
     [BindProperty(SupportsGet = true)]
     public string? SelectedReference { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? RequirementQuery { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? SelectedRequirementReference { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int RequirementPage { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public int RequirementPageSize { get; set; } = 50;
+
     [BindProperty]
     public SpecEditorInput Edit { get; set; } = new();
+
+    [BindProperty]
+    public SpecRequirementEditorInput RequirementEdit { get; set; } = SpecRequirementEditorInput.CreateBlank();
 
     [TempData]
     public string? BannerTitle { get; set; }
@@ -75,6 +93,28 @@ public class SpecsModel : RepoPageModel
 
     public string RequirementIdPrefix => BuildRequirementIdPrefix();
 
+    public bool UseRequirementBrowserMode => !IsCreateMode && SelectedSpec is not null;
+
+    public bool HasSelectedRequirement => !string.IsNullOrWhiteSpace(SelectedRequirementReference);
+
+    public bool IsSelectedRequirementNew => string.Equals(SelectedRequirementReference, "new", StringComparison.OrdinalIgnoreCase);
+
+    public IReadOnlyList<SelectListItem> RequirementPageSizeOptions { get; } = RequirementPageSizes
+        .Select(size => new SelectListItem($"{size} / page", size.ToString(CultureInfo.InvariantCulture)))
+        .ToList();
+
+    public IReadOnlyList<RequirementListEntry> VisibleRequirements { get; private set; } = [];
+
+    public int TotalRequirementCount { get; private set; }
+
+    public int FilteredRequirementCount { get; private set; }
+
+    public int RequirementPageCount { get; private set; }
+
+    public int RequirementRangeStart { get; private set; }
+
+    public int RequirementRangeEnd { get; private set; }
+
     public void OnGet()
     {
         ApplyChrome("Specs");
@@ -83,9 +123,43 @@ public class SpecsModel : RepoPageModel
 
     public IActionResult OnPostSave()
     {
+        var postedEdit = CloneSpecEditorInput(Edit);
+        var requirementDraft = CloneRequirementEditorInput(RequirementEdit);
+
         try
         {
             ApplyChrome("Specs");
+
+            if (ShouldUseRequirementBrowserWorkflow())
+            {
+                var current = LoadExistingSpecEditorForMutation();
+                var selectedRequirementSuffix = ResolveSelectedRequirementSuffix(current.Requirements, SelectedRequirementReference);
+                CopySpecEditableFields(postedEdit, current);
+                Edit = current;
+                PrepareEditorForSave();
+
+                var savedSpec = Workspace.GetDoc(Workspace.SaveSpec(Edit).Path);
+                if (savedSpec is null)
+                {
+                    throw new InvalidOperationException("Failed to reload spec.");
+                }
+
+                SyncTransientEditorState();
+                var redirectedRequirementReference = ResolveRequirementReferenceBySuffix(selectedRequirementSuffix);
+                SetBanner("Spec saved", $"{savedSpec.Summary.Path} updated locally.");
+
+                return RedirectToPage(new
+                {
+                    selectedReference = savedSpec.Summary.ArtifactId ?? savedSpec.Summary.Path,
+                    query = Query,
+                    requirementQuery = RequirementQuery,
+                    requirementPage = ResolveRequirementPageForReference(redirectedRequirementReference),
+                    requirementPageSize = RequirementPageSize,
+                    selectedRequirementReference = redirectedRequirementReference,
+                    createMode = false
+                });
+            }
+
             PrepareEditorForSave();
 
             var created = ShouldCreateSpec();
@@ -96,13 +170,33 @@ public class SpecsModel : RepoPageModel
             }
 
             SetBanner(created ? "Spec created" : "Spec saved", $"{saved.Summary.Path} updated locally.");
-            return RedirectToPage(new { selectedReference = saved.Summary.ArtifactId ?? saved.Summary.Path, query = Query, createMode = false });
+            return RedirectToPage(new
+            {
+                selectedReference = saved.Summary.ArtifactId ?? saved.Summary.Path,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = RequirementPage,
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = SelectedRequirementReference,
+                createMode = false
+            });
         }
         catch (Exception ex)
         {
             ApplyChrome("Specs");
             ModelState.AddModelError(string.Empty, FormatError(ex));
-            LoadPage(populateEditor: false);
+
+            if (ShouldUseRequirementBrowserWorkflow())
+            {
+                LoadPage(populateEditor: true, populateRequirementEdit: false);
+                RequirementEdit = requirementDraft;
+                EnsureRequirementEditState();
+            }
+            else
+            {
+                LoadPage(populateEditor: false);
+            }
+
             return Page();
         }
     }
@@ -112,6 +206,7 @@ public class SpecsModel : RepoPageModel
         try
         {
             ApplyChrome("Specs");
+            LoadPage(populateEditor: true);
 
             if (IsCreateMode || SelectedSpec is null)
             {
@@ -120,7 +215,16 @@ public class SpecsModel : RepoPageModel
 
             var deleted = Workspace.DeleteDoc(SelectedSpec.Summary.Path, keepLinks: false);
             SetBanner("Spec deleted", $"{SelectedSpec.Summary.Path} removed locally.\nLinked work items updated: {deleted.ItemsUpdated}");
-            return RedirectToPage(new { selectedReference = string.Empty, query = Query, createMode = false });
+            return RedirectToPage(new
+            {
+                selectedReference = string.Empty,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = 1,
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = string.Empty,
+                createMode = false
+            });
         }
         catch (Exception ex)
         {
@@ -134,6 +238,21 @@ public class SpecsModel : RepoPageModel
     public IActionResult OnPostAddRequirement()
     {
         ApplyChrome("Specs");
+
+        if (ShouldUseRequirementBrowserWorkflow())
+        {
+            return RedirectToPage(new
+            {
+                selectedReference = SelectedReference,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = RequirementPage,
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = "new",
+                createMode = false
+            });
+        }
+
         Edit.Requirements ??= [];
         Edit.Requirements.Add(SpecRequirementEditorInput.CreateBlank());
         LoadPage(populateEditor: false);
@@ -196,6 +315,135 @@ public class SpecsModel : RepoPageModel
         return Page();
     }
 
+    public IActionResult OnPostSaveRequirement()
+    {
+        var requirementDraft = CloneRequirementEditorInput(RequirementEdit);
+
+        try
+        {
+            ApplyChrome("Specs");
+
+            if (!ShouldUseRequirementBrowserWorkflow())
+            {
+                throw new InvalidOperationException("A saved specification must be selected before editing a requirement.");
+            }
+
+            Edit = LoadExistingSpecEditorForMutation();
+            UpsertSelectedRequirementIntoEdit();
+            PrepareEditorForSave();
+
+            var savedSpec = Workspace.GetDoc(Workspace.SaveSpec(Edit).Path);
+            if (savedSpec is null)
+            {
+                throw new InvalidOperationException("Failed to reload spec.");
+            }
+
+            SyncTransientEditorState();
+            var redirectedRequirementReference = ResolveRequirementReferenceFromDraft(requirementDraft);
+            SetBanner("Requirement saved", $"{redirectedRequirementReference} updated locally.");
+
+            return RedirectToPage(new
+            {
+                selectedReference = savedSpec.Summary.ArtifactId ?? savedSpec.Summary.Path,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = ResolveRequirementPageForReference(redirectedRequirementReference),
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = redirectedRequirementReference,
+                createMode = false
+            });
+        }
+        catch (Exception ex)
+        {
+            ApplyChrome("Specs");
+            ModelState.AddModelError(string.Empty, FormatError(ex));
+            LoadPage(populateEditor: true, populateRequirementEdit: false);
+            RequirementEdit = requirementDraft;
+            EnsureRequirementEditState();
+            return Page();
+        }
+    }
+
+    public IActionResult OnPostDeleteSelectedRequirement()
+    {
+        try
+        {
+            ApplyChrome("Specs");
+
+            if (!ShouldUseRequirementBrowserWorkflow())
+            {
+                throw new InvalidOperationException("A saved specification must be selected before deleting a requirement.");
+            }
+
+            if (IsSelectedRequirementNew)
+            {
+                return RedirectToPage(new
+                {
+                    selectedReference = SelectedReference,
+                    query = Query,
+                    requirementQuery = RequirementQuery,
+                    requirementPage = RequirementPage,
+                    requirementPageSize = RequirementPageSize,
+                    selectedRequirementReference = string.Empty,
+                    createMode = false
+                });
+            }
+
+            Edit = LoadExistingSpecEditorForMutation();
+            var requirementIndex = FindRequirementIndex(Edit.Requirements, SelectedRequirementReference);
+            if (requirementIndex < 0)
+            {
+                throw new InvalidOperationException("Selected requirement could not be found.");
+            }
+
+            Edit.Requirements.RemoveAt(requirementIndex);
+            PrepareEditorForSave();
+
+            var savedSpec = Workspace.GetDoc(Workspace.SaveSpec(Edit).Path);
+            if (savedSpec is null)
+            {
+                throw new InvalidOperationException("Failed to reload spec.");
+            }
+
+            SetBanner("Requirement deleted", $"{SelectedRequirementReference} removed locally.");
+            return RedirectToPage(new
+            {
+                selectedReference = savedSpec.Summary.ArtifactId ?? savedSpec.Summary.Path,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = RequirementPage,
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = string.Empty,
+                createMode = false
+            });
+        }
+        catch (Exception ex)
+        {
+            ApplyChrome("Specs");
+            ModelState.AddModelError(string.Empty, FormatError(ex));
+            LoadPage(populateEditor: true);
+            return Page();
+        }
+    }
+
+    public IActionResult OnPostAddSelectedTraceValue(string field)
+    {
+        ApplyChrome("Specs");
+        AddTraceValue(RequirementEdit.Trace, field);
+        LoadPage(populateEditor: true, populateRequirementEdit: false);
+        EnsureRequirementEditState();
+        return Page();
+    }
+
+    public IActionResult OnPostRemoveSelectedTraceValue(string field, string value)
+    {
+        ApplyChrome("Specs");
+        RemoveTraceValue(RequirementEdit.Trace, field, value);
+        LoadPage(populateEditor: true, populateRequirementEdit: false);
+        EnsureRequirementEditState();
+        return Page();
+    }
+
     public string GetRequirementDisplayId(SpecRequirementEditorInput requirement)
     {
         var suffix = ExtractRequirementIdSuffix(requirement);
@@ -247,11 +495,378 @@ public class SpecsModel : RepoPageModel
         return string.IsNullOrWhiteSpace(match?.Text) ? value : match!.Text;
     }
 
-    private void LoadPage(bool populateEditor)
+    private bool ShouldUseRequirementBrowserWorkflow()
+    {
+        return !CreateMode &&
+            !string.IsNullOrWhiteSpace(SelectedReference) &&
+            !string.Equals(SelectedReference, "new", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private SpecEditorInput LoadExistingSpecEditorForMutation()
+    {
+        return Workspace.CreateSpecEditorInput(SelectedReference ?? string.Empty)
+            ?? throw new InvalidOperationException("A saved specification must be selected before editing requirements.");
+    }
+
+    private void BuildRequirementBrowserState(bool populateRequirementEdit)
+    {
+        if (!UseRequirementBrowserMode)
+        {
+            VisibleRequirements = [];
+            TotalRequirementCount = 0;
+            FilteredRequirementCount = 0;
+            RequirementPageCount = 0;
+            RequirementRangeStart = 0;
+            RequirementRangeEnd = 0;
+
+            if (populateRequirementEdit)
+            {
+                RequirementEdit = SpecRequirementEditorInput.CreateBlank();
+                EnsureRequirementEditState();
+            }
+
+            return;
+        }
+
+        if (!RequirementPageSizes.Contains(RequirementPageSize))
+        {
+            RequirementPageSize = 50;
+        }
+
+        var orderedEntries = Edit.Requirements
+            .Select((requirement, index) => new RequirementListEntry(
+                index,
+                ResolveRequirementReference(requirement, index),
+                GetRequirementDisplayId(requirement),
+                GetRequirementSummaryTitle(requirement),
+                GetRequirementSummaryPreview(requirement),
+                CountTraceValues(requirement.Trace),
+                false))
+            .Where(entry => HasMeaningfulRequirementContent(Edit.Requirements[entry.Index]))
+            .Where(entry => RequirementMatchesQuery(Edit.Requirements[entry.Index], RequirementQuery))
+            .OrderBy(entry => entry.DisplayId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        TotalRequirementCount = Edit.Requirements.Count(HasMeaningfulRequirementContent);
+        FilteredRequirementCount = orderedEntries.Count;
+        RequirementPageCount = orderedEntries.Count == 0
+            ? 1
+            : (int)Math.Ceiling(orderedEntries.Count / (double)RequirementPageSize);
+
+        if (RequirementPage < 1)
+        {
+            RequirementPage = 1;
+        }
+        else if (RequirementPage > RequirementPageCount)
+        {
+            RequirementPage = RequirementPageCount;
+        }
+
+        var skip = (RequirementPage - 1) * RequirementPageSize;
+        RequirementRangeStart = orderedEntries.Count == 0 ? 0 : skip + 1;
+        RequirementRangeEnd = orderedEntries.Count == 0 ? 0 : Math.Min(skip + RequirementPageSize, orderedEntries.Count);
+        VisibleRequirements = orderedEntries
+            .Skip(skip)
+            .Take(RequirementPageSize)
+            .Select(entry => entry with
+            {
+                IsSelected = !string.IsNullOrWhiteSpace(SelectedRequirementReference) &&
+                    string.Equals(entry.Reference, SelectedRequirementReference, StringComparison.OrdinalIgnoreCase)
+            })
+            .ToList();
+
+        if (!populateRequirementEdit)
+        {
+            EnsureRequirementEditState();
+            return;
+        }
+
+        if (IsSelectedRequirementNew)
+        {
+            RequirementEdit = SpecRequirementEditorInput.CreateBlank();
+            EnsureRequirementEditState();
+            return;
+        }
+
+        var selectedIndex = FindRequirementIndex(Edit.Requirements, SelectedRequirementReference);
+        if (selectedIndex >= 0)
+        {
+            RequirementEdit = CloneRequirementEditorInput(Edit.Requirements[selectedIndex]);
+            EnsureRequirementEditState();
+            return;
+        }
+
+        SelectedRequirementReference = string.Empty;
+        RequirementEdit = SpecRequirementEditorInput.CreateBlank();
+        EnsureRequirementEditState();
+    }
+
+    private static bool RequirementMatchesQuery(SpecRequirementEditorInput requirement, string? query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return true;
+        }
+
+        var normalizedQuery = query.Trim();
+        return requirement.Id.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Title.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Statement.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.NotesText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.SatisfiedByText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.ImplementedByText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.VerifiedByText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.DerivedFromText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.SupersedesText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.UpstreamRefsText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase) ||
+            requirement.Trace.RelatedText.Contains(normalizedQuery, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void EnsureRequirementEditState()
+    {
+        RequirementEdit ??= SpecRequirementEditorInput.CreateBlank();
+        RequirementEdit.Trace ??= new SpecRequirementTraceEditorInput();
+        RequirementEdit.IdSuffix = ExtractRequirementIdSuffix(RequirementEdit);
+    }
+
+    private string ResolveSelectedRequirementSuffix(IList<SpecRequirementEditorInput> requirements, string? reference)
+    {
+        if (string.IsNullOrWhiteSpace(reference) ||
+            IsSelectedRequirementNew ||
+            requirements.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var selectedIndex = FindRequirementIndex(requirements, reference);
+        return selectedIndex >= 0
+            ? ExtractRequirementIdSuffix(requirements[selectedIndex])
+            : string.Empty;
+    }
+
+    private string ResolveRequirementReferenceBySuffix(string suffix)
+    {
+        if (string.IsNullOrWhiteSpace(suffix))
+        {
+            return string.Empty;
+        }
+
+        var match = Edit.Requirements.FirstOrDefault(requirement =>
+            string.Equals(ExtractRequirementIdSuffix(requirement), suffix, StringComparison.OrdinalIgnoreCase));
+        return match is null ? string.Empty : ResolveRequirementReference(match, Edit.Requirements.IndexOf(match));
+    }
+
+    private string ResolveRequirementReferenceFromDraft(SpecRequirementEditorInput requirementDraft)
+    {
+        var suffix = ExtractRequirementIdSuffix(requirementDraft);
+        return ResolveRequirementReferenceBySuffix(suffix);
+    }
+
+    private int ResolveRequirementPageForReference(string? requirementReference)
+    {
+        if (string.IsNullOrWhiteSpace(requirementReference))
+        {
+            return RequirementPage;
+        }
+
+        var orderedEntries = Edit.Requirements
+            .Select((requirement, index) => new RequirementListEntry(
+                index,
+                ResolveRequirementReference(requirement, index),
+                GetRequirementDisplayId(requirement),
+                GetRequirementSummaryTitle(requirement),
+                GetRequirementSummaryPreview(requirement),
+                CountTraceValues(requirement.Trace),
+                false))
+            .Where(entry => HasMeaningfulRequirementContent(Edit.Requirements[entry.Index]))
+            .Where(entry => RequirementMatchesQuery(Edit.Requirements[entry.Index], RequirementQuery))
+            .OrderBy(entry => entry.DisplayId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var selectedIndex = orderedEntries.FindIndex(entry =>
+            string.Equals(entry.Reference, requirementReference, StringComparison.OrdinalIgnoreCase));
+        if (selectedIndex < 0)
+        {
+            return 1;
+        }
+
+        return (selectedIndex / RequirementPageSize) + 1;
+    }
+
+    private void UpsertSelectedRequirementIntoEdit()
+    {
+        EnsureRequirementEditState();
+        Edit.Requirements = Edit.Requirements
+            .Where(HasMeaningfulRequirementContent)
+            .ToList();
+
+        if (IsSelectedRequirementNew)
+        {
+            Edit.Requirements.Add(CloneRequirementEditorInput(RequirementEdit));
+            return;
+        }
+
+        var requirementIndex = FindRequirementIndex(Edit.Requirements, SelectedRequirementReference);
+        if (requirementIndex < 0)
+        {
+            throw new InvalidOperationException("Selected requirement could not be found.");
+        }
+
+        Edit.Requirements[requirementIndex] = CloneRequirementEditorInput(RequirementEdit);
+    }
+
+    private static int FindRequirementIndex(IList<SpecRequirementEditorInput> requirements, string? reference)
+    {
+        if (string.IsNullOrWhiteSpace(reference))
+        {
+            return -1;
+        }
+
+        for (var i = 0; i < requirements.Count; i++)
+        {
+            var requirementReference = ResolveRequirementReference(requirements[i], i);
+            if (string.Equals(requirementReference, reference, StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private static string ResolveRequirementReference(SpecRequirementEditorInput requirement, int index)
+    {
+        var normalizedId = DocService.NormalizeArtifactId(requirement.Id);
+        return string.IsNullOrWhiteSpace(normalizedId)
+            ? $"row-{index}"
+            : normalizedId;
+    }
+
+    private static int CountTraceValues(SpecRequirementTraceEditorInput? trace)
+    {
+        if (trace is null)
+        {
+            return 0;
+        }
+
+        return SplitLines(trace.SatisfiedByText).Count +
+            SplitLines(trace.ImplementedByText).Count +
+            SplitLines(trace.VerifiedByText).Count +
+            SplitLines(trace.DerivedFromText).Count +
+            SplitLines(trace.SupersedesText).Count +
+            SplitLines(trace.UpstreamRefsText).Count +
+            SplitLines(trace.RelatedText).Count;
+    }
+
+    private static SpecRequirementEditorInput CloneRequirementEditorInput(SpecRequirementEditorInput source)
+    {
+        return new SpecRequirementEditorInput
+        {
+            Id = source.Id,
+            IdSuffix = source.IdSuffix,
+            Title = source.Title,
+            Statement = source.Statement,
+            NotesText = source.NotesText,
+            ExtensionJson = source.ExtensionJson,
+            Trace = CloneTraceEditorInput(source.Trace)
+        };
+    }
+
+    private static SpecRequirementTraceEditorInput CloneTraceEditorInput(SpecRequirementTraceEditorInput source)
+    {
+        return new SpecRequirementTraceEditorInput
+        {
+            SatisfiedByText = source.SatisfiedByText,
+            ImplementedByText = source.ImplementedByText,
+            VerifiedByText = source.VerifiedByText,
+            DerivedFromText = source.DerivedFromText,
+            SupersedesText = source.SupersedesText,
+            UpstreamRefsText = source.UpstreamRefsText,
+            RelatedText = source.RelatedText,
+            SelectedSatisfiedBy = source.SelectedSatisfiedBy,
+            SelectedImplementedBy = source.SelectedImplementedBy,
+            SelectedVerifiedBy = source.SelectedVerifiedBy,
+            SelectedDerivedFrom = source.SelectedDerivedFrom,
+            SelectedSupersedes = source.SelectedSupersedes,
+            SelectedRelated = source.SelectedRelated,
+            ExtensionJson = source.ExtensionJson
+        };
+    }
+
+    private static SpecEditorInput CloneSpecEditorInput(SpecEditorInput source)
+    {
+        return new SpecEditorInput
+        {
+            Path = source.Path,
+            SourceFormat = source.SourceFormat,
+            SchemaReference = source.SchemaReference,
+            ExtensionJson = source.ExtensionJson,
+            ArtifactId = source.ArtifactId,
+            Domain = source.Domain,
+            Capability = source.Capability,
+            Title = source.Title,
+            Status = source.Status,
+            Owner = source.Owner,
+            Purpose = source.Purpose,
+            Scope = source.Scope,
+            Context = source.Context,
+            TagsText = source.TagsText,
+            RelatedArtifactsText = source.RelatedArtifactsText,
+            OpenQuestionsText = source.OpenQuestionsText,
+            SupplementalSections = source.SupplementalSections
+                .Select(section => new SpecSupplementalSectionEditorInput
+                {
+                    Heading = section.Heading,
+                    Content = section.Content,
+                    ExtensionJson = section.ExtensionJson
+                })
+                .ToList(),
+            Requirements = source.Requirements
+                .Select(CloneRequirementEditorInput)
+                .ToList()
+        };
+    }
+
+    private static void CopySpecEditableFields(SpecEditorInput source, SpecEditorInput target)
+    {
+        target.Path = source.Path;
+        target.SourceFormat = source.SourceFormat;
+        target.SchemaReference = source.SchemaReference;
+        target.ExtensionJson = source.ExtensionJson;
+        target.ArtifactId = source.ArtifactId;
+        target.Domain = source.Domain;
+        target.Capability = source.Capability;
+        target.Title = source.Title;
+        target.Status = source.Status;
+        target.Owner = source.Owner;
+        target.Purpose = source.Purpose;
+        target.Scope = source.Scope;
+        target.Context = source.Context;
+        target.TagsText = source.TagsText;
+        target.RelatedArtifactsText = source.RelatedArtifactsText;
+        target.OpenQuestionsText = source.OpenQuestionsText;
+        target.SupplementalSections = source.SupplementalSections
+            .Select(section => new SpecSupplementalSectionEditorInput
+            {
+                Heading = section.Heading,
+                Content = section.Content,
+                ExtensionJson = section.ExtensionJson
+            })
+            .ToList();
+    }
+
+    private void LoadPage(bool populateEditor, bool populateRequirementEdit = true)
     {
         if (!string.IsNullOrWhiteSpace(SelectedReference))
         {
             SelectedReference = SelectedReference.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(SelectedRequirementReference))
+        {
+            SelectedRequirementReference = SelectedRequirementReference.Trim();
         }
 
         Specs = Workspace.ListDocs("specification", Query);
@@ -277,6 +892,7 @@ public class SpecsModel : RepoPageModel
         SpecIdPolicySummary = Workspace.GetSpecIdPolicySummary();
         SyncTransientEditorState();
         PopulatePickerOptions();
+        BuildRequirementBrowserState(populateRequirementEdit);
         PathPreview = BuildPathPreview();
         Tree = BuildSpecTree(
             Specs,
@@ -656,6 +1272,16 @@ public class SpecsModel : RepoPageModel
             return;
         }
 
+        AddTraceValue(trace, field);
+    }
+
+    private static void AddTraceValue(SpecRequirementTraceEditorInput? trace, string field)
+    {
+        if (trace is null)
+        {
+            return;
+        }
+
         var selectedValue = GetSelectedTraceValue(trace, field);
         if (string.IsNullOrWhiteSpace(selectedValue))
         {
@@ -675,6 +1301,16 @@ public class SpecsModel : RepoPageModel
     private void RemoveTraceValue(int index, string field, string value)
     {
         var trace = GetTraceEditor(index);
+        if (trace is null)
+        {
+            return;
+        }
+
+        RemoveTraceValue(trace, field, value);
+    }
+
+    private static void RemoveTraceValue(SpecRequirementTraceEditorInput? trace, string field, string value)
+    {
         if (trace is null)
         {
             return;
@@ -893,4 +1529,13 @@ public class SpecsModel : RepoPageModel
 
         return string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
+
+    public sealed record RequirementListEntry(
+        int Index,
+        string Reference,
+        string DisplayId,
+        string Title,
+        string SummaryPreview,
+        int TraceCount,
+        bool IsSelected);
 }
