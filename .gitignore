@@ -16,6 +16,9 @@ appsettings.Local.json
 *.1p.json
 development.1p.json
 .tools/
+.wrangler/
+node_modules/
+dist/
 
 # Config Doctor output
 config-doctor-output/
