@@ -2,107 +2,139 @@
 @model Workbench.Pages.CreateModel
 @{
     ViewData["Title"] = "Create";
+    ViewData["DisableCustomStyles"] = true;
 }
 
-<inc-card class="hero compact-hero">
-    <div class="hero-copy">
-        <div class="eyebrow">New work item</div>
-        <h2>Create a repo-native item in one place.</h2>
-        <p>
-            Use this page for new items so the editor stays focused on the selected record instead of mixing creation and editing.
-        </p>
-        <div class="hero-links">
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Index">Back to items</a>
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
+<div class="inc-stack inc-stack--gap-lg">
+    <section class="inc-card">
+        <div class="inc-card__body inc-stack inc-stack--gap-lg">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+                <div class="inc-stack inc-stack--gap-sm flex-grow-1">
+                    <div>
+                        <p class="inc-key-value__label mb-1">New work item</p>
+                        <h2 class="mb-2">Create a repo-native item in one place.</h2>
+                        <p class="mb-0">Use this page for new items so the editor stays focused on creation instead of mixing it with the item browser.</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Index">Back to items</a>
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
+                    </div>
+                </div>
+
+                <div class="inc-summary-overview inc-summary-overview--4-col flex-grow-1">
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Type</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">work_item</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Default status</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">planned</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Owner</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">local profile</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Mode</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">local</div>
+                        </div>
+                    </article>
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
-        <article class="inc-summary-block stat-card accent">
-            <div class="inc-summary-block__header stat-label">Type</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">work_item</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Default status</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">planned</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Owner</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">local profile</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Mode</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">local</div>
-            </div>
-        </article>
-    </div>
-</inc-card>
+    </section>
 
-<inc-card class="panel">
-    <div class="panel-head compact">
-        <h3>Create item</h3>
-        <span class="muted">Uses the same file-backed work item service as the editor.</span>
-    </div>
-
-    <form method="post" class="editor-stack">
-        <partial name="_ValidationSummary" />
-
-        <inc-card class="editor-section">
-            <div class="editor-section-head">
-                <h4>Identity</h4>
-                <span class="muted">New item metadata and ownership.</span>
+    <section class="inc-card">
+        <div class="inc-card__body inc-stack inc-stack--gap-lg">
+            <div>
+                <p class="inc-key-value__label mb-1">Create item</p>
+                <h3 class="mb-2">New work item</h3>
+                <p class="mb-0">Uses the same file-backed work item service as the editor.</p>
             </div>
-            <div class="editor-grid editor-grid-two">
+
+            <form method="post" class="inc-stack inc-stack--gap-lg">
+                <partial name="_ValidationSummary" />
                 <input type="hidden" asp-for="Create.Type" />
-                <inc-field label="Type">
-                    <input class="inc-form__control" value="work_item" readonly />
-                </inc-field>
-                <inc-field label="Owner / team">
-                    <input class="inc-form__control" asp-for="Create.Owner" placeholder="optional team or person" />
-                    <span class="inc-form__invalid-feedback" asp-validation-for="Create.Owner"></span>
-                </inc-field>
-                <inc-field class="span-2" label="Title">
-                    <input class="inc-form__control" asp-for="Create.Title" />
-                    <span class="inc-form__invalid-feedback" asp-validation-for="Create.Title"></span>
-                </inc-field>
-            </div>
-        </inc-card>
 
-        <inc-card class="editor-section">
-            <div class="editor-section-head">
-                <h4>Workflow</h4>
-                <span class="muted">Initial state and priority.</span>
-            </div>
-            <div class="editor-grid editor-grid-two">
-                <inc-field label="Status">
-                    <select class="inc-form__select" asp-for="Create.Status">
-                        @foreach (var status in StatusOptions)
-                        {
-                            <option value="@status">@Workbench.Pages.IndexModel.StatusLabel(status)</option>
-                        }
-                    </select>
-                    <span class="inc-form__invalid-feedback" asp-validation-for="Create.Status"></span>
-                </inc-field>
-                <inc-field label="Priority">
-                    <select class="inc-form__select" asp-for="Create.Priority">
-                        @foreach (var priority in PriorityOptions)
-                        {
-                            <option value="@priority">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
-                        }
-                    </select>
-                    <span class="inc-form__invalid-feedback" asp-validation-for="Create.Priority"></span>
-                </inc-field>
-            </div>
-        </inc-card>
+                <section class="inc-card">
+                    <div class="inc-card__body inc-stack inc-stack--gap-md">
+                        <div>
+                            <h4 class="mb-1">Identity</h4>
+                            <p class="mb-0 text-body-secondary">New item metadata and ownership.</p>
+                        </div>
 
-        <div class="button-row">
-            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Create item</button>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label">Type</label>
+                                    <input class="inc-form__control" value="work_item" readonly />
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label" asp-for="Create.Owner">Owner / team</label>
+                                    <input class="inc-form__control" asp-for="Create.Owner" placeholder="optional team or person" />
+                                    <span class="inc-form__feedback inc-form__feedback--error" asp-validation-for="Create.Owner"></span>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label" asp-for="Create.Title">Title</label>
+                                    <input class="inc-form__control" asp-for="Create.Title" />
+                                    <span class="inc-form__feedback inc-form__feedback--error" asp-validation-for="Create.Title"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="inc-card">
+                    <div class="inc-card__body inc-stack inc-stack--gap-md">
+                        <div>
+                            <h4 class="mb-1">Workflow</h4>
+                            <p class="mb-0 text-body-secondary">Initial state and priority.</p>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label" asp-for="Create.Status">Status</label>
+                                    <select class="inc-form__select" asp-for="Create.Status">
+                                        @foreach (var status in StatusOptions)
+                                        {
+                                            <option value="@status">@Workbench.Pages.IndexModel.StatusLabel(status)</option>
+                                        }
+                                    </select>
+                                    <span class="inc-form__feedback inc-form__feedback--error" asp-validation-for="Create.Status"></span>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="inc-form__group mb-0">
+                                    <label class="inc-form__label" asp-for="Create.Priority">Priority</label>
+                                    <select class="inc-form__select" asp-for="Create.Priority">
+                                        @foreach (var priority in PriorityOptions)
+                                        {
+                                            <option value="@priority">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
+                                        }
+                                    </select>
+                                    <span class="inc-form__feedback inc-form__feedback--error" asp-validation-for="Create.Priority"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Create item</button>
+                </div>
+            </form>
         </div>
-    </form>
-</inc-card>
+    </section>
+</div>

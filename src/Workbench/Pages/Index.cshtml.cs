@@ -284,7 +284,7 @@ public class IndexModel : RepoPageModel
             normalized.StartsWith("specs/schemas/", StringComparison.OrdinalIgnoreCase) ||
             normalized.StartsWith("architecture/", StringComparison.OrdinalIgnoreCase))
         {
-            return Url.Page("/Docs", new { selectedPath = normalized }) ?? trimmed;
+            return Url.Page("/Docs", new { selectedReference = normalized }) ?? trimmed;
         }
 
         return Url.Page("/Files", new { selectedPath = normalized }) ?? trimmed;

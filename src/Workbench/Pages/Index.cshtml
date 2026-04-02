@@ -2,373 +2,413 @@
 @model Workbench.Pages.IndexModel
 @{
     ViewData["Title"] = "Items";
+    ViewData["DisableCustomStyles"] = true;
 }
 
-<inc-card class="hero">
-    <div class="hero-copy">
-        <div class="eyebrow">Primary landing page</div>
-        <h2>Manage repo-native work items without remembering commands.</h2>
-        <p>
-            Browse, edit, sync, and validate the same file-backed data that powers the CLI.
-        </p>
-        <div class="hero-links">
-            <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Create">Create item</a>
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Files">Files</a>
-        </div>
-    </div>
-    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
-        <article class="inc-summary-block stat-card accent">
-            <div class="inc-summary-block__header stat-label">Visible items</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Planned</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">In progress</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Complete</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</div>
-            </div>
-        </article>
-    </div>
-</inc-card>
-
-@if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
-{
-    <section class="inc-state-panel inc-state-panel--results">
-        <div class="inc-state-panel__head">
-            <div class="inc-state-panel__icon">i</div>
-            <div>
-                <h2 class="inc-state-panel__title">@Model.BannerTitle</h2>
-                <p class="inc-state-panel__body">@Model.BannerMessage</p>
-            </div>
-        </div>
-        @if (Model.BannerLines.Count > 0)
-        {
-            <ul class="inc-list-group inc-list-group--flush">
-                @foreach (var line in Model.BannerLines)
-                {
-                    <li class="inc-list-group__item">@line</li>
-                }
-            </ul>
-        }
-    </section>
-}
-
-<div class="workspace">
-    <inc-card class="panel sidebar">
-        <div class="panel-head">
-            <h3>Work items</h3>
-            <form method="get" class="inc-filter-bar">
-                <input type="hidden" name="selectedId" value="@Model.SelectedId" />
-                <div class="inc-filter-bar__main">
-                    <inc-field class="inc-filter-bar__field inc-filter-bar__field--grow" label="Search">
-                        <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, ID, owner, text" />
-                    </inc-field>
-                    <inc-field class="inc-filter-bar__field" label="Status">
-                        <select class="inc-form__select" asp-for="StatusFilter">
-                            <option value="all">All</option>
-                            @foreach (var status in StatusOptions)
-                            {
-                                <option value="@status">@StatusLabel(status)</option>
-                            }
-                        </select>
-                    </inc-field>
-                    <label class="inc-form__check inc-filter-bar__field">
-                        <input class="inc-form__check__input" asp-for="IncludeDone" />
-                        <span class="inc-form__check__label">Include terminal items</span>
-                    </label>
-                </div>
-                <div class="inc-filter-bar__actions">
-                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="item-list">
-            @if (Model.Items.Count == 0)
-            {
-                <div class="inc-empty-state">
-                    <div class="inc-empty-state__content">
-                        <div class="inc-empty-state__icon">?</div>
-                        <h3 class="inc-heading inc-heading--h3">No work items</h3>
-                        <p class="inc-text inc-text--regular inc-text--muted">No work items match the current filters.</p>
+<div class="inc-stack inc-stack--gap-lg">
+    <section class="inc-card">
+        <div class="inc-card__body inc-stack inc-stack--gap-lg">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+                <div class="inc-stack inc-stack--gap-sm flex-grow-1">
+                    <div>
+                        <p class="inc-key-value__label mb-1">Primary landing page</p>
+                        <h2 class="mb-2">Manage repo-native work items without remembering commands.</h2>
+                        <p class="mb-0">Browse, edit, sync, and validate the same file-backed data that powers the CLI.</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Create">Create item</a>
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs</a>
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Files">Files</a>
                     </div>
                 </div>
-            }
-            else
+
+                <div class="inc-summary-overview inc-summary-overview--4-col flex-grow-1">
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Visible items</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.Items.Count</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Planned</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.Items.Count(item => string.Equals(item.Status, "planned", StringComparison.OrdinalIgnoreCase))</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">In progress</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.Items.Count(item => string.Equals(item.Status, "in_progress", StringComparison.OrdinalIgnoreCase))</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Complete</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.Items.Count(item => string.Equals(item.Status, "complete", StringComparison.OrdinalIgnoreCase))</div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.BannerTitle))
+    {
+        <section class="inc-state-panel inc-state-panel--results">
+            <div class="inc-state-panel__head">
+                <div class="inc-state-panel__icon">i</div>
+                <div>
+                    <h2 class="inc-state-panel__title">@Model.BannerTitle</h2>
+                    <p class="inc-state-panel__body">@Model.BannerMessage</p>
+                </div>
+            </div>
+            @if (Model.BannerLines.Count > 0)
             {
-                foreach (var item in Model.Items)
-                {
-                    <a class="inc-card item-card @(Model.SelectedItem?.Id == item.Id ? "selected" : string.Empty)"
-                        asp-page="/Index"
-                        asp-route-selectedId="@item.Id"
-                        asp-route-statusFilter="@Model.StatusFilter"
-                        asp-route-query="@Model.Query"
-                        asp-route-includeDone="@Model.IncludeDone">
-                        <div class="inc-card__body">
-                            <div class="item-card-top">
-                                <span class="item-id">@item.Id</span>
-                                <span class="inc-badge inc-badge--pill @StatusBadgeClass(item.Status)">@StatusLabel(item.Status)</span>
+                <ul class="inc-list-group inc-list-group--flush">
+                    @foreach (var line in Model.BannerLines)
+                    {
+                        <li class="inc-list-group__item">@line</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+
+    <div class="row g-4 align-items-start">
+        <aside class="col-12 col-xl-4">
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    <div>
+                        <p class="inc-key-value__label mb-1">Catalog</p>
+                        <h3 class="mb-2">Work items</h3>
+                        <p class="mb-0">Browse file-backed work items by title, ID, owner, and workflow state.</p>
+                    </div>
+
+                    <form method="get" class="inc-filter-bar">
+                        <input type="hidden" name="selectedId" value="@Model.SelectedId" />
+                        <div class="inc-filter-bar__main">
+                            <div class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow mb-0">
+                                <label class="inc-form__label" for="query">Search</label>
+                                <input id="query" class="inc-form__control" name="query" value="@Model.Query" placeholder="Title, ID, owner, text" />
                             </div>
-                            <div class="item-title">@item.Title</div>
-                            <div class="item-meta">
-                                <span>@(string.IsNullOrWhiteSpace(item.Owner) ? "unowned" : item.Owner)</span>
-                                <span>@(string.IsNullOrWhiteSpace(item.Priority) ? "unprioritized" : item.Priority)</span>
+                            <div class="inc-form__group inc-filter-bar__field mb-0">
+                                <label class="inc-form__label" asp-for="StatusFilter">Status</label>
+                                <select class="inc-form__select" asp-for="StatusFilter">
+                                    <option value="all">All</option>
+                                    @foreach (var status in StatusOptions)
+                                    {
+                                        <option value="@status">@StatusLabel(status)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="inc-form__check d-flex align-items-center gap-2 mb-0">
+                                <input class="inc-form__check-input" asp-for="IncludeDone" />
+                                <label class="inc-form__check-label mb-0" asp-for="IncludeDone">Include terminal items</label>
                             </div>
                         </div>
-                    </a>
-                }
-            }
+                        <div class="inc-filter-bar__actions">
+                            <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Search</button>
+                        </div>
+                    </form>
+
+                    @if (Model.Items.Count == 0)
+                    {
+                        <div class="inc-empty-state">
+                            <div class="inc-empty-state__content">
+                                <div class="inc-empty-state__icon">?</div>
+                                <h3 class="inc-heading inc-heading--h3">No work items</h3>
+                                <p class="inc-text inc-text--regular inc-text--muted">No work items match the current filters.</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="inc-stack inc-stack--gap-sm">
+                            @foreach (var item in Model.Items)
+                            {
+                                <a class="inc-card text-decoration-none @(Model.SelectedItem?.Id == item.Id ? "border-primary" : string.Empty)"
+                                   asp-page="/Index"
+                                   asp-route-selectedId="@item.Id"
+                                   asp-route-statusFilter="@Model.StatusFilter"
+                                   asp-route-query="@Model.Query"
+                                   asp-route-includeDone="@Model.IncludeDone"
+                                   aria-current="@(Model.SelectedItem?.Id == item.Id ? "page" : null)">
+                                    <div class="inc-card__body d-flex flex-column gap-2">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                            <span class="font-monospace fw-semibold">@item.Id</span>
+                                            <span class="inc-badge inc-badge--pill @StatusBadgeClass(item.Status)">@StatusLabel(item.Status)</span>
+                                        </div>
+                                        <div class="fw-semibold">@item.Title</div>
+                                        <div class="small text-body-secondary d-flex flex-wrap gap-2">
+                                            <span>@(string.IsNullOrWhiteSpace(item.Owner) ? "unowned" : item.Owner)</span>
+                                            <span>@(string.IsNullOrWhiteSpace(item.Priority) ? "unprioritized" : item.Priority)</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+        </aside>
+
+        <div class="col-12 col-xl-8">
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    @if (Model.SelectedItem is null)
+                    {
+                        <div class="inc-empty-state">
+                            <div class="inc-empty-state__content">
+                                <div class="inc-empty-state__icon">i</div>
+                                <h3 class="inc-heading inc-heading--h3">Pick a work item</h3>
+                                <p class="inc-text inc-text--regular inc-text--muted">Select an item on the left to edit it, or create a new one.</p>
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Create">Create item</a>
+                                    <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Browse docs</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                            <div>
+                                <p class="inc-key-value__label mb-1">Selected item</p>
+                                <h3 class="mb-2">@Model.SelectedItem.Id</h3>
+                                <p class="mb-1">@Model.SelectedItem.Title</p>
+                                <p class="mb-0 text-body-secondary">@Model.SelectedItem.Path</p>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 align-items-start">
+                                <span class="inc-badge inc-badge--pill @StatusBadgeClass(Model.SelectedItem.Status)">@StatusLabel(Model.SelectedItem.Status)</span>
+                                <span class="inc-badge inc-badge--pill @PriorityBadgeClass(Model.SelectedItem.Priority)">@(!string.IsNullOrWhiteSpace(Model.SelectedItem.Priority) ? Model.SelectedItem.Priority : "unprioritized")</span>
+                            </div>
+                        </div>
+
+                        <form method="post" asp-page-handler="Save" class="inc-stack inc-stack--gap-lg">
+                            <partial name="_ValidationSummary" />
+                            <input type="hidden" asp-for="Edit.Path" />
+                            <input type="hidden" asp-for="SelectedId" />
+                            <input type="hidden" asp-for="StatusFilter" />
+                            <input type="hidden" asp-for="Query" />
+                            <input type="hidden" asp-for="IncludeDone" />
+
+                            <section class="inc-filter-bar">
+                                <div class="inc-filter-bar__main">
+                                    <div>
+                                        <div class="fw-semibold">Saving writes the selected work item file.</div>
+                                        <div class="small text-body-secondary">Status, summary, acceptance criteria, and appended notes save together.</div>
+                                    </div>
+                                </div>
+                                <div class="inc-filter-bar__actions">
+                                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save item</button>
+                                </div>
+                            </section>
+
+                            <details class="inc-disclosure" open>
+                                <summary class="inc-disclosure__summary">
+                                    <span class="inc-disclosure__title">Identity</span>
+                                    <span class="inc-disclosure__meta">@Model.SelectedItem.Path</span>
+                                </summary>
+                                <div class="inc-disclosure__content">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="inc-form__group mb-0">
+                                                <label class="inc-form__label" asp-for="Edit.Title">Title</label>
+                                                <input class="inc-form__control" asp-for="Edit.Title" />
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="inc-form__group mb-0">
+                                                <label class="inc-form__label">Type</label>
+                                                <input class="inc-form__control" value="@Model.SelectedItem.Type" readonly />
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="inc-form__group mb-0">
+                                                <label class="inc-form__label" asp-for="Edit.Owner">Owner / team</label>
+                                                <input class="inc-form__control" asp-for="Edit.Owner" placeholder="optional team or person" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <details class="inc-disclosure" open>
+                                <summary class="inc-disclosure__summary">
+                                    <span class="inc-disclosure__title">Workflow</span>
+                                    <span class="inc-disclosure__meta">Status, priority, and file behavior</span>
+                                </summary>
+                                <div class="inc-disclosure__content">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-6">
+                                            <div class="inc-form__group mb-0">
+                                                <label class="inc-form__label" asp-for="Edit.Status">Status</label>
+                                                <select class="inc-form__select" asp-for="Edit.Status">
+                                                    @foreach (var status in StatusOptions)
+                                                    {
+                                                        <option value="@status">@StatusLabel(status)</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="inc-form__group mb-0">
+                                                <label class="inc-form__label" asp-for="Edit.Priority">Priority</label>
+                                                <select class="inc-form__select" asp-for="Edit.Priority">
+                                                    @foreach (var priority in PriorityOptions)
+                                                    {
+                                                        <option value="@(string.IsNullOrWhiteSpace(priority) ? string.Empty : priority)">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="inc-form__check d-flex align-items-center gap-2">
+                                                <input class="inc-form__check-input" asp-for="Edit.RenameFile" />
+                                                <label class="inc-form__check-label mb-0" asp-for="Edit.RenameFile">Rename the file when the title changes</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <details class="inc-disclosure" open>
+                                <summary class="inc-disclosure__summary">
+                                    <span class="inc-disclosure__title">Content</span>
+                                    <span class="inc-disclosure__meta">Narrative and acceptance criteria</span>
+                                </summary>
+                                <div class="inc-disclosure__content">
+                                    <div class="inc-stack inc-stack--gap-md">
+                                        <div class="inc-form__group mb-0">
+                                            <label class="inc-form__label" asp-for="Edit.Summary">Summary</label>
+                                            <textarea class="inc-form__control" asp-for="Edit.Summary" rows="6"></textarea>
+                                        </div>
+                                        <div class="inc-form__group mb-0">
+                                            <label class="inc-form__label" asp-for="Edit.AcceptanceCriteria">Acceptance criteria</label>
+                                            <textarea class="inc-form__control" asp-for="Edit.AcceptanceCriteria" rows="8"></textarea>
+                                        </div>
+                                        <div class="inc-form__group mb-0">
+                                            <label class="inc-form__label" asp-for="Edit.AppendNote">Append note</label>
+                                            <textarea class="inc-form__control" asp-for="Edit.AppendNote" rows="4" placeholder="Optional note appended to the item body"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+
+                            <details class="inc-disclosure" open>
+                                <summary class="inc-disclosure__summary">
+                                    <span class="inc-disclosure__title">Related links</span>
+                                    <span class="inc-disclosure__meta">@Model.SelectedItem.Path</span>
+                                </summary>
+                                <div class="inc-disclosure__content">
+                                    <div class="row g-3">
+                                        @{
+                                            var relatedSections = new (string Label, string[] Links)[]
+                                            {
+                                                ("Specs", Model.SelectedItem.Related.Specs.ToArray()),
+                                                ("Design links", Model.SelectedItem.DesignLinks.ToArray()),
+                                                ("Verification links", Model.SelectedItem.VerificationLinks.ToArray()),
+                                                ("Issues", Model.SelectedItem.Related.Issues.ToArray()),
+                                                ("Pull requests", Model.SelectedItem.Related.Prs.ToArray())
+                                            };
+                                        }
+
+                                        @foreach (var relatedSection in relatedSections)
+                                        {
+                                            <div class="col-12 col-md-6 col-xxl-4">
+                                                <section class="inc-card h-100">
+                                                    <div class="inc-card__body inc-stack inc-stack--gap-sm">
+                                                        <div class="small text-uppercase text-body-secondary fw-semibold">@(relatedSection.Label)</div>
+                                                        @if (relatedSection.Links.Length == 0)
+                                                        {
+                                                            <div class="small text-body-secondary">None</div>
+                                                        }
+                                                        else
+                                                        {
+                                                            foreach (var link in relatedSection.Links)
+                                                            {
+                                                                <a class="text-decoration-none" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
+                                                            }
+                                                        }
+                                                    </div>
+                                                </section>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </details>
+
+                            <details class="inc-disclosure">
+                                <summary class="inc-disclosure__summary">
+                                    <span class="inc-disclosure__title">Delete work item</span>
+                                    <span class="inc-disclosure__meta">Removes the file and backlinks</span>
+                                </summary>
+                                <div class="inc-disclosure__content">
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" asp-page-handler="Delete" formnovalidate class="inc-btn inc-btn--danger inc-btn--sm">Delete item</button>
+                                    </div>
+                                </div>
+                            </details>
+                        </form>
+
+                        <details class="inc-disclosure" open>
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Repo actions</span>
+                                <span class="inc-disclosure__meta">Shortcuts for the same core services as the CLI</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                <div class="row g-3">
+                                    <div class="col-12 col-lg-4">
+                                        <section class="inc-card h-100">
+                                            <div class="inc-card__body inc-stack inc-stack--gap-sm">
+                                                <div class="fw-semibold">Sync issue links</div>
+                                                <div class="small text-body-secondary">Pull GitHub issue backlinks into the local item metadata.</div>
+                                                <form method="post" asp-page-handler="SyncIssues">
+                                                    <input type="hidden" asp-for="SelectedId" />
+                                                    <input type="hidden" asp-for="StatusFilter" />
+                                                    <input type="hidden" asp-for="Query" />
+                                                    <input type="hidden" asp-for="IncludeDone" />
+                                                    <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
+                                                </form>
+                                            </div>
+                                        </section>
+                                    </div>
+                                    <div class="col-12 col-lg-4">
+                                        <section class="inc-card h-100">
+                                            <div class="inc-card__body inc-stack inc-stack--gap-sm">
+                                                <div class="fw-semibold">Sync navigation</div>
+                                                <div class="small text-body-secondary">Regenerate indexes and backlinks from repo state.</div>
+                                                <form method="post" asp-page-handler="SyncNavigation">
+                                                    <input type="hidden" asp-for="SelectedId" />
+                                                    <input type="hidden" asp-for="StatusFilter" />
+                                                    <input type="hidden" asp-for="Query" />
+                                                    <input type="hidden" asp-for="IncludeDone" />
+                                                    <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
+                                                </form>
+                                            </div>
+                                        </section>
+                                    </div>
+                                    <div class="col-12 col-lg-4">
+                                        <section class="inc-card h-100">
+                                            <div class="inc-card__body inc-stack inc-stack--gap-sm">
+                                                <div class="fw-semibold">Validate repo</div>
+                                                <div class="small text-body-secondary">Check local docs, links, IDs, and work item structure.</div>
+                                                <form method="post" asp-page-handler="Validate">
+                                                    <input type="hidden" asp-for="SelectedId" />
+                                                    <input type="hidden" asp-for="StatusFilter" />
+                                                    <input type="hidden" asp-for="Query" />
+                                                    <input type="hidden" asp-for="IncludeDone" />
+                                                    <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
+                                                </form>
+                                            </div>
+                                        </section>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                    }
+                </div>
+            </section>
         </div>
-    </inc-card>
-
-    <inc-card class="panel detail">
-        @if (Model.SelectedItem is null)
-        {
-            <div class="inc-empty-state">
-                <div class="inc-empty-state__content">
-                    <div class="inc-empty-state__icon">i</div>
-                    <h3 class="inc-heading inc-heading--h3">Pick a work item</h3>
-                    <p class="inc-text inc-text--regular inc-text--muted">Select an item on the left to edit it, or create a new one below.</p>
-                    <div class="inc-empty-state__actions">
-                        <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Create">Create item</a>
-                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Browse docs</a>
-                    </div>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="detail-header">
-                <div>
-                    <div class="eyebrow">Selected item</div>
-                    <h3>@Model.SelectedItem.Id</h3>
-                    <p>@Model.SelectedItem.Title</p>
-                </div>
-                <div class="detail-badges">
-                    <span class="inc-badge inc-badge--pill @StatusBadgeClass(Model.SelectedItem.Status)">@StatusLabel(Model.SelectedItem.Status)</span>
-                    <span class="inc-badge inc-badge--pill @PriorityBadgeClass(Model.SelectedItem.Priority)">@(!string.IsNullOrWhiteSpace(Model.SelectedItem.Priority) ? Model.SelectedItem.Priority : "unprioritized")</span>
-                </div>
-            </div>
-
-            <form method="post" asp-page-handler="Save" class="editor-stack">
-                <partial name="_ValidationSummary" />
-                <input type="hidden" asp-for="Edit.Path" />
-                <input type="hidden" asp-for="SelectedId" />
-                <input type="hidden" asp-for="StatusFilter" />
-                <input type="hidden" asp-for="Query" />
-                <input type="hidden" asp-for="IncludeDone" />
-
-                <inc-card class="editor-section">
-                    <div class="editor-section-head">
-                        <h4>Identity</h4>
-                        <span class="muted">@Model.SelectedItem.Path</span>
-                    </div>
-                    <div class="editor-grid editor-grid-two">
-                        <inc-field class="span-2" label="Title">
-                            <input class="inc-form__control" asp-for="Edit.Title" />
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Title"></span>
-                        </inc-field>
-                        <inc-field label="Type">
-                            <input class="inc-form__control" value="@Model.SelectedItem.Type" readonly />
-                        </inc-field>
-                        <inc-field label="Owner / team">
-                            <input class="inc-form__control" asp-for="Edit.Owner" placeholder="optional team or person" />
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Owner"></span>
-                        </inc-field>
-                    </div>
-                </inc-card>
-
-                <inc-card class="editor-section">
-                    <div class="editor-section-head">
-                        <h4>Workflow</h4>
-                        <span class="muted">Status, priority, and file behavior.</span>
-                    </div>
-                    <div class="editor-grid editor-grid-two">
-                        <inc-field label="Status">
-                            <select class="inc-form__select" asp-for="Edit.Status">
-                                @foreach (var status in StatusOptions)
-                                {
-                                    <option value="@status">@StatusLabel(status)</option>
-                                }
-                            </select>
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Status"></span>
-                        </inc-field>
-                        <inc-field label="Priority">
-                            <select class="inc-form__select" asp-for="Edit.Priority">
-                                @foreach (var priority in PriorityOptions)
-                                {
-                                    <option value="@(string.IsNullOrWhiteSpace(priority) ? string.Empty : priority)">@(string.IsNullOrWhiteSpace(priority) ? "unset" : priority)</option>
-                                }
-                            </select>
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Priority"></span>
-                        </inc-field>
-                        <label class="inc-form__check checkbox-row span-2">
-                            <input class="inc-form__check__input" asp-for="Edit.RenameFile" />
-                            <span class="inc-form__check__label">Rename the file when the title changes</span>
-                        </label>
-                    </div>
-                </inc-card>
-
-                <inc-card class="editor-section">
-                    <div class="editor-section-head">
-                        <h4>Content</h4>
-                        <span class="muted">The narrative and acceptance criteria.</span>
-                    </div>
-                    <div class="editor-grid">
-                        <inc-field class="span-2" label="Summary">
-                            <textarea class="inc-form__control" asp-for="Edit.Summary" rows="6"></textarea>
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.Summary"></span>
-                        </inc-field>
-                        <inc-field class="span-2" label="Acceptance criteria">
-                            <textarea class="inc-form__control" asp-for="Edit.AcceptanceCriteria" rows="8"></textarea>
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.AcceptanceCriteria"></span>
-                        </inc-field>
-                        <inc-field class="span-2" label="Append note">
-                            <textarea class="inc-form__control" asp-for="Edit.AppendNote" rows="4" placeholder="Optional note appended to the item body"></textarea>
-                            <span class="inc-form__invalid-feedback" asp-validation-for="Edit.AppendNote"></span>
-                        </inc-field>
-                    </div>
-                </inc-card>
-
-                <div class="button-row">
-                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save item</button>
-                </div>
-            </form>
-
-            <inc-card class="snapshot">
-                <div class="snapshot-head">
-                    <h4>Related links</h4>
-                    <span class="muted">@Model.SelectedItem.Path</span>
-                </div>
-                <div class="link-grid">
-                    <div>
-                        <div class="field-label">Specs</div>
-                        @if (Model.SelectedItem.Related.Specs.Count == 0)
-                        {
-                            <div class="muted">None</div>
-                        }
-                        else
-                        {
-                            foreach (var link in Model.SelectedItem.Related.Specs)
-                            {
-                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
-                            }
-                        }
-                    </div>
-                    <div>
-                        <div class="field-label">Design links</div>
-                        @if (Model.SelectedItem.DesignLinks.Count == 0)
-                        {
-                            <div class="muted">None</div>
-                        }
-                        else
-                        {
-                            foreach (var link in Model.SelectedItem.DesignLinks)
-                            {
-                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
-                            }
-                        }
-                    </div>
-                    <div>
-                        <div class="field-label">Verification links</div>
-                        @if (Model.SelectedItem.VerificationLinks.Count == 0)
-                        {
-                            <div class="muted">None</div>
-                        }
-                        else
-                        {
-                            foreach (var link in Model.SelectedItem.VerificationLinks)
-                            {
-                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
-                            }
-                        }
-                    </div>
-                    <div>
-                        <div class="field-label">Issues</div>
-                        @if (Model.SelectedItem.Related.Issues.Count == 0)
-                        {
-                            <div class="muted">None</div>
-                        }
-                        else
-                        {
-                            foreach (var link in Model.SelectedItem.Related.Issues)
-                            {
-                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
-                            }
-                        }
-                    </div>
-                    <div>
-                        <div class="field-label">Pull requests</div>
-                        @if (Model.SelectedItem.Related.Prs.Count == 0)
-                        {
-                            <div class="muted">None</div>
-                        }
-                        else
-                        {
-                            foreach (var link in Model.SelectedItem.Related.Prs)
-                            {
-                                <a class="related-link" href="@Model.ResolveRelatedLinkHref(link)">@Workbench.Pages.IndexModel.ResolveRelatedLinkLabel(link)</a>
-                            }
-                        }
-                    </div>
-                </div>
-            </inc-card>
-        }
-
-        <inc-card class="actions">
-            <div class="panel-head compact">
-                <h3>Repo actions</h3>
-                <span class="muted">Shortcuts for the same core services as the CLI.</span>
-            </div>
-            <div class="action-grid">
-                <inc-card class="action-tile">
-                    <div class="action-title">Sync issue links</div>
-                    <div class="action-copy">Pull GitHub issue backlinks into the local item metadata.</div>
-                    <form method="post" asp-page-handler="SyncIssues">
-                        <input type="hidden" asp-for="SelectedId" />
-                        <input type="hidden" asp-for="StatusFilter" />
-                        <input type="hidden" asp-for="Query" />
-                        <input type="hidden" asp-for="IncludeDone" />
-                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
-                    </form>
-                </inc-card>
-                <inc-card class="action-tile">
-                    <div class="action-title">Sync navigation</div>
-                    <div class="action-copy">Regenerate indexes and backlinks from repo state.</div>
-                    <form method="post" asp-page-handler="SyncNavigation">
-                        <input type="hidden" asp-for="SelectedId" />
-                        <input type="hidden" asp-for="StatusFilter" />
-                        <input type="hidden" asp-for="Query" />
-                        <input type="hidden" asp-for="IncludeDone" />
-                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
-                    </form>
-                </inc-card>
-                <inc-card class="action-tile">
-                    <div class="action-title">Validate repo</div>
-                    <div class="action-copy">Check local docs, links, IDs, and work item structure.</div>
-                    <form method="post" asp-page-handler="Validate">
-                        <input type="hidden" asp-for="SelectedId" />
-                        <input type="hidden" asp-for="StatusFilter" />
-                        <input type="hidden" asp-for="Query" />
-                        <input type="hidden" asp-for="IncludeDone" />
-                        <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Run</button>
-                    </form>
-                </inc-card>
-            </div>
-        </inc-card>
-    </inc-card>
+    </div>
 </div>

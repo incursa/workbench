@@ -2,166 +2,186 @@
 @model Workbench.Pages.FilesModel
 @{
     ViewData["Title"] = "Files";
+    ViewData["DisableCustomStyles"] = true;
 }
 
-<inc-card class="hero">
-    <div class="hero-copy">
-        <div class="eyebrow">Local file explorer</div>
-        <h2>Browse the repo and preview markdown inline.</h2>
-        <p>
-            This page scans the local checkout, renders a nested folder navigator, and previews markdown or text files directly in the browser.
-        </p>
-        <div class="hero-links">
-            <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Index">Items</a>
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs browser</a>
-            <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Create">Create item</a>
-        </div>
-    </div>
-    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
-        <article class="inc-summary-block stat-card accent">
-            <div class="inc-summary-block__header stat-label">Files found</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.Files.Count</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Markdown</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.MarkdownCount</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Text</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.TextCount</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Binary</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.BinaryCount</div>
-            </div>
-        </article>
-    </div>
-</inc-card>
-
-<div class="workspace files-layout">
-    <inc-card class="panel sidebar">
-        <div class="panel-head">
-            <h3>Browse files</h3>
-            <form method="get" class="inc-filter-bar files-filter">
-                <input type="hidden" name="selectedPath" value="@Model.SelectedPath" />
-                <div class="inc-filter-bar__main">
-                    <inc-field class="inc-filter-bar__field inc-filter-bar__field--grow" label="Search">
-                        <input class="inc-form__control" name="query" value="@Model.Query" placeholder="Path, name, excerpt, kind" />
-                    </inc-field>
-                    <inc-field class="inc-filter-bar__field" label="Type">
-                        <select class="inc-form__select" asp-for="TypeFilter">
-                            @foreach (var type in global::Workbench.Pages.FilesModel.TypeOptions)
-                            {
-                                <option value="@type">@type</option>
-                            }
-                        </select>
-                    </inc-field>
-                </div>
-                <div class="inc-filter-bar__actions">
-                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Apply filters</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="tree-list">
-            @if (Model.Files.Count == 0)
-            {
-                <div class="inc-empty-state">
-                    <div class="inc-empty-state__content">
-                        <div class="inc-empty-state__icon">?</div>
-                        <h3 class="inc-heading inc-heading--h3">No files</h3>
-                        <p class="inc-text inc-text--regular inc-text--muted">No files match the current filters.</p>
-                    </div>
-                </div>
-            }
-            else
-            {
-                @await Html.PartialAsync("_TreeBranch", Model.Tree)
-            }
-        </div>
-    </inc-card>
-
-    <inc-card class="panel detail">
-        @if (Model.SelectedFile is null)
-        {
-            <div class="inc-empty-state">
-                <div class="inc-empty-state__content">
-                    <div class="inc-empty-state__icon">i</div>
-                    <h3 class="inc-heading inc-heading--h3">Select a file</h3>
-                    <p class="inc-text inc-text--regular inc-text--muted">Choose a file on the left to preview it here.</p>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="detail-header">
-                <div>
-                    <div class="eyebrow">Selected file</div>
-                    <h3>@Model.SelectedFile.Summary.Name</h3>
-                    <p>@Model.SelectedFile.Summary.Path</p>
-                </div>
-                <div class="detail-badges">
-                    <span class="inc-badge inc-badge--pill @Workbench.Pages.FilesModel.FileTypeBadgeClass(Model.SelectedFile.Summary.FileType)">@Model.SelectedFile.Summary.FileType</span>
-                    <span class="inc-badge inc-badge--pill inc-badge--info">@Model.SelectedFile.Summary.Extension</span>
-                </div>
-            </div>
-
-            <inc-card class="snapshot">
-                <div class="snapshot-head">
-                    <h4>Metadata</h4>
-                    <span class="muted">@Model.SelectedFile.Summary.LastModifiedUtc.ToString("u")</span>
-                </div>
-                <div class="link-grid">
+<div class="inc-stack inc-stack--gap-lg">
+    <section class="inc-card">
+        <div class="inc-card__body inc-stack inc-stack--gap-lg">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+                <div class="inc-stack inc-stack--gap-sm flex-grow-1">
                     <div>
-                        <div class="field-label">Size</div>
-                        <div class="mono">@Model.SelectedFile.Summary.SizeBytes bytes</div>
+                        <p class="inc-key-value__label mb-1">Local file explorer</p>
+                        <h2 class="mb-2">Browse the repo and preview markdown inline.</h2>
+                        <p class="mb-0">This page scans the local checkout, renders a nested folder navigator, and previews markdown or text files directly in the browser.</p>
                     </div>
-                    <div>
-                        <div class="field-label">Preview</div>
-                        <div class="mono">@(Model.SelectedFile.CanPreview ? "available" : "binary file")</div>
-                    </div>
-                    <div class="span-2">
-                        <div class="field-label">Excerpt</div>
-                        <div class="muted">@Model.SelectedFile.Summary.Excerpt</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="inc-btn inc-btn--primary inc-btn--sm" asp-page="/Index">Items</a>
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Docs">Docs browser</a>
+                        <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Create">Create item</a>
                     </div>
                 </div>
-            </inc-card>
 
-            <inc-disclosure class="doc-viewer" summary="Preview" open>
-                <div slot="summary" class="panel-head compact">
-                    <h4>Preview</h4>
-                    <span class="muted">Local read-only preview</span>
+                <div class="inc-summary-overview inc-summary-overview--4-col flex-grow-1">
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Files found</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.Files.Count</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Markdown</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.MarkdownCount</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Text</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.TextCount</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Binary</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.BinaryCount</div>
+                        </div>
+                    </article>
                 </div>
-                <div slot="content">
-                    @if (Model.SelectedFile.IsBinary)
+            </div>
+        </div>
+    </section>
+
+    <div class="row g-4 align-items-start">
+        <aside class="col-12 col-xl-4">
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    <div>
+                        <p class="inc-key-value__label mb-1">Catalog</p>
+                        <h3 class="mb-2">Browse files</h3>
+                        <p class="mb-0">Filter the local checkout by path or file type, then preview the selected file on the right.</p>
+                    </div>
+
+                    <form method="get" class="inc-filter-bar">
+                        <input type="hidden" name="selectedPath" value="@Model.SelectedPath" />
+                        <div class="inc-filter-bar__main">
+                            <div class="inc-form__group inc-filter-bar__field inc-filter-bar__field--grow mb-0">
+                                <label class="inc-form__label" for="query">Search</label>
+                                <input id="query" class="inc-form__control" name="query" value="@Model.Query" placeholder="Path, name, excerpt, kind" />
+                            </div>
+                            <div class="inc-form__group inc-filter-bar__field mb-0">
+                                <label class="inc-form__label" asp-for="TypeFilter">Type</label>
+                                <select class="inc-form__select" asp-for="TypeFilter">
+                                    @foreach (var type in global::Workbench.Pages.FilesModel.TypeOptions)
+                                    {
+                                        <option value="@type">@type</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="inc-filter-bar__actions">
+                            <button type="submit" class="inc-btn inc-btn--secondary inc-btn--sm">Search</button>
+                        </div>
+                    </form>
+
+                    @if (Model.Files.Count == 0)
                     {
                         <div class="inc-empty-state">
                             <div class="inc-empty-state__content">
-                                <div class="inc-empty-state__icon">B</div>
-                                <h3 class="inc-heading inc-heading--h3">Binary file</h3>
-                                <p class="inc-text inc-text--regular inc-text--muted">Binary files are listed here but not rendered inline.</p>
+                                <div class="inc-empty-state__icon">?</div>
+                                <h3 class="inc-heading inc-heading--h3">No files</h3>
+                                <p class="inc-text inc-text--regular inc-text--muted">No files match the current filters.</p>
                             </div>
-                        </div>
-                    }
-                    else if (Model.SelectedFile.IsMarkdown)
-                    {
-                        <div class="markdown-body">
-                            @Html.Raw(Model.SelectedFileHtml)
                         </div>
                     }
                     else
                     {
-                        <pre class="doc-body">@Model.SelectedFile.Body</pre>
+                        @await Html.PartialAsync("_TreeBranch", Model.Tree)
                     }
                 </div>
-            </inc-disclosure>
-        }
-    </inc-card>
+            </section>
+        </aside>
+
+        <div class="col-12 col-xl-8">
+            <section class="inc-card">
+                <div class="inc-card__body inc-stack inc-stack--gap-lg">
+                    @if (Model.SelectedFile is null)
+                    {
+                        <div class="inc-empty-state">
+                            <div class="inc-empty-state__content">
+                                <div class="inc-empty-state__icon">i</div>
+                                <h3 class="inc-heading inc-heading--h3">Select a file</h3>
+                                <p class="inc-text inc-text--regular inc-text--muted">Choose a file on the left to preview it here.</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                            <div>
+                                <p class="inc-key-value__label mb-1">Selected file</p>
+                                <h3 class="mb-2">@Model.SelectedFile.Summary.Name</h3>
+                                <p class="mb-0 text-body-secondary">@Model.SelectedFile.Summary.Path</p>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 align-items-start">
+                                <span class="inc-badge inc-badge--pill @Workbench.Pages.FilesModel.FileTypeBadgeClass(Model.SelectedFile.Summary.FileType)">@Model.SelectedFile.Summary.FileType</span>
+                                <span class="inc-badge inc-badge--pill inc-badge--info">@Model.SelectedFile.Summary.Extension</span>
+                            </div>
+                        </div>
+
+                        <div class="inc-key-value-grid">
+                            <div class="inc-key-value inc-key-value--card">
+                                <div class="inc-key-value__label">Size</div>
+                                <div class="inc-key-value__value">@Model.SelectedFile.Summary.SizeBytes bytes</div>
+                            </div>
+                            <div class="inc-key-value inc-key-value--card">
+                                <div class="inc-key-value__label">Preview</div>
+                                <div class="inc-key-value__value">@(Model.SelectedFile.CanPreview ? "available" : "binary file")</div>
+                            </div>
+                            <div class="inc-key-value inc-key-value--card">
+                                <div class="inc-key-value__label">Last modified</div>
+                                <div class="inc-key-value__value">@Model.SelectedFile.Summary.LastModifiedUtc.ToString("u")</div>
+                            </div>
+                        </div>
+
+                        <section class="inc-card">
+                            <div class="inc-card__body">
+                                <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Excerpt</div>
+                                <p class="mb-0 text-body-secondary">@Model.SelectedFile.Summary.Excerpt</p>
+                            </div>
+                        </section>
+
+                        <details class="inc-disclosure" open>
+                            <summary class="inc-disclosure__summary">
+                                <span class="inc-disclosure__title">Preview</span>
+                                <span class="inc-disclosure__meta">Local read-only preview</span>
+                            </summary>
+                            <div class="inc-disclosure__content">
+                                @if (Model.SelectedFile.IsBinary)
+                                {
+                                    <div class="inc-empty-state">
+                                        <div class="inc-empty-state__content">
+                                            <div class="inc-empty-state__icon">B</div>
+                                            <h3 class="inc-heading inc-heading--h3">Binary file</h3>
+                                            <p class="inc-text inc-text--regular inc-text--muted">Binary files are listed here but not rendered inline.</p>
+                                        </div>
+                                    </div>
+                                }
+                                else if (Model.SelectedFile.IsMarkdown)
+                                {
+                                    <div class="markdown-body">
+                                        @Html.Raw(Model.SelectedFileHtml)
+                                    </div>
+                                }
+                                else
+                                {
+                                    <pre class="mb-0 font-monospace small overflow-auto">@Model.SelectedFile.Body</pre>
+                                }
+                            </div>
+                        </details>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
 </div>

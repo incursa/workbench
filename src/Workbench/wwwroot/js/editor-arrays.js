@@ -42,12 +42,12 @@
 
     const createRow = (editor, value = "") => {
         const row = document.createElement("div");
-        row.className = "array-editor__row";
+        row.className = "d-flex flex-column flex-lg-row gap-2 align-items-stretch";
         row.setAttribute("data-array-row", "true");
 
         const input = document.createElement("input");
         input.type = "text";
-        input.className = "inc-form__control array-editor__input";
+        input.className = "inc-form__control";
         input.setAttribute("data-array-item-input", "true");
         input.value = value;
         input.placeholder = editor.dataset.arrayPlaceholder || "Add item";
@@ -55,12 +55,12 @@
         input.spellcheck = false;
 
         const actions = document.createElement("div");
-        actions.className = "array-editor__actions";
+        actions.className = "d-flex flex-wrap gap-2";
 
         const makeButton = (label, action) => {
             const button = document.createElement("button");
             button.type = "button";
-            button.className = "inc-btn inc-btn--secondary inc-btn--sm array-editor__button";
+            button.className = "inc-btn inc-btn--secondary inc-btn--sm";
             button.textContent = label;
             button.setAttribute("data-array-action", action);
             return button;

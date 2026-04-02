@@ -2,13 +2,20 @@
 @model Workbench.Pages.ErrorModel
 @{
     ViewData["Title"] = "Error";
+    ViewData["DisableCustomStyles"] = true;
 }
 
-<section class="panel error-panel">
-    <h2>Something went wrong.</h2>
-    <p>The local Workbench UI hit an unexpected failure.</p>
-    @if (Model.ShowRequestId)
-    {
-        <p class="muted">Request ID: @Model.RequestId</p>
-    }
+<section class="inc-card">
+    <div class="inc-card__body inc-stack inc-stack--gap-md">
+        <div>
+            <p class="inc-key-value__label mb-1">Unexpected failure</p>
+            <h2 class="mb-2">Something went wrong.</h2>
+            <p class="mb-0">The local Workbench UI hit an unexpected failure.</p>
+        </div>
+
+        @if (Model.ShowRequestId)
+        {
+            <div class="small text-body-secondary">Request ID: @Model.RequestId</div>
+        }
+    </div>
 </section>

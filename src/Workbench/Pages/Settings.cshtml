@@ -2,69 +2,106 @@
 @model Workbench.Pages.SettingsModel
 @{
     ViewData["Title"] = "Settings";
+    ViewData["DisableCustomStyles"] = true;
 }
 
-<section class="hero inc-card">
-    <div class="hero-copy">
-        <div class="eyebrow">Local identity</div>
-        <h2>Store a machine-local authoring profile.</h2>
-        <p>
-            This is not an auth flow. It simply gives the browser UI a default name, handle, email, and work item owner for local authoring.
-        </p>
-        @if (!string.IsNullOrWhiteSpace(Model.Message))
-        {
-            <inc-state-panel variant="success" title="Saved" body="@Model.Message"></inc-state-panel>
-        }
-    </div>
-    <div class="hero-stats inc-summary-overview inc-summary-overview--4-col">
-        <article class="inc-summary-block stat-card accent">
-            <div class="inc-summary-block__header stat-label">Profile file</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--small stat-value">@Model.ProfilePath</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Display name</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@(string.IsNullOrWhiteSpace(Model.DisplayName) ? "unset" : Model.DisplayName)</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Default owner</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@(string.IsNullOrWhiteSpace(Model.DefaultOwner) ? "unset" : Model.DefaultOwner)</div>
-            </div>
-        </article>
-        <article class="inc-summary-block stat-card">
-            <div class="inc-summary-block__header stat-label">Effective author</div>
-            <div class="inc-summary-block__body inc-summary-block__body--left">
-                <div class="inc-summary-block__value inc-summary-block__value--large stat-value">@Model.EffectiveAuthorDisplay</div>
-            </div>
-        </article>
-    </div>
-</section>
+<div class="inc-stack inc-stack--gap-lg">
+    <section class="inc-card">
+        <div class="inc-card__body inc-stack inc-stack--gap-lg">
+            <div class="d-flex flex-column flex-xl-row justify-content-between gap-4">
+                <div class="inc-stack inc-stack--gap-sm flex-grow-1">
+                    <div>
+                        <p class="inc-key-value__label mb-1">Local identity</p>
+                        <h2 class="mb-2">Store a machine-local authoring profile.</h2>
+                        <p class="mb-0">This is not an auth flow. It simply gives the browser UI a default name, handle, email, and work item owner for local authoring.</p>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Message))
+                    {
+                        <section class="inc-state-panel inc-state-panel--results">
+                            <div class="inc-state-panel__head">
+                                <div class="inc-state-panel__icon">i</div>
+                                <div>
+                                    <h3 class="inc-state-panel__title">Saved</h3>
+                                    <p class="inc-state-panel__body mb-0">@Model.Message</p>
+                                </div>
+                            </div>
+                        </section>
+                    }
+                </div>
 
-<inc-card class="panel">
-    <div class="panel-head compact">
-        <h3>Edit profile</h3>
-        <a class="muted" asp-page="/Index">Back to items</a>
-    </div>
-
-    <form method="post" class="editor-grid editor-grid-two">
-        <inc-field label="Display name">
-            <input class="inc-form__control" asp-for="DisplayName" placeholder="Sam McAravey" />
-        </inc-field>
-        <inc-field label="Handle">
-            <input class="inc-form__control" asp-for="Handle" placeholder="sam" />
-        </inc-field>
-        <inc-field label="Email">
-            <input class="inc-form__control" asp-for="Email" placeholder="sam@example.com" />
-        </inc-field>
-        <inc-field label="Default owner">
-            <input class="inc-form__control" asp-for="DefaultOwner" placeholder="platform" />
-        </inc-field>
-        <div class="button-row span-2">
-            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save profile</button>
+                <div class="inc-summary-overview inc-summary-overview--4-col flex-grow-1">
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Profile file</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--small">@Model.ProfilePath</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Display name</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@(string.IsNullOrWhiteSpace(Model.DisplayName) ? "unset" : Model.DisplayName)</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Default owner</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@(string.IsNullOrWhiteSpace(Model.DefaultOwner) ? "unset" : Model.DefaultOwner)</div>
+                        </div>
+                    </article>
+                    <article class="inc-summary-block">
+                        <div class="inc-summary-block__header">Effective author</div>
+                        <div class="inc-summary-block__body inc-summary-block__body--left">
+                            <div class="inc-summary-block__value inc-summary-block__value--large">@Model.EffectiveAuthorDisplay</div>
+                        </div>
+                    </article>
+                </div>
+            </div>
         </div>
-    </form>
-</inc-card>
+    </section>
+
+    <section class="inc-card">
+        <div class="inc-card__body inc-stack inc-stack--gap-lg">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <p class="inc-key-value__label mb-1">Edit profile</p>
+                    <h3 class="mb-2">Machine-local settings</h3>
+                    <p class="mb-0">These values stay on the current machine and prefill local authoring fields.</p>
+                </div>
+                <a class="inc-btn inc-btn--secondary inc-btn--sm" asp-page="/Index">Back to items</a>
+            </div>
+
+            <form method="post" class="inc-stack inc-stack--gap-lg">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="inc-form__group mb-0">
+                            <label class="inc-form__label" asp-for="DisplayName">Display name</label>
+                            <input class="inc-form__control" asp-for="DisplayName" placeholder="Sam McAravey" />
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="inc-form__group mb-0">
+                            <label class="inc-form__label" asp-for="Handle">Handle</label>
+                            <input class="inc-form__control" asp-for="Handle" placeholder="sam" />
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="inc-form__group mb-0">
+                            <label class="inc-form__label" asp-for="Email">Email</label>
+                            <input class="inc-form__control" asp-for="Email" placeholder="sam@example.com" />
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="inc-form__group mb-0">
+                            <label class="inc-form__label" asp-for="DefaultOwner">Default owner</label>
+                            <input class="inc-form__control" asp-for="DefaultOwner" placeholder="platform" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save profile</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
