@@ -569,6 +569,7 @@ Options:
 - `--coverage <coverage>`: Cobertura file or directory root to ingest.
 - `--out-dir <out-dir>`: Directory for normalized quality artifacts.
 - `--dry-run`: Compute the quality artifacts without writing files.
+- `--sync-requirement-comments`: Synchronize generated XML-style requirement comment blocks into test source files.
 
 ### `workbench scaffold`
 Create the default folder structure, templates, and config.
