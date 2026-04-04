@@ -18,7 +18,8 @@ public sealed record QualitySyncOptions(
     string? ResultsPath,
     string? CoveragePath,
     string? OutDir,
-    bool DryRun);
+    bool DryRun,
+    bool SyncRequirementComments = false);
 
 public sealed record QualityShowOptions(
     string Kind,
@@ -94,6 +95,24 @@ public static class QualityService
         var outputDirectory = ResolvePath(repoRoot, options.OutDir ?? DefaultOutputDirectory);
         var authored = LoadAuthoredIntent(repoRoot, contractPath);
         var inventory = DiscoverTestInventory(repoRoot, authored, "workbench quality sync");
+        var requirementRefs = RequirementTraceSyncService.BuildRequirementTestRefs(inventory);
+        var traceSyncResult = RequirementTraceSyncService.SyncRequirementTestRefs(
+            repoRoot,
+            requirementRefs,
+            options.DryRun);
+        RequirementCommentSyncResult? commentSyncResult = null;
+        var catalogWarnings = Array.Empty<string>();
+        if (options.SyncRequirementComments)
+        {
+            var requirementCatalog = RequirementTraceSyncService.BuildRequirementCatalog(repoRoot, out var requirementCatalogWarnings);
+            catalogWarnings = requirementCatalogWarnings.ToArray();
+            commentSyncResult = RequirementTraceSyncService.SyncRequirementComments(
+                repoRoot,
+                inventory,
+                requirementCatalog,
+                options.DryRun);
+        }
+
         var results = IngestTestRunSummary(
             repoRoot,
             options.ResultsPath,
@@ -123,6 +142,12 @@ public static class QualityService
         var markdownPath = Path.Combine(outputDirectory, DefaultSummaryArtifact);
         var warnings = new List<string>();
         warnings.AddRange(inventory.Warnings);
+        warnings.AddRange(catalogWarnings);
+        warnings.AddRange(traceSyncResult.Warnings);
+        if (commentSyncResult is not null)
+        {
+            warnings.AddRange(commentSyncResult.Warnings);
+        }
         warnings.AddRange(results.Warnings);
         warnings.AddRange(coverage.Warnings);
         warnings.AddRange(report.Assessment.Findings
@@ -161,6 +186,11 @@ public static class QualityService
                 NormalizeRepoPath(repoRoot, markdownPath),
                 report.Assessment.Status,
                 report.Assessment.Findings.Count),
+            new QualitySyncTraceSyncData(
+                new QualitySyncTraceSyncTargetData(traceSyncResult.FilesUpdated, traceSyncResult.RequirementsUpdated),
+                commentSyncResult is null
+                    ? null
+                    : new QualitySyncTraceSyncTargetData(commentSyncResult.FilesUpdated, commentSyncResult.RequirementsUpdated)),
             warnings,
             options.DryRun);
 

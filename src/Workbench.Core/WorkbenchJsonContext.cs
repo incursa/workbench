@@ -50,6 +50,8 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(TestInventory))]
 [JsonSerializable(typeof(TestRunSummary))]
 [JsonSerializable(typeof(CoverageSummary))]
+[JsonSerializable(typeof(QualitySyncTraceSyncTargetData))]
+[JsonSerializable(typeof(QualitySyncTraceSyncData))]
 [JsonSerializable(typeof(QualityReport))]
 [JsonSerializable(typeof(QualitySyncOutput))]
 [JsonSerializable(typeof(QualityShowOutput))]

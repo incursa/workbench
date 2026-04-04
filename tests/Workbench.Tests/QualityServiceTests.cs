@@ -50,7 +50,7 @@ public class QualityServiceTests
     }
 
     [TestMethod]
-    public void Sync_DoesNotMutateCanonicalSpecTraceArtifacts()
+    public void Sync_BackfillsCanonicalSpecTraceArtifacts()
     {
         using var repo = CreateFixtureRepo(includeRequirementSpec: true);
         var specPath = Path.Combine(repo.Path, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md");
@@ -67,7 +67,76 @@ public class QualityServiceTests
 
         Assert.AreEqual("fail", result.Report.Assessment.Status);
         var after = File.ReadAllText(specPath);
-        Assert.AreEqual(original, after);
+        Assert.AreNotEqual(original, after);
+        StringAssert.Contains(after, "Test Refs:", StringComparison.Ordinal);
+        StringAssert.Contains(after, "tests/Sample.Tests/WidgetTests.cs::Adds_numbers", StringComparison.Ordinal);
+        Assert.IsNotNull(result.Data.TraceSync);
+        Assert.AreEqual(1, result.Data.TraceSync!.Specifications.FilesUpdated);
+        Assert.AreEqual(1, result.Data.TraceSync.Specifications.RequirementsUpdated);
+        Assert.IsNull(result.Data.TraceSync.TestRequirementComments);
+    }
+
+    [TestMethod]
+    public void Sync_SyncRequirementComments_InsertsGeneratedRequirementBlocks()
+    {
+        using var repo = CreateFixtureRepo(includeRequirementSpec: true);
+        WriteRequirementCommentSpec(repo.Path);
+        WriteRequirementCommentSource(repo.Path);
+
+        var result = QualityService.Sync(
+            repo.Path,
+            new QualitySyncOptions(
+                null,
+                "artifacts/raw/test-results",
+                "artifacts/raw/coverage",
+                null,
+                false,
+                true));
+
+        Assert.IsNotNull(result.Data.TraceSync);
+        Assert.AreEqual(1, result.Data.TraceSync!.Specifications.FilesUpdated);
+        Assert.AreEqual(4, result.Data.TraceSync.Specifications.RequirementsUpdated);
+        Assert.IsNotNull(result.Data.TraceSync.TestRequirementComments);
+        Assert.AreEqual(1, result.Data.TraceSync.TestRequirementComments!.FilesUpdated);
+        Assert.AreEqual(4, result.Data.TraceSync.TestRequirementComments.RequirementsUpdated);
+
+        var testPath = Path.Combine(repo.Path, "tests", "Sample.Tests", "WidgetTests.cs");
+        var updatedTest = File.ReadAllText(testPath);
+        const string BlockMarker = "<workbench-requirements generated=\"true\" source=\"workbench quality sync\">";
+        Assert.AreEqual(3, updatedTest.Split(new[] { BlockMarker }, StringSplitOptions.None).Length - 1);
+
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0004\">The widget test class MUST be documented with generated requirement comments.",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0001\">The system MUST verify addition behavior.",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0002\">The system MUST document zero handling.",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0003\">The system MUST document the fallback path.",
+            StringComparison.Ordinal);
+
+        Assert.IsLessThan(
+            updatedTest.IndexOf("[Requirement(\"REQ-SAMPLE-0004\")]", StringComparison.Ordinal),
+            updatedTest.IndexOf("requirementId=\"REQ-SAMPLE-0004\"", StringComparison.Ordinal));
+        Assert.IsLessThan(
+            updatedTest.IndexOf("requirementId=\"REQ-SAMPLE-0001\"", StringComparison.Ordinal),
+            updatedTest.IndexOf("[Trait(\"Category\", \"Positive\")]", StringComparison.Ordinal));
+        Assert.IsLessThan(
+            updatedTest.IndexOf("[Requirement(\"REQ-SAMPLE-0001\")]", StringComparison.Ordinal),
+            updatedTest.IndexOf("requirementId=\"REQ-SAMPLE-0001\"", StringComparison.Ordinal));
+        Assert.IsLessThan(
+            updatedTest.IndexOf("[Requirement(\"REQ-SAMPLE-0002\")]", StringComparison.Ordinal),
+            updatedTest.IndexOf("requirementId=\"REQ-SAMPLE-0002\"", StringComparison.Ordinal));
+        Assert.IsLessThan(
+            updatedTest.IndexOf("[Requirement(\"REQ-SAMPLE-0003\")]", StringComparison.Ordinal),
+            updatedTest.IndexOf("requirementId=\"REQ-SAMPLE-0003\"", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -75,7 +144,9 @@ public class QualityServiceTests
     {
         using var repo = CreateFixtureRepo(includeRequirementSpec: true);
         var specPath = Path.Combine(repo.Path, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md");
+        var testPath = Path.Combine(repo.Path, "tests", "Sample.Tests", "WidgetTests.cs");
         var original = File.ReadAllText(specPath);
+        var originalTest = File.ReadAllText(testPath);
 
         _ = QualityService.Sync(
             repo.Path,
@@ -84,10 +155,13 @@ public class QualityServiceTests
                 "artifacts/raw/test-results",
                 "artifacts/raw/coverage",
                 null,
+                true,
                 true));
 
         var after = File.ReadAllText(specPath);
         Assert.AreEqual(original, after);
+        var afterTest = File.ReadAllText(testPath);
+        Assert.AreEqual(originalTest, afterTest);
     }
 
     [TestMethod]
@@ -462,6 +536,62 @@ public class QualityServiceTests
                 </package>
               </packages>
             </coverage>
+            """);
+    }
+
+    private static void WriteRequirementCommentSpec(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.md"), """
+            ---
+            artifact_id: SPEC-SAMPLE-0001
+            artifact_type: specification
+            title: Sample requirement comments
+            domain: SAMPLE
+            capability: quality
+            status: draft
+            owner: platform
+            ---
+
+            # SPEC-SAMPLE-0001 - Sample requirement comments
+
+            ## REQ-SAMPLE-0004 Widget class requirement
+            The widget test class MUST be documented with generated requirement comments.
+
+            ## REQ-SAMPLE-0001 Adds numbers requirement
+            The system MUST verify addition behavior.
+
+            ## REQ-SAMPLE-0002 Handles zero requirement
+            The system MUST document zero handling.
+
+            ## REQ-SAMPLE-0003 Handles zero fallback requirement
+            The system MUST document the fallback path.
+            """);
+    }
+
+    private static void WriteRequirementCommentSource(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "tests", "Sample.Tests", "WidgetTests.cs"), """
+            using Xunit;
+
+            namespace Sample.Tests;
+
+            [Requirement("REQ-SAMPLE-0004")]
+            public class WidgetTests
+            {
+                [Fact]
+                [Trait("Category", "Positive")]
+                [Requirement("REQ-SAMPLE-0001")]
+                public void Adds_numbers()
+                {
+                }
+
+                [Requirement("REQ-SAMPLE-0002")]
+                [Requirement("REQ-SAMPLE-0003")]
+                [Theory]
+                public void Handles_zero()
+                {
+                }
+            }
             """);
     }
 

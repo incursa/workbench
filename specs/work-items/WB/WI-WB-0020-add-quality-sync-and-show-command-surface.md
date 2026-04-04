@@ -12,6 +12,7 @@ addresses:
   - REQ-QE-0004
   - REQ-QE-0005
   - REQ-QE-0006
+  - REQ-QE-0007
 design_links:
   - ARC-WB-0005
 verification_links:
@@ -47,7 +48,8 @@ Workbench's existing sync/show and JSON-envelope conventions.
 ## Planned Changes
 
 - `workbench quality sync` emits normalized artifacts, backfills canonical
-  requirement trace blocks from discovered tests, and writes a standard JSON
+  requirement trace blocks from discovered tests, optionally refreshes generated
+  requirement-comment blocks in test source files, and writes a standard JSON
   summary envelope.
 - `workbench quality show` defaults to the latest quality report and can return
   selected artifacts in table or JSON form.
@@ -76,6 +78,7 @@ Addresses:
 - [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 - [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 - [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0007`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 Uses Design:
 

@@ -77,6 +77,19 @@ Notes:
 - keep raw TRX and Cobertura files as inputs, not the canonical record
 - preserve source paths and generation metadata in the normalized output
 
+## REQ-QE-0007 Generate inline requirement comments
+When requirement comment synchronization is enabled, the quality sync command MUST synchronize generated XML-style requirement comment blocks into matching test source files, identify each block by requirement ID, refresh the block text from the canonical requirement clause, and remove stale generated blocks when the associated requirement attributes are removed.
+
+Trace:
+- Implemented By:
+  - [`WI-WB-0020`](../../work-items/WB/WI-WB-0020-add-quality-sync-and-show-command-surface.md)
+- Related:
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
+
+Notes:
+- generated blocks live beside `[Requirement]` attributes on classes or methods
+- generated blocks are auto-generated and should be treated as read-only
+
 ## REQ-QE-0003 Render normalized artifacts for inspection
 The quality show command MUST render the latest normalized report or a selected normalized artifact instead of requiring manual parsing of raw files.
 

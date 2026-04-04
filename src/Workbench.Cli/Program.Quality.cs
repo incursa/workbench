@@ -32,11 +32,16 @@ public partial class Program
         {
             Description = "Compute the quality artifacts without writing files."
         };
+        var syncRequirementCommentsOption = new Option<bool>("--sync-requirement-comments")
+        {
+            Description = "Synchronize generated XML-style requirement comment blocks into test source files."
+        };
         syncCommand.Options.Add(contractOption);
         syncCommand.Options.Add(resultsOption);
         syncCommand.Options.Add(coverageOption);
         syncCommand.Options.Add(outDirOption);
         syncCommand.Options.Add(dryRunOption);
+        syncCommand.Options.Add(syncRequirementCommentsOption);
         syncCommand.SetAction(parseResult =>
         {
             try
@@ -60,7 +65,8 @@ public partial class Program
                         parseResult.GetValue(resultsOption),
                         parseResult.GetValue(coverageOption),
                         parseResult.GetValue(outDirOption),
-                        parseResult.GetValue(dryRunOption)));
+                        parseResult.GetValue(dryRunOption),
+                        parseResult.GetValue(syncRequirementCommentsOption)));
 
                 if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
                 {
@@ -72,6 +78,18 @@ public partial class Program
                     Console.WriteLine($"Results: {result.Data.Results.Status} ({result.Data.Results.Passed} passed, {result.Data.Results.Failed} failed, {result.Data.Results.Skipped} skipped)");
                     Console.WriteLine($"Coverage: {(result.Data.Coverage.Available ? $"line {result.Data.Coverage.LineRate:P1}, branch {result.Data.Coverage.BranchRate:P1}" : "no data")}");
                     Console.WriteLine($"Report: {result.Data.Report.Status} with {result.Data.Report.Findings} findings");
+                    if (result.Data.TraceSync is not null)
+                    {
+                        Console.WriteLine($"Trace sync: specs {result.Data.TraceSync.Specifications.FilesUpdated} files, {result.Data.TraceSync.Specifications.RequirementsUpdated} requirements");
+                        if (result.Data.TraceSync.TestRequirementComments is null)
+                        {
+                            Console.WriteLine("Requirement comments: not requested");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Requirement comments: {result.Data.TraceSync.TestRequirementComments.FilesUpdated} files, {result.Data.TraceSync.TestRequirementComments.RequirementsUpdated} requirements");
+                        }
+                    }
                     Console.WriteLine($"Artifacts: {result.Data.Report.JsonPath}");
                     Console.WriteLine($"Summary: {result.Data.Report.MarkdownPath}");
                     if (result.Data.Warnings.Count > 0)

@@ -241,8 +241,17 @@ public sealed record QualitySyncData(
     [property: JsonPropertyName("results")] QualitySyncResultsData Results,
     [property: JsonPropertyName("coverage")] QualitySyncCoverageData Coverage,
     [property: JsonPropertyName("report")] QualitySyncReportData Report,
+    [property: JsonPropertyName("traceSync")] QualitySyncTraceSyncData? TraceSync,
     [property: JsonPropertyName("warnings")] IList<string> Warnings,
     [property: JsonPropertyName("dryRun")] bool DryRun);
+
+public sealed record QualitySyncTraceSyncTargetData(
+    [property: JsonPropertyName("filesUpdated")] int FilesUpdated,
+    [property: JsonPropertyName("requirementsUpdated")] int RequirementsUpdated);
+
+public sealed record QualitySyncTraceSyncData(
+    [property: JsonPropertyName("specifications")] QualitySyncTraceSyncTargetData Specifications,
+    [property: JsonPropertyName("testRequirementComments")] QualitySyncTraceSyncTargetData? TestRequirementComments);
 
 public sealed record QualitySyncOutput(
     [property: JsonPropertyName("ok")] bool Ok,

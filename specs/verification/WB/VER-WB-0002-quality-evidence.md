@@ -12,6 +12,7 @@ verifies:
   - REQ-QE-0004
   - REQ-QE-0005
   - REQ-QE-0006
+  - REQ-QE-0007
 related_artifacts:
   - SPEC-QA-QUALITY-EVIDENCE
   - ARC-WB-0005
@@ -21,7 +22,7 @@ related_artifacts:
 
 ## Scope
 
-Authored testing intent, normalized test inventory, canonical requirement trace backfill, run summaries, coverage summaries, and quality report generation.
+Authored testing intent, normalized test inventory, canonical requirement trace backfill, inline generated requirement comments in test source files, run summaries, coverage summaries, and quality report generation.
 
 ## Requirements Verified
 
@@ -31,6 +32,7 @@ Authored testing intent, normalized test inventory, canonical requirement trace 
 - [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 - [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 - [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0007`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Verification Method
 
@@ -44,7 +46,7 @@ Documentation review, repository validation, and targeted command checks.
 
 1. Review the linked spec and architecture artifacts.
 2. Run the repo validation and command-surface checks.
-3. Confirm a non-dry-run quality sync backfills canonical requirement trace refs and a dry-run sync leaves requirement docs unchanged.
+3. Confirm a non-dry-run quality sync backfills canonical requirement trace refs, refreshes generated requirement comments when requested, and a dry-run sync leaves requirement docs and test sources unchanged.
 4. Confirm the expected files, paths, and outputs exist.
 
 ## Expected Result

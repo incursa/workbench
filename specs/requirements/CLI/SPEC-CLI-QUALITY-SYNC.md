@@ -41,7 +41,8 @@ recursively when directories are supplied and ignores unrelated files.
 ## REQ-CLI-QUALITY-SYNC-0004 Output directory scope
 
 `quality sync` MUST write generated artifacts only beneath the requested
-output directory.
+output directory, except for explicitly requested source updates such as
+requirement-comment synchronization in test files.
 
 ## REQ-CLI-QUALITY-SYNC-0005 Raw evidence preservation
 
@@ -55,3 +56,10 @@ generated quality report.
 ## REQ-CLI-QUALITY-SYNC-0007 Machine-readable output
 
 `quality sync` MUST support machine-readable output when requested.
+
+## REQ-CLI-QUALITY-SYNC-0008 Requirement comment sync option
+
+`quality sync` MUST accept `--sync-requirement-comments` to enable generated
+XML-style requirement comment blocks beside matching test requirement
+attributes in source files and MUST leave those source files unchanged when
+the option is not set.
