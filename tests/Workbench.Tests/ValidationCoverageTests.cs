@@ -7,6 +7,7 @@ namespace Workbench.Tests;
 public class ValidationCoverageTests
 {
     [TestMethod]
+    [TestCategory("Positive")]
     public void ValidateRepo_ValidCanonicalRepo_ReturnsNoErrors()
     {
         using var repo = CreateRepoWithSchemas();
@@ -126,6 +127,7 @@ public class ValidationCoverageTests
     }
 
     [TestMethod]
+    [TestCategory("Positive")]
     public void ValidateRepo_CoreProfile_AllowsMissingDownstreamTrace()
     {
         using var repo = CreateRepoWithSchemas();
@@ -152,6 +154,7 @@ public class ValidationCoverageTests
     }
 
     [TestMethod]
+    [TestCategory("Negative")]
     public void ValidateRepo_TraceableProfile_MissingDownstreamTrace_Fails()
     {
         using var repo = CreateRepoWithSchemas();
@@ -181,6 +184,7 @@ public class ValidationCoverageTests
     }
 
     [TestMethod]
+    [TestCategory("Negative")]
     public void ValidateRepo_TraceableProfile_UnresolvedDirectTraceRefs_Fail()
     {
         using var repo = CreateRepoWithSchemas();
@@ -214,6 +218,7 @@ public class ValidationCoverageTests
     }
 
     [TestMethod]
+    [TestCategory("Positive")]
     public void ValidateRepo_TraceableProfile_CompleteResolvedGraph_Passes()
     {
         using var repo = CreateRepoWithSchemas();

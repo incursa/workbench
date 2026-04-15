@@ -19,7 +19,11 @@ may still reference the published remote schema URL for editor assistance and
 external tooling, but Workbench does not depend on a repository-local schema
 copy. Legacy Markdown with front matter is still supported for repo docs and
 older local content, but when a canonical JSON artifact exists beside a
-Markdown sibling, Workbench treats the JSON file as the authoritative source.
+Markdown sibling, Workbench treats the JSON file as the authoritative source
+and ignores the rendered companion during canonical validation. Workbench also
+normalizes current repo-native `coverage` blocks and `status: "landed"`
+artifacts before schema validation so repos can validate without a one-time
+rewrite.
 
 ## Operating model
 
@@ -69,6 +73,8 @@ Markdown sibling, Workbench treats the JSON file as the authoritative source.
 - `specs/work-items/`: canonical work items and indexes.
 - `specs/templates/`: canonical copy-ready templates.
 - `specs/schemas/`: JSON schemas for canonical front matter and trace blocks.
+- `fuzz/`: SharpFuzz harnesses for parser and canonical JSON intake code.
+- `benchmarks/`: permanent BenchmarkDotNet suites for parser and validation hot paths.
 - `quality/`: local quality-intent inputs.
 - `assets/`: static assets used by docs or tooling.
 - `artifacts/`: build outputs and local artifacts.
@@ -101,10 +107,22 @@ Run tests:
 dotnet test --solution Workbench.slnx
 ```
 
+Run fuzz harnesses:
+
+```bash
+dotnet build fuzz/Workbench.Fuzz.csproj -c Release
+```
+
+Run benchmarks:
+
+```bash
+dotnet run -c Release --project benchmarks/Workbench.Benchmarks.csproj -- --job Dry --filter "*CanonicalValidationBenchmarks*"
+```
+
 Validate canonical JSON artifacts against the schema snapshot pinned into Workbench:
 
 ```powershell
-pwsh -File scripts/Validate-SpecTraceJson.ps1 -RepoRoot C:\path\to\repo -Profiles core,traceable
+pwsh -File scripts/Test-SpecTraceRepository.ps1 -RepoRoot C:\path\to\repo -Profiles @('core', 'traceable')
 ```
 
 Run unit tests only:

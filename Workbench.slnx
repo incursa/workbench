@@ -4,6 +4,12 @@
     <Project Path="src/Workbench.Cli/Workbench.Cli.csproj" />
     <Project Path="src/Workbench/Workbench.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Workbench.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/fuzz/">
+    <Project Path="fuzz/Workbench.Fuzz.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Workbench.Tests/Workbench.Tests.csproj" />
     <Project Path="tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj" />

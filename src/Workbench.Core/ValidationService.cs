@@ -87,6 +87,12 @@ public static class ValidationService
                 {
                     continue;
                 }
+
+                if (File.Exists(Path.ChangeExtension(file, ".json")))
+                {
+                    continue;
+                }
+
                 items.Add(new WorkItemRecord(file, true));
             }
         }

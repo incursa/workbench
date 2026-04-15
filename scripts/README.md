@@ -4,7 +4,8 @@ Helper scripts for canonical SpecTrace validation, packaging, and release automa
 
 ## Canonical JSON
 
-- [`scripts/Validate-SpecTraceJson.ps1`](Validate-SpecTraceJson.ps1): validates a target repository's canonical JSON artifacts against the SpecTrace schema snapshot pinned into the local Workbench build. Optionally syncs navigation after validation.
+- [`scripts/Test-SpecTraceRepository.ps1`](Test-SpecTraceRepository.ps1): supported front door for validating a target repository's canonical JSON artifacts against the SpecTrace schema snapshot pinned into the local Workbench build. Same-stem rendered Markdown companions are allowed and ignored when JSON exists beside them. Repo-native requirement `coverage` blocks and `status: "landed"` artifacts are normalized during validation. Optionally syncs navigation after validation.
+- [`scripts/Validate-SpecTraceJson.ps1`](Validate-SpecTraceJson.ps1): compatibility wrapper for older callers. Delegates to [`scripts/Test-SpecTraceRepository.ps1`](Test-SpecTraceRepository.ps1).
 
 ## Testing
 

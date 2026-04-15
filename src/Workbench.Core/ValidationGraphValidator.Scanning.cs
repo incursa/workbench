@@ -189,22 +189,22 @@ internal static partial class ValidationGraphValidator
         List<string> scopePrefixes)
     {
         var shouldEmit = ShouldEmitForScope(source.SourceRepoRelativePath, scopePrefixes);
-        CanonicalArtifactModel artifact;
-        try
+        var load = CanonicalArtifactJsonLoader.LoadForValidation(repoRoot, source.SourcePath);
+        if (shouldEmit)
         {
-            artifact = CanonicalArtifactJsonLoader.Load(repoRoot, source.SourcePath);
-        }
-        catch (Exception ex)
-        {
-            if (shouldEmit)
+            foreach (var error in load.Errors)
             {
                 result.AddError(
                     ValidationProfiles.Core,
                     ValidationCategories.Schema,
-                    ex.ToString(),
+                    StripLocationPrefix(error, source.SourcePath),
                     file: source.SourcePath);
             }
+        }
 
+        var artifact = load.Artifact;
+        if (artifact is null)
+        {
             return;
         }
 

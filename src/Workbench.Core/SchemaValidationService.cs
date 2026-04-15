@@ -1,7 +1,8 @@
 // JSON schema validation for config and front matter.
 // Assumes canonical Spec Trace schemas live under specs/schemas/ and repo config schemas under schemas/.
-#pragma warning disable S1144
+#pragma warning disable S1144, ERP022
 using System.Collections;
+using System.Text.Json.Nodes;
 using Json.Schema;
 
 namespace Workbench.Core;
@@ -161,9 +162,14 @@ public static class SchemaValidationService
     {
         _ = repoRoot;
 
-        return json is null
-            ? ValidateJsonAgainstSchema(artifactPath, () => pinnedCanonicalArtifactSchema.Value, artifactPath)
-            : ValidateJsonAgainstSchema(json, () => pinnedCanonicalArtifactSchema.Value, artifactPath, jsonIsContent: true);
+        var jsonText = json ?? File.ReadAllText(artifactPath);
+        var normalizedJson = NormalizeCanonicalArtifactJson(jsonText);
+
+        return ValidateJsonAgainstSchema(
+            normalizedJson,
+            () => pinnedCanonicalArtifactSchema.Value,
+            artifactPath,
+            jsonIsContent: true);
     }
 
     public static IList<string> ValidateJsonContent(string repoRoot, string schemaRelativePath, string context, string json)
@@ -229,7 +235,134 @@ public static class SchemaValidationService
         using var stream = assembly.GetManifestResourceStream(PinnedCanonicalArtifactSchemaResourceName)
             ?? throw new InvalidOperationException($"Pinned canonical artifact schema resource '{PinnedCanonicalArtifactSchemaResourceName}' was not found.");
         using var reader = new StreamReader(stream);
-        return JsonSchema.FromText(reader.ReadToEnd());
+        var schema = JsonNode.Parse(reader.ReadToEnd()) as JsonObject
+            ?? throw new InvalidOperationException($"Pinned canonical artifact schema resource '{PinnedCanonicalArtifactSchemaResourceName}' did not contain a JSON object.");
+
+        ApplyPinnedSchemaCompatibility(schema);
+        return JsonSchema.FromText(schema.ToJsonString());
+    }
+
+    internal static string NormalizeCanonicalArtifactJson(string json)
+    {
+        try
+        {
+            var root = JsonNode.Parse(json) as JsonObject;
+            if (root is null)
+            {
+                return json;
+            }
+
+            if (!TryNormalizeLandedStatus(root))
+            {
+                return json;
+            }
+
+            return root.ToJsonString();
+        }
+        catch
+        {
+            return json;
+        }
+    }
+
+    private static void ApplyPinnedSchemaCompatibility(JsonObject schema)
+    {
+        if (schema["$defs"] is not JsonObject defs)
+        {
+            return;
+        }
+
+        if (!defs.ContainsKey("coverageStatus"))
+        {
+            defs["coverageStatus"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["enum"] = new JsonArray
+                {
+                    "required",
+                    "optional",
+                    "not_applicable",
+                    "deferred"
+                }
+            };
+        }
+
+        if (!defs.ContainsKey("requirementCoverage"))
+        {
+            defs["requirementCoverage"] = new JsonObject
+            {
+                ["type"] = "object",
+                ["description"] = "Expected coverage dimensions for a requirement. This is authored expectation metadata, not actual test, code, or runtime evidence.",
+                ["required"] = new JsonArray
+                {
+                    "positive",
+                    "negative",
+                    "edge",
+                    "fuzz"
+                },
+                ["properties"] = new JsonObject
+                {
+                    ["positive"] = new JsonObject { ["$ref"] = "#/$defs/coverageStatus" },
+                    ["negative"] = new JsonObject { ["$ref"] = "#/$defs/coverageStatus" },
+                    ["edge"] = new JsonObject { ["$ref"] = "#/$defs/coverageStatus" },
+                    ["fuzz"] = new JsonObject { ["$ref"] = "#/$defs/coverageStatus" }
+                },
+                ["patternProperties"] = new JsonObject
+                {
+                    ["^x_[A-Za-z0-9_]+$"] = new JsonObject()
+                },
+                ["additionalProperties"] = false
+            };
+        }
+
+        if (defs["requirement"] is JsonObject requirement &&
+            requirement["properties"] is JsonObject properties &&
+            !properties.ContainsKey("coverage"))
+        {
+            properties["coverage"] = new JsonObject
+            {
+                ["$ref"] = "#/$defs/requirementCoverage"
+            };
+        }
+    }
+
+    private static bool TryNormalizeLandedStatus(JsonObject artifact)
+    {
+        if (!artifact.TryGetPropertyValue("status", out var statusNode))
+        {
+            return false;
+        }
+
+        string? status;
+        try
+        {
+            status = statusNode?.GetValue<string>();
+        }
+        catch
+        {
+            return false;
+        }
+
+        if (!string.Equals(status, "landed", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var artifactType = artifact.TryGetPropertyValue("artifact_type", out var artifactTypeNode)
+            ? artifactTypeNode?.GetValue<string>()
+            : null;
+
+        var normalizedStatus = artifactType?.ToLowerInvariant() switch
+        {
+            "verification" => "passed",
+            "work_item" => "complete",
+            "architecture" => "implemented",
+            "specification" => "implemented",
+            _ => "implemented"
+        };
+
+        artifact["status"] = normalizedStatus;
+        return true;
     }
 
     private static void CollectErrors(EvaluationResults results, List<string> errors, string context)

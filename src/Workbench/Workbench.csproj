@@ -15,8 +15,8 @@
     <PackageTags>dotnet-tool;cli;documentation;work-items;developer-productivity</PackageTags>
     <PackageProjectUrl>https://github.com/incursa/workbench</PackageProjectUrl>
     <RepositoryUrl>https://github.com/incursa/workbench</RepositoryUrl>
-    <Version>0.1.0</Version>
-    <PackageVersion>0.1.0</PackageVersion>
+    <Version>0.1.1</Version>
+    <PackageVersion>0.1.1</PackageVersion>
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
     <IsPackable>true</IsPackable>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
