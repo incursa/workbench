@@ -140,6 +140,83 @@ public class QualityServiceTests
     }
 
     [TestMethod]
+    public void Sync_SyncRequirementComments_InsertsGeneratedRequirementBlocks_FromJsonSpec()
+    {
+        using var repo = CreateFixtureRepo();
+        WriteRequirementCommentJsonSpec(repo.Path);
+        WriteRequirementCommentSource(repo.Path);
+
+        var result = QualityService.Sync(
+            repo.Path,
+            new QualitySyncOptions(
+                null,
+                "artifacts/raw/test-results",
+                "artifacts/raw/coverage",
+                null,
+                false,
+                true));
+
+        Assert.IsNotNull(result.Data.TraceSync);
+        Assert.AreEqual(0, result.Data.TraceSync!.Specifications.FilesUpdated);
+        Assert.IsNotNull(result.Data.TraceSync.TestRequirementComments);
+        Assert.AreEqual(1, result.Data.TraceSync.TestRequirementComments!.FilesUpdated);
+        Assert.AreEqual(4, result.Data.TraceSync.TestRequirementComments.RequirementsUpdated);
+
+        var testPath = Path.Combine(repo.Path, "tests", "Sample.Tests", "WidgetTests.cs");
+        var updatedTest = File.ReadAllText(testPath);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0004\">The widget test class MUST be documented with generated requirement comments.",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0001\">The system MUST verify addition behavior.",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0002\">The system MUST document zero handling.",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0003\">The system MUST document the fallback path.",
+            StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Sync_SyncRequirementComments_InsertsGeneratedRequirementBlocks_ForEmptyTestFile()
+    {
+        using var repo = CreateFixtureRepo();
+        WriteRequirementCommentJsonSpec(repo.Path);
+        WriteRequirementCommentEmptySource(repo.Path);
+
+        var result = QualityService.Sync(
+            repo.Path,
+            new QualitySyncOptions(
+                null,
+                "artifacts/raw/test-results",
+                "artifacts/raw/coverage",
+                null,
+                false,
+                true));
+
+        Assert.IsNotNull(result.Data.TraceSync);
+        Assert.IsNotNull(result.Data.TraceSync.TestRequirementComments);
+        Assert.AreEqual(1, result.Data.TraceSync.TestRequirementComments!.FilesUpdated);
+        Assert.AreEqual(1, result.Data.TraceSync.TestRequirementComments.RequirementsUpdated);
+
+        var testPath = Path.Combine(repo.Path, "tests", "Sample.Tests", "WidgetTests.cs");
+        var updatedTest = File.ReadAllText(testPath);
+        StringAssert.Contains(
+            updatedTest,
+            "<workbench-requirements generated=\"true\" source=\"workbench quality sync\">",
+            StringComparison.Ordinal);
+        StringAssert.Contains(
+            updatedTest,
+            "requirementId=\"REQ-SAMPLE-0004\">The widget test class MUST be documented with generated requirement comments.",
+            StringComparison.Ordinal);
+    }
+
+    [TestMethod]
     public void Sync_DryRunDoesNotMutateCanonicalSpecTraceArtifacts()
     {
         using var repo = CreateFixtureRepo(includeRequirementSpec: true);
@@ -568,6 +645,53 @@ public class QualityServiceTests
             """);
     }
 
+    private static void WriteRequirementCommentJsonSpec(string repoRoot)
+    {
+        Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE"));
+        File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-0001.json"), """
+            {
+              "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
+              "artifact_id": "SPEC-SAMPLE-0001",
+              "artifact_type": "specification",
+              "title": "Sample requirement comments",
+              "domain": "SAMPLE",
+              "capability": "quality",
+              "status": "draft",
+              "owner": "platform",
+              "purpose": "Exercise JSON requirement catalog loading for generated comments.",
+              "scope": "Keep the sample requirement comments synchronized from canonical JSON.",
+              "context": "The sync path should read requirement statements from JSON specification files.",
+              "requirements": [
+                {
+                  "id": "REQ-SAMPLE-0004",
+                  "title": "Widget class requirement",
+                  "statement": "The widget test class MUST be documented with generated requirement comments."
+                },
+                {
+                  "id": "REQ-SAMPLE-0001",
+                  "title": "Adds numbers requirement",
+                  "statement": "The system MUST verify addition behavior.",
+                  "trace": {
+                    "x_test_refs": [
+                      "tests/Sample.Tests/WidgetTests.cs::Adds_numbers"
+                    ]
+                  }
+                },
+                {
+                  "id": "REQ-SAMPLE-0002",
+                  "title": "Handles zero requirement",
+                  "statement": "The system MUST document zero handling."
+                },
+                {
+                  "id": "REQ-SAMPLE-0003",
+                  "title": "Handles zero fallback requirement",
+                  "statement": "The system MUST document the fallback path."
+                }
+              ]
+            }
+            """);
+    }
+
     private static void WriteRequirementCommentSource(string repoRoot)
     {
         File.WriteAllText(Path.Combine(repoRoot, "tests", "Sample.Tests", "WidgetTests.cs"), """
@@ -591,6 +715,20 @@ public class QualityServiceTests
                 public void Handles_zero()
                 {
                 }
+            }
+            """);
+    }
+
+    private static void WriteRequirementCommentEmptySource(string repoRoot)
+    {
+        File.WriteAllText(Path.Combine(repoRoot, "tests", "Sample.Tests", "WidgetTests.cs"), """
+            using Xunit;
+
+            namespace Sample.Tests;
+
+            [Requirement("REQ-SAMPLE-0004")]
+            public class WidgetTests
+            {
             }
             """);
     }

@@ -1,9 +1,15 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Workbench.Core;
 
 internal static class RequirementTraceSyncService
 {
+    private static readonly JsonSerializerOptions canonicalArtifactJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
     private static readonly Regex requirementAttributeRegex = new(
         @"^\s*\[\s*Requirement(?:Attribute)?\s*\(\s*""(?<value>[^""]+)""\s*\)\s*\]",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
@@ -71,7 +77,7 @@ internal static class RequirementTraceSyncService
             return catalog;
         }
 
-        foreach (var file in Directory.EnumerateFiles(requirementsRoot, "*.md", SearchOption.AllDirectories).OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+        foreach (var file in EnumerateRequirementCatalogFiles(requirementsRoot))
         {
             var repoRelative = SpecTraceLayout.NormalizePath(Path.GetRelativePath(repoRoot, file));
             if (!SpecTraceLayout.IsSpecificationRootFile(repoRelative))
@@ -81,18 +87,9 @@ internal static class RequirementTraceSyncService
 
             try
             {
-                var content = File.ReadAllText(file);
-                if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
-                {
-                    warnings.Add($"{repoRelative}: requirement catalog load failed: {error}");
-                    continue;
-                }
-
-                var requirementClauses = SpecTraceMarkdown.ParseRequirementClauses(frontMatter!.Body, out var parseErrors);
-                foreach (var parseError in parseErrors)
-                {
-                    warnings.Add($"{repoRelative}: {parseError}");
-                }
+                var requirementClauses = file.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+                    ? LoadRequirementClausesFromJson(file, repoRelative, warnings)
+                    : LoadRequirementClausesFromMarkdown(file, repoRelative, warnings);
 
                 foreach (var clause in requirementClauses)
                 {
@@ -112,6 +109,111 @@ internal static class RequirementTraceSyncService
         }
 
         return catalog;
+    }
+
+    private static IReadOnlyList<string> EnumerateRequirementCatalogFiles(string requirementsRoot)
+    {
+        return Directory.EnumerateFiles(requirementsRoot, "*", SearchOption.AllDirectories)
+            .Where(path =>
+            {
+                var extension = Path.GetExtension(path);
+                return extension.Equals(".md", StringComparison.OrdinalIgnoreCase)
+                    || extension.Equals(".json", StringComparison.OrdinalIgnoreCase);
+            })
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IReadOnlyList<SpecTraceMarkdown.RequirementClause> LoadRequirementClausesFromMarkdown(
+        string file,
+        string repoRelativePath,
+        ICollection<string> warnings)
+    {
+        var content = File.ReadAllText(file);
+        if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
+        {
+            warnings.Add($"{repoRelativePath}: requirement catalog load failed: {error}");
+            return Array.Empty<SpecTraceMarkdown.RequirementClause>();
+        }
+
+        var requirementClauses = SpecTraceMarkdown.ParseRequirementClauses(frontMatter!.Body, out var parseErrors);
+        foreach (var parseError in parseErrors)
+        {
+            warnings.Add($"{repoRelativePath}: {parseError}");
+        }
+
+        return requirementClauses;
+    }
+
+    private static IReadOnlyList<SpecTraceMarkdown.RequirementClause> LoadRequirementClausesFromJson(
+        string file,
+        string repoRelativePath,
+        ICollection<string> warnings)
+    {
+        var content = File.ReadAllText(file);
+        CanonicalArtifactModel? artifact;
+
+        try
+        {
+            artifact = JsonSerializer.Deserialize<CanonicalArtifactModel>(content, canonicalArtifactJsonOptions);
+        }
+        catch (Exception ex)
+        {
+            warnings.Add($"{repoRelativePath}: requirement catalog load failed: {ex}");
+            return Array.Empty<SpecTraceMarkdown.RequirementClause>();
+        }
+
+        if (artifact is null)
+        {
+            warnings.Add($"{repoRelativePath}: requirement catalog load failed: canonical JSON returned no payload.");
+            return Array.Empty<SpecTraceMarkdown.RequirementClause>();
+        }
+
+        if (artifact.Requirements is null || artifact.Requirements.Count == 0)
+        {
+            warnings.Add($"{repoRelativePath}: requirement catalog load failed: no requirements were found.");
+            return Array.Empty<SpecTraceMarkdown.RequirementClause>();
+        }
+
+        var clauses = new List<SpecTraceMarkdown.RequirementClause>();
+        foreach (var requirement in artifact.Requirements)
+        {
+            if (requirement is null)
+            {
+                warnings.Add($"{repoRelativePath}: requirement catalog load failed: an empty requirement entry was found.");
+                continue;
+            }
+
+            var requirementId = requirement.Id?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(requirementId))
+            {
+                warnings.Add($"{repoRelativePath}: requirement catalog load failed: a requirement entry is missing an id.");
+                continue;
+            }
+
+            var requirementText = NormalizeRequirementCommentText(requirement.Statement ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(requirementText))
+            {
+                warnings.Add($"{repoRelativePath}: requirement '{requirementId}' does not contain a statement.");
+                continue;
+            }
+
+            var title = NormalizeRequirementCommentText(requirement.Title ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = requirementId;
+            }
+
+            clauses.Add(new SpecTraceMarkdown.RequirementClause(
+                requirementId,
+                title,
+                requirementText,
+                string.Empty,
+                null,
+                null));
+        }
+
+        return clauses;
     }
 
     internal static RequirementTraceSyncResult SyncRequirementTestRefs(
@@ -171,14 +273,7 @@ internal static class RequirementTraceSyncService
         var filesUpdated = 0;
         var requirementsUpdated = 0;
 
-        var sourceFiles = inventory.Tests
-            .Select(test => test.SourcePath)
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Select(path => NormalizePath(repoRoot, path!))
-            .Where(File.Exists)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var sourceFiles = CollectRequirementCommentSourceFiles(repoRoot, inventory);
 
         foreach (var file in sourceFiles)
         {
@@ -213,6 +308,56 @@ internal static class RequirementTraceSyncService
         }
 
         return new RequirementCommentSyncResult(filesUpdated, requirementsUpdated, warnings);
+    }
+
+    private static IReadOnlyList<string> CollectRequirementCommentSourceFiles(string repoRoot, TestInventory inventory)
+    {
+        var sourceFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var test in inventory.Tests)
+        {
+            AddRequirementCommentSourceFile(repoRoot, test.SourcePath, sourceFiles);
+        }
+
+        foreach (var project in inventory.Projects)
+        {
+            AddProjectSourceFiles(repoRoot, project.ProjectPath, sourceFiles);
+        }
+
+        return sourceFiles
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static void AddProjectSourceFiles(string repoRoot, string projectPath, ISet<string> sourceFiles)
+    {
+        var normalizedProjectPath = NormalizePath(repoRoot, projectPath);
+        var projectDirectory = Path.GetDirectoryName(normalizedProjectPath);
+        if (string.IsNullOrWhiteSpace(projectDirectory) || !Directory.Exists(projectDirectory))
+        {
+            return;
+        }
+
+        foreach (var sourcePath in Directory.EnumerateFiles(projectDirectory, "*.cs", SearchOption.AllDirectories))
+        {
+            AddRequirementCommentSourceFile(repoRoot, sourcePath, sourceFiles);
+        }
+    }
+
+    private static void AddRequirementCommentSourceFile(string repoRoot, string? sourcePath, ISet<string> sourceFiles)
+    {
+        if (string.IsNullOrWhiteSpace(sourcePath))
+        {
+            return;
+        }
+
+        var normalizedSourcePath = NormalizePath(repoRoot, sourcePath);
+        if (!File.Exists(normalizedSourcePath) || IsGeneratedOrBuildPath(normalizedSourcePath))
+        {
+            return;
+        }
+
+        sourceFiles.Add(normalizedSourcePath);
     }
 
     private static string BackfillRequirementComments(
@@ -383,6 +528,15 @@ internal static class RequirementTraceSyncService
         }
 
         return filtered;
+    }
+
+    private static bool IsGeneratedOrBuildPath(string path)
+    {
+        var segments = path.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.None);
+        return segments.Any(segment =>
+            string.Equals(segment, "bin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(segment, "obj", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(segment, ".git", StringComparison.OrdinalIgnoreCase));
     }
 
     private static List<(int Start, int End)> FindRequirementCommentRegions(IReadOnlyList<string> lines)
