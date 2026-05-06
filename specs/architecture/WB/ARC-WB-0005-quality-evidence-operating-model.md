@@ -60,7 +60,8 @@ V1 rules:
 - `quality-report` compares authored truth and observed truth without replacing
   either one
 - Workbench exposes a small command surface centered on `workbench quality sync`
-  and `workbench quality show`
+  `workbench quality proof-health`, `workbench quality show`, and
+  `workbench quality attest`
 - the subsystem manages evidence and summaries, not CI orchestration, policy
   enforcement, or autonomous remediation
 
@@ -72,8 +73,11 @@ canonical observed record for current testing evidence.
 
 - Authored testing intent stored as repository content
 - Observed run and coverage artifacts normalized into generated outputs
-- Command surface centered on `quality sync` and `quality show`
+- Command surface centered on `quality sync`, `quality proof-health`,
+  `quality show`, and `quality attest`
 - Advisory reporting that compares intent to evidence
+- Read-only proof-health classification that compares authored requirement
+  coverage expectations to discovered requirement test traits
 
 ## Data and State Considerations
 

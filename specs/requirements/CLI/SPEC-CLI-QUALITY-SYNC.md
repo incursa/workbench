@@ -61,5 +61,5 @@ generated quality report.
 
 `quality sync` MUST accept `--sync-requirement-comments` to enable generated
 XML-style requirement comment blocks beside matching test requirement
-attributes in source files and MUST leave those source files unchanged when
-the option is not set.
+attributes in source files while leaving those source files unchanged when the
+option is not set.

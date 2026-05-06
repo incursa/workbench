@@ -9,6 +9,7 @@ owner: platform
 related_artifacts:
   - SPEC-CLI-SURFACE
   - SPEC-CLI-QUALITY-ATTEST
+  - SPEC-CLI-QUALITY-PROOF-HEALTH
   - SPEC-CLI-QUALITY-SHOW
   - SPEC-CLI-QUALITY-SYNC
   - WI-WB-0024
@@ -35,11 +36,12 @@ quality command and stay in sync with the live command tree.
 The `quality` group root MUST keep the generated report advisory rather than
 merge-blocking.
 
-## REQ-CLI-QUALITY-0003 Display, sync, and attest separation
+## REQ-CLI-QUALITY-0003 Display, proof-health, sync, and attest separation
 
-The `quality` family MUST keep `show`, `sync`, and `attest` separate so one
-displays normalized quality evidence, one ingests raw results, and one
-produces a derived attestation snapshot.
+The `quality` family MUST keep `show`, `proof-health`, `sync`, and `attest`
+separate so one displays normalized quality evidence, one classifies
+per-requirement proof health, one ingests raw results, and one produces a
+derived attestation snapshot.
 
 ## REQ-CLI-QUALITY-0004 Advisory handling
 
@@ -48,8 +50,8 @@ enforced merge gate by the command family itself.
 
 ## REQ-CLI-QUALITY-0005 Child exposure
 
-The `quality` index MUST expose `show`, `sync`, and `attest` as its documented
-children.
+The `quality` index MUST expose `show`, `proof-health`, `sync`, and `attest`
+as its documented children.
 
 ## REQ-CLI-QUALITY-0006 Derived snapshot boundary
 
@@ -59,5 +61,6 @@ does not mutate canonical requirements, work items, or verification artifacts.
 ## Command Family Catalog
 
 - [`SPEC-CLI-QUALITY-ATTEST`](SPEC-CLI-QUALITY-ATTEST.md)
+- [`SPEC-CLI-QUALITY-PROOF-HEALTH`](SPEC-CLI-QUALITY-PROOF-HEALTH.md)
 - [`SPEC-CLI-QUALITY-SHOW`](SPEC-CLI-QUALITY-SHOW.md)
 - [`SPEC-CLI-QUALITY-SYNC`](SPEC-CLI-QUALITY-SYNC.md)

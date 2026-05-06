@@ -197,10 +197,15 @@ Expected warnings:
 
 Workbench quality evidence is advisory in this repo. `workbench quality sync`
 normalizes raw test and coverage evidence into `artifacts/quality/testing/`.
+`workbench quality proof-health` is a read-only diagnostic that classifies
+per-requirement coverage contracts against discovered requirement test traits.
+Use `--default-required positive negative` to evaluate Markdown requirements
+against an explicit fallback policy without treating that policy as authored
+coverage metadata.
 `workbench quality attest` produces a read-only snapshot in
 `artifacts/quality/attestation/` that rolls up requirement coverage, trace
 completeness, direct refs, work-item status, verification status, and evidence
-health. Neither command mutates canonical trace or turns direct refs into
+health. These commands do not turn derived evidence into canonical proof or
 canonical downstream edges for canonical artifacts.
 
 Happy path:
@@ -210,6 +215,7 @@ dotnet tool restore
 pwsh -File scripts/testing/run-quality-evidence.ps1
 dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage
 dotnet tool run workbench quality show
+dotnet tool run workbench quality proof-health
 dotnet tool run workbench quality attest
 ```
 

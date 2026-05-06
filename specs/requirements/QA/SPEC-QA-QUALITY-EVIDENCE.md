@@ -30,15 +30,15 @@ V1 stays narrow:
 - authored testing intent remains a local contract under `quality/`
 - observed testing evidence is normalized into JSON and Markdown under
   `artifacts/quality/testing/`
-- Workbench exposes a small command surface centered on `quality sync` and
-  `quality show`
+- Workbench exposes a small command surface centered on `quality sync`,
+  `quality proof-health`, `quality show`, and `quality attest`
 
 ## Scope
 
 - normalize test inventory, TRX results, and coverage results, and backfill canonical requirement trace refs from discovered tests
 - generate a readable report and stable JSON artifacts
 - preserve authored intent separately from observed evidence
-- expose sync and show commands without turning Workbench into a CI/CD orchestrator
+- expose sync, proof-health, show, and attest commands without turning Workbench into a CI/CD orchestrator
 
 ## Context
 
@@ -146,6 +146,18 @@ Trace:
 
 Notes:
 - prefer local repo links where possible
+
+## REQ-QE-0008 Classify requirement proof health
+The quality workflow MUST provide a read-only per-requirement proof-health view that compares authored coverage expectations to discovered requirement test evidence without treating the classification as canonical proof.
+
+Trace:
+- Related:
+  - [`SPEC-CLI-QUALITY-PROOF-HEALTH`](../CLI/SPEC-CLI-QUALITY-PROOF-HEALTH.md)
+  - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
+
+Notes:
+- coverage expectations are authored metadata, not proof by themselves
+- proof-health classifications are derived diagnostics for humans and agents
 
 ## Open Questions
 

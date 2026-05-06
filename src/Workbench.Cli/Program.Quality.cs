@@ -288,16 +288,125 @@ public partial class Program
             }
         });
 
+        var proofHealthCommand = new Command("proof-health", "Classify per-requirement proof health from authored coverage contracts and discovered test evidence.");
+        var proofContractOption = new Option<string?>("--contract")
+        {
+            Description = "Authored testing intent contract path.",
+            DefaultValueFactory = _ => QualityService.DefaultContractPath
+        };
+        var proofScopeOption = new Option<string[]>("--scope")
+        {
+            Description = "Requirement ID, artifact ID, or repo-relative requirement path prefix to include.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var proofGapsOption = new Option<string[]>("--gaps")
+        {
+            Description = "Optional gap ledger file or directory to use for blocked uncovered requirements.",
+            AllowMultipleArgumentsPerToken = true
+        };
+        var defaultRequiredOption = new Option<string[]>("--default-required")
+        {
+            Description = "Evidence kind to require when a requirement has no authored coverage contract (positive|negative|edge|fuzz).",
+            AllowMultipleArgumentsPerToken = true
+        };
+        defaultRequiredOption.CompletionSources.Add("positive", "negative", "edge", "fuzz");
+        proofHealthCommand.Options.Add(proofContractOption);
+        proofHealthCommand.Options.Add(proofScopeOption);
+        proofHealthCommand.Options.Add(proofGapsOption);
+        proofHealthCommand.Options.Add(defaultRequiredOption);
+        proofHealthCommand.SetAction(parseResult =>
+        {
+            try
+            {
+                var repo = parseResult.GetValue(repoOption);
+                var format = parseResult.GetValue(formatOption) ?? "table";
+                var repoRoot = ResolveRepo(repo);
+                var resolvedFormat = ResolveFormat(format);
+                _ = WorkbenchConfig.Load(repoRoot, out var configError);
+                if (configError is not null)
+                {
+                    Console.WriteLine($"Config error: {configError}");
+                    SetExitCode(2);
+                    return;
+                }
+
+                var result = QualityProofHealthService.Analyze(
+                    repoRoot,
+                    new QualityProofHealthOptions(
+                        parseResult.GetValue(proofContractOption),
+                        (parseResult.GetValue(proofScopeOption) ?? Array.Empty<string>()).ToList(),
+                        (parseResult.GetValue(proofGapsOption) ?? Array.Empty<string>()).ToList(),
+                        (parseResult.GetValue(defaultRequiredOption) ?? Array.Empty<string>()).ToList()));
+
+                if (string.Equals(resolvedFormat, "json", StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteJson(new QualityProofHealthOutput(true, result.Data), WorkbenchJsonContext.Default.QualityProofHealthOutput);
+                }
+                else
+                {
+                    WriteQualityProofHealthTable(result.Data);
+                }
+
+                SetExitCode(0);
+            }
+            catch (Exception ex)
+            {
+                ReportError(ex);
+                SetExitCode(2);
+            }
+        });
+
         qualityCommand.Subcommands.Add(syncCommand);
         qualityCommand.Subcommands.Add(attestCommand);
         qualityCommand.Subcommands.Add(showCommand);
+        qualityCommand.Subcommands.Add(proofHealthCommand);
         qualityCommand.SetAction(parseResult =>
         {
-            Console.WriteLine("Use `workbench quality sync` to generate testing evidence, `workbench quality attest` to generate a repository evidence snapshot, or `workbench quality show` to inspect normalized artifacts.");
+            Console.WriteLine("Use `workbench quality sync` to generate testing evidence, `workbench quality proof-health` to classify requirement proof health, `workbench quality attest` to generate a repository evidence snapshot, or `workbench quality show` to inspect normalized artifacts.");
             SetExitCode(0);
         });
 
         return qualityCommand;
+    }
+
+    static void WriteQualityProofHealthTable(QualityProofHealthData data)
+    {
+        Console.WriteLine($"Requirements: {data.Summary.Requirements}");
+        if (data.Summary.States.Count > 0)
+        {
+            Console.WriteLine("States:");
+            foreach (var state in data.Summary.States)
+            {
+                Console.WriteLine($"- {state.Key}: {state.Value}");
+            }
+        }
+
+        if (data.Summary.WorkQueueTags.Count > 0)
+        {
+            Console.WriteLine("Work queue:");
+            foreach (var tag in data.Summary.WorkQueueTags)
+            {
+                Console.WriteLine($"- {tag.Key}: {tag.Value}");
+            }
+        }
+
+        var actionable = data.Requirements
+            .Where(requirement => !string.Equals(requirement.State, "trace_clean", StringComparison.OrdinalIgnoreCase))
+            .Take(10)
+            .ToList();
+        if (actionable.Count > 0)
+        {
+            Console.WriteLine("Actionable requirements:");
+            foreach (var requirement in actionable)
+            {
+                var missing = requirement.Evidence.Missing.Count == 0
+                    ? "none"
+                    : string.Join(", ", requirement.Evidence.Missing);
+                Console.WriteLine($"- {requirement.RequirementId}: {requirement.State} (missing: {missing})");
+            }
+        }
+
+        WriteQualityEntries("Warnings", data.Warnings);
     }
 
     static void WriteQualityTable(QualityShowData data)

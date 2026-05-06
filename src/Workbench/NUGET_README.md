@@ -12,6 +12,7 @@ It provides commands to:
 - create, update, and sync work items
 - link repository specs, architecture docs, verification artifacts, and work items
 - run repository validation and consistency checks
+- inspect repo-native quality evidence and per-requirement proof health
 - open a local browser UI for browsing and editing work items
 
 ## Installation
@@ -73,6 +74,12 @@ Sync specs, docs, and links:
 
 ```bash
 workbench doc sync --all
+```
+
+Inspect requirement proof health:
+
+```bash
+workbench quality proof-health
 ```
 
 ## Requirements

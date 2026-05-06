@@ -86,6 +86,7 @@ workbench <command> [options]
   - `workbench promote`: Create a work item, branch, and commit in one step.
   - `workbench quality`: Group: repo-native quality evidence commands.
     - `workbench quality attest`: Generate a derived repository evidence snapshot as HTML and JSON.
+    - `workbench quality proof-health`: Classify per-requirement proof health from authored coverage contracts and discovered test evidence.
     - `workbench quality show`: Read the latest normalized quality artifact or a selected evidence kind.
     - `workbench quality sync`: Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
   - `workbench scaffold`: Create the default folder structure, templates, and config.
@@ -534,6 +535,7 @@ Group: repo-native quality evidence commands.
 
 Subcommands:
 - `attest`: Generate a derived repository evidence snapshot as HTML and JSON.
+- `proof-health`: Classify per-requirement proof health from authored coverage contracts and discovered test evidence.
 - `show`: Read the latest normalized quality artifact or a selected evidence kind.
 - `sync`: Discover testing evidence, ingest normalized artifacts, and generate the current quality report.
 
@@ -552,6 +554,15 @@ Options:
 - `--manual-qa <manual-qa>`: Manual QA evidence file or directory root to inspect.
 - `--exec`: Run configured evidence refresh commands before generating the snapshot.
 - `--no-exec`: Do not execute configured evidence refresh commands.
+
+### `workbench quality proof-health`
+Classify per-requirement proof health from authored coverage contracts and discovered test evidence.
+
+Options:
+- `--contract <contract>`: Authored testing intent contract path.
+- `--scope <scope>`: Requirement ID, artifact ID, or repo-relative requirement path prefix to include.
+- `--gaps <gaps>`: Optional gap ledger file or directory to use for blocked uncovered requirements.
+- `--default-required <default-required>`: Evidence kind to require when a requirement has no authored coverage contract (positive|negative|edge|fuzz).
 
 ### `workbench quality show`
 Read the latest normalized quality artifact or a selected evidence kind.

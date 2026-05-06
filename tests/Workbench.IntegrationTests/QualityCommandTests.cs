@@ -178,6 +178,65 @@ public class QualityCommandTests
     }
 
     [TestMethod]
+    public void QualityProofHealth_JsonOutput_ClassifiesRequirementProofHealth()
+    {
+        using var repo = CreateFixtureRepo();
+        WriteProofHealthArtifacts(repo.Path);
+
+        var result = WorkbenchCli.Run(repo.Path, "quality", "proof-health", "--format", "json");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        using var json = JsonDocument.Parse(result.StdOut);
+        var data = json.RootElement.GetProperty("data");
+        Assert.AreEqual(4, data.GetProperty("summary").GetProperty("requirements").GetInt32());
+        var states = data.GetProperty("summary").GetProperty("states");
+        Assert.AreEqual(1, states.GetProperty("trace_clean").GetInt32());
+        Assert.AreEqual(1, states.GetProperty("partially_covered").GetInt32());
+        Assert.AreEqual(1, states.GetProperty("uncovered_blocked").GetInt32());
+        Assert.AreEqual(1, states.GetProperty("missing_coverage_contract").GetInt32());
+
+        var requirements = data.GetProperty("requirements").EnumerateArray().ToDictionary(
+            element => element.GetProperty("requirementId").GetString()!,
+            element => element.GetProperty("state").GetString()!,
+            StringComparer.Ordinal);
+        Assert.AreEqual("trace_clean", requirements["REQ-SAMPLE-PROOF-0001"]);
+        Assert.AreEqual("partially_covered", requirements["REQ-SAMPLE-PROOF-0002"]);
+        Assert.AreEqual("uncovered_blocked", requirements["REQ-SAMPLE-PROOF-0003"]);
+        Assert.AreEqual("missing_coverage_contract", requirements["REQ-SAMPLE-PROOF-0004"]);
+        Assert.IsFalse(Directory.Exists(Path.Combine(repo.Path, "artifacts", "quality", "testing")));
+    }
+
+    [TestMethod]
+    public void QualityProofHealth_DefaultRequired_EvaluatesMarkdownRequirementsWithExplicitPolicy()
+    {
+        using var repo = CreateFixtureRepo();
+        WriteProofHealthMarkdownArtifacts(repo.Path);
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "quality",
+            "proof-health",
+            "--scope",
+            "REQ-SAMPLE-MD-0001",
+            "--default-required",
+            "positive",
+            "negative",
+            "--format",
+            "json");
+
+        Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        using var json = JsonDocument.Parse(result.StdOut);
+        var requirement = json.RootElement.GetProperty("data").GetProperty("requirements")[0];
+        Assert.AreEqual("trace_clean", requirement.GetProperty("state").GetString());
+        Assert.AreEqual(
+            "default_policy",
+            requirement.GetProperty("evidence").GetProperty("coverageContractSource").GetString());
+        CollectionAssert.Contains(
+            requirement.GetProperty("workQueueTags").EnumerateArray().Select(element => element.GetString()).ToList(),
+            "author_coverage_contract");
+    }
+
+    [TestMethod]
     public void QualityRootCommand_PrintsGuidance()
     {
         using var repo = CreateFixtureRepo();
@@ -186,6 +245,7 @@ public class QualityCommandTests
 
         Assert.AreEqual(0, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
         StringAssert.Contains(result.StdOut, "Use `workbench quality sync`", StringComparison.Ordinal);
+        StringAssert.Contains(result.StdOut, "`workbench quality proof-health`", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "`workbench quality attest`", StringComparison.Ordinal);
         StringAssert.Contains(result.StdOut, "`workbench quality show`", StringComparison.Ordinal);
     }
@@ -627,6 +687,181 @@ public class QualityCommandTests
             [Requirement("REQ-SAMPLE-0004")]
             public class WidgetTests
             {
+            }
+            """);
+    }
+
+    private static void WriteProofHealthArtifacts(string repoRoot)
+    {
+        Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "tests", "Sample.Tests", "RequirementHomes", "SAMPLE"));
+        File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-PROOF.json"), """
+            {
+              "$schema": "https://github.com/incursa/spec-trace/raw/refs/heads/main/model/model.schema.json",
+              "artifact_id": "SPEC-SAMPLE-PROOF",
+              "artifact_type": "specification",
+              "title": "Sample proof health",
+              "domain": "SAMPLE",
+              "capability": "quality",
+              "status": "draft",
+              "owner": "platform",
+              "purpose": "Exercise per-requirement proof health classification.",
+              "scope": "Keep the fixture small and deterministic.",
+              "context": "Proof health consumes coverage contracts and discovered requirement test traits.",
+              "requirements": [
+                {
+                  "id": "REQ-SAMPLE-PROOF-0001",
+                  "title": "Clean proof",
+                  "statement": "The system MUST report a clean proof when focused positive and negative tests are linked.",
+                  "coverage": {
+                    "positive": "required",
+                    "negative": "required",
+                    "edge": "optional",
+                    "fuzz": "not_applicable"
+                  },
+                  "trace": {
+                    "x_test_refs": [
+                      "tests/Sample.Tests/RequirementHomes/SAMPLE/REQ-SAMPLE-PROOF-0001.cs::Positive_path_accepts_widget",
+                      "tests/Sample.Tests/RequirementHomes/SAMPLE/REQ-SAMPLE-PROOF-0001.cs::Negative_path_rejects_widget"
+                    ]
+                  }
+                },
+                {
+                  "id": "REQ-SAMPLE-PROOF-0002",
+                  "title": "Partial proof",
+                  "statement": "The system MUST report partial proof when required evidence kinds are missing.",
+                  "coverage": {
+                    "positive": "required",
+                    "negative": "required",
+                    "edge": "optional",
+                    "fuzz": "not_applicable"
+                  },
+                  "trace": {
+                    "x_test_refs": [
+                      "tests/Sample.Tests/RequirementHomes/SAMPLE/REQ-SAMPLE-PROOF-0002.cs::Positive_path_handles_partial_widget"
+                    ]
+                  }
+                },
+                {
+                  "id": "REQ-SAMPLE-PROOF-0003",
+                  "title": "Blocked proof",
+                  "statement": "The system MUST report blocked uncovered proof when the gap ledger references the requirement.",
+                  "coverage": {
+                    "positive": "required",
+                    "negative": "optional",
+                    "edge": "optional",
+                    "fuzz": "not_applicable"
+                  }
+                },
+                {
+                  "id": "REQ-SAMPLE-PROOF-0004",
+                  "title": "Missing coverage contract",
+                  "statement": "The system MUST report missing coverage contract when no authored coverage metadata exists."
+                }
+              ]
+            }
+            """);
+        File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE", "REQUIREMENT-GAPS.md"), """
+            # Requirement Gaps
+
+            - REQ-SAMPLE-PROOF-0003 is intentionally blocked in this fixture.
+            """);
+        File.WriteAllText(Path.Combine(repoRoot, "tests", "Sample.Tests", "RequirementHomes", "SAMPLE", "REQ-SAMPLE-PROOF-0001.cs"), """
+            using Xunit;
+
+            namespace Sample.Tests.RequirementHomes;
+
+            public class REQ_SAMPLE_PROOF_0001
+            {
+                [Fact]
+                [Requirement("REQ-SAMPLE-PROOF-0001")]
+                [Trait("Category", "Positive")]
+                public void Positive_path_accepts_widget()
+                {
+                }
+
+                [Fact]
+                [Requirement("REQ-SAMPLE-PROOF-0001")]
+                [Trait("Category", "Negative")]
+                public void Negative_path_rejects_widget()
+                {
+                }
+            }
+            """);
+        File.WriteAllText(Path.Combine(repoRoot, "tests", "Sample.Tests", "RequirementHomes", "SAMPLE", "REQ-SAMPLE-PROOF-0002.cs"), """
+            using Xunit;
+
+            namespace Sample.Tests.RequirementHomes;
+
+            public class REQ_SAMPLE_PROOF_0002
+            {
+                [Fact]
+                [Requirement("REQ-SAMPLE-PROOF-0002")]
+                [Trait("Category", "Positive")]
+                public void Positive_path_handles_partial_widget()
+                {
+                }
+            }
+            """);
+    }
+
+    private static void WriteProofHealthMarkdownArtifacts(string repoRoot)
+    {
+        Directory.CreateDirectory(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, "tests", "Sample.Tests", "RequirementHomes", "SAMPLE"));
+        File.WriteAllText(Path.Combine(repoRoot, "specs", "requirements", "SAMPLE", "SPEC-SAMPLE-MD.md"), """
+            ---
+            artifact_id: SPEC-SAMPLE-MD
+            artifact_type: specification
+            title: Sample markdown proof health
+            domain: SAMPLE
+            capability: quality
+            status: draft
+            owner: platform
+            ---
+
+            # SPEC-SAMPLE-MD - Sample markdown proof health
+
+            ## Purpose
+
+            Exercise proof-health default policy evaluation for Markdown requirements.
+
+            ## Scope
+
+            - Markdown requirement clauses
+
+            ## Context
+
+            Markdown requirements cannot carry JSON coverage metadata directly.
+
+            ## REQ-SAMPLE-MD-0001 Markdown proof health
+            The system MUST evaluate a Markdown requirement against an explicit default policy.
+
+            Trace:
+            - Test Refs:
+              - tests/Sample.Tests/RequirementHomes/SAMPLE/REQ-SAMPLE-MD-0001.cs::Positive_markdown_requirement
+              - tests/Sample.Tests/RequirementHomes/SAMPLE/REQ-SAMPLE-MD-0001.cs::Negative_markdown_requirement
+            """);
+        File.WriteAllText(Path.Combine(repoRoot, "tests", "Sample.Tests", "RequirementHomes", "SAMPLE", "REQ-SAMPLE-MD-0001.cs"), """
+            using Xunit;
+
+            namespace Sample.Tests.RequirementHomes;
+
+            public class REQ_SAMPLE_MD_0001
+            {
+                [Fact]
+                [Requirement("REQ-SAMPLE-MD-0001")]
+                [Trait("Category", "Positive")]
+                public void Positive_markdown_requirement()
+                {
+                }
+
+                [Fact]
+                [Requirement("REQ-SAMPLE-MD-0001")]
+                [Trait("Category", "Negative")]
+                public void Negative_markdown_requirement()
+                {
+                }
             }
             """);
     }
