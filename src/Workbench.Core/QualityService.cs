@@ -884,15 +884,28 @@ public static class QualityService
             findings.Add(new QualityReportFinding("missing-coverage", "warn", "No normalized coverage evidence is available from Cobertura inputs.", "report", DefaultCoverageArtifact));
         }
 
-        var inventoryByContractRef = inventory.Tests.ToDictionary(BuildContractTestReference, test => test, StringComparer.Ordinal);
+        var inventoryByContractRef = inventory.Tests
+            .GroupBy(BuildContractTestReference, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+        foreach (var duplicate in inventoryByContractRef.Where(entry => entry.Value.Count > 1))
+        {
+            findings.Add(new QualityReportFinding(
+                "duplicate-inventory-contract-ref",
+                "warn",
+                $"Multiple discovered tests share the same authored contract reference: {duplicate.Key}",
+                "test",
+                duplicate.Key));
+        }
+
         foreach (var requiredTest in authored.RequiredTests)
         {
-            if (!inventoryByContractRef.TryGetValue(requiredTest, out var inventoryTest))
+            if (!inventoryByContractRef.TryGetValue(requiredTest, out var inventoryMatches))
             {
                 findings.Add(new QualityReportFinding("required-test-missing-inventory", "error", $"Required test is not present in the discovered inventory: {requiredTest}", "test", requiredTest));
                 continue;
             }
 
+            var inventoryTest = inventoryMatches[0];
             var seenInRun = results.Tests.Any(test =>
                 string.Equals(test.TestId, inventoryTest.TestId, StringComparison.Ordinal)
                 || string.Equals(test.FullyQualifiedName, inventoryTest.FullyQualifiedName, StringComparison.Ordinal));
@@ -1266,11 +1279,18 @@ public static class QualityService
         string? currentType = null;
         var pendingTraits = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var targetFramework = targetFrameworks.FirstOrDefault() ?? "unknown";
+        var inRawStringLiteral = false;
 
         var lines = File.ReadAllLines(sourcePath);
         for (var index = 0; index < lines.Length; index++)
         {
             var line = lines[index];
+            if (ShouldSkipSourceScanLineForRawStringLiteral(line, ref inRawStringLiteral))
+            {
+                pendingTraits.Clear();
+                continue;
+            }
+
             var namespaceMatch = namespaceRegex.Match(line);
             if (namespaceMatch.Success)
             {
@@ -1333,6 +1353,44 @@ public static class QualityService
         }
 
         return results;
+    }
+
+    private static bool ShouldSkipSourceScanLineForRawStringLiteral(string line, ref bool inRawStringLiteral)
+    {
+        const string MinimumRawStringDelimiter = "\"\"\"";
+
+        if (inRawStringLiteral)
+        {
+            if (line.Contains(MinimumRawStringDelimiter, StringComparison.Ordinal))
+            {
+                inRawStringLiteral = false;
+            }
+
+            return true;
+        }
+
+        var delimiterStart = line.IndexOf(MinimumRawStringDelimiter, StringComparison.Ordinal);
+        if (delimiterStart < 0)
+        {
+            return false;
+        }
+
+        var delimiterLength = CountConsecutiveQuotes(line, delimiterStart);
+        var delimiter = new string('"', delimiterLength);
+        var closingDelimiterStart = line.IndexOf(delimiter, delimiterStart + delimiterLength, StringComparison.Ordinal);
+        inRawStringLiteral = closingDelimiterStart < 0;
+        return true;
+    }
+
+    private static int CountConsecutiveQuotes(string text, int start)
+    {
+        var count = 0;
+        for (var index = start; index < text.Length && text[index] == '"'; index++)
+        {
+            count++;
+        }
+
+        return count;
     }
 
     private static void AddPendingTrait(IDictionary<string, List<string>> pendingTraits, string key, string value)

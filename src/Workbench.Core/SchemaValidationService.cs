@@ -10,7 +10,7 @@ namespace Workbench.Core;
 public static class SchemaValidationService
 {
     private const string PinnedCanonicalArtifactSchemaResourceName = "Workbench.Core.PinnedSchemas.SpecTrace.model.schema.json";
-    private static readonly Lazy<JsonSchema> pinnedCanonicalArtifactSchema = new(LoadPinnedCanonicalArtifactSchema);
+    private static readonly Lazy<string> pinnedCanonicalArtifactSchemaText = new(LoadPinnedCanonicalArtifactSchemaText);
 
     public static IList<string> ValidateConfig(string repoRoot)
     {
@@ -167,7 +167,8 @@ public static class SchemaValidationService
 
         return ValidateJsonAgainstSchema(
             normalizedJson,
-            () => pinnedCanonicalArtifactSchema.Value,
+            // JsonSchema instances can carry evaluation state, so do not share one across parallel validations.
+            () => JsonSchema.FromText(pinnedCanonicalArtifactSchemaText.Value),
             artifactPath,
             jsonIsContent: true);
     }
@@ -229,7 +230,7 @@ public static class SchemaValidationService
         return errors;
     }
 
-    private static JsonSchema LoadPinnedCanonicalArtifactSchema()
+    private static string LoadPinnedCanonicalArtifactSchemaText()
     {
         var assembly = typeof(SchemaValidationService).Assembly;
         using var stream = assembly.GetManifestResourceStream(PinnedCanonicalArtifactSchemaResourceName)
@@ -239,7 +240,7 @@ public static class SchemaValidationService
             ?? throw new InvalidOperationException($"Pinned canonical artifact schema resource '{PinnedCanonicalArtifactSchemaResourceName}' did not contain a JSON object.");
 
         ApplyPinnedSchemaCompatibility(schema);
-        return JsonSchema.FromText(schema.ToJsonString());
+        return schema.ToJsonString();
     }
 
     internal static string NormalizeCanonicalArtifactJson(string json)

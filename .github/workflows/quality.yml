@@ -74,11 +74,11 @@ jobs:
 
       - name: Workbench quality sync
         id: quality_sync
-        run: dotnet tool run workbench quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage --out-dir artifacts/quality/testing
+        run: dotnet src/Workbench/bin/Release/net10.0/Workbench.dll quality sync --results artifacts/quality/raw/test-results --coverage artifacts/quality/raw/coverage --out-dir artifacts/quality/testing
 
       - name: Workbench quality show
         if: always()
-        run: dotnet tool run workbench quality show
+        run: dotnet src/Workbench/bin/Release/net10.0/Workbench.dll quality show
 
       - name: Upload coverage artifacts
         if: always()

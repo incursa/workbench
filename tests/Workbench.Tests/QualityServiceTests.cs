@@ -340,6 +340,80 @@ public class QualityServiceTests
         Assert.AreEqual("tests/Sample.Tests/Sample.Tests.csproj", inventory.Projects[0].ProjectPath);
     }
 
+    [TestMethod]
+    public void DiscoverTestInventory_IgnoresTestsInsideRawStringLiterals()
+    {
+        using var repo = CreateFixtureRepo();
+        File.WriteAllText(Path.Combine(repo.Path, "tests", "Sample.Tests", "WidgetTests.cs"), """"
+            using Xunit;
+
+            namespace Sample.Tests;
+
+            public class WidgetTests
+            {
+                [Fact]
+                [Requirement("REQ-SAMPLE-0001")]
+                public void Adds_numbers()
+                {
+                    var fixture = """
+                        namespace Fixture.Tests;
+
+                        public class FixtureTests
+                        {
+                            [Fact]
+                            [Requirement("REQ-FAKE-0001")]
+                            public void Fixture_only()
+                            {
+                            }
+                        }
+                        """;
+                }
+
+                [Theory]
+                [Requirement("REQ-SAMPLE-0002")]
+                public void Handles_zero()
+                {
+                }
+            }
+            """");
+
+        var authored = QualityService.LoadAuthoredIntent(repo.Path, Path.Combine(repo.Path, QualityService.DefaultContractPath));
+        var inventory = QualityService.DiscoverTestInventory(repo.Path, authored, "workbench quality sync");
+
+        Assert.HasCount(2, inventory.Tests);
+        Assert.IsFalse(inventory.Tests.Any(test => string.Equals(test.DisplayName, "Fixture_only", StringComparison.Ordinal)));
+        Assert.IsTrue(inventory.Tests.Any(test => string.Equals(test.FullyQualifiedName, "Sample.Tests.WidgetTests.Handles_zero", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void Sync_ReportsDuplicateContractReferencesWithoutThrowing()
+    {
+        using var repo = CreateFixtureRepo();
+        File.AppendAllText(Path.Combine(repo.Path, "tests", "Sample.Tests", "WidgetTests.cs"), """
+
+            public class DuplicateWidgetTests
+            {
+                [Fact]
+                public void Adds_numbers()
+                {
+                }
+            }
+            """);
+
+        var result = QualityService.Sync(
+            repo.Path,
+            new QualitySyncOptions(
+                null,
+                "artifacts/raw/test-results",
+                "artifacts/raw/coverage",
+                null,
+                false));
+
+        Assert.IsTrue(result.Report.Assessment.Findings.Any(finding =>
+            string.Equals(finding.Code, "duplicate-inventory-contract-ref", StringComparison.Ordinal)
+            && string.Equals(finding.SubjectRef, "tests/Sample.Tests/WidgetTests.cs::Adds_numbers", StringComparison.Ordinal)));
+    }
+
     private static void AssertSchema(string repoRoot, string schemaPath, string artifactPath)
     {
         var fullPath = Path.Combine(repoRoot, artifactPath.Replace('/', Path.DirectorySeparatorChar));
