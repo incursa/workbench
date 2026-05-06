@@ -17,6 +17,8 @@ The only dynamic tool in v1 is `search_docs`.
 
 Run all commands from the repository root.
 
+Prerequisite: Node.js 22 or newer.
+
 Typical loop:
 
 ```bash

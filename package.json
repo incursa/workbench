@@ -4,6 +4,9 @@
   "private": true,
   "description": "Deterministic Cloudflare Worker MCP docs server for Workbench markdown.",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "files": [
     "dist",
     "content",
@@ -26,9 +29,14 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "esbuild": "^0.27.4",
+    "esbuild": "^0.27.7",
     "gray-matter": "^4.0.3",
-    "wrangler": "^4.79.0",
-    "zod": "^4.3.6"
+    "wrangler": "^4.88.0",
+    "zod": "^4.4.3"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.13",
+    "hono": "4.12.17",
+    "ip-address": "10.2.0"
   }
 }
