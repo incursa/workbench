@@ -5,10 +5,10 @@
     "allowPrerelease": false
   },
   "msbuild-sdks": {
-    "Microsoft.Build.Sql": "2.0.0",
-    "MSBuild.Sdk.SqlProj": "3.3.0",
-    "Aspire.AppHost.Sdk": "13.0.2",
-    "MSTest.Sdk": "4.0.2"
+    "Microsoft.Build.Sql": "2.1.0",
+    "MSBuild.Sdk.SqlProj": "4.2.0",
+    "Aspire.AppHost.Sdk": "13.2.4",
+    "MSTest.Sdk": "4.2.2"
   },
   "test": {
     "runner": "Microsoft.Testing.Platform"
