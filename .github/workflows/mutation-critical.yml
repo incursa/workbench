@@ -101,7 +101,7 @@ jobs:
       - name: Download baseline snapshot from main
         if: always()
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v19
+        uses: dawidd6/action-download-artifact@v21
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: mutation-critical.yml
