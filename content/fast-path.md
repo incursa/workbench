@@ -1,4 +1,8 @@
 ---
+title: "Fast Path"
+---
+
+---
 uri: workbench://fast-path
 slug: fast-path
 title: Fast Path

@@ -1,4 +1,8 @@
 ---
+title: "Update"
+---
+
+---
 uri: workbench://update
 slug: update
 title: Update

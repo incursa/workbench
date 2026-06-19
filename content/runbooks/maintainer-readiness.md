@@ -1,4 +1,8 @@
 ---
+title: "Maintainer readiness"
+---
+
+---
 uri: workbench://runbooks/maintainer-readiness
 slug: maintainer-readiness
 title: Maintainer readiness

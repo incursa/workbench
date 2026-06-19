@@ -1,4 +1,8 @@
 ---
+title: "Authoring Guide"
+---
+
+---
 uri: workbench://guides/authoring
 slug: authoring
 title: Authoring Guide

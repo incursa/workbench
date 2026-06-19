@@ -1,4 +1,8 @@
 ---
+title: "Install"
+---
+
+---
 uri: workbench://install
 slug: install
 title: Install

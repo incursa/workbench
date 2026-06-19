@@ -1,4 +1,8 @@
 ---
+title: "Verification Index"
+---
+
+---
 uri: workbench://specs/verification-index
 slug: verification-index
 title: Verification Index

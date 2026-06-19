@@ -1,4 +1,8 @@
 ---
+title: "Spec CLI workflow"
+---
+
+---
 uri: workbench://runbooks/spec-cli-workflow
 slug: spec-cli-workflow
 title: Spec CLI workflow

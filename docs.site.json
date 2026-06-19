@@ -1,0 +1,8 @@
+{
+  "slug": "workbench",
+  "title": "Workbench",
+  "section": "open-source",
+  "sourcePath": "content",
+  "targetPath": "src/content/docs/open-source/workbench",
+  "publish": true
+}

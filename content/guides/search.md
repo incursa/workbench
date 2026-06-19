@@ -1,4 +1,8 @@
 ---
+title: "Search Guide"
+---
+
+---
 uri: workbench://guides/search
 slug: search
 title: Search Guide

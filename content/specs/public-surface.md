@@ -1,4 +1,8 @@
 ---
+title: "Public Surface"
+---
+
+---
 uri: workbench://specs/public-surface
 slug: public-surface
 title: Public Surface

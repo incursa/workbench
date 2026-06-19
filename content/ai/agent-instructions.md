@@ -1,4 +1,8 @@
 ---
+title: "Agent instructions"
+---
+
+---
 uri: workbench://ai/agent-instructions
 slug: agent-instructions
 title: Agent instructions

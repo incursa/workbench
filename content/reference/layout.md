@@ -1,4 +1,8 @@
 ---
+title: "Layout"
+---
+
+---
 uri: workbench://reference/layout
 slug: layout
 title: Layout

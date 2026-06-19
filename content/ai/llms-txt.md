@@ -1,4 +1,8 @@
 ---
+title: "AI Bootstrap"
+---
+
+---
 uri: workbench://ai/llms-txt
 slug: llms-txt
 title: AI Bootstrap
