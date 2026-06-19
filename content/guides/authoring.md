@@ -30,6 +30,10 @@ searchKind: guide
 
 Use one markdown file per topic.
 
+This page covers the authoring rules for the docs MCP Worker source tree. The
+published mirror uses the same markdown source, so keep links, headings, and
+front matter stable when possible.
+
 Front matter carries the metadata the generator needs:
 
 - `uri`
@@ -51,3 +55,6 @@ URIs, duplicate slugs within a group, unsupported kinds, and broken
 
 Keep related URIs internal to the `workbench://` namespace so the docs surface
 remains deterministic.
+
+After editing a page, run `npm test` to confirm the content still parses and
+the compiled resources remain valid.

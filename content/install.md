@@ -26,6 +26,9 @@ searchKind: guide
 
 # Install
 
+Use this page when you need the shortest path from a fresh checkout to a
+running docs worker.
+
 From the repository root:
 
 ```bash
@@ -46,3 +49,6 @@ Open the URL Wrangler prints and browse the generated docs index at `/mcp`.
 
 If you only want to verify the build artifacts, run `npm run build:manifests`
 followed by `npm run build:worker`.
+
+After changing markdown content or front matter, run `npm test` to rebuild the
+Worker and check the MCP transport and search surface.

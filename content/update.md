@@ -27,6 +27,9 @@ searchKind: guide
 
 # Update
 
+Use this page when markdown, front matter, or Worker code changes require a
+fresh build of the compiled docs surface.
+
 When the markdown changes, rebuild the docs server artifacts:
 
 ```bash
@@ -40,3 +43,7 @@ the search behavior.
 
 Treat `dist/mcp/` as generated output only. If you change content, change the
 markdown source files and rerun the build.
+
+When the docs mirror changes, keep [`docs.site.json`](../docs.site.json)
+and [.github/workflows/sync-docs.yml](../.github/workflows/sync-docs.yml)
+in sync with the source tree.

@@ -44,3 +44,6 @@ result set narrow when you already know which part of the docs tree you want.
 
 An exact title match should outrank a broad body-text match. If the query is
 empty, the tool falls back to the docs' configured priorities.
+
+Search only sees compiled content. It does not crawl the repo at runtime and it
+does not read unpublished files outside the docs manifest.

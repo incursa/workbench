@@ -27,6 +27,9 @@ searchKind: spec
 
 # Verification Index
 
+This page lists the minimum checks that prove the compiled docs surface still
+matches the markdown source tree.
+
 Before shipping, verify:
 
 - docs index rendering
@@ -41,3 +44,6 @@ Before shipping, verify:
 
 The test suite should rebuild the Worker and exercise the compiled manifests,
 not runtime source markdown.
+
+These checks do not prove the mirrored docs PR in `incursa-docs`, the live
+Cloudflare deployment, or any repo outside this source tree.

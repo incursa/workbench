@@ -2,7 +2,10 @@
 
 Workbench is a .NET CLI for repo-native specifications, architecture, work
 items, verification, validation, and generated navigation that all live in
-source control. The canonical model for authored intent is Spec Trace:
+source control. The repository also ships a deterministic docs MCP Worker
+whose source lives in `content/` and is published through
+[`docs.site.json`](docs.site.json). The canonical model for authored intent is
+Spec Trace:
 
 - specifications group related requirements
 - requirements are the atomic normative statements
@@ -11,7 +14,19 @@ source control. The canonical model for authored intent is Spec Trace:
 - verification artifacts record how requirements were proven
 
 GitHub remains an optional sync and mirror layer, not the primary system of
-record.
+record. The docs site is a mirror of `content/`, not a separate authoring tree.
+
+## Quick Start
+
+From the repository root:
+
+```bash
+dotnet tool restore
+dotnet build Workbench.slnx
+dotnet run --project src/Workbench/Workbench.csproj -- --help
+npm install
+npm test
+```
 
 Canonical spec-trace artifacts are JSON documents validated against the
 SpecTrace model snapshot pinned into the Workbench build. Authored artifacts
@@ -35,6 +50,7 @@ rewrite.
 - Keep canonical templates under `specs/templates/`.
 - Keep the quality intent contract in [`quality/testing-intent.yaml`](quality/testing-intent.yaml).
 - Keep the attestation config in [`quality/attestation.yaml`](quality/attestation.yaml) when you want repo-local evidence rollup defaults.
+- Keep docs content in `content/`; [`docs.site.json`](docs.site.json) controls the mirror target.
 - Treat `overview/`, `contracts/`, `decisions/`, `work/`, and the old root
   template/schema copies as removed legacy surfaces.
 
@@ -66,6 +82,12 @@ rewrite.
 ## Repository map
 
 - `src/Workbench`: CLI source code.
+- `src/Workbench.Cli`: command composition and dispatch.
+- `src/Workbench.Core`: repository IO, validation, Git/GitHub integration, and shared models.
+- `src/Workbench.Tui`: terminal UI entry point.
+- `src/mcp`: docs MCP Worker source.
+- `content/`: authored docs for the MCP Worker and mirrored docs site.
+- `runbooks/`: operational procedures and release playbooks.
 - `tests/`: automated tests.
 - `specs/requirements/`: canonical requirement specs and generated Spec Trace outputs.
 - `specs/architecture/`: canonical architecture docs.
@@ -80,12 +102,38 @@ rewrite.
 - `artifacts/`: build outputs and local artifacts.
 - `testdata/`: fixtures for parsing and validation tests.
 
+## Documentation Ownership
+
+- Source docs live in `content/`, `runbooks/`, and `specs/`.
+- The docs site publishes from `content/` via [`docs.site.json`](docs.site.json).
+- The mirrored output in `incursa-docs` is generated content and should not be
+  edited by hand.
+- `dist/mcp/` is generated output only.
+
+## Release And Versioning
+
+- The CLI package ID is `Incursa.Workbench`.
+- The package version is pinned in [`src/Workbench/Workbench.csproj`](src/Workbench/Workbench.csproj).
+- The publish workflow computes calendar-style versions for automated package
+  and AOT artifacts.
+- The docs MCP package is separate and is defined in [`package.json`](package.json).
+- Regenerate [`specs/generated/commands.md`](specs/generated/commands.md) when the command tree changes.
+- Treat command behavior, output JSON contracts, artifact schemas, and package contents as public surfaces.
+
 ## Requirements
 
 - .NET SDK `10.0.100` (see [`global.json`](global.json)).
 - Canonical JSON validation uses the SpecTrace schema snapshot pinned in
   [`src/Workbench.Core/Workbench.Core.csproj`](src/Workbench.Core/Workbench.Core.csproj).
 - Optional: GitHub CLI for the GH-dependent integration tests.
+
+## Security And Credentials
+
+- Keep secrets in environment variables or `.workbench/credentials.env`.
+- Do not commit `OPENAI_API_KEY`, `WORKBENCH_AI_OPENAI_KEY`, `WORKBENCH_GITHUB_TOKEN`,
+  `DOCS_SITE_SYNC_TOKEN`, or `NUGET_API_KEY`.
+- GitHub, docs sync, NuGet publishing, and voice transcription all depend on
+  external credentials that are not part of the repository.
 
 ## Common commands
 
@@ -284,6 +332,19 @@ GitHub Actions builds and tests on `ubuntu-latest`, `windows-latest`, and
 dotnet build Workbench.slnx
 dotnet test --solution Workbench.slnx
 ```
+
+## Known Gaps
+
+- `tracking/workbench-gaps.md` is the active gap ledger for planned linking,
+  docs, hooks, and CLI cleanup.
+- Mutation testing has a config file but is not part of the default local gate.
+- Fuzz harnesses exist under `fuzz/`, but fuzzing is not part of the standard
+  readiness command sequence.
+- GitHub-integrated flows require configured provider settings and credentials.
+- The docs MCP Worker has a deploy script, but deployment requires Cloudflare
+  configuration and secrets outside the local readiness pass.
+- Derived outputs under `artifacts/`, `specs/generated/`, and `dist/mcp/` must
+  not be edited by hand.
 
 ## Contributing
 

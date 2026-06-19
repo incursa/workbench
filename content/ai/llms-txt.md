@@ -44,3 +44,6 @@ Keep the runtime simple:
 - no database
 - no dynamic web search
 - one search tool only
+
+If you are updating published docs, treat `content/` as the source of truth and
+`dist/mcp/` as derived output.

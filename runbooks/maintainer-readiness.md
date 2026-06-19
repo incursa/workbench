@@ -31,7 +31,8 @@ Core boundaries:
   interaction helpers.
 - [`src/mcp`](../src/mcp): Cloudflare Worker source for the deterministic
   Workbench docs MCP server.
-- [`content`](../content): markdown source for the docs MCP server.
+- [`content`](../content): markdown source for the docs MCP server and the
+  source tree published through [`docs.site.json`](../docs.site.json).
 - [`dist/mcp`](../dist/mcp): generated MCP manifests and bundled Worker output.
 
 The CLI layer should stay thin. Put business rules in `Workbench.Core` and keep
@@ -178,6 +179,8 @@ GitHub:
 - `workbench item sync` reconciles work items with issues and branch state.
 - `workbench github pr create` creates a PR and can backlink it to a work item.
 - GitHub CLI is optional for some integration tests and provider workflows.
+- [`docs.site.json`](../docs.site.json) and [`.github/workflows/sync-docs.yml`](../.github/workflows/sync-docs.yml)
+  control mirrored docs publication into `incursa-docs`.
 
 Quality and release tooling:
 
@@ -220,6 +223,8 @@ Maintainer expectations:
   artifact expectations are intentionally incompatible.
 - Do not rely on GitHub Actions as local proof. Reproduce the relevant build,
   test, validation, pack, and MCP checks locally first.
+- The docs MCP package is separate from the CLI package and is released from
+  the Node workspace in [`package.json`](../package.json).
 
 ## Current Readiness State
 

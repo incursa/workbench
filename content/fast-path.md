@@ -36,3 +36,6 @@ If the docs already exist, the shortest path is:
 
 The server never reads from the docs tree at runtime. It serves the compiled
 manifest and search index that were produced during the build.
+
+If you changed a page that participates in the mirror, run `npm test` before
+you hand it off so the front matter and MCP resources are checked together.

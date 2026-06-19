@@ -30,6 +30,8 @@ tags:
 
 Treat the `content/` tree as the only authored source for the MCP docs server.
 Do not mutate `dist/mcp/` by hand.
+The docs site mirror is generated from `content/` through
+[`docs.site.json`](../../docs.site.json).
 
 Prefer deterministic changes:
 
@@ -39,4 +41,5 @@ Prefer deterministic changes:
 - keep the URI namespace stable
 
 For longer work, inspect the docs README first so you understand the local
-development and deployment flow before changing the content tree.
+development and deployment flow before changing the content tree. When you
+change published docs, run `npm test` before handing off the result.

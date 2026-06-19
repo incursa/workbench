@@ -31,6 +31,9 @@ Use the dedicated `workbench spec` command family to create, inspect, edit,
 link, unlink, delete, and synchronize requirement specifications without
 falling back to ad hoc Markdown editing.
 
+Use `workbench doc` only for non-spec documents that live in the published
+docs surface under `content/`.
+
 ## Scope
 
 - `workbench spec new`
@@ -49,6 +52,8 @@ falling back to ad hoc Markdown editing.
 4. Link the spec to work items when delivery work starts.
 5. Update or remove traceability when scope changes.
 6. Sync backlinks and front matter after larger edits or file moves.
+   Keep the published docs tree aligned with the source tree when you change a
+   workflow page.
 7. Use the browser UI when you want a structured editor.
 
 ## Validation

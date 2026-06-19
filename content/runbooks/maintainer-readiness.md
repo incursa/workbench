@@ -44,7 +44,8 @@ reports, and release artifacts are integration surfaces around that model.
   integration, Spec Trace handling, quality evidence, voice transcription, and
   shared models.
 - `src/Workbench.Tui`: terminal UI entry point and helpers.
-- `src/mcp` plus `content`: deterministic docs MCP Worker source.
+- `src/mcp` plus `content`: deterministic docs MCP Worker source. The
+  published mirror uses `content/` as input through [`docs.site.json`](../../docs.site.json).
 - `dist/mcp`: generated MCP manifests and bundled Worker output.
 
 The CLI layer should stay thin. Business rules belong in `Workbench.Core`.
@@ -85,6 +86,8 @@ dotnet run --project src/Workbench/Workbench.csproj -- quality attest
   project.
 - GitHub sync and PR creation depend on `.workbench/config.json` plus provider
   credentials.
+- The docs mirror workflow uses [`docs.site.json`](../../docs.site.json) and
+  [.github/workflows/sync-docs.yml](../../.github/workflows/sync-docs.yml).
 - The private npm package builds the docs MCP Worker, not the .NET CLI package.
 - AI and voice commands require configured credentials. Do not commit secrets.
 

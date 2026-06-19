@@ -30,6 +30,9 @@ searchKind: reference
 
 The docs server keeps authored content and generated output separate.
 
+Use this map to find the source tree that the docs site publishes and the
+runtime output that `npm test` rebuilds.
+
 ```text
 content/
   overview.md
@@ -62,3 +65,12 @@ tests/mcp/
 ```
 
 Keep `dist/mcp/` generated and treat the docs tree as the source of truth.
+The docs site mirror uses `content/` as input and does not read `dist/mcp/` at
+authoring time.
+
+Root files worth knowing about:
+
+- `README.md`
+- `docs.site.json`
+- `runbooks/`
+- `specs/`

@@ -1,5 +1,6 @@
 ---
 title: "Overview"
+priority: 130
 ---
 
 ---
@@ -29,9 +30,11 @@ searchKind: guide
 Workbench Docs MCP is a markdown-first Cloudflare Worker that turns static
 repository docs into MCP resources.
 
-The source of truth is the `content/` tree. The build step parses front matter,
-validates it, and emits deterministic manifests under `dist/mcp/`. The Worker
-then serves:
+The source of truth is the `content/` tree. The docs site mirror is controlled
+by [`docs.site.json`](../docs.site.json) and the sync workflow opens a PR in
+`incursa-docs` rather than publishing directly. The build step parses front
+matter, validates it, and emits deterministic manifests under `dist/mcp/`.
+The Worker then serves:
 
 - `GET /mcp` for the browsable HTML docs index
 - `POST /mcp` for MCP JSON-RPC traffic
@@ -46,3 +49,4 @@ The runtime stays deterministic:
 - one tool only: `search_docs`
 
 Use this page as the entry point for the rest of the docs surface.
+For the local validation path, run `npm test` after content changes.

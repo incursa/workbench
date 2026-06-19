@@ -22,6 +22,9 @@ It also explains when to use the `workbench doc` surface for project-specific
 documents outside the canonical Spec Trace families and how policy-driven spec
 IDs work.
 
+The published docs under `content/` are separate from the canonical spec tree
+under `specs/`; keep that boundary intact when you update workflow guidance.
+
 ## Preconditions
 
 - You are inside a Workbench repository.
@@ -67,6 +70,7 @@ IDs work.
 7. Sync backlinks and front matter after larger edits or file moves.
    ```bash
    workbench spec sync --all
+   workbench doc sync --all
    workbench validate
    ```
 8. Use the browser UI when you want a structured editor.
