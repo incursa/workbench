@@ -6,7 +6,8 @@ Thanks for your interest in improving Workbench! This guide covers local setup, 
 
 ### Prerequisites
 
-- .NET SDK (latest stable recommended)
+- .NET SDK `10.0.100` or the patch-compatible SDK selected by [`global.json`](global.json).
+- Node.js 22 or newer when changing the docs MCP Worker or files under [`content/`](content).
 
 ### Get the code
 
@@ -18,7 +19,7 @@ cd workbench
 ### Build locally
 
 ```bash
-dotnet build Workbench.slnx
+dotnet build Workbench.slnx -c Release
 ```
 
 ## Tests
@@ -26,13 +27,13 @@ dotnet build Workbench.slnx
 Run the targeted test project:
 
 ```bash
-dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj
+dotnet test --project tests/Workbench.Tests/Workbench.Tests.csproj -c Release
 ```
 
 Run the full solution verification:
 
 ```bash
-dotnet test --solution Workbench.slnx
+dotnet test --solution Workbench.slnx -c Release
 ```
 
 Generate the standard raw quality evidence set:
@@ -53,6 +54,19 @@ Verify the checked-in CLI help snapshot matches the live command tree:
 ```bash
 dotnet run --project src/Workbench/Workbench.csproj -- doc regen-help --check
 ```
+
+Run the maintainer readiness checklist before publishing or handing off larger
+changes:
+
+```bash
+dotnet run --project src/Workbench/Workbench.csproj -- validate --profile core
+npm test
+dotnet pack src/Workbench/Workbench.csproj -c Release
+git diff --check
+```
+
+The full maintainer workflow is documented in
+[`runbooks/maintainer-readiness.md`](runbooks/maintainer-readiness.md).
 
 For integration tests that need git, use `GitTestRepo.RunGit` rather than raw
 `ProcessRunner.Run(..., "git", ...)` so test repos stay hermetic and ignore

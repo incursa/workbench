@@ -32,7 +32,10 @@
     }
   },
   "Validation": {
-    "LinkExclude": [],
+    "LinkExclude": [
+      "node_modules",
+      "src/Workbench/wwwroot/lib/incursa-ui-kit"
+    ],
     "DocExclude": []
   },
   "Tui": {

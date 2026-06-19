@@ -184,6 +184,7 @@ Expected warnings:
 - Overview: [`overview.md`](overview.md)
 - Authoring guide: [`authoring.md`](authoring.md)
 - Layout guide: [`layout.md`](layout.md)
+- Maintainer readiness runbook: [`runbooks/maintainer-readiness.md`](runbooks/maintainer-readiness.md)
 - Requirements: `specs/requirements/`
 - Architecture: `specs/architecture/`
 - Verification artifacts: `specs/verification/`
@@ -192,6 +193,14 @@ Expected warnings:
 - Schemas: `specs/schemas/` and the pinned SpecTrace model embedded in Workbench
 - Canonical CLI help snapshot: [`specs/generated/commands.md`](specs/generated/commands.md)
 - Quality intent contract: [`quality/testing-intent.yaml`](quality/testing-intent.yaml)
+
+## Maintainer readiness
+
+Use [`runbooks/maintainer-readiness.md`](runbooks/maintainer-readiness.md)
+before changing command behavior, package surfaces, release tooling, generated
+docs, or repository-native workflow conventions. It lists the local build,
+test, validation, MCP, and pack commands that should pass before a maintainer
+publishes or hands off changes.
 
 ## Quality evidence
 
