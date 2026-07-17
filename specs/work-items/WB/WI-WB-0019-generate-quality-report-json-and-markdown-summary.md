@@ -47,8 +47,8 @@ policy gate.
 
 ## Planned Changes
 
-- Workbench emits [`artifacts/quality/testing/quality-report.json`](../../../artifacts/quality/testing/quality-report.json) and
-  [`artifacts/quality/testing/quality-summary.md`](../../../artifacts/quality/testing/quality-summary.md).
+- Workbench emits `artifacts/quality/testing/quality-report.json` and
+  `artifacts/quality/testing/quality-summary.md` as derived outputs.
 - The report contains authored, observed, and assessment sections as separate
   structures.
 - Detectable gaps are explicit, structured, and grounded in current evidence.

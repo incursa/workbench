@@ -33,7 +33,7 @@ Core boundaries:
   Workbench docs MCP server.
 - [`content`](../content): markdown source for the docs MCP server and the
   source tree published through [`docs.site.json`](../docs.site.json).
-- [`dist/mcp`](../dist/mcp): generated MCP manifests and bundled Worker output.
+- `dist/mcp`: generated MCP manifests and bundled Worker output.
 
 The CLI layer should stay thin. Put business rules in `Workbench.Core` and keep
 the generated command snapshot in [`specs/generated/commands.md`](../specs/generated/commands.md)
@@ -263,5 +263,5 @@ dotnet run --project src/Workbench/Workbench.csproj -- quality attest
   local tests do not prove remote repository settings.
 - The docs MCP Worker has a deploy script, but deployment requires Cloudflare
   configuration and secrets outside the local readiness pass.
-- Derived outputs under [`artifacts`](../artifacts), [`specs/generated`](../specs/generated),
-  and [`dist/mcp`](../dist/mcp) must not be edited by hand.
+- Derived outputs under `artifacts`, [`specs/generated`](../specs/generated),
+  and `dist/mcp` must not be edited by hand.
