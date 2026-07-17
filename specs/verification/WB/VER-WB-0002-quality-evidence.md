@@ -56,8 +56,8 @@ The linked requirements are satisfied by the documented repository behavior and 
 ## Evidence
 
 - [`quality/testing-intent.yaml`](../../../quality/testing-intent.yaml)
-- [`artifacts/quality/testing/quality-summary.md`](../../../artifacts/quality/testing/quality-summary.md)
-- [`artifacts/quality/testing/quality-report.json`](../../../artifacts/quality/testing/quality-report.json)
+- `artifacts/quality/testing/quality-summary.md` (derived output)
+- `artifacts/quality/testing/quality-report.json` (derived output)
 - [`scripts/testing/verify-critical-coverage.ps1`](../../../scripts/testing/verify-critical-coverage.ps1)
 - [`tests/Workbench.Tests/QualityServiceTests.cs`](../../../tests/Workbench.Tests/QualityServiceTests.cs)
 - [`tests/Workbench.IntegrationTests/QualityCommandTests.cs`](../../../tests/Workbench.IntegrationTests/QualityCommandTests.cs)

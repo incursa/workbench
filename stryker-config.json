@@ -1,6 +1,6 @@
 {
   "stryker-config": {
-    "solution-path": "Workbench.slnx",
+    "solution": "Workbench.slnx",
     "project": "src/Workbench.Core/Workbench.Core.csproj",
     "test-projects": [
       "tests/Workbench.Tests/Workbench.Tests.csproj"
