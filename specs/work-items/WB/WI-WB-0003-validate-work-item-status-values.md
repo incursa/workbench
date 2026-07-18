@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0003
 artifact_type: work_item
-title: "Validate work item status values"
+title: Validate work item status values
 domain: WB
 status: planned
 owner: platform
@@ -33,12 +33,12 @@ related_artifacts:
 
 # WI-WB-0003 - Validate work item status values
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Prevent setting work item statuses that are not in the allowed set. Add a
 future-friendly path for configurable statuses.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

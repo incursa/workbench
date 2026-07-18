@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0025
 artifact_type: work_item
-title: "derive repository attestation snapshot"
+title: derive repository attestation snapshot
 domain: WB
 status: complete
 owner: platform
@@ -24,13 +24,13 @@ related_artifacts:
 
 # WI-WB-0025 - derive repository attestation snapshot
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Implement the derived repository evidence attestation command that produces
 static summary and detailed HTML reports plus a machine-readable JSON snapshot,
 while keeping the report separate from canonical Spec Trace artifacts.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 
@@ -45,14 +45,9 @@ while keeping the report separate from canonical Spec Trace artifacts.
 
 - [`ARC-WB-0005`](../../architecture/WB/ARC-WB-0005-quality-evidence-operating-model.md)
 
-## Delivered Changes
+## Planned Changes
 
-- `workbench quality attest` emits a derived repository attestation snapshot.
-- The command writes summary HTML, detailed HTML, and JSON outputs under
-  `artifacts/quality/attestation/`.
-- The report separates canonical trace, direct refs, work-item status,
-  verification status, and current evidence health.
-- Evidence refresh execution remains explicit and opt-in.
+-
 
 ## Out of Scope
 
@@ -86,3 +81,12 @@ Uses Design:
 Verified By:
 
 - [`VER-WB-0008`](../../verification/WB/VER-WB-0008-derived-repository-attestation-snapshot.md)
+
+## Delivered Changes
+
+- `workbench quality attest` emits a derived repository attestation snapshot.
+- The command writes summary HTML, detailed HTML, and JSON outputs under
+  `artifacts/quality/attestation/`.
+- The report separates canonical trace, direct refs, work-item status,
+  verification status, and current evidence health.
+- Evidence refresh execution remains explicit and opt-in.

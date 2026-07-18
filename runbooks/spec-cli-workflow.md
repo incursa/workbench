@@ -1,3 +1,12 @@
+---
+workbench:
+  type: runbook
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /runbooks/spec-cli-workflow.md
+---
+
 # Runbook: Spec CLI Workflow
 
 ## Purpose

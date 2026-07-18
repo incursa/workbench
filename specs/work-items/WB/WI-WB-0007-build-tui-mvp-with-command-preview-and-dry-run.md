@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0007
 artifact_type: work_item
-title: "Build TUI MVP with command preview and dry-run"
+title: Build TUI MVP with command preview and dry-run
 domain: WB
 status: planned
 owner: platform
@@ -25,12 +25,12 @@ related_artifacts:
 
 # WI-WB-0007 - Build TUI MVP with command preview and dry-run
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Build the initial Terminal.Gui-based TUI with work item workflows, command preview,
 and a global dry-run toggle for discoverability.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

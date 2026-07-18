@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0023
 artifact_type: work_item
-title: "build local web ui mode for workbench"
+title: build local web ui mode for workbench
 domain: WB
 status: planned
 owner: platform
@@ -38,11 +38,11 @@ related_artifacts:
 
 # WI-WB-0023 - build local web ui mode for workbench
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Add a local browser-based UI that runs from the same Workbench executable and reuses the existing core file-backed services for work items, docs, navigation sync, validation, and compact specification editing.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

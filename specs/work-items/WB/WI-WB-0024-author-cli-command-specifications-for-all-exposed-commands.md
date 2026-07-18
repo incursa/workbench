@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0024
 artifact_type: work_item
-title: "Author CLI command specifications for all exposed commands"
+title: Author CLI command specifications for all exposed commands
 domain: WB
 status: planned
 owner: platform
@@ -34,14 +34,14 @@ related_artifacts:
 
 # WI-WB-0024 - Author CLI command specifications for all exposed commands
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Create canonical requirement specifications for each exposed Workbench CLI
 command and subcommand, organized into focused command-family specs with a
 surface index, so the command surface is documented as a set of testable
 behavior contracts.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

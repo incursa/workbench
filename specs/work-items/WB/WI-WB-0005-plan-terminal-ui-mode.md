@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0005
 artifact_type: work_item
-title: "Plan terminal UI mode"
+title: Plan terminal UI mode
 domain: WB
 status: complete
 owner: platform
@@ -25,12 +25,12 @@ related_artifacts:
 
 # WI-WB-0005 - Plan terminal UI mode
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Plan the embedded terminal UI mode for Workbench to improve command discoverability,
 with a visible command preview and a global dry-run toggle.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

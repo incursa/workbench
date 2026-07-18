@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /tracking/workbench-readiness-follow-up-2026-03-22.md
+---
+
 # Workbench readiness follow-up
 
 This note captures the concrete follow-up steps needed to move Workbench from

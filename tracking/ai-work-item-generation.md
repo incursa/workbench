@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /tracking/ai-work-item-generation.md
+---
+
 # AI work item generation
 
 Workbench can draft work items from a freeform description using an AI model.

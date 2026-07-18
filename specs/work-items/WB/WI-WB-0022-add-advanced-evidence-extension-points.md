@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0022
 artifact_type: work_item
-title: "add advanced evidence extension points"
+title: add advanced evidence extension points
 domain: WB
 status: planned
 owner: platform
@@ -24,13 +24,13 @@ related_artifacts:
 
 # WI-WB-0022 - add advanced evidence extension points
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Define and implement extension points for mutation evidence, fuzz evidence, and
 AI-assisted remediation suggestions without making any of them mandatory or
 autonomous in the default workflow.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0002
 artifact_type: work_item
-title: "Sync work items with GitHub issues and branches"
+title: Sync work items with GitHub issues and branches
 domain: WB
 status: complete
 owner: platform
@@ -25,13 +25,13 @@ related_artifacts:
 
 # WI-WB-0002 - Sync work items with GitHub issues and branches
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Add a sync command that keeps local work items and GitHub issues aligned
 without deletes. Sync should create missing issues or local work items and
 optionally create branches for items that need them.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

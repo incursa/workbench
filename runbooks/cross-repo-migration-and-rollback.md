@@ -1,3 +1,12 @@
+---
+workbench:
+  type: runbook
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /runbooks/cross-repo-migration-and-rollback.md
+---
+
 # Runbook: Cross-Repo Migration and Rollback (coherent-v1)
 
 ## Purpose

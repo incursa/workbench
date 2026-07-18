@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0010
 artifact_type: work_item
-title: "create public launch landing and messaging kit"
+title: create public launch landing and messaging kit
 domain: WB
 status: planned
 owner: platform
@@ -23,13 +23,13 @@ related_artifacts:
 
 # WI-WB-0010 - create public launch landing and messaging kit
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Create a public-facing landing narrative (copy + structure) that clearly
 communicates Workbench’s value, differentiators, and call to action for new
 users.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

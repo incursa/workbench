@@ -1,3 +1,12 @@
+---
+workbench:
+  type: specification
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /specs/requirements/_index.md
+---
+
 # Requirements Index
 
 Canonical specifications live under `specs/requirements/<domain>/`.

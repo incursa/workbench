@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0019
 artifact_type: work_item
-title: "generate quality report json and markdown summary"
+title: generate quality report json and markdown summary
 domain: WB
 status: planned
 owner: platform
@@ -24,13 +24,13 @@ related_artifacts:
 
 # WI-WB-0019 - generate quality report json and markdown summary
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Generate the compared report layer that puts authored testing intent beside
 observed evidence and records evidence gaps without turning that report into a
 policy gate.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

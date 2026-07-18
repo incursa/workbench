@@ -1,3 +1,12 @@
+---
+workbench:
+  type: specification
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /specs/requirements/WEB/REQUIREMENT-GAPS.md
+---
+
 # WEB Requirement Gaps
 
 This file tracks unresolved decisions for the local web UI spec browser and requirement editor.

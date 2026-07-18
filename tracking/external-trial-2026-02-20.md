@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /tracking/external-trial-2026-02-20.md
+---
+
 # External Trial Report (2026-02-20)
 
 This report documents the two-repo external hardening trial required by

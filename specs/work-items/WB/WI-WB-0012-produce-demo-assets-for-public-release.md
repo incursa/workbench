@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0012
 artifact_type: work_item
-title: "produce demo assets for public release"
+title: produce demo assets for public release
 domain: WB
 status: planned
 owner: platform
@@ -23,12 +23,12 @@ related_artifacts:
 
 # WI-WB-0012 - produce demo assets for public release
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Capture high-signal visuals and recordings that demonstrate the CLI flow,
 validation output, and work item lifecycle.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

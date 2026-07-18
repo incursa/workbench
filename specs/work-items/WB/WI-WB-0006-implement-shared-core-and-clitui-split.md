@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0006
 artifact_type: work_item
-title: "Implement shared core and CLI/TUI split"
+title: Implement shared core and CLI/TUI split
 domain: WB
 status: complete
 owner: platform
@@ -25,12 +25,12 @@ related_artifacts:
 
 # WI-WB-0006 - Implement shared core and CLI/TUI split
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Split Workbench into core/CLI/TUI projects while preserving a single published
 executable and shared command logic.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

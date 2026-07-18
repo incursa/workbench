@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0020
 artifact_type: work_item
-title: "add quality sync and show command surface"
+title: add quality sync and show command surface
 domain: WB
 status: planned
 owner: platform
@@ -25,12 +25,12 @@ related_artifacts:
 
 # WI-WB-0020 - add quality sync and show command surface
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Implement the small V1 CLI surface for the subsystem and keep it aligned with
 Workbench's existing sync/show and JSON-envelope conventions.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

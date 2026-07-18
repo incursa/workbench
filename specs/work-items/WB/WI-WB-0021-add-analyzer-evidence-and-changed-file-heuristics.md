@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0021
 artifact_type: work_item
-title: "add analyzer evidence and changed file heuristics"
+title: add analyzer evidence and changed file heuristics
 domain: WB
 status: planned
 owner: platform
@@ -24,13 +24,13 @@ related_artifacts:
 
 # WI-WB-0021 - add analyzer evidence and changed file heuristics
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Extend the quality evidence subsystem beyond test execution by ingesting
 analyzer/static-check outputs and flagging changed files with weak nearby
 evidence.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

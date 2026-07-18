@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0018
 artifact_type: work_item
-title: "add cobertura ingestion and coverage summary contract"
+title: add cobertura ingestion and coverage summary contract
 domain: WB
 status: planned
 owner: platform
@@ -24,12 +24,12 @@ related_artifacts:
 
 # WI-WB-0018 - add cobertura ingestion and coverage summary contract
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Normalize coverage outputs into a stable coverage-summary artifact that can
 compare authored thresholds and critical files against observed coverage.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

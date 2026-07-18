@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /tracking/workbench-gaps.md
+---
+
 # Workbench Gaps And TODOs
 
 This file tracks missing features, gaps, and decisions to revisit.

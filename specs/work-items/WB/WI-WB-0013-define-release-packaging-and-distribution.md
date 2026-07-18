@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0013
 artifact_type: work_item
-title: "define release packaging and distribution"
+title: define release packaging and distribution
 domain: WB
 status: planned
 owner: platform
@@ -23,12 +23,12 @@ related_artifacts:
 
 # WI-WB-0013 - define release packaging and distribution
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Document and automate the public release process so users have a clear path to
 installing Workbench.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0011
 artifact_type: work_item
-title: "add getting started tutorial and sample repo"
+title: add getting started tutorial and sample repo
 domain: WB
 status: in_progress
 owner: platform
@@ -23,12 +23,12 @@ related_artifacts:
 
 # WI-WB-0011 - add getting started tutorial and sample repo
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Provide a step-by-step onboarding tutorial plus a small sample repository that
 shows Workbench in action end-to-end.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

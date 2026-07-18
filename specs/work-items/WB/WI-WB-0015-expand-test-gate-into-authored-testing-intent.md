@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0015
 artifact_type: work_item
-title: "expand test gate into authored testing intent"
+title: expand test gate into authored testing intent
 domain: WB
 status: planned
 owner: platform
@@ -24,12 +24,12 @@ related_artifacts:
 
 # WI-WB-0015 - expand test gate into authored testing intent
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Evolve [`quality/testing-intent.yaml`](../../../quality/testing-intent.yaml) from a narrow threshold file
 into the authored testing-intent contract for the quality evidence subsystem.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0016
 artifact_type: work_item
-title: "add normalized test inventory discovery and schema"
+title: add normalized test inventory discovery and schema
 domain: WB
 status: planned
 owner: platform
@@ -24,13 +24,13 @@ related_artifacts:
 
 # WI-WB-0016 - add normalized test inventory discovery and schema
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Discover .NET test projects and test cases, then emit
 `artifacts/quality/testing/test-inventory.json` using the proposed inventory
 schema.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

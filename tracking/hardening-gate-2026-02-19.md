@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /tracking/hardening-gate-2026-02-19.md
+---
+
 # Hardening Gate (2026-02-19)
 
 This checklist is the release bar before upgrading other repositories to this model.

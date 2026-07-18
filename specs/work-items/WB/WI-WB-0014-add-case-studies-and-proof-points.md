@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0014
 artifact_type: work_item
-title: "add case studies and proof points"
+title: add case studies and proof points
 domain: WB
 status: planned
 owner: platform
@@ -23,12 +23,12 @@ related_artifacts:
 
 # WI-WB-0014 - add case studies and proof points
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Add credible, concrete examples that show why Workbench improves clarity and
 throughput compared to ad-hoc workflows.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

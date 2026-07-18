@@ -1,7 +1,7 @@
 ---
 artifact_id: WI-WB-0017
 artifact_type: work_item
-title: "add trx ingestion and test run summary contract"
+title: add trx ingestion and test run summary contract
 domain: WB
 status: planned
 owner: platform
@@ -24,12 +24,12 @@ related_artifacts:
 
 # WI-WB-0017 - add trx ingestion and test run summary contract
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Normalize TRX outputs into a stable run-summary artifact that captures what ran,
 what passed, what failed, and what was skipped.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

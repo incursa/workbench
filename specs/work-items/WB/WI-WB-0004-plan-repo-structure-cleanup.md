@@ -41,13 +41,13 @@ related_artifacts:
 
 # WI-WB-0004 - Plan repo structure cleanup (reduce large files, improve navigation)
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Create a structured plan to refactor the Workbench codebase into clearer
 modules, reduce large file sizes (notably `Program.cs`), and improve overall
 navigability without changing behavior.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 

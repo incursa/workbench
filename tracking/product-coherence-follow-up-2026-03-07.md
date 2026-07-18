@@ -1,3 +1,12 @@
+---
+workbench:
+  type: doc
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /tracking/product-coherence-follow-up-2026-03-07.md
+---
+
 # Product coherence follow-up (2026-03-07)
 
 This pass clarified the operating model, improved the work-item happy path, and

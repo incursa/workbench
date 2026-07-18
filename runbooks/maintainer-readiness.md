@@ -1,3 +1,12 @@
+---
+workbench:
+  type: runbook
+  workItems: []
+  codeRefs: []
+  pathHistory: []
+  path: /runbooks/maintainer-readiness.md
+---
+
 # Runbook: Maintainer Readiness
 
 ## Purpose

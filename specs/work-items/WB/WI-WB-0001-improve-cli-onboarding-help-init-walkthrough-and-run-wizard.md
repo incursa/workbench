@@ -25,13 +25,13 @@ related_artifacts:
 
 # WI-WB-0001 - Improve CLI onboarding help, init walkthrough, and run wizard
 
-Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
-
 ## Summary
 
 Deliver clearer CLI onboarding by updating help output, adding a guided `init`,
 and introducing a guided command for common repo actions, per the linked
 feature spec.
+
+Use one of the approved work-item statuses: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, or `superseded`.
 
 ## Requirements Addressed
 
