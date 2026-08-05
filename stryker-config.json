@@ -5,6 +5,7 @@
     "test-projects": [
       "tests/Workbench.Tests/Workbench.Tests.csproj"
     ],
+    "test-runner": "mtp",
     "mutate": [
       "**/FrontMatter.cs",
       "**/SchemaValidationService.cs",

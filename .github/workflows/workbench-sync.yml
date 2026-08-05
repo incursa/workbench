@@ -22,7 +22,6 @@ on:
 permissions:
   contents: write
   issues: write
-  pull-requests: write
 
 jobs:
   sync:
@@ -76,7 +75,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           WORKBENCH_GITHUB_TOKEN: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          args=(sync --items --docs --nav --include-terminal-items --force)
+          args=(sync --items --docs --nav --include-terminal-items --force --prefer local)
           if [[ "${{ inputs.import_issues }}" == "true" ]]; then
             args+=(--import-issues)
           fi
@@ -96,17 +95,22 @@ jobs:
             echo "sync_mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create pull request
+      - name: Commit changes to main
         id: create_pr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.WORKBENCH_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          commit-message: "chore: workbench sync (${{ env.SYNC_MODE }})"
-          branch: "chore/workbench-sync"
-          title: "Workbench sync (${{ env.SYNC_MODE }})"
-          body: |
-            ## Summary
-            - Run Workbench sync workflow in `${{ env.SYNC_MODE }}` mode.
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "No Workbench changes to publish."
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: workbench sync (${{ env.SYNC_MODE }})"
+          git push origin HEAD:main
+          echo "published=true" >> "$GITHUB_OUTPUT"
 
       - name: Export workflow metrics
         if: always()
@@ -127,7 +131,7 @@ jobs:
             "import_issues": "${{ inputs.import_issues }}",
             "generate_outcome": "${{ steps.sync_generate.outcome }}",
             "active_outcome": "${{ steps.sync_active.outcome }}",
-            "create_pr_outcome": "${{ steps.create_pr.outcome }}"
+            "main_update_outcome": "${{ steps.create_pr.outcome }}"
           }
           EOF
 
@@ -155,13 +159,13 @@ jobs:
             sync_status="❌"
           fi
 
-          pr_status="✅"
+          main_status="✅"
           if [[ "${{ steps.create_pr.outcome }}" != "success" ]]; then
-            pr_status="❌"
+            main_status="❌"
           fi
 
           overall="✅ Passed"
-          if [[ "$sync_status" != "✅" || "$pr_status" != "✅" ]]; then
+          if [[ "$sync_status" != "✅" || "$main_status" != "✅" ]]; then
             overall="❌ Failed"
           fi
 
@@ -178,7 +182,7 @@ jobs:
             echo "| Gate | Status | Metric | Threshold | Notes |"
             echo "|---|---|---:|---:|---|"
             echo "| Operational: Sync | $sync_status | Mode=${mode} | Command succeeds | Import issues=${{ inputs.import_issues }} |"
-            echo "| Operational: PR | $pr_status | create-pull-request | Success | branch=chore/workbench-sync |"
+            echo "| Operational: Main update | $main_status | direct commit/push | Success | target=main |"
             echo "| 🧪 Tests | N/A | Not run in this workflow | n/a | n/a |"
             echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | n/a |"
             echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
