@@ -82,6 +82,8 @@ intent and project memory.
   expanded finish JSON contract as schema version 2. Navigation and validation
   failures now retain the applied status/evidence result, stage error, exit
   code, and exact next action.
+- Updated the docs MCP dependency graph and removed stale security overrides;
+  `npm audit` now reports zero vulnerabilities and all MCP tests pass.
 
 ## Trace Links
 

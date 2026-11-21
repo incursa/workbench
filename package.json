@@ -28,15 +28,10 @@
     "deploy": "npm run deploy:mcp"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "esbuild": "^0.28.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "esbuild": "^0.28.2",
     "gray-matter": "^4.0.3",
-    "wrangler": "^4.88.0",
-    "zod": "^4.4.3"
-  },
-  "overrides": {
-    "@hono/node-server": "1.19.13",
-    "hono": "4.12.17",
-    "ip-address": "10.2.0"
+    "wrangler": "^4.166.0",
+    "zod": "^4.6.7"
   }
 }
