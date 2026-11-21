@@ -76,9 +76,12 @@ intent and project memory.
   refresh is enabled.
 - Final review hardened terminal-status handling, repository-bound context
   resolution, exact requirement matching, and explicit JSON versioning.
-- Before the finish increment is considered complete, its dry-run path must
-  calculate navigation and validation against the prospective completed item,
-  and downstream failures must preserve actionable stage results.
+- Review identified that the finish dry-run needed to calculate navigation and
+  validation against prospective state and retain downstream stage failures.
+- Implemented the prospective dry-run in an isolated mirror and versioned the
+  expanded finish JSON contract as schema version 2. Navigation and validation
+  failures now retain the applied status/evidence result, stage error, exit
+  code, and exact next action.
 
 ## Trace Links
 

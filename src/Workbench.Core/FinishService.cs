@@ -26,6 +26,27 @@ public static class FinishService
             throw new ArgumentException("Work item ID is required.", nameof(options));
         }
 
+        if (options.DryRun)
+        {
+            var workItemPath = WorkItemService.GetItemPathById(repoRoot, config, options.WorkItemId.Trim());
+            using var simulation = FinishSimulationWorkspace.Create(repoRoot, config, workItemPath);
+            return await FinishCoreAsync(
+                simulation.Root,
+                config,
+                options with { DryRun = false },
+                reportedDryRun: true).ConfigureAwait(false);
+        }
+
+        return await FinishCoreAsync(repoRoot, config, options, reportedDryRun: false).ConfigureAwait(false);
+    }
+
+    private static async Task<FinishData> FinishCoreAsync(
+        string repoRoot,
+        WorkbenchConfig config,
+        FinishOptions options,
+        bool reportedDryRun)
+    {
+
         var pullRequest = NormalizePullRequest(options.PullRequest);
         var evidenceEntries = BuildEvidenceEntries(pullRequest, options.Evidence, options.Note);
         var path = WorkItemService.GetItemPathById(repoRoot, config, options.WorkItemId.Trim());
@@ -49,30 +70,13 @@ public static class FinishService
             frontMatter.Data["status"] = "complete";
         }
 
-        if ((statusChanged || evidenceChanged) && !options.DryRun)
+        if (statusChanged || evidenceChanged)
         {
             await File.WriteAllTextAsync(path, new FrontMatter(frontMatter.Data, updatedBody).Serialize()).ConfigureAwait(false);
         }
 
-        var navigation = await NavigationService.SyncNavigationAsync(
-            repoRoot,
-            config,
-            includeDone: false,
-            syncIssues: false,
-            force: false,
-            dryRun: options.DryRun,
-            syncDocs: false,
-            normalizeItems: false).ConfigureAwait(false);
-
-        var validation = ValidationService.ValidateRepo(
-            repoRoot,
-            config,
-            new ValidationOptions(
-                LinkInclude: Array.Empty<string>(),
-                LinkExclude: Array.Empty<string>(),
-                SkipDocSchema: false,
-                Profile: options.ValidationProfile,
-                Scope: Array.Empty<string>()));
+        var navigation = await RunNavigationAsync(repoRoot, config).ConfigureAwait(false);
+        var validation = RunValidation(repoRoot, config, options.ValidationProfile);
 
         return new FinishData(
             options.WorkItemId.Trim(),
@@ -81,19 +85,101 @@ public static class FinishService
             statusChanged ? "complete" : previousStatus,
             statusChanged,
             evidenceChanged,
-            options.DryRun,
-            new FinishNavigationData(
-                navigation.DocsUpdated,
-                navigation.ItemsUpdated,
-                navigation.IndexFilesUpdated,
-                navigation.MissingDocs,
-                navigation.MissingItems,
-                navigation.Warnings),
-            new FinishValidationData(
-                validation.Errors.Count == 0,
-                validation.Profile,
-                validation.Errors,
-                validation.Warnings));
+            reportedDryRun,
+            navigation,
+            validation,
+            BuildNextAction(options.WorkItemId.Trim(), navigation, validation));
+    }
+
+    private static async Task<FinishNavigationData> RunNavigationAsync(
+        string repoRoot,
+        WorkbenchConfig config)
+    {
+        try
+        {
+            var result = await NavigationService.SyncNavigationAsync(
+                repoRoot,
+                config,
+                includeDone: false,
+                syncIssues: false,
+                force: false,
+                dryRun: false,
+                syncDocs: false,
+                normalizeItems: false).ConfigureAwait(false);
+            return new FinishNavigationData(
+                true,
+                result.DocsUpdated,
+                result.ItemsUpdated,
+                result.IndexFilesUpdated,
+                result.MissingDocs.Select(message => NormalizeDiagnostic(repoRoot, message)).ToArray(),
+                result.MissingItems.Select(message => NormalizeDiagnostic(repoRoot, message)).ToArray(),
+                result.Warnings.Select(message => NormalizeDiagnostic(repoRoot, message)).ToArray(),
+                null);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return new FinishNavigationData(
+                false,
+                0,
+                0,
+                0,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                NormalizeDiagnostic(repoRoot, ex.Message));
+        }
+    }
+
+    private static FinishValidationData RunValidation(
+        string repoRoot,
+        WorkbenchConfig config,
+        string? profile)
+    {
+        try
+        {
+            var result = ValidationService.ValidateRepo(
+                repoRoot,
+                config,
+                new ValidationOptions(
+                    LinkInclude: Array.Empty<string>(),
+                    LinkExclude: Array.Empty<string>(),
+                    SkipDocSchema: false,
+                    Profile: profile,
+                    Scope: Array.Empty<string>()));
+            return new FinishValidationData(
+                true,
+                result.Errors.Count == 0,
+                result.Profile,
+                result.Errors.Select(message => NormalizeDiagnostic(repoRoot, message)).ToArray(),
+                result.Warnings.Select(message => NormalizeDiagnostic(repoRoot, message)).ToArray(),
+                null);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or JsonException)
+        {
+            return new FinishValidationData(
+                true,
+                false,
+                profile ?? ValidationProfiles.Core,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                NormalizeDiagnostic(repoRoot, ex.Message));
+        }
+    }
+
+    private static string? BuildNextAction(
+        string workItemId,
+        FinishNavigationData navigation,
+        FinishValidationData validation)
+    {
+        if (!navigation.Ok)
+        {
+            return $"Resolve the navigation error and rerun workbench finish {workItemId}.";
+        }
+        if (!validation.Ok)
+        {
+            return $"Resolve validation findings and rerun workbench validate --profile {validation.Profile}.";
+        }
+        return null;
     }
 
     private static string? NormalizePullRequest(string? value)
@@ -245,5 +331,15 @@ public static class FinishService
     private static string NormalizeRepoPath(string repoRoot, string path)
     {
         return Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+    }
+
+    private static string NormalizeDiagnostic(string repoRoot, string message)
+    {
+        var normalizedRoot = Path.GetFullPath(repoRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return message
+            .Replace(normalizedRoot + Path.DirectorySeparatorChar, string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace(normalizedRoot + Path.AltDirectorySeparatorChar, string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace(normalizedRoot, ".", StringComparison.OrdinalIgnoreCase)
+            .Replace('\\', '/');
     }
 }

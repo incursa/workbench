@@ -77,14 +77,18 @@ public partial class Program
 
                 if (string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
                 {
-                    WriteJson(new FinishOutput(data.Validation.Ok, data), WorkbenchJsonContext.Default.FinishOutput);
+                    WriteJson(
+                        new FinishOutput(data.Navigation.Ok && data.Validation.Ok, data),
+                        WorkbenchJsonContext.Default.FinishOutput);
                 }
                 else
                 {
                     var verb = data.DryRun ? "Would finish" : "Finished";
                     Console.WriteLine($"{verb} {data.WorkItemId}: {data.PreviousStatus} -> {data.FinalStatus}");
                     Console.WriteLine($"Evidence: {(data.EvidenceChanged ? "updated" : "unchanged")}");
-                    Console.WriteLine($"Navigation: {data.Navigation.IndexFilesUpdated} index file(s) updated");
+                    Console.WriteLine(data.Navigation.Ok
+                        ? $"Navigation: {data.Navigation.IndexFilesUpdated} index file(s) updated"
+                        : $"Navigation: failed ({data.Navigation.Error})");
                     Console.WriteLine(data.Validation.Ok
                         ? $"Validation: passed ({data.Validation.Profile})"
                         : $"Validation: failed ({data.Validation.Errors.Count} error(s))");
@@ -94,7 +98,10 @@ public partial class Program
                         {
                             Console.WriteLine($"- {error}");
                         }
-                        Console.WriteLine($"Next: resolve the errors and rerun workbench validate --profile {data.Validation.Profile}");
+                    }
+                    if (!string.IsNullOrWhiteSpace(data.RecommendedNextAction))
+                    {
+                        Console.WriteLine($"Next: {data.RecommendedNextAction}");
                     }
                 }
 
@@ -103,7 +110,7 @@ public partial class Program
                     || data.Navigation.MissingDocs.Count > 0
                     || data.Navigation.MissingItems.Count > 0;
                 var exitCode = 2;
-                if (data.Validation.Ok)
+                if (data.Navigation.Ok && data.Validation.Ok)
                 {
                     exitCode = hasWarnings ? 1 : 0;
                 }

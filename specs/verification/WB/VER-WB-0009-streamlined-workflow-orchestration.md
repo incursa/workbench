@@ -66,8 +66,9 @@ stable automation contracts, and explicit external-system authority.
 
 ## Evidence
 
-- Planned: policy and context tests.
-- Planned: finish service and command tests.
+- Passing: policy and context unit/integration tests.
+- Passing: finish idempotence, prospective no-mutation dry-run, structured
+  post-mutation failure, terminal-status safety, and JSON contract tests.
 - Planned: doctor repair and external reconciliation tests.
 
 ## Status

@@ -70,7 +70,8 @@ rewrite.
    and verification artifacts.
 6. Finish tracked work with `workbench finish <id> [--pr <url>]`. It records
    local completion evidence idempotently, refreshes derived navigation, and
-   validates without contacting external systems.
+   validates without contacting external systems. Add `--dry-run` to execute
+   the prospective workflow in an isolated mirror without changing the repo.
 7. Run `workbench validate` before review or automation. Use
    `--profile traceable` or `--profile auditable` when you need stronger graph
    checks, and `--scope <path>` to focus validation on a subtree.

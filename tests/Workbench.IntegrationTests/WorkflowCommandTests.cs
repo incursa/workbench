@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Workbench.Core;
+
 namespace Workbench.IntegrationTests;
 
 [TestClass]
@@ -74,7 +77,7 @@ public class WorkflowCommandTests
         var first = RunFinish(repo.Path, id, PullRequest);
         Assert.AreEqual(2, first.ExitCode, $"stderr: {first.StdErr}\nstdout: {first.StdOut}");
         var firstData = TestAssertions.ParseJson(first.StdOut).GetProperty("data");
-        Assert.AreEqual(1, firstData.GetProperty("schemaVersion").GetInt32());
+        Assert.AreEqual(2, firstData.GetProperty("schemaVersion").GetInt32());
         Assert.IsTrue(firstData.GetProperty("statusChanged").GetBoolean());
         Assert.IsTrue(firstData.GetProperty("evidenceChanged").GetBoolean());
         Assert.IsFalse(firstData.GetProperty("validation").GetProperty("ok").GetBoolean());
@@ -87,6 +90,48 @@ public class WorkflowCommandTests
 
         var content = File.ReadAllText(path);
         Assert.AreEqual(1, CountOccurrences(content, $"Pull request: {PullRequest}"));
+    }
+
+    [TestMethod]
+    public void Finish_JsonPreservesMutationResultWhenNavigationFails()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+        TestAssertions.RunWorkbenchAndAssertSuccess(repo.Path, "--repo", repo.Path, "scaffold");
+        CopyValidationSchemas(repo.Path);
+
+        var created = TestAssertions.RunWorkbenchAndParseJson(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "--format",
+            "json",
+            "item",
+            "new",
+            "--type",
+            "work_item",
+            "--title",
+            "Structured finish failure");
+        var id = created.GetProperty("data").GetProperty("id").GetString()!;
+        var config = WorkbenchConfig.Load(repo.Path, out var error);
+        Assert.IsNull(error);
+        config = config with { Paths = config.Paths with { DocsRoot = "blocked" } };
+        File.WriteAllText(
+            WorkbenchConfig.GetConfigPath(repo.Path),
+            JsonSerializer.Serialize(config, WorkbenchJsonContext.Default.WorkbenchConfig));
+        File.WriteAllText(Path.Combine(repo.Path, "blocked"), "not a directory");
+
+        var result = RunFinish(repo.Path, id, "https://github.com/incursa/workbench/pull/44");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        var payload = TestAssertions.ParseJson(result.StdOut);
+        Assert.IsFalse(payload.GetProperty("ok").GetBoolean());
+        var data = payload.GetProperty("data");
+        Assert.IsTrue(data.GetProperty("statusChanged").GetBoolean());
+        Assert.IsFalse(data.GetProperty("navigation").GetProperty("ok").GetBoolean());
+        Assert.IsFalse(string.IsNullOrWhiteSpace(data.GetProperty("navigation").GetProperty("error").GetString()));
+        Assert.IsTrue(data.GetProperty("validation").GetProperty("executed").GetBoolean());
+        Assert.IsFalse(string.IsNullOrWhiteSpace(data.GetProperty("recommendedNextAction").GetString()));
     }
 
     private static CommandResult RunFinish(string repoPath, string id, string pullRequest)

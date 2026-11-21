@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Workbench.Core;
 
 namespace Workbench.Tests;
@@ -71,7 +72,16 @@ public class FinishServiceTests
             "in_progress",
             null,
             null);
-        var before = await File.ReadAllTextAsync(created.Path);
+        await NavigationService.SyncNavigationAsync(
+            repo.Path,
+            WorkbenchConfig.Default,
+            includeDone: false,
+            syncIssues: false,
+            force: false,
+            dryRun: false,
+            syncDocs: false,
+            normalizeItems: false);
+        var before = SnapshotFiles(repo.Path);
 
         var result = await FinishService.FinishAsync(
             repo.Path,
@@ -85,7 +95,53 @@ public class FinishServiceTests
         Assert.IsTrue(result.StatusChanged);
         Assert.IsTrue(result.EvidenceChanged);
         Assert.AreEqual("complete", result.FinalStatus);
-        Assert.AreEqual(before, await File.ReadAllTextAsync(created.Path));
+        Assert.IsTrue(result.Navigation.Ok, result.Navigation.Error);
+        Assert.IsGreaterThan(0, result.Navigation.IndexFilesUpdated);
+        CollectionAssert.AreEquivalent(before, SnapshotFiles(repo.Path));
+
+        var actual = await FinishService.FinishAsync(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new FinishOptions(
+                created.Id,
+                PullRequest: "https://github.com/incursa/workbench/pull/43"));
+
+        Assert.AreEqual(result.Navigation.IndexFilesUpdated, actual.Navigation.IndexFilesUpdated);
+        Assert.AreEqual(result.Validation.Ok, actual.Validation.Ok);
+        CollectionAssert.AreEqual(result.Validation.Errors.ToArray(), actual.Validation.Errors.ToArray());
+    }
+
+    [TestMethod]
+    public async Task FinishAsync_ReturnsStageResultsWhenNavigationFailsAfterMutation()
+    {
+        using var repo = CreateRepoRoot();
+        ScaffoldService.Scaffold(repo.Path, force: true);
+        var created = WorkItemService.CreateItem(
+            repo.Path,
+            WorkbenchConfig.Default,
+            "work_item",
+            "Structured failure",
+            "in_progress",
+            null,
+            null);
+        var config = WorkbenchConfig.Default with
+        {
+            Paths = WorkbenchConfig.Default.Paths with { DocsRoot = "blocked" }
+        };
+        await File.WriteAllTextAsync(Path.Combine(repo.Path, "blocked"), "not a directory");
+
+        var result = await FinishService.FinishAsync(
+            repo.Path,
+            config,
+            new FinishOptions(created.Id));
+
+        Assert.IsTrue(result.StatusChanged);
+        Assert.AreEqual("complete", result.FinalStatus);
+        Assert.IsFalse(result.Navigation.Ok);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.Navigation.Error));
+        Assert.IsTrue(result.Validation.Executed);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.RecommendedNextAction));
+        StringAssert.Contains(await File.ReadAllTextAsync(created.Path), "status: complete", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -148,6 +204,15 @@ public class FinishServiceTests
             index += value.Length;
         }
         return count;
+    }
+
+    private static string[] SnapshotFiles(string repoRoot)
+    {
+        return Directory.EnumerateFiles(repoRoot, "*", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}.git{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .Select(path => $"{Path.GetRelativePath(repoRoot, path)}:{Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)))}")
+            .ToArray();
     }
 
     private static TempRepoRoot CreateRepoRoot()

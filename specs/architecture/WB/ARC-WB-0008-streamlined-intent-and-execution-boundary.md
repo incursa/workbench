@@ -112,6 +112,9 @@ it does not silently relax existing validation or mutate existing artifacts.
 ## Edge Cases and Constraints
 
 - A repeated finish or repair command must be a no-op when state is current.
+- Finish dry-runs execute against an isolated repository mirror so generated
+  navigation and validation observe the prospective completed item without
+  writing to the source repository.
 - A validation failure after a local finish must report what changed and the
   exact remaining action rather than hide the completed mutations.
 - Existing canonical schemas reject arbitrary execution fields. Until the

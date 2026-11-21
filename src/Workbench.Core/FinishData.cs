@@ -12,11 +12,12 @@ public sealed record FinishData(
     [property: JsonPropertyName("evidenceChanged")] bool EvidenceChanged,
     [property: JsonPropertyName("dryRun")] bool DryRun,
     [property: JsonPropertyName("navigation")] FinishNavigationData Navigation,
-    [property: JsonPropertyName("validation")] FinishValidationData Validation)
+    [property: JsonPropertyName("validation")] FinishValidationData Validation,
+    [property: JsonPropertyName("recommendedNextAction")] string? RecommendedNextAction)
 {
     /// <summary>
     /// Version of the finish JSON data contract.
     /// </summary>
     [JsonPropertyName("schemaVersion")]
-    public int SchemaVersion { get; init; } = 1;
+    public int SchemaVersion { get; init; } = 2;
 }
