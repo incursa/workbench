@@ -108,7 +108,8 @@ deployment state.
 - `src/Workbench`: CLI source code.
 - `src/Workbench.Cli`: command composition and dispatch.
 - `src/Workbench.Core`: repository IO, validation, Git/GitHub integration, and shared models.
-- `src/Workbench.Tui`: terminal UI entry point.
+- `src/Workbench.Tui`: unsupported Terminal.Gui prototype retained for design
+  reference; it is not built, packaged, or covered by compatibility guarantees.
 - `src/mcp`: docs MCP Worker source.
 - `content/`: authored docs for the MCP Worker and mirrored docs site.
 - `runbooks/`: operational procedures and release playbooks.

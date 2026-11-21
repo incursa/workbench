@@ -4,7 +4,7 @@ artifact_type: specification
 title: Terminal UI Mode
 domain: TUI
 capability: terminal-ui
-status: draft
+status: retired
 owner: platform
 related_artifacts:
   - WI-WB-0005
@@ -17,8 +17,8 @@ related_artifacts:
 
 ## Purpose
 
-Add an interactive terminal UI mode to the Workbench CLI while keeping a
-single published executable and reusing the existing service layer.
+Record the historical terminal UI proposal and its requirements. The proposal
+is retired and does not describe a supported Workbench surface.
 
 ## Scope
 
@@ -29,11 +29,10 @@ single published executable and reusing the existing service layer.
 
 ## Context
 
-The TUI is intended to sit between the CLI and a future browser UI: it should
-make browsing and common edits easier without changing the data model or
-duplicating the underlying business logic.
-The current shipped CLI does not expose `workbench tui`; this spec tracks the
-planned terminal UI contract rather than a live command surface.
+The Terminal.Gui prototype was never integrated into the solution, package, or
+command tree. The shipped browser UI now serves the interactive use case. The
+source remains under `src/Workbench.Tui` for reference only; implementing a
+supported TUI requires a new specification and product decision.
 
 ## REQ-TUI-0001 Expose the TUI from the same executable
 The CLI MUST expose the terminal UI as a subcommand or alias inside the same published executable.

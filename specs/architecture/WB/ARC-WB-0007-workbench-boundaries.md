@@ -16,11 +16,6 @@ satisfies:
   - REQ-CLI-SURFACE-0004
   - REQ-CLI-SURFACE-0005
   - REQ-CLI-SURFACE-0006
-  - REQ-TUI-0001
-  - REQ-TUI-0002
-  - REQ-TUI-0003
-  - REQ-TUI-0004
-  - REQ-TUI-0005
   - REQ-WEB-0001
   - REQ-WEB-0002
   - REQ-WEB-0003
@@ -29,7 +24,6 @@ satisfies:
 related_artifacts:
   - SPEC-WB-STD
   - SPEC-CLI-SURFACE
-  - SPEC-TUI-TERMINAL-UI
   - SPEC-WEB-LOCAL-UI
   - VER-WB-0005
 ---
@@ -52,11 +46,6 @@ Describe the top-level product boundaries that Workbench owns.
 - [`REQ-CLI-SURFACE-0004`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
 - [`REQ-CLI-SURFACE-0005`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
 - [`REQ-CLI-SURFACE-0006`](../../requirements/CLI/SPEC-CLI-SURFACE.md)
-- [`REQ-TUI-0001`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
-- [`REQ-TUI-0002`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
-- [`REQ-TUI-0003`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
-- [`REQ-TUI-0004`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
-- [`REQ-TUI-0005`](../../requirements/TUI/SPEC-TUI-TERMINAL-UI.md)
 - [`REQ-WEB-0001`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
 - [`REQ-WEB-0002`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
 - [`REQ-WEB-0003`](../../requirements/WEB/SPEC-WEB-LOCAL-UI.md)
@@ -87,7 +76,7 @@ The boundary model separates authored content from generated views and keeps eac
 ## Edge Cases and Constraints
 
 - Canonical artifacts should remain distinguishable from generated indexes.
-- The CLI, TUI, and web surfaces should reuse the same repository model.
+- The CLI and web surfaces should reuse the same repository model.
 - Generated sections should be clearly marked as generated.
 
 ## Alternatives Considered

@@ -3,7 +3,7 @@ artifact_id: VER-WB-0003
 artifact_type: verification
 title: "Terminal UI Mode"
 domain: WB
-status: blocked
+status: obsolete
 owner: platform
 verifies:
   - REQ-TUI-0001
@@ -46,8 +46,8 @@ Documentation review, repository validation, and targeted command-surface checks
 
 ## Expected Result
 
-The linked requirements are satisfied by the documented repository behavior and validation outputs.
-This artifact remains blocked until the CLI exposes the TUI entrypoint described by the requirements.
+The historical requirements are not part of the supported product. The
+prototype is explicitly excluded from the solution and package.
 
 ## Evidence
 
@@ -61,7 +61,7 @@ This artifact remains blocked until the CLI exposes the TUI entrypoint described
 
 The status below applies to every requirement listed in `verifies`. If the requirements do not share one outcome, split them into separate verification artifacts.
 
-passed
+obsolete
 
 ## Related Artifacts
 
