@@ -74,18 +74,33 @@ Read first:
 
 ## Workflow
 
-1. Start with the authoritative `SPEC-...` files for the task.
-2. Open the matching template.
-3. Draft or revise the artifact.
-4. Run `workbench validate`.
-5. Refresh generated views when the repo surface changes.
-6. Use `workbench quality attest` when you need the derived evidence snapshot
+1. Run `workbench context` to resolve the repository's workflow level,
+   applicable artifacts, active work, and recommended next command.
+2. Under `light`, make trivial or emergency changes without creating a work
+   item when durable coordination is unnecessary.
+3. Under `standard`, create a work item for meaningful multi-step or handoff
+   work. Under `governed`, also maintain explicit requirement, architecture,
+   and verification trace.
+4. Start with the authoritative `SPEC-...` files when the change affects
+   durable behavior or constraints.
+5. Open the matching template and draft or revise the artifact.
+6. Use `workbench finish <id>` for tracked work so completion evidence,
+   generated views, and validation are reconciled together. Run `workbench doc
+   sync` separately when the change also requires backlink or document repair.
+7. Run `workbench validate` directly for untracked light changes or focused
+   diagnostics.
+8. Use `workbench quality attest` when you need the derived evidence snapshot
    instead of another canonical artifact.
 
 When traceability needs stronger enforcement, run `workbench validate` with
 `--profile traceable` or `--profile auditable`. Use `--scope` to narrow the
 validation target to a subtree without turning derived quality evidence into
 canonical trace.
+
+GitHub and deployment systems remain authoritative for execution state.
+Workbench records engineering intent, architectural decisions, traceability,
+and durable verification evidence; it should not require a parallel manual
+status update when execution facts can be reconciled from their source.
 
 ## Authoring Rules
 

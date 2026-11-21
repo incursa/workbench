@@ -47,12 +47,15 @@ public static class NavigationService
         bool syncIssues,
         bool force,
         bool dryRun,
-        bool syncDocs = true)
+        bool syncDocs = true,
+        bool normalizeItems = true)
     {
         var docSync = syncDocs
             ? await DocService.SyncLinksAsync(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun)
 .ConfigureAwait(false) : new DocService.DocSyncResult(0, 0, new List<string>(), new List<string>());
-        var normalizedItems = WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun);
+        var normalizedItems = normalizeItems
+            ? WorkItemService.NormalizeRelatedLinks(repoRoot, config, includeDone, dryRun)
+            : 0;
         var warnings = new List<string>();
         var docs = LoadDocEntries(repoRoot, config, warnings);
         var docsReadmePath = Path.Combine(repoRoot, config.Paths.DocsRoot, "README.md");

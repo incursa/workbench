@@ -19,6 +19,12 @@ public sealed record WorkbenchConfig(
     TuiConfig Tui)
 {
     /// <summary>
+    /// Proportional workflow policy. Kept outside the positional constructor so
+    /// existing callers and repository configuration files remain compatible.
+    /// </summary>
+    public WorkflowConfig Workflow { get; init; } = new();
+
+    /// <summary>
     /// Default configuration used when no config file exists or load fails.
     /// </summary>
     public static WorkbenchConfig Default => new(
@@ -64,6 +70,10 @@ public sealed record WorkbenchConfig(
             if (config.Tui is null)
             {
                 config = config with { Tui = new TuiConfig() };
+            }
+            if (config.Workflow is null)
+            {
+                config = config with { Workflow = new WorkflowConfig() };
             }
             return config;
         }

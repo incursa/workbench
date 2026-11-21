@@ -46,6 +46,7 @@ workbench <command> [options]
       - `workbench config credentials unset`: Remove an entry from credentials.env.
     - `workbench config set`: Write or update config values in .workbench/config.json.
     - `workbench config show`: Print effective config (defaults + repo config + CLI overrides).
+  - `workbench context`: Show concise repository policy, active work, applicable artifacts, and one recommended next action.
   - `workbench doc`: Group: documentation commands.
     - `workbench doc delete`: Delete a documentation file and update work item links.
     - `workbench doc edit`: Edit documentation metadata and body by artifact ID or path.
@@ -57,6 +58,7 @@ workbench <command> [options]
     - `workbench doc sync`: Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.
     - `workbench doc unlink`: Unlink a doc from work items.
   - `workbench doctor`: Check git, config, and expected paths.
+  - `workbench finish`: Idempotently record completion evidence, refresh local derived views, and validate a work item.
   - `workbench github`: Group: GitHub commands.
     - `workbench github pr`: Group: GitHub pull request commands.
       - `workbench github pr create`: Create a GitHub PR via the configured provider and backlink the PR URL.
@@ -167,6 +169,12 @@ Options:
 ### `workbench config show`
 Print effective config (defaults + repo config + CLI overrides).
 
+### `workbench context`
+Show concise repository policy, active work, applicable artifacts, and one recommended next action.
+
+Options:
+- `--work-item <work-item>`: Select a work item explicitly instead of inferring it from the current branch.
+
 ### `workbench doc`
 Group: documentation commands.
 
@@ -274,6 +282,19 @@ Check git, config, and expected paths.
 
 Options:
 - `--json`: Output machine-readable JSON.
+
+### `workbench finish`
+Idempotently record completion evidence, refresh local derived views, and validate a work item.
+
+Arguments:
+- `id`: Work item ID.
+
+Options:
+- `--pr <pr>`: Pull request URL to record as completion evidence.
+- `--evidence <evidence>`: Completion evidence entry. May be specified more than once.
+- `--note <note>`: Completion note to record idempotently.
+- `--profile <profile>`: Validation profile override (core|traceable|auditable).
+- `--dry-run`: Report the local changes without writing them.
 
 ### `workbench github`
 Group: GitHub commands.

@@ -3385,6 +3385,8 @@ public partial class Program
         navCommand.Subcommands.Add(navSyncCommand);
         root.Subcommands.Add(navCommand);
         root.Subcommands.Add(BuildQualityCommand(repoOption, formatOption));
+        root.Subcommands.Add(BuildContextCommand(repoOption, formatOption));
+        root.Subcommands.Add(BuildFinishCommand(repoOption, formatOption));
 
         var syncCommand = new Command("sync", "Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.");
         var syncItemsOption = new Option<bool>("--items")
