@@ -145,7 +145,8 @@ deployment state.
 
 ## Requirements
 
-- .NET SDK `10.0.100` (see [`global.json`](global.json)).
+- .NET SDK `10.0.100` or a later .NET 10 feature band (see
+  [`global.json`](global.json)). Major-version roll-forward remains disabled.
 - Canonical JSON validation uses the SpecTrace schema snapshot pinned in
   [`src/Workbench.Core/Workbench.Core.csproj`](src/Workbench.Core/Workbench.Core.csproj).
 - Optional: GitHub CLI for the GH-dependent integration tests.
