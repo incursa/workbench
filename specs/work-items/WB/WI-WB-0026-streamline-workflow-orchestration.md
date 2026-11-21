@@ -85,11 +85,34 @@ intent and project memory.
 - Updated the docs MCP dependency graph and removed stale security overrides;
   `npm audit` now reports zero vulnerabilities and all MCP tests pass.
 
+## Traceability Migration Backlog
+
+The validator now treats Markdown artifact links and plain IDs equivalently.
+After removing duplicate clauses, stale external-local references, and two body
+mismatches, the remaining findings are genuine authoring work rather than
+parser noise:
+
+- traceable: 444 requirements without a downstream relationship
+- auditable: the same 444 downstream gaps, 479 missing verification links,
+  453 reciprocal mismatches, and 14 orphan artifacts
+
+Migration order is reciprocal-claim review, real verification evidence, then
+unimplemented requirement disposition. Do not bulk-link generic artifacts to
+make the profiles green.
+
 ## Trace Links
 
 Addresses:
 
-- [`SPEC-WB-STREAMLINED-WORKFLOW`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0001`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0002`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0003`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0004`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0005`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0006`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0007`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0008`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
+- [`REQ-WB-STREAM-0009`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
 
 Uses Design:
 

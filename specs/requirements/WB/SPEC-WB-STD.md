@@ -6,11 +6,6 @@ domain: WB
 capability: standards-integration
 status: draft
 owner: platform
-related_artifacts:
-  - SPEC-STD
-  - SPEC-SCH
-  - SPEC-LAY
-  - SPEC-TPL
 ---
 
 # SPEC-WB-STD - Workbench Standards Integration
@@ -27,7 +22,7 @@ Define how Workbench consumes the spec-trace standard without redefining it.
 
 ## Context
 
-The spec-trace repository remains the authority on requirement structure,
+The [spec-trace repository](https://github.com/incursa/spec-trace) remains the authority on requirement structure,
 artifact layout, identifier rules, and compact requirement grammar. Workbench
 must implement behavior against that standard rather than duplicate or reinterpret
 it.

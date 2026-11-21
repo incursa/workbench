@@ -69,6 +69,9 @@ stable automation contracts, and explicit external-system authority.
 - Passing: policy and context unit/integration tests.
 - Passing: finish idempotence, prospective no-mutation dry-run, structured
   post-mutation failure, terminal-status safety, and JSON contract tests.
+- Passing: Markdown-linked trace references resolve identically to plain IDs;
+  repository triage reduced traceable findings from 779 to 444 and auditable
+  findings from 2,142 to 1,390 without adding synthetic relationships.
 - Planned: doctor repair and external reconciliation tests.
 
 ## Status
