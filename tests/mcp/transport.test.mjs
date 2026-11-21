@@ -12,6 +12,10 @@ test("GET /mcp renders the markdown-first docs index", async () => {
   assert.match(html, /content\//i);
   assert.match(html, /workbench:\/\/file\/\{path\}/i);
   assert.match(html, /\/workbench\/mcp\/resource\//i);
+  assert.match(response.headers.get("content-security-policy"), /default-src 'none'/i);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.match(response.headers.get("cache-control"), /public/i);
 });
 
 test("POST /workbench/mcp initializes stable MCP server metadata", async () => {
@@ -88,4 +92,21 @@ test("tools/list exposes only search_docs", async () => {
     tools.result.tools.map((tool) => tool.name),
     ["search_docs"],
   );
+});
+
+test("MCP transport rejects unsupported methods and oversized requests", async () => {
+  const unsupported = await callWorker("/workbench/mcp", { method: "PUT" });
+  assert.equal(unsupported.status, 405);
+  assert.equal(unsupported.headers.get("allow"), "GET, POST");
+
+  const oversized = await callWorker("/workbench/mcp", {
+    method: "POST",
+    headers: {
+      "content-length": String(300 * 1024),
+      "content-type": "application/json",
+    },
+    body: "{}",
+  });
+  assert.equal(oversized.status, 413);
+  assert.equal(oversized.headers.get("cache-control"), "no-store");
 });

@@ -72,6 +72,8 @@ stable automation contracts, and explicit external-system authority.
 - Passing: Markdown-linked trace references resolve identically to plain IDs;
   repository triage reduced traceable findings from 779 to 444 and auditable
   findings from 2,142 to 1,390 without adding synthetic relationships.
+- Passing: 13 docs MCP protocol/search/security tests and zero npm audit
+  vulnerabilities.
 - Planned: doctor repair and external reconciliation tests.
 
 ## Status

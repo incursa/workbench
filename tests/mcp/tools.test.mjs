@@ -59,3 +59,17 @@ test("search_docs returns prioritized results for an empty query", async () => {
 
   assert.equal(response.result.structuredContent.results[0].uri, "workbench://overview");
 });
+
+test("search_docs rejects overlong queries", async () => {
+  const response = await callJsonRpc("tools/call", {
+    name: "search_docs",
+    arguments: {
+      query: "x".repeat(513),
+      kind: "any",
+      group: "any",
+      max_results: 3,
+    },
+  });
+
+  assert.equal(response.result.isError, true);
+});

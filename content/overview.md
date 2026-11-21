@@ -42,11 +42,15 @@ The Worker then serves:
 
 The runtime stays deterministic:
 
+- public, unauthenticated, and read-only
 - no LLM calls
 - no database
 - no runtime crawling
 - no dynamic web search
 - one tool only: `search_docs`
+
+`POST /mcp` is protocol transport, not a mutation endpoint. Runtime responses
+are produced exclusively from the compiled manifest and search index.
 
 Use this page as the entry point for the rest of the docs surface.
 For the local validation path, run `npm test` after content changes.

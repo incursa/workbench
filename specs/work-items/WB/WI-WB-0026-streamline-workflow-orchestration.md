@@ -84,6 +84,9 @@ intent and project memory.
   code, and exact next action.
 - Updated the docs MCP dependency graph and removed stale security overrides;
   `npm audit` now reports zero vulnerabilities and all MCP tests pass.
+- Formalized the docs MCP as a public, unauthenticated, read-only surface and
+  added request/query bounds, security/cache headers, and negative transport
+  tests without introducing runtime state or mutation.
 
 ## Traceability Migration Backlog
 
