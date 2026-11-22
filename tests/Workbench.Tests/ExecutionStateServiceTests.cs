@@ -11,7 +11,7 @@ public sealed class ExecutionStateServiceTests
     private static readonly DateTimeOffset observedAt = new(2026, 11, 22, 1, 2, 3, TimeSpan.Zero);
 
     [TestMethod]
-    public async Task RefreshAsync_WritesVersionedSnapshotAndRetainsObservationsWhenProviderBecomesUnavailable()
+    public async Task RefreshAsync_WritesVersionedSnapshotAndRetainsObservationsWhenProviderBecomesUnavailableAsync()
     {
         using var repo = new TempRepoRoot();
         ScaffoldService.Scaffold(repo.Path, force: false);
@@ -76,7 +76,7 @@ public sealed class ExecutionStateServiceTests
     }
 
     [TestMethod]
-    public async Task GithubProvider_ObservesPullRequestReleaseAndDeploymentWithoutMutation()
+    public async Task GithubProvider_ObservesPullRequestReleaseAndDeploymentWithoutMutationAsync()
     {
         var requests = new List<(HttpMethod Method, string Path, string? Authorization)>();
         using var client = new HttpClient(new StubHttpMessageHandler(request =>
@@ -126,7 +126,7 @@ public sealed class ExecutionStateServiceTests
     }
 
     [TestMethod]
-    public async Task GithubProvider_MissingCredentialsReturnsClearUnavailableStatus()
+    public async Task GithubProvider_MissingCredentialsReturnsClearUnavailableStatusAsync()
     {
         using var client = new HttpClient(new StubHttpMessageHandler(_ =>
             throw new AssertFailedException("Unavailable provider must not issue an HTTP request.")));
