@@ -109,6 +109,58 @@ it does not silently relax existing validation or mutate existing artifacts.
 - External synchronization is read-only or explicit; no network call is part
   of an automatic local repair.
 
+## External Execution Reconciliation Contract
+
+The first reconciliation slice is an explicit read model, not another sync
+engine. A provider returns immutable observations with this logical shape:
+
+```text
+ExecutionObservation(
+  provider, kind, externalReference, url,
+  normalizedState, nativeState, observedAtUtc, revision)
+```
+
+`kind` is `pull_request`, `release`, or `deployment`. Normalized states are
+deliberately small: `pending`, `active`, `succeeded`, `failed`, `cancelled`, and
+`unknown`; the provider-native value is retained so no information is hidden.
+The provider interface has one read operation over configured references and
+does not expose create, update, retry, cancel, or deploy methods.
+
+An explicit future `workbench execution refresh` command will resolve the
+configured references and write a versioned snapshot to
+`artifacts/execution-state/<work-item-id>.json`. `workbench execution show`
+will read the snapshot without network access unless refresh is requested. A
+snapshot records both successful observations and refresh diagnostics, so a
+provider outage is not confused with a failed deployment. Canonical work-item
+status is never derived from this snapshot.
+
+The first adapter should use the existing GitHub authority and credentials for
+pull-request and GitHub release/deployment observations. Provider-neutral
+records and tests precede that adapter, so another deployment system can be
+added without changing the snapshot contract. This slice requires its own CLI
+specification and verification artifact before implementation.
+
+## Initiative and Parent-Child Extension
+
+The schema extension will add optional `parent_ref` and `initiative_refs`
+fields to canonical work items. A reference is either a local canonical
+artifact ID or a cross-repository URI in this form:
+
+```text
+workbench://<host>/<owner>/<repository>/<artifact-id>
+```
+
+`parent_ref` is singular; `initiative_refs` is an ordered, duplicate-free
+list. Local validation rejects self-reference, cycles, and references to a
+non-work-item artifact. Remote references are syntactically validated offline;
+an explicit resolver may later confirm existence but must not copy remote
+status or content. Derived navigation may show the relationships, while the
+authored fields remain the source of truth.
+
+This extension lands separately from execution reconciliation. It requires a
+schema version update, Markdown/JSON round-trip coverage, local cycle tests,
+and a migration note; no existing field changes meaning.
+
 ## Edge Cases and Constraints
 
 - A repeated finish or repair command must be a no-op when state is current.
@@ -143,6 +195,7 @@ it does not silently relax existing validation or mutate existing artifacts.
 
 ## Open Questions
 
-- Whether execution evidence should become a Spec Trace extension or remain a
-  separate derived store.
-- Which deployment providers should define the first reconciliation contract.
+- Whether a future remote resolver should support aliases for moved
+  repositories while retaining the original canonical URI.
+- Whether initiative references should eventually allow non-work-item
+  artifacts; the first schema revision will not.

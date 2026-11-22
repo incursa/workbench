@@ -83,6 +83,10 @@ stable automation contracts, and explicit external-system authority.
   refresh, idempotence, malformed-config preservation, and optional provider
   readiness checks.
 - Planned: provider-backed external reconciliation tests.
+- Planned: execution snapshot versioning, stale-provider behavior, and proof
+  that automatic local commands make no provider calls.
+- Planned: hierarchy schema round trips, cycle rejection, remote URI parsing,
+  and proof that status is not propagated across relationships.
 
 ## Status
 

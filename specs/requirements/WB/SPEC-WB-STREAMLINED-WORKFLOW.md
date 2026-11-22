@@ -111,6 +111,17 @@ Trace:
 Workbench SHOULD represent stable initiative and parent-child relationships
 without copying execution status between repositories.
 
+Acceptance criteria:
+
+- a work item has at most one parent reference and zero or more initiative
+  references
+- local references use canonical artifact IDs; cross-repository references use
+  `workbench://<host>/<owner>/<repository>/<artifact-id>` URIs
+- local cycles and a work item referencing itself are rejected
+- remote references remain usable offline and are resolved only by an explicit
+  command
+- relationship resolution never imports or propagates work-item status
+
 Trace:
 - Satisfied By:
   - [`ARC-WB-0008`](../../architecture/WB/ARC-WB-0008-streamlined-intent-and-execution-boundary.md)
@@ -124,6 +135,20 @@ Trace:
 Workbench MUST allow GitHub and deployment systems to remain authoritative for
 merge, release, and deployment state while retaining engineering intent and
 traceability locally.
+
+Acceptance criteria:
+
+- provider observations are read-only and include provider, kind, external
+  reference, URL, normalized state, provider-native state, observation time,
+  and immutable revision when available
+- explicit refresh writes only a derived snapshot under
+  `artifacts/execution-state/`; it does not edit canonical work-item status
+- automatic local commands, including `finish` and `doctor --fix`, never make
+  provider calls
+- stale or unavailable providers preserve the last observation and report its
+  age and refresh error
+- JSON output is versioned and distinguishes provider failure from an observed
+  failed deployment
 
 Trace:
 - Satisfied By:

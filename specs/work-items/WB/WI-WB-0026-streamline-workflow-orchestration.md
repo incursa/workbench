@@ -53,6 +53,10 @@ intent and project memory.
   dry-run and structured downstream stage results.
 - Delivered: deterministic `workbench doctor --fix` scaffolding and
   established-index repair with versioned JSON and one next action.
+- Decision-ready, not implemented: read-only external execution observations
+  and a derived snapshot contract.
+- Decision-ready, not implemented: offline-stable parent and initiative
+  references for local and cross-repository work items.
 
 ## Out of Scope
 
@@ -69,6 +73,10 @@ intent and project memory.
 - Integration tests for JSON contracts, exit codes, help, generated navigation,
   dry-run behavior, and backward-compatible config loading.
 - Full format, build, .NET test, MCP test, and core validation passes.
+- External reconciliation requires provider-contract, snapshot, stale-cache,
+  and no-implicit-network tests before its requirement can pass.
+- Initiative hierarchy requires schema round-trip, local cycle, remote URI,
+  and status-non-propagation tests before its requirement can pass.
 
 ## Completion Notes
 
