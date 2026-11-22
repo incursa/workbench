@@ -281,6 +281,125 @@ public sealed class WebSurfaceTests
         }
     }
 
+    [TestMethod]
+    public async Task LocalWebUi_RequirementEditorMovesAndSavesAllAtomicallyWithConcurrencyProtectionAsync()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+        ScaffoldService.Scaffold(repo.Path, force: false);
+        var config = WorkbenchConfig.Load(repo.Path, out var configError);
+        Assert.IsNull(configError);
+        var workspace = new Workbench.WorkbenchWorkspace(repo.Path, config);
+        var createdSpec = workspace.CreateSpec(new Workbench.SpecEditorInput
+        {
+            ArtifactId = "SPEC-WEB-BATCH",
+            Domain = "WEB",
+            Capability = "batch",
+            Title = "Batch requirement editing",
+            Status = "draft",
+            Owner = "platform",
+            Purpose = "Exercise ordered atomic requirement edits.",
+            Requirements =
+            [
+                Requirement("REQ-WEB-BATCH-0001", "First", "The editor MUST persist the first requirement."),
+                Requirement("REQ-WEB-BATCH-0002", "Second", "The editor MUST persist the second requirement."),
+                Requirement("REQ-WEB-BATCH-0003", "Third", "The editor MUST persist the third requirement.")
+            ]
+        });
+
+        await using var app = Workbench.WorkbenchWebHost.BuildApplication(
+            repo.Path,
+            config,
+            "http://127.0.0.1:0");
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
+            const string SpecId = "SPEC-WEB-BATCH";
+            const string FirstId = "REQ-WEB-BATCH-0001";
+            const string SecondId = "REQ-WEB-BATCH-0002";
+            const string ThirdId = "REQ-WEB-BATCH-0003";
+            var pagePath = RequirementEditorPath(SpecId, SecondId);
+
+            var moveEarlierToken = await GetRequestVerificationTokenAsync(client, pagePath);
+            var moveEarlierRevision = await GetInputValueAsync(client, pagePath, "Edit.SourceRevision");
+            using var moveEarlierResponse = await client.PostAsync(
+                "/Specs?handler=MoveRequirement",
+                MoveRequirementForm(moveEarlierToken, SpecId, moveEarlierRevision, SecondId, "earlier"));
+            Assert.AreEqual(HttpStatusCode.OK, moveEarlierResponse.StatusCode);
+            CollectionAssert.AreEqual(
+                new[] { SecondId, FirstId, ThirdId },
+                workspace.CreateSpecEditorInput(SpecId)!.Requirements.Select(requirement => requirement.Id).ToArray());
+
+            var moveLaterToken = await GetRequestVerificationTokenAsync(client, pagePath);
+            var moveLaterRevision = await GetInputValueAsync(client, pagePath, "Edit.SourceRevision");
+            using var moveLaterResponse = await client.PostAsync(
+                "/Specs?handler=MoveRequirement",
+                MoveRequirementForm(moveLaterToken, SpecId, moveLaterRevision, SecondId, "later"));
+            Assert.AreEqual(HttpStatusCode.OK, moveLaterResponse.StatusCode);
+            CollectionAssert.AreEqual(
+                new[] { FirstId, SecondId, ThirdId },
+                workspace.CreateSpecEditorInput(SpecId)!.Requirements.Select(requirement => requirement.Id).ToArray());
+
+            var specPath = Path.Combine(repo.Path, createdSpec.Summary.Path);
+            var beforeInvalidBatch = await File.ReadAllTextAsync(specPath);
+            var invalidToken = await GetRequestVerificationTokenAsync(client, pagePath);
+            var invalidRevision = await GetInputValueAsync(client, pagePath, "Edit.SourceRevision");
+            using var invalidResponse = await client.PostAsync(
+                "/Specs?handler=SaveAllRequirements",
+                BatchRequirementsForm(
+                    invalidToken,
+                    SpecId,
+                    invalidRevision,
+                    ("0001", "First batch edit", "The batch editor MUST save valid entries."),
+                    ("0002", "Invalid second edit", "This clause is invalid."),
+                    ("0003", "Third batch edit", "The batch editor MUST save all entries.")));
+            var invalidBody = await invalidResponse.Content.ReadAsStringAsync();
+            Assert.AreEqual(HttpStatusCode.OK, invalidResponse.StatusCode);
+            StringAssert.Contains(invalidBody, "Invalid second edit", StringComparison.Ordinal);
+            Assert.AreEqual(beforeInvalidBatch, await File.ReadAllTextAsync(specPath));
+
+            var validToken = await GetRequestVerificationTokenAsync(client, pagePath);
+            var validRevision = await GetInputValueAsync(client, pagePath, "Edit.SourceRevision");
+            using var validResponse = await client.PostAsync(
+                "/Specs?handler=SaveAllRequirements",
+                BatchRequirementsForm(
+                    validToken,
+                    SpecId,
+                    validRevision,
+                    ("0001", "First batch edit", "The batch editor MUST save the first entry."),
+                    ("0002", "Second batch edit", "The batch editor MUST save the second entry."),
+                    ("0003", "Third batch edit", "The batch editor MUST save the third entry.")));
+            Assert.AreEqual(HttpStatusCode.OK, validResponse.StatusCode);
+            CollectionAssert.AreEqual(
+                new[] { "First batch edit", "Second batch edit", "Third batch edit" },
+                workspace.CreateSpecEditorInput(SpecId)!.Requirements.Select(requirement => requirement.Title).ToArray());
+
+            var staleToken = await GetRequestVerificationTokenAsync(client, pagePath);
+            var staleRevision = await GetInputValueAsync(client, pagePath, "Edit.SourceRevision");
+            await File.AppendAllTextAsync(specPath, Environment.NewLine);
+            var externallyChangedContent = await File.ReadAllTextAsync(specPath);
+            using var staleResponse = await client.PostAsync(
+                "/Specs?handler=SaveAllRequirements",
+                BatchRequirementsForm(
+                    staleToken,
+                    SpecId,
+                    staleRevision,
+                    ("0001", "Stale overwrite", "The batch editor MUST reject stale writes."),
+                    ("0002", "Second batch edit", "The batch editor MUST preserve external changes."),
+                    ("0003", "Third batch edit", "The batch editor MUST remain atomic.")));
+            var staleBody = await staleResponse.Content.ReadAsStringAsync();
+            Assert.AreEqual(HttpStatusCode.OK, staleResponse.StatusCode);
+            StringAssert.Contains(staleBody, "changed on disk", StringComparison.OrdinalIgnoreCase);
+            Assert.AreEqual(externallyChangedContent, await File.ReadAllTextAsync(specPath));
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
     private static async Task<string> GetRequestVerificationTokenAsync(HttpClient client, string path)
     {
         using var response = await client.GetAsync(path).ConfigureAwait(false);
@@ -290,6 +409,22 @@ public sealed class WebSurfaceTests
         Assert.IsTrue(inputMatch.Success, $"Antiforgery input was not rendered by GET {path}.");
         var valueMatch = inputValueRegex.Match(inputMatch.Value);
         Assert.IsTrue(valueMatch.Success, $"Antiforgery value was not rendered by GET {path}.");
+        return WebUtility.HtmlDecode(valueMatch.Groups["token"].Value);
+    }
+
+    private static async Task<string> GetInputValueAsync(HttpClient client, string path, string inputName)
+    {
+        using var response = await client.GetAsync(path).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, $"GET {path}\n{body}");
+        var inputMatch = Regex.Match(
+            body,
+            $"<input[^>]*name=\"{Regex.Escape(inputName)}\"[^>]*>",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture,
+            TimeSpan.FromSeconds(1));
+        Assert.IsTrue(inputMatch.Success, $"Input '{inputName}' was not rendered by GET {path}.");
+        var valueMatch = inputValueRegex.Match(inputMatch.Value);
+        Assert.IsTrue(valueMatch.Success, $"Input '{inputName}' did not render a value.");
         return WebUtility.HtmlDecode(valueMatch.Groups["token"].Value);
     }
 
@@ -318,6 +453,68 @@ public sealed class WebSurfaceTests
             ("RequirementEdit.Trace.SupersedesText", string.Empty),
             ("RequirementEdit.Trace.UpstreamRefsText", string.Empty),
             ("RequirementEdit.Trace.RelatedText", string.Empty));
+    }
+
+    private static FormUrlEncodedContent MoveRequirementForm(
+        string token,
+        string specId,
+        string sourceRevision,
+        string requirementReference,
+        string direction)
+    {
+        return Form(
+            token,
+            ("SelectedReference", specId),
+            ("SelectedRequirementReference", requirementReference),
+            ("RequirementPage", "1"),
+            ("RequirementPageSize", "50"),
+            ("Edit.SourceRevision", sourceRevision),
+            ("requirementReference", requirementReference),
+            ("direction", direction));
+    }
+
+    private static FormUrlEncodedContent BatchRequirementsForm(
+        string token,
+        string specId,
+        string sourceRevision,
+        params (string IdSuffix, string Title, string Statement)[] requirements)
+    {
+        var fields = new List<(string Name, string Value)>
+        {
+            ("SelectedReference", specId),
+            ("RequirementPage", "1"),
+            ("RequirementPageSize", "50"),
+            ("Edit.SourceRevision", sourceRevision)
+        };
+
+        for (var index = 0; index < requirements.Length; index++)
+        {
+            var requirement = requirements[index];
+            var prefix = $"Edit.Requirements[{index}]";
+            fields.Add(($"{prefix}.IdSuffix", requirement.IdSuffix));
+            fields.Add(($"{prefix}.Title", requirement.Title));
+            fields.Add(($"{prefix}.Statement", requirement.Statement));
+            fields.Add(($"{prefix}.NotesText", string.Empty));
+            fields.Add(($"{prefix}.Trace.SatisfiedByText", string.Empty));
+            fields.Add(($"{prefix}.Trace.ImplementedByText", string.Empty));
+            fields.Add(($"{prefix}.Trace.VerifiedByText", string.Empty));
+            fields.Add(($"{prefix}.Trace.DerivedFromText", string.Empty));
+            fields.Add(($"{prefix}.Trace.SupersedesText", string.Empty));
+            fields.Add(($"{prefix}.Trace.UpstreamRefsText", string.Empty));
+            fields.Add(($"{prefix}.Trace.RelatedText", string.Empty));
+        }
+
+        return Form(token, fields.ToArray());
+    }
+
+    private static Workbench.SpecRequirementEditorInput Requirement(string id, string title, string statement)
+    {
+        return new Workbench.SpecRequirementEditorInput
+        {
+            Id = id,
+            Title = title,
+            Statement = statement
+        };
     }
 
     private static FormUrlEncodedContent Form(string token, params (string Name, string Value)[] fields)

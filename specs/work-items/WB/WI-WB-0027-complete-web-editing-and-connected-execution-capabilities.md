@@ -80,6 +80,13 @@ parent relationships, and continue evidence-driven trace migration.
 The work item was created after PR #616 merged so the follow-up remains
 separate from the completed readiness-remediation history.
 
+- Completed the requirement-editor slice with persisted Move Earlier and Move
+  Later controls, a batch editor with atomic Save All, and optimistic source
+  revisions that reject stale overwrites.
+- Added production-host integration coverage for both move directions, valid
+  batch persistence, byte-stable invalid-batch rejection, and concurrent source
+  changes.
+
 ## Trace Links
 
 Addresses:
