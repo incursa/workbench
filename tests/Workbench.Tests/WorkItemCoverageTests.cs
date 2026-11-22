@@ -28,8 +28,27 @@ public class WorkItemCoverageTests
             "work_item",
             "Coverage baseline item",
             "planned",
-            null,
+            "high",
             null);
+        var createdItem = WorkItemService.LoadItem(created.Path);
+        Assert.IsNotNull(createdItem);
+        Assert.AreEqual("high", createdItem.Priority);
+
+        var metadataEdited = WorkItemService.EditItem(
+            created.Path,
+            title: null,
+            summary: null,
+            acceptanceCriteria: null,
+            appendNote: null,
+            renameFile: false,
+            config: WorkbenchConfig.Default,
+            repoRoot: repo.Path,
+            status: "in_progress",
+            priority: "critical",
+            owner: "delivery");
+        Assert.AreEqual("in_progress", metadataEdited.Item.Status);
+        Assert.AreEqual("critical", metadataEdited.Item.Priority);
+        Assert.AreEqual("delivery", metadataEdited.Item.Owner);
 
         var draftApplied = WorkItemService.ApplyDraft(
             created.Path,
