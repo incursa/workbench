@@ -105,9 +105,14 @@ State how the work will be proven and link the verification artifact.
 - The baseline local web host and all primary Razor Pages routes are shipped in
   the main executable and now have page-level HTTP smoke coverage, including an
   embedded static asset.
-- The work item remains in progress because the advanced compact specification
-  editor behaviors tracked by `VER-WB-0007` still require their targeted UI
-  verification to be completed.
+- Production-handler integration coverage now proves work-item create, edit,
+  metadata persistence, and validation, plus requirement validation, targeted
+  save, add, and delete behavior. The coverage found and fixed canonical
+  work-item priority and metadata-only edit persistence.
+- The work item remains in progress because `Move Earlier`, `Move Later`, and
+  atomic `Save All` are not exposed by the current selected-requirement editor,
+  and compact grouping, section toggles, and preview behavior still require a
+  browser walkthrough. These gaps remain tracked by `VER-WB-0007`.
 
 ## Trace Links
 
