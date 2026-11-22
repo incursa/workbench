@@ -63,6 +63,7 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(FinishOutput))]
 [JsonSerializable(typeof(ExecutionStateSnapshot))]
 [JsonSerializable(typeof(ExecutionStateOutput))]
+[JsonSerializable(typeof(WorkItemHierarchyOutput))]
 public partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

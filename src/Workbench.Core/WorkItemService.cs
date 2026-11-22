@@ -918,6 +918,8 @@ public static class WorkItemService
                 DesignLinks = canonicalDesignLinks,
                 VerificationLinks = canonicalVerificationLinks,
                 RelatedArtifacts = canonicalRelatedArtifacts,
+                ParentRef = GetString(data, "parent_ref"),
+                InitiativeRefs = GetStringList(data, "initiative_refs"),
                 GithubSynced = null
             };
         }
@@ -975,6 +977,8 @@ public static class WorkItemService
             DesignLinks = GetStringList(data, "design_links"),
             VerificationLinks = GetStringList(data, "verification_links"),
             RelatedArtifacts = GetStringList(data, "related_artifacts"),
+            ParentRef = GetString(data, "parent_ref"),
+            InitiativeRefs = GetStringList(data, "initiative_refs"),
             GithubSynced = GetString(data, "githubSynced")
         };
     }

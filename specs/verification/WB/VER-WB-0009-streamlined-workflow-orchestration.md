@@ -98,8 +98,10 @@ stable automation contracts, and explicit external-system authority.
 - Passing: provider code is reachable only from the explicit `execution
   refresh` command; existing automatic local commands have no provider
   dependency or call path.
-- Planned: hierarchy schema round trips, cycle rejection, remote URI parsing,
-  and proof that status is not propagated across relationships.
+- Passing: optional hierarchy schema round trips, versioned CLI JSON, offline
+  remote URI parsing, local missing/self/cycle rejection in mutation and
+  repository validation, derived child/navigation views, and proof that work
+  item status is unchanged.
 
 ## Status
 

@@ -93,6 +93,10 @@ separate from the completed readiness-remediation history.
   error, prior observation timestamp, and age without changing canonical work
   items. Unit and CLI integration tests cover missing credentials, normalized
   provider state, snapshot versioning, and offline reads.
+- Added optional schema-version-2 `parent_ref` and `initiative_refs` fields,
+  versioned `item hierarchy` JSON commands, offline cross-repository URI
+  validation, local self/cycle/missing-reference rejection, and derived
+  navigation. Existing work items remain valid without migration.
 
 ## Trace Links
 

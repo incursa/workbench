@@ -308,8 +308,8 @@ public static class NavigationService
         var docsByPath = docs.ToDictionary(entry => entry.RepoRelativePath, StringComparer.OrdinalIgnoreCase);
         var defaultRepo = TryResolveRepo(repoRoot, config);
 
-        builder.AppendLine("| Item | Status | GitHub | Issues | Related |");
-        builder.AppendLine("| --- | --- | --- | --- | --- |");
+        builder.AppendLine("| Item | Status | Hierarchy | GitHub | Issues | Related |");
+        builder.AppendLine("| --- | --- | --- | --- | --- | --- |");
 
         foreach (var entry in items
                      .OrderBy(item => GetStatusRank(item.Item.Status))
@@ -321,10 +321,25 @@ public static class NavigationService
             var githubLink = entry.GithubLink is null ? "-" : BuildMarkdownLink("view", entry.GithubLink);
             var issueLinks = FormatIssueLinks(entry.Item.Related.Issues, defaultRepo);
             var relatedLinks = FormatRelatedLinks(entry.Item, docsByPath, readmeDir, repoRoot);
+            var hierarchy = FormatHierarchy(entry.Item);
             var statusLabel = FormatWorkItemStatus(entry.Item.Status);
 
-            builder.AppendLine($"| {itemLink} | {statusLabel} | {githubLink} | {issueLinks} | {relatedLinks} |");
+            builder.AppendLine($"| {itemLink} | {statusLabel} | {hierarchy} | {githubLink} | {issueLinks} | {relatedLinks} |");
         }
+    }
+
+    private static string FormatHierarchy(WorkItem item)
+    {
+        var relationships = new List<string>();
+        if (!string.IsNullOrWhiteSpace(item.ParentRef))
+        {
+            relationships.Add($"Parent: {EscapeTableCell(item.ParentRef)}");
+        }
+        if (item.InitiativeRefs.Count > 0)
+        {
+            relationships.Add($"Initiatives: {string.Join(", ", item.InitiativeRefs.Select(EscapeTableCell))}");
+        }
+        return relationships.Count == 0 ? "-" : string.Join("<br>", relationships);
     }
 
     private static string BuildRootIndex(string repoRoot, WorkbenchConfig config)

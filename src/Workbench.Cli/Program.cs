@@ -1163,6 +1163,7 @@ public partial class Program
             }
         });
         itemCommand.Subcommands.Add(itemEditCommand);
+        itemCommand.Subcommands.Add(BuildItemHierarchyCommand(repoOption, formatOption));
 
         var itemCloseCommand = new Command("close", "Set status to complete.");
         var closeIdArg = new Argument<string>("id")

@@ -61,6 +61,13 @@ public static class ValidationService
 
         var workItems = CollectWorkItems(repoRoot, config);
         ValidateItems(repoRoot, workItems, result);
+        foreach (var diagnostic in WorkItemHierarchyService.ValidateRepository(repoRoot, config))
+        {
+            result.AddError(
+                ValidationProfiles.RepoState,
+                ValidationCategories.RepoState,
+                diagnostic);
+        }
         result.WorkItemCount = Math.Max(graph.WorkItems.Count, workItems.Count);
 
         result.MarkdownFileCount = ValidateMarkdownLinks(repoRoot, config, result, options, scopePrefixes);

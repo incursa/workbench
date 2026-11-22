@@ -21,6 +21,8 @@ namespace Workbench.Core;
 /// <param name="DesignLinks">Architecture identifiers used by the work item.</param>
 /// <param name="VerificationLinks">Verification identifiers associated with the work item.</param>
 /// <param name="RelatedArtifacts">Additional artifact identifiers carried alongside the canonical model.</param>
+/// <param name="ParentRef">Optional local or cross-repository parent work-item reference.</param>
+/// <param name="InitiativeRefs">Ordered local or cross-repository initiative references.</param>
 /// <param name="GithubSynced">Compatibility GitHub sync timestamp.</param>
 /// <param name="Slug">Slugified title.</param>
 /// <param name="Path">Absolute path to the work item file.</param>
@@ -44,6 +46,8 @@ public sealed record WorkItemPayload(
     [property: JsonPropertyName("designLinks")] IList<string> DesignLinks,
     [property: JsonPropertyName("verificationLinks")] IList<string> VerificationLinks,
     [property: JsonPropertyName("relatedArtifacts")] IList<string> RelatedArtifacts,
+    [property: JsonPropertyName("parentRef")] string? ParentRef,
+    [property: JsonPropertyName("initiativeRefs")] IList<string> InitiativeRefs,
     [property: JsonPropertyName("githubSynced")] string? GithubSynced,
     [property: JsonPropertyName("slug")] string Slug,
     [property: JsonPropertyName("path")] string Path,

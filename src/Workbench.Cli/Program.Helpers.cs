@@ -374,6 +374,8 @@ public partial class Program
             item.DesignLinks,
             item.VerificationLinks,
             item.RelatedArtifacts,
+            item.ParentRef,
+            item.InitiativeRefs,
             item.GithubSynced,
             item.Slug,
             item.Path,

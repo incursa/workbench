@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "artifact-frontmatter.schema.json",
+  "x-workbench-schema-version": 2,
   "title": "Artifact Front Matter",
   "description": "Strict reference schema for file-level YAML front matter used by the specification, architecture, work-item, and verification Markdown artifacts in this package. Core fields stay strict, and optional namespaced x_ extension keys are allowed for local metadata.",
   "$defs": {
@@ -23,6 +24,25 @@
     "workItemId": {
       "type": "string",
       "pattern": "^WI-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-\\d{4,}$"
+    },
+    "workItemReference": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/workItemId"
+        },
+        {
+          "type": "string",
+          "pattern": "^workbench://[^/:?#]+/[^/?#]+/[^/?#]+/WI-[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)*-\\d{4,}$"
+        }
+      ]
+    },
+    "workItemReferenceArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/workItemReference"
+      },
+      "minItems": 1,
+      "uniqueItems": true
     },
     "verificationId": {
       "type": "string",
@@ -262,6 +282,14 @@
         "related_artifacts": {
           "description": "Optional direct artifact IDs for documents materially related to this work item.",
           "$ref": "#/$defs/traceArtifactReferenceArray"
+        },
+        "parent_ref": {
+          "description": "Optional local work-item ID or cross-repository work-item URI for the parent.",
+          "$ref": "#/$defs/workItemReference"
+        },
+        "initiative_refs": {
+          "description": "Optional ordered, duplicate-free local or cross-repository initiative work-item references.",
+          "$ref": "#/$defs/workItemReferenceArray"
         }
       },
       "patternProperties": {
