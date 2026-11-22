@@ -63,6 +63,10 @@ public class CliHelpContractTests
         StringAssert.Contains(content, "### `workbench spec`", StringComparison.Ordinal);
         StringAssert.Contains(content, "### `workbench spec new`", StringComparison.Ordinal);
         StringAssert.Contains(content, "### `workbench item edit`", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench item hierarchy set`", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench item hierarchy show`", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench execution refresh`", StringComparison.Ordinal);
+        StringAssert.Contains(content, "### `workbench execution show`", StringComparison.Ordinal);
         StringAssert.Contains(content, "### `workbench doc regen-help`", StringComparison.Ordinal);
 
         var secondCheckResult = WorkbenchCli.Run(

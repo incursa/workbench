@@ -126,8 +126,8 @@ deliberately small: `pending`, `active`, `succeeded`, `failed`, `cancelled`, and
 The provider interface has one read operation over configured references and
 does not expose create, update, retry, cancel, or deploy methods.
 
-An explicit future `workbench execution refresh` command will resolve the
-configured references and write a versioned snapshot to
+The explicit `workbench execution refresh` command resolves the
+configured references and writes a versioned snapshot to
 `artifacts/execution-state/<work-item-id>.json`. `workbench execution show`
 will read the snapshot without network access unless refresh is requested. A
 snapshot records both successful observations and refresh diagnostics, so a
@@ -142,7 +142,7 @@ specification and verification artifact before implementation.
 
 ## Initiative and Parent-Child Extension
 
-The schema extension will add optional `parent_ref` and `initiative_refs`
+Schema version 2 adds optional `parent_ref` and `initiative_refs`
 fields to canonical work items. A reference is either a local canonical
 artifact ID or a cross-repository URI in this form:
 
@@ -157,9 +157,11 @@ an explicit resolver may later confirm existence but must not copy remote
 status or content. Derived navigation may show the relationships, while the
 authored fields remain the source of truth.
 
-This extension lands separately from execution reconciliation. It requires a
-schema version update, Markdown/JSON round-trip coverage, local cycle tests,
-and a migration note; no existing field changes meaning.
+This extension lands separately from execution reconciliation. Existing work
+items require no migration: both fields are optional, omitted fields load as
+no parent and no initiatives, and no existing field changes meaning. Schema
+version 2, Markdown/JSON round-trip coverage, local cycle tests, and generated
+navigation verify that compatibility boundary.
 
 ## Edge Cases and Constraints
 

@@ -109,10 +109,12 @@ State how the work will be proven and link the verification artifact.
   metadata persistence, and validation, plus requirement validation, targeted
   save, add, and delete behavior. The coverage found and fixed canonical
   work-item priority and metadata-only edit persistence.
-- The work item remains in progress because `Move Earlier`, `Move Later`, and
-  atomic `Save All` are not exposed by the current selected-requirement editor,
-  and compact grouping, section toggles, and preview behavior still require a
-  browser walkthrough. These gaps remain tracked by `VER-WB-0007`.
+- Move Earlier, Move Later, and atomic Save All are now exposed and covered by
+  production-handler integration tests, including stale-source rejection and
+  all-or-nothing invalid-batch behavior.
+- The work item remains in progress because compact grouping, section toggles,
+  and preview behavior still require a browser walkthrough. These gaps remain
+  tracked by `VER-WB-0007`.
 
 ## Trace Links
 

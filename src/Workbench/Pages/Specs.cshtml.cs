@@ -318,6 +318,7 @@ public class SpecsModel : RepoPageModel
     public IActionResult OnPostSaveRequirement()
     {
         var requirementDraft = CloneRequirementEditorInput(RequirementEdit);
+        var sourceRevision = Edit.SourceRevision;
 
         try
         {
@@ -329,6 +330,7 @@ public class SpecsModel : RepoPageModel
             }
 
             Edit = LoadExistingSpecEditorForMutation();
+            Edit.SourceRevision = sourceRevision;
             UpsertSelectedRequirementIntoEdit();
             PrepareEditorForSave();
 
@@ -366,6 +368,8 @@ public class SpecsModel : RepoPageModel
 
     public IActionResult OnPostDeleteSelectedRequirement()
     {
+        var sourceRevision = Edit.SourceRevision;
+
         try
         {
             ApplyChrome("Specs");
@@ -390,6 +394,7 @@ public class SpecsModel : RepoPageModel
             }
 
             Edit = LoadExistingSpecEditorForMutation();
+            Edit.SourceRevision = sourceRevision;
             var requirementIndex = FindRequirementIndex(Edit.Requirements, SelectedRequirementReference);
             if (requirementIndex < 0)
             {
@@ -422,6 +427,114 @@ public class SpecsModel : RepoPageModel
             ApplyChrome("Specs");
             ModelState.AddModelError(string.Empty, FormatError(ex));
             LoadPage(populateEditor: true);
+            return Page();
+        }
+    }
+
+    public IActionResult OnPostMoveRequirement(string requirementReference, string direction)
+    {
+        var sourceRevision = Edit.SourceRevision;
+
+        try
+        {
+            ApplyChrome("Specs");
+
+            if (!ShouldUseRequirementBrowserWorkflow())
+            {
+                throw new InvalidOperationException("A saved specification must be selected before moving a requirement.");
+            }
+
+            Edit = LoadExistingSpecEditorForMutation();
+            Edit.SourceRevision = sourceRevision;
+            var requirementIndex = FindRequirementIndex(Edit.Requirements, requirementReference);
+            if (requirementIndex < 0)
+            {
+                throw new InvalidOperationException("Selected requirement could not be found.");
+            }
+
+            var targetIndex = direction.ToLowerInvariant() switch
+            {
+                "earlier" => requirementIndex - 1,
+                "later" => requirementIndex + 1,
+                _ => throw new InvalidOperationException("Move direction must be earlier or later.")
+            };
+            if (targetIndex < 0 || targetIndex >= Edit.Requirements.Count)
+            {
+                throw new InvalidOperationException($"Requirement cannot move {direction.ToLowerInvariant()}.");
+            }
+
+            (Edit.Requirements[requirementIndex], Edit.Requirements[targetIndex]) =
+                (Edit.Requirements[targetIndex], Edit.Requirements[requirementIndex]);
+            PrepareEditorForSave();
+
+            var savedSpec = Workspace.GetDoc(Workspace.SaveSpec(Edit).Path)
+                ?? throw new InvalidOperationException("Failed to reload spec.");
+
+            SetBanner("Requirement moved", $"{requirementReference} moved {direction.ToLowerInvariant()}.");
+            return RedirectToPage(new
+            {
+                selectedReference = savedSpec.Summary.ArtifactId ?? savedSpec.Summary.Path,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = ResolveRequirementPageForReference(requirementReference),
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = requirementReference,
+                createMode = false
+            });
+        }
+        catch (Exception ex)
+        {
+            ApplyChrome("Specs");
+            ModelState.AddModelError(string.Empty, FormatError(ex));
+            LoadPage(populateEditor: true);
+            return Page();
+        }
+    }
+
+    public IActionResult OnPostSaveAllRequirements()
+    {
+        var postedRequirements = (Edit.Requirements ?? [])
+            .Select(CloneRequirementEditorInput)
+            .ToList();
+        var sourceRevision = Edit.SourceRevision;
+
+        try
+        {
+            ApplyChrome("Specs");
+
+            if (!ShouldUseRequirementBrowserWorkflow())
+            {
+                throw new InvalidOperationException("A saved specification must be selected before saving requirements.");
+            }
+
+            Edit = LoadExistingSpecEditorForMutation();
+            Edit.SourceRevision = sourceRevision;
+            Edit.Requirements = postedRequirements;
+            PrepareEditorForSave();
+
+            var savedSpec = Workspace.GetDoc(Workspace.SaveSpec(Edit).Path)
+                ?? throw new InvalidOperationException("Failed to reload spec.");
+
+            SetBanner("Requirements saved", $"{Edit.Requirements.Count} requirements updated atomically.");
+            return RedirectToPage(new
+            {
+                selectedReference = savedSpec.Summary.ArtifactId ?? savedSpec.Summary.Path,
+                query = Query,
+                requirementQuery = RequirementQuery,
+                requirementPage = RequirementPage,
+                requirementPageSize = RequirementPageSize,
+                selectedRequirementReference = SelectedRequirementReference,
+                createMode = false
+            });
+        }
+        catch (Exception ex)
+        {
+            ApplyChrome("Specs");
+            ModelState.AddModelError(string.Empty, FormatError(ex));
+            LoadPage(populateEditor: true);
+            Edit.Requirements = postedRequirements;
+            Edit.SourceRevision = sourceRevision;
+            SyncTransientEditorState();
             return Page();
         }
     }
@@ -544,8 +657,6 @@ public class SpecsModel : RepoPageModel
                 false))
             .Where(entry => HasMeaningfulRequirementContent(Edit.Requirements[entry.Index]))
             .Where(entry => RequirementMatchesQuery(Edit.Requirements[entry.Index], RequirementQuery))
-            .OrderBy(entry => entry.DisplayId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         TotalRequirementCount = Edit.Requirements.Count(HasMeaningfulRequirementContent);
@@ -681,8 +792,6 @@ public class SpecsModel : RepoPageModel
                 false))
             .Where(entry => HasMeaningfulRequirementContent(Edit.Requirements[entry.Index]))
             .Where(entry => RequirementMatchesQuery(Edit.Requirements[entry.Index], RequirementQuery))
-            .OrderBy(entry => entry.DisplayId, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(entry => entry.Title, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var selectedIndex = orderedEntries.FindIndex(entry =>
@@ -801,6 +910,7 @@ public class SpecsModel : RepoPageModel
         {
             Path = source.Path,
             SourceFormat = source.SourceFormat,
+            SourceRevision = source.SourceRevision,
             SchemaReference = source.SchemaReference,
             ExtensionJson = source.ExtensionJson,
             ArtifactId = source.ArtifactId,
@@ -833,6 +943,7 @@ public class SpecsModel : RepoPageModel
     {
         target.Path = source.Path;
         target.SourceFormat = source.SourceFormat;
+        target.SourceRevision = source.SourceRevision;
         target.SchemaReference = source.SchemaReference;
         target.ExtensionJson = source.ExtensionJson;
         target.ArtifactId = source.ArtifactId;
@@ -1430,9 +1541,6 @@ public class SpecsModel : RepoPageModel
                 requirement.IdSuffix = ExtractRequirementIdSuffix(requirement);
                 return requirement;
             })
-            .OrderBy(requirement => HasMeaningfulRequirementContent(requirement) ? 0 : 1)
-            .ThenBy(requirement => GetRequirementDisplayId(requirement), StringComparer.OrdinalIgnoreCase)
-            .ThenBy(requirement => CollapseWhitespace(requirement.Title), StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 

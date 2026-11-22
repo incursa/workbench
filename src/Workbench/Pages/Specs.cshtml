@@ -124,6 +124,7 @@
                         <input type="hidden" asp-for="Query" />
                         <input type="hidden" asp-for="Edit.Path" />
                         <input type="hidden" asp-for="Edit.SourceFormat" />
+                        <input type="hidden" asp-for="Edit.SourceRevision" />
                         <input type="hidden" asp-for="Edit.SchemaReference" />
                         <input type="hidden" asp-for="Edit.ExtensionJson" />
 
@@ -788,14 +789,28 @@
                                             <td class="small text-body-secondary">@requirement.SummaryPreview</td>
                                             <td>@requirement.TraceCount</td>
                                             <td class="text-end">
-                                                <a class="inc-btn inc-btn--secondary inc-btn--sm"
-                                                   asp-page="/Specs"
-                                                   asp-route-selectedReference="@Model.SelectedReference"
-                                                   asp-route-query="@Model.Query"
-                                                   asp-route-requirementQuery="@Model.RequirementQuery"
-                                                   asp-route-requirementPage="@Model.RequirementPage"
-                                                   asp-route-requirementPageSize="@Model.RequirementPageSize"
-                                                   asp-route-selectedRequirementReference="@requirement.Reference">Edit</a>
+                                                <div class="d-flex flex-wrap justify-content-end gap-1">
+                                                    <form method="post" asp-page-handler="MoveRequirement" class="d-inline">
+                                                        <input type="hidden" name="SelectedReference" value="@Model.SelectedReference" />
+                                                        <input type="hidden" name="Query" value="@Model.Query" />
+                                                        <input type="hidden" name="RequirementQuery" value="@Model.RequirementQuery" />
+                                                        <input type="hidden" name="RequirementPage" value="@Model.RequirementPage" />
+                                                        <input type="hidden" name="RequirementPageSize" value="@Model.RequirementPageSize" />
+                                                        <input type="hidden" name="SelectedRequirementReference" value="@requirement.Reference" />
+                                                        <input type="hidden" name="Edit.SourceRevision" value="@Model.Edit.SourceRevision" />
+                                                        <input type="hidden" name="requirementReference" value="@requirement.Reference" />
+                                                        <button type="submit" name="direction" value="earlier" class="inc-btn inc-btn--secondary inc-btn--sm" disabled="@(requirement.Index == 0 ? "disabled" : null)">Move earlier</button>
+                                                        <button type="submit" name="direction" value="later" class="inc-btn inc-btn--secondary inc-btn--sm" disabled="@(requirement.Index == Model.Edit.Requirements.Count - 1 ? "disabled" : null)">Move later</button>
+                                                    </form>
+                                                    <a class="inc-btn inc-btn--secondary inc-btn--sm"
+                                                       asp-page="/Specs"
+                                                       asp-route-selectedReference="@Model.SelectedReference"
+                                                       asp-route-query="@Model.Query"
+                                                       asp-route-requirementQuery="@Model.RequirementQuery"
+                                                       asp-route-requirementPage="@Model.RequirementPage"
+                                                       asp-route-requirementPageSize="@Model.RequirementPageSize"
+                                                       asp-route-selectedRequirementReference="@requirement.Reference">Edit</a>
+                                                </div>
                                             </td>
                                         </tr>
                                     }
@@ -854,6 +869,84 @@
             </div>
         </section>
 
+        <details class="inc-card">
+            <summary class="inc-card__body d-flex justify-content-between align-items-center gap-3">
+                <span>
+                    <span class="inc-key-value__label d-block mb-1">Batch editor</span>
+                    <span class="h3 mb-0">Edit and save all requirements</span>
+                </span>
+                <span class="small text-body-secondary">All-or-nothing validation</span>
+            </summary>
+            <div class="inc-card__body border-top">
+                <form method="post" asp-page-handler="SaveAllRequirements" class="inc-stack inc-stack--gap-lg">
+                    <partial name="_ValidationSummary" />
+                    <input type="hidden" asp-for="SelectedReference" />
+                    <input type="hidden" asp-for="SelectedRequirementReference" />
+                    <input type="hidden" asp-for="Query" />
+                    <input type="hidden" asp-for="RequirementQuery" />
+                    <input type="hidden" asp-for="RequirementPage" />
+                    <input type="hidden" asp-for="RequirementPageSize" />
+                    <input type="hidden" asp-for="Edit.SourceRevision" />
+
+                    @for (var i = 0; i < Model.Edit.Requirements.Count; i++)
+                    {
+                        <section class="inc-card">
+                            <div class="inc-card__body inc-stack inc-stack--gap-md">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div>
+                                        <div class="font-monospace">@Model.GetRequirementDisplayId(Model.Edit.Requirements[i])</div>
+                                        <div class="small text-body-secondary">Requirement @(i + 1) of @Model.Edit.Requirements.Count</div>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" asp-for="Edit.Requirements[i].Id" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].ExtensionJson" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.ExtensionJson" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.SatisfiedByText" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.ImplementedByText" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.VerifiedByText" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.DerivedFromText" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.SupersedesText" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.UpstreamRefsText" />
+                                <input type="hidden" asp-for="Edit.Requirements[i].Trace.RelatedText" />
+
+                                <div class="row g-3">
+                                    <div class="col-12 col-lg-3">
+                                        <label class="inc-form__label" asp-for="Edit.Requirements[i].IdSuffix">ID suffix</label>
+                                        <input class="inc-form__control font-monospace" asp-for="Edit.Requirements[i].IdSuffix" />
+                                    </div>
+                                    <div class="col-12 col-lg-9">
+                                        <label class="inc-form__label" asp-for="Edit.Requirements[i].Title">Title</label>
+                                        <input class="inc-form__control" asp-for="Edit.Requirements[i].Title" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="inc-form__label" asp-for="Edit.Requirements[i].Statement">Statement</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].Statement" rows="3"></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="inc-form__label" asp-for="Edit.Requirements[i].NotesText">Notes</label>
+                                        <textarea class="inc-form__control" asp-for="Edit.Requirements[i].NotesText" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    }
+
+                    <section class="inc-filter-bar">
+                        <div class="inc-filter-bar__main">
+                            <div>
+                                <div class="fw-semibold">Every requirement is validated before the specification is written.</div>
+                                <div class="small text-body-secondary">If any entry is invalid or the source changed on disk, no submitted requirement is persisted.</div>
+                            </div>
+                        </div>
+                        <div class="inc-filter-bar__actions">
+                            <button type="submit" class="inc-btn inc-btn--primary inc-btn--sm">Save all requirements</button>
+                        </div>
+                    </section>
+                </form>
+            </div>
+        </details>
+
         @if (Model.HasSelectedRequirement)
         {
             <section class="inc-card">
@@ -884,6 +977,7 @@
                         <input type="hidden" asp-for="RequirementPage" />
                         <input type="hidden" asp-for="RequirementPageSize" />
                         <input type="hidden" asp-for="SelectedRequirementReference" />
+                        <input type="hidden" asp-for="Edit.SourceRevision" />
                         <input type="hidden" asp-for="RequirementEdit.ExtensionJson" />
                         <input type="hidden" asp-for="RequirementEdit.Trace.ExtensionJson" />
 
@@ -1174,6 +1268,7 @@
                     <input type="hidden" asp-for="RequirementPageSize" />
                     <input type="hidden" asp-for="Edit.Path" />
                     <input type="hidden" asp-for="Edit.SourceFormat" />
+                    <input type="hidden" asp-for="Edit.SourceRevision" />
                     <input type="hidden" asp-for="Edit.SchemaReference" />
                     <input type="hidden" asp-for="Edit.ExtensionJson" />
 

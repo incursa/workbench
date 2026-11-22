@@ -6,6 +6,8 @@ public sealed class SpecEditorInput
 
     public string SourceFormat { get; set; } = "json";
 
+    public string SourceRevision { get; set; } = string.Empty;
+
     public string SchemaReference { get; set; } = string.Empty;
 
     public string ExtensionJson { get; set; } = string.Empty;

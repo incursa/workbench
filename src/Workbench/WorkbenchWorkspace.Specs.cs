@@ -71,6 +71,7 @@ public sealed partial class WorkbenchWorkspace
             ? CreateSpecEditorInputFromJson(doc)
             : CreateSpecEditorInputFromMarkdown(doc);
 
+        input.SourceRevision = ComputeSpecRevision(doc.Summary.Path);
         EnsureEditorCollections(input);
         return input;
     }
@@ -127,10 +128,37 @@ public sealed partial class WorkbenchWorkspace
             throw new InvalidOperationException("Spec path is required.");
         }
 
+        EnsureSpecRevisionMatches(input);
+
         return input.Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
             || string.Equals(input.SourceFormat, "json", StringComparison.OrdinalIgnoreCase)
             ? SaveCanonicalJsonSpec(input)
             : SaveMarkdownSpec(input);
+    }
+
+    private void EnsureSpecRevisionMatches(SpecEditorInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input.SourceRevision))
+        {
+            return;
+        }
+
+        var currentRevision = ComputeSpecRevision(input.Path);
+        if (!string.Equals(currentRevision, input.SourceRevision, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("The specification changed on disk after this editor was loaded. Reload it before saving.");
+        }
+    }
+
+    private string ComputeSpecRevision(string path)
+    {
+        var fullPath = Path.IsPathRooted(path) ? path : Path.Combine(RepoRoot, path);
+        if (!File.Exists(fullPath))
+        {
+            return string.Empty;
+        }
+
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(fullPath)));
     }
 
     private static void EnsureEditorCollections(SpecEditorInput input)

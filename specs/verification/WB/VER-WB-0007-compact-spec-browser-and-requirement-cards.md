@@ -82,21 +82,22 @@ rejected before a file is written, and the preview remains hidden by default.
   exercises the production host, antiforgery flow, invalid targeted saves,
   targeted persistence without unrelated changes, requirement addition, and
   requirement deletion.
+- The production-handler suite also proves Move Earlier and Move Later preserve
+  source order, Save All persists a valid batch, an invalid batch leaves the
+  file byte-for-byte unchanged, and a stale batch cannot overwrite a concurrent
+  on-disk change.
 - The same suite exercises work-item creation, editing, persisted metadata, and
   validation through the production Razor Page handlers.
 - A browser walkthrough is still required for compact grouping, section
   toggles, and the hidden preview behavior.
-- `Move Earlier`, `Move Later`, and atomic `Save All` are not exposed by the
-  current selected-requirement editor and remain implementation gaps for
-  `REQ-WEB-0012` and `REQ-WEB-0014`.
 - benchmark: not-applicable
 
 ## Status
 
 The status below applies to every requirement listed in `verifies`. If the requirements do not share one outcome, split them into separate verification artifacts.
 
-planned; server-side interaction evidence is passing, but the missing controls
-and remaining browser walkthrough prevent this verification from passing.
+planned; server-side interaction evidence is passing, but the remaining visual
+browser walkthrough prevents this verification from passing.
 
 ## Related Artifacts
 

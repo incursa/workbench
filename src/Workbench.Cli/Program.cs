@@ -1163,6 +1163,7 @@ public partial class Program
             }
         });
         itemCommand.Subcommands.Add(itemEditCommand);
+        itemCommand.Subcommands.Add(BuildItemHierarchyCommand(repoOption, formatOption));
 
         var itemCloseCommand = new Command("close", "Set status to complete.");
         var closeIdArg = new Argument<string>("id")
@@ -3154,6 +3155,7 @@ public partial class Program
         root.Subcommands.Add(BuildQualityCommand(repoOption, formatOption));
         root.Subcommands.Add(BuildContextCommand(repoOption, formatOption));
         root.Subcommands.Add(BuildFinishCommand(repoOption, formatOption));
+        root.Subcommands.Add(BuildExecutionCommand(repoOption, formatOption));
 
         var syncCommand = new Command("sync", "Umbrella repo sync: run the item, doc, and nav sync stages. Use this for the common happy path.");
         var syncItemsOption = new Option<bool>("--items")

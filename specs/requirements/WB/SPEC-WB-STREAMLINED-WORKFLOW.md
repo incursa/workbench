@@ -127,6 +127,7 @@ Trace:
   - [`ARC-WB-0008`](../../architecture/WB/ARC-WB-0008-streamlined-intent-and-execution-boundary.md)
 - Implemented By:
   - [`WI-WB-0026`](../../work-items/WB/WI-WB-0026-streamline-workflow-orchestration.md)
+  - [`WI-WB-0027`](../../work-items/WB/WI-WB-0027-complete-web-editing-and-connected-execution-capabilities.md)
 - Verified By:
   - [`VER-WB-0009`](../../verification/WB/VER-WB-0009-streamlined-workflow-orchestration.md)
 
@@ -155,6 +156,7 @@ Trace:
   - [`ARC-WB-0008`](../../architecture/WB/ARC-WB-0008-streamlined-intent-and-execution-boundary.md)
 - Implemented By:
   - [`WI-WB-0026`](../../work-items/WB/WI-WB-0026-streamline-workflow-orchestration.md)
+  - [`WI-WB-0027`](../../work-items/WB/WI-WB-0027-complete-web-editing-and-connected-execution-capabilities.md)
 - Verified By:
   - [`VER-WB-0009`](../../verification/WB/VER-WB-0009-streamlined-workflow-orchestration.md)
 
@@ -168,6 +170,7 @@ Trace:
   - [`ARC-WB-0008`](../../architecture/WB/ARC-WB-0008-streamlined-intent-and-execution-boundary.md)
 - Implemented By:
   - [`WI-WB-0026`](../../work-items/WB/WI-WB-0026-streamline-workflow-orchestration.md)
+  - [`WI-WB-0027`](../../work-items/WB/WI-WB-0027-complete-web-editing-and-connected-execution-capabilities.md)
 - Verified By:
   - [`VER-WB-0009`](../../verification/WB/VER-WB-0009-streamlined-workflow-orchestration.md)
 

@@ -55,6 +55,12 @@ public sealed record WorkItem(
     /// <summary>Additional related artifact identifiers carried alongside the canonical trace model.</summary>
     public IList<string> RelatedArtifacts { get; init; } = new List<string>();
 
+    /// <summary>Optional local work-item ID or cross-repository work-item URI for the parent.</summary>
+    public string? ParentRef { get; init; }
+
+    /// <summary>Ordered local work-item IDs or cross-repository work-item URIs for initiatives.</summary>
+    public IList<string> InitiativeRefs { get; init; } = new List<string>();
+
     /// <summary>Optional GitHub sync timestamp.</summary>
     public string? GithubSynced { get; init; }
 }
