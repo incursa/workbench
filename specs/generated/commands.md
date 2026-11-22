@@ -58,6 +58,9 @@ workbench <command> [options]
     - `workbench doc sync`: Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.
     - `workbench doc unlink`: Unlink a doc from work items.
   - `workbench doctor`: Check repository health and optionally repair deterministic local drift.
+  - `workbench execution`: Observe external PR, release, and deployment state without mutating the provider or canonical work items.
+    - `workbench execution refresh`: Explicitly query read-only execution providers and write a derived local snapshot.
+    - `workbench execution show`: Read the latest derived execution-state snapshot without network access.
   - `workbench finish`: Idempotently record completion evidence, refresh local derived views, and validate a work item.
   - `workbench github`: Group: GitHub commands.
     - `workbench github pr`: Group: GitHub pull request commands.
@@ -283,6 +286,29 @@ Check repository health and optionally repair deterministic local drift.
 Options:
 - `--json`: Output machine-readable JSON (legacy alias for --format json).
 - `--fix`: Repair deterministic local scaffolding and generated-navigation drift.
+
+### `workbench execution`
+Observe external PR, release, and deployment state without mutating the provider or canonical work items.
+
+Subcommands:
+- `refresh`: Explicitly query read-only execution providers and write a derived local snapshot.
+- `show`: Read the latest derived execution-state snapshot without network access.
+
+### `workbench execution refresh`
+Explicitly query read-only execution providers and write a derived local snapshot.
+
+Options:
+- `--work-item <work-item>` (required): Canonical work item ID used to group the derived snapshot.
+- `--provider <provider>`: Read-only execution provider.
+- `--pr <pr>`: Pull request URL, owner/repo#number, or number. Repeat as needed.
+- `--release <release>`: Release URL, owner/repo@tag, or tag. Repeat as needed.
+- `--deployment <deployment>`: Deployment API URL, owner/repo#ID, or ID. Repeat as needed.
+
+### `workbench execution show`
+Read the latest derived execution-state snapshot without network access.
+
+Options:
+- `--work-item <work-item>` (required): Canonical work item ID used to group the derived snapshot.
 
 ### `workbench finish`
 Idempotently record completion evidence, refresh local derived views, and validate a work item.

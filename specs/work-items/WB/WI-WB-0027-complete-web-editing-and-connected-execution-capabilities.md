@@ -86,6 +86,13 @@ separate from the completed readiness-remediation history.
 - Added production-host integration coverage for both move directions, valid
   batch persistence, byte-stable invalid-batch rejection, and concurrent source
   changes.
+- Added an explicit `execution refresh` boundary backed by a GET-only GitHub
+  provider for pull requests, releases, and deployments, plus an offline
+  `execution show` path over versioned derived snapshots.
+- Provider failures preserve matching prior observations and report the refresh
+  error, prior observation timestamp, and age without changing canonical work
+  items. Unit and CLI integration tests cover missing credentials, normalized
+  provider state, snapshot versioning, and offline reads.
 
 ## Trace Links
 

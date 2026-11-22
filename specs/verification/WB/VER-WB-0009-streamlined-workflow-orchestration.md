@@ -18,6 +18,7 @@ verifies:
 related_artifacts:
   - SPEC-WB-STREAMLINED-WORKFLOW
   - WI-WB-0026
+  - WI-WB-0027
   - ARC-WB-0008
 ---
 
@@ -57,7 +58,13 @@ validation checks.
 3. Run finish twice and confirm evidence is not duplicated and generated views
    are unchanged on the second run.
 4. Verify automatic paths do not contact GitHub.
-5. Run format, build, tests, help-contract verification, and core validation.
+5. Refresh explicit PR, release, and deployment references through a fake or
+   stubbed provider and verify every outbound request is read-only.
+6. Make the provider unavailable and verify the snapshot retains prior
+   observations with structured age and failure diagnostics.
+7. Read the snapshot through `execution show` without credentials or provider
+   access.
+8. Run format, build, tests, help-contract verification, and core validation.
 
 ## Expected Result
 
@@ -82,9 +89,15 @@ stable automation contracts, and explicit external-system authority.
 - Passing: doctor JSON contract, local scaffolding repair, established-index
   refresh, idempotence, malformed-config preservation, and optional provider
   readiness checks.
-- Planned: provider-backed external reconciliation tests.
-- Planned: execution snapshot versioning, stale-provider behavior, and proof
-  that automatic local commands make no provider calls.
+- Passing: provider-backed PR, release, and deployment observations use GET
+  requests only and normalize provider-native state without mutating work-item
+  status.
+- Passing: schema-versioned snapshots, explicit refresh, offline show, missing
+  credential diagnostics, and stale-provider retention with structured prior
+  observation timestamp and age.
+- Passing: provider code is reachable only from the explicit `execution
+  refresh` command; existing automatic local commands have no provider
+  dependency or call path.
 - Planned: hierarchy schema round trips, cycle rejection, remote URI parsing,
   and proof that status is not propagated across relationships.
 
@@ -96,4 +109,5 @@ planned
 
 - [`SPEC-WB-STREAMLINED-WORKFLOW`](../../requirements/WB/SPEC-WB-STREAMLINED-WORKFLOW.md)
 - [`WI-WB-0026`](../../work-items/WB/WI-WB-0026-streamline-workflow-orchestration.md)
+- [`WI-WB-0027`](../../work-items/WB/WI-WB-0027-complete-web-editing-and-connected-execution-capabilities.md)
 - [`ARC-WB-0008`](../../architecture/WB/ARC-WB-0008-streamlined-intent-and-execution-boundary.md)
