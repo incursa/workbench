@@ -128,11 +128,50 @@ jobs:
           name: ci-metrics-${{ matrix.os }}
           path: metrics/ci/build-test-${{ matrix.os }}.json
 
+  docs-mcp:
+    needs: pre-commit
+    name: Docs MCP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Verify docs MCP
+        shell: pwsh
+        run: ./scripts/verify.ps1 -Mode Mcp
+
+      - name: Export MCP metrics
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/ci
+          cat > metrics/ci/docs-mcp.json <<EOF
+          {
+            "workflow": "CI",
+            "job": "docs-mcp",
+            "status": "${{ job.status }}"
+          }
+          EOF
+
+      - name: Upload MCP metrics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-metrics-docs-mcp
+          path: metrics/ci/docs-mcp.json
+
   report:
     name: CI report
     runs-on: ubuntu-latest
     if: always()
-    needs: [pre-commit, build-test]
+    needs: [pre-commit, build-test, docs-mcp]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -150,9 +189,10 @@ jobs:
 
           precommit_result="${{ needs.pre-commit.result }}"
           build_result="${{ needs.build-test.result }}"
+          mcp_result="${{ needs.docs-mcp.result }}"
 
           overall="✅ Passed"
-          if [[ "$precommit_result" != "success" || "$build_result" != "success" ]]; then
+          if [[ "$precommit_result" != "success" || "$build_result" != "success" || "$mcp_result" != "success" ]]; then
             overall="❌ Failed"
           fi
 
@@ -161,6 +201,9 @@ jobs:
 
           build_status="✅"
           [[ "$build_result" != "success" ]] && build_status="❌"
+
+          mcp_status="✅"
+          [[ "$mcp_result" != "success" ]] && mcp_status="❌"
 
           eval "$(bash scripts/ci/parse-trx.sh artifacts)"
 
@@ -191,6 +234,7 @@ jobs:
             echo "|---|---|---:|---:|---|"
             echo "| Build | $build_status | Matrix build-test: $build_result | Success | ubuntu/windows/macos |"
             echo "| 🧪 Tests | $tests_status | $tests_metric | $tests_threshold | $tests_notes |"
+            echo "| Docs MCP | $mcp_status | Build, 13 tests, npm audit: $mcp_result | Success | Node 22 |"
             echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | Use Quality Gate workflow |"
             echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
             echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Use Mutation workflow |"
@@ -201,6 +245,7 @@ jobs:
             echo "- ci-test-results-<os>"
             echo "- ci-metrics-pre-commit"
             echo "- ci-metrics-<os>"
+            echo "- ci-metrics-docs-mcp"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if [[ "$overall" != "✅ Passed" ]]; then

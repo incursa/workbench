@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Workbench.Core;
 
 namespace Workbench.IntegrationTests;
@@ -113,15 +112,21 @@ public class WorkflowCommandTests
             "--title",
             "Structured finish failure");
         var id = created.GetProperty("data").GetProperty("id").GetString()!;
-        var config = WorkbenchConfig.Load(repo.Path, out var error);
-        Assert.IsNull(error);
-        config = config with { Paths = config.Paths with { DocsRoot = "blocked" } };
+        var indexPath = Path.Combine(repo.Path, "specs", "work-items", "README.md");
         File.WriteAllText(
-            WorkbenchConfig.GetConfigPath(repo.Path),
-            JsonSerializer.Serialize(config, WorkbenchJsonContext.Default.WorkbenchConfig));
-        File.WriteAllText(Path.Combine(repo.Path, "blocked"), "not a directory");
+            indexPath,
+            "# Work Items\n\n<!-- workbench:work-index:start -->\nstale\n<!-- workbench:work-index:end -->\n");
+        File.SetAttributes(indexPath, File.GetAttributes(indexPath) | FileAttributes.ReadOnly);
 
-        var result = RunFinish(repo.Path, id, "https://github.com/incursa/workbench/pull/44");
+        CommandResult result;
+        try
+        {
+            result = RunFinish(repo.Path, id, "https://github.com/incursa/workbench/pull/44");
+        }
+        finally
+        {
+            File.SetAttributes(indexPath, FileAttributes.Normal);
+        }
 
         Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
         var payload = TestAssertions.ParseJson(result.StdOut);

@@ -93,6 +93,10 @@ intent and project memory.
 - Expanded doctor coverage to GitHub, OpenAI, Codex, voice transcription, and
   generated navigation. Automatic repair remains local-only, refuses malformed
   configuration, and does not create index files a repository has not adopted.
+- Added a cross-platform composable verification entry point and made the docs
+  MCP build, protocol/security tests, and npm audit a required main CI job.
+  Existing .NET quality/coverage jobs remain until their equivalence can be
+  demonstrated before deduplication.
 
 ## Traceability Migration Backlog
 
