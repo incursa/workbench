@@ -28,10 +28,10 @@
     "deploy": "npm run deploy:mcp"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "esbuild": "^0.28.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "esbuild": "^0.28.1",
     "gray-matter": "^4.0.3",
-    "wrangler": "^4.88.0",
+    "wrangler": "^4.115.0",
     "zod": "^4.4.3"
   },
   "overrides": {
