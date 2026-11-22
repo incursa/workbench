@@ -12,6 +12,10 @@ on:
       - "examples/**"
   workflow_dispatch:
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest

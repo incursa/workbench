@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 9 * * 1"
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   mutation:
     runs-on: ubuntu-latest
