@@ -3,7 +3,7 @@ artifact_id: WI-WB-0023
 artifact_type: work_item
 title: "build local web ui mode for workbench"
 domain: WB
-status: planned
+status: in_progress
 owner: platform
 addresses:
   - REQ-WEB-0001
@@ -102,7 +102,12 @@ State how the work will be proven and link the verification artifact.
 
 ## Completion Notes
 
-Optional implementation notes, deviations, or follow-up items.
+- The baseline local web host and all primary Razor Pages routes are shipped in
+  the main executable and now have page-level HTTP smoke coverage, including an
+  embedded static asset.
+- The work item remains in progress because the advanced compact specification
+  editor behaviors tracked by `VER-WB-0007` still require their targeted UI
+  verification to be completed.
 
 ## Trace Links
 

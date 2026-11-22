@@ -20,29 +20,12 @@ public static class WorkbenchWebHost
                 return 2;
             }
 
-            var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-            {
-                Args = options.RemainingArgs,
-                ContentRootPath = repoRoot
-            });
-
-            ConfigureWebRoot(builder, repoRoot);
-            builder.Services.AddRazorPages();
-            builder.Services.AddSingleton(new WorkbenchWorkspace(repoRoot, config));
-            builder.Services.AddSingleton<WorkbenchUserProfileStore>();
-            builder.WebHost.UseUrls(options.Url);
-
-            var app = builder.Build();
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-            }
-
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.MapRazorPages();
-
-            RegisterBrowserLaunch(app, options);
+            var app = BuildApplication(
+                repoRoot,
+                config,
+                options.Url,
+                options.LaunchBrowser,
+                options.RemainingArgs);
 
             await Console.Out.WriteLineAsync($"Workbench web UI listening on {options.Url}").ConfigureAwait(false);
             await Console.Out.WriteLineAsync($"Repo root: {repoRoot}").ConfigureAwait(false);
@@ -55,6 +38,45 @@ public static class WorkbenchWebHost
             await Console.Error.WriteLineAsync(FormatError(ex)).ConfigureAwait(false);
             return 2;
         }
+    }
+
+    /// <summary>Builds the local web application without starting it.</summary>
+    public static WebApplication BuildApplication(
+        string repoRoot,
+        WorkbenchConfig config,
+        string url,
+        bool launchBrowser = false,
+        string[]? args = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(repoRoot);
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            Args = args ?? Array.Empty<string>(),
+            ApplicationName = typeof(Program).Assembly.FullName,
+            ContentRootPath = Path.GetFullPath(repoRoot)
+        });
+
+        ConfigureWebRoot(builder, repoRoot);
+        builder.Services.AddRazorPages();
+        builder.Services.AddSingleton(new WorkbenchWorkspace(repoRoot, config));
+        builder.Services.AddSingleton<WorkbenchUserProfileStore>();
+        builder.WebHost.UseUrls(url);
+
+        var app = builder.Build();
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler("/Error");
+        }
+
+        app.UseStaticFiles();
+        app.UseRouting();
+        app.MapRazorPages();
+
+        RegisterBrowserLaunch(app, launchBrowser);
+        return app;
     }
 
     private static string ResolveRepo(string? repoArg)
@@ -117,9 +139,9 @@ public static class WorkbenchWebHost
             : new ManifestEmbeddedFileProvider(assembly, "wwwroot");
     }
 
-    private static void RegisterBrowserLaunch(WebApplication app, WebOptions options)
+    private static void RegisterBrowserLaunch(WebApplication app, bool launchBrowser)
     {
-        if (!options.LaunchBrowser || !Environment.UserInteractive)
+        if (!launchBrowser || !Environment.UserInteractive)
         {
             return;
         }

@@ -32,7 +32,8 @@ Browser-first local editing, repository browsing, and shared core-service reuse 
 
 ## Verification Method
 
-Documentation review, repository validation, and targeted command checks.
+Page-level HTTP smoke tests, repository validation, and targeted command
+checks.
 
 ## Preconditions
 
@@ -42,7 +43,10 @@ Documentation review, repository validation, and targeted command checks.
 
 1. Review the linked spec and architecture artifacts.
 2. Run the repo validation and command-surface checks.
-3. Confirm the expected files, paths, and outputs exist.
+3. Start the production Razor Pages host on an ephemeral loopback port.
+4. Confirm the item, dashboard alias, docs, specs, files, settings, and create
+   routes render successfully from a scaffolded local repository.
+5. Confirm an embedded stylesheet is served without a source checkout.
 
 ## Expected Result
 
@@ -51,8 +55,9 @@ The linked requirements are satisfied by the documented repository behavior and 
 ## Evidence
 
 - [`src/Workbench/Pages/Index.cshtml.cs`](../../../src/Workbench/Pages/Index.cshtml.cs)
-- tests/Workbench.Tests/WorkItemEditTests.cs
+- [`tests/Workbench.Tests/WorkItemEditTests.cs`](../../../tests/Workbench.Tests/WorkItemEditTests.cs)
 - [`tests/Workbench.IntegrationTests/CommandSurfaceTests.cs`](../../../tests/Workbench.IntegrationTests/CommandSurfaceTests.cs)
+- [`tests/Workbench.IntegrationTests/WebSurfaceTests.cs`](../../../tests/Workbench.IntegrationTests/WebSurfaceTests.cs)
 - benchmark: not-applicable
 
 ## Status
