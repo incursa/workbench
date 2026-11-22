@@ -48,7 +48,8 @@ public static class NavigationService
         bool force,
         bool dryRun,
         bool syncDocs = true,
-        bool normalizeItems = true)
+        bool normalizeItems = true,
+        bool createMissingIndexes = true)
     {
         var docSync = syncDocs
             ? await DocService.SyncLinksAsync(repoRoot, config, includeAllDocs: true, syncIssues, includeDone, dryRun)
@@ -71,35 +72,40 @@ public static class NavigationService
             "workbench:overview-index",
             BuildDocsIndex(repoRoot, config, docsReadmePath, docs),
             force,
-            dryRun);
+            dryRun,
+            createMissingIndexes);
         indexFilesUpdated += SyncIndexFile(
             specsReadmePath,
             BuildSpecsReadmeTemplate(),
             "workbench:specs-index",
             BuildSpecsIndex(repoRoot, config, specsReadmePath, docs),
             force,
-            dryRun);
+            dryRun,
+            createMissingIndexes);
         indexFilesUpdated += SyncIndexFile(
             architectureReadmePath,
             BuildArchitectureReadmeTemplate(),
             "workbench:architecture-index",
             BuildArchitectureIndex(repoRoot, config, architectureReadmePath, docs),
             force,
-            dryRun);
+            dryRun,
+            createMissingIndexes);
         indexFilesUpdated += SyncIndexFile(
             workReadmePath,
             BuildWorkReadmeTemplate(),
             "workbench:work-index",
             BuildWorkIndex(repoRoot, config, workReadmePath, docs),
             force,
-            dryRun);
+            dryRun,
+            createMissingIndexes);
         indexFilesUpdated += SyncIndexFile(
             rootReadmePath,
             BuildRootReadmeTemplate(),
             "workbench:root-index",
             BuildRootIndex(repoRoot, config),
             force,
-            dryRun);
+            dryRun,
+            createMissingIndexes);
         return new NavigationSyncResult(
             docSync.DocsUpdated,
             docSync.ItemsUpdated + normalizedItems,
@@ -543,10 +549,22 @@ public static class NavigationService
         return NormalizePath(relative);
     }
 
-    private static int SyncIndexFile(string filePath, string template, string markerName, string content, bool force, bool dryRun)
+    private static int SyncIndexFile(
+        string filePath,
+        string template,
+        string markerName,
+        string content,
+        bool force,
+        bool dryRun,
+        bool createMissingIndexes)
     {
         if (!File.Exists(filePath))
         {
+            if (!createMissingIndexes)
+            {
+                return 0;
+            }
+
             if (!dryRun)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? Directory.GetCurrentDirectory());

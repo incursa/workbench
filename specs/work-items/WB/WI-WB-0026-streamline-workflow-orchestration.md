@@ -48,8 +48,11 @@ intent and project memory.
 
 ## Delivered Changes
 
-- In progress: optional workflow levels and `workbench context`.
-- In progress: local-only idempotent `workbench finish`.
+- Delivered: optional workflow levels and versioned `workbench context`.
+- Delivered: local-only idempotent `workbench finish`, including prospective
+  dry-run and structured downstream stage results.
+- Delivered: deterministic `workbench doctor --fix` scaffolding and
+  established-index repair with versioned JSON and one next action.
 
 ## Out of Scope
 
@@ -87,6 +90,9 @@ intent and project memory.
 - Formalized the docs MCP as a public, unauthenticated, read-only surface and
   added request/query bounds, security/cache headers, and negative transport
   tests without introducing runtime state or mutation.
+- Expanded doctor coverage to GitHub, OpenAI, Codex, voice transcription, and
+  generated navigation. Automatic repair remains local-only, refuses malformed
+  configuration, and does not create index files a repository has not adopted.
 
 ## Traceability Migration Backlog
 

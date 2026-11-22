@@ -124,16 +124,24 @@ public class FinishServiceTests
             "in_progress",
             null,
             null);
-        var config = WorkbenchConfig.Default with
-        {
-            Paths = WorkbenchConfig.Default.Paths with { DocsRoot = "blocked" }
-        };
-        await File.WriteAllTextAsync(Path.Combine(repo.Path, "blocked"), "not a directory");
+        var indexPath = Path.Combine(repo.Path, "specs", "work-items", "README.md");
+        await File.WriteAllTextAsync(
+            indexPath,
+            "# Work Items\n\n<!-- workbench:work-index:start -->\nstale\n<!-- workbench:work-index:end -->\n");
+        File.SetAttributes(indexPath, File.GetAttributes(indexPath) | FileAttributes.ReadOnly);
 
-        var result = await FinishService.FinishAsync(
-            repo.Path,
-            config,
-            new FinishOptions(created.Id));
+        FinishData result;
+        try
+        {
+            result = await FinishService.FinishAsync(
+                repo.Path,
+                WorkbenchConfig.Default,
+                new FinishOptions(created.Id));
+        }
+        finally
+        {
+            File.SetAttributes(indexPath, FileAttributes.Normal);
+        }
 
         Assert.IsTrue(result.StatusChanged);
         Assert.AreEqual("complete", result.FinalStatus);

@@ -105,7 +105,8 @@ public static class FinishService
                 force: false,
                 dryRun: false,
                 syncDocs: false,
-                normalizeItems: false).ConfigureAwait(false);
+                normalizeItems: false,
+                createMissingIndexes: false).ConfigureAwait(false);
             return new FinishNavigationData(
                 true,
                 result.DocsUpdated,

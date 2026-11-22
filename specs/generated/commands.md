@@ -57,7 +57,7 @@ workbench <command> [options]
     - `workbench doc summarize`: Summarize doc changes with AI and append change notes.
     - `workbench doc sync`: Repo metadata stage: sync doc/work-item backlinks and doc front matter. Does not regenerate indexes.
     - `workbench doc unlink`: Unlink a doc from work items.
-  - `workbench doctor`: Check git, config, and expected paths.
+  - `workbench doctor`: Check repository health and optionally repair deterministic local drift.
   - `workbench finish`: Idempotently record completion evidence, refresh local derived views, and validate a work item.
   - `workbench github`: Group: GitHub commands.
     - `workbench github pr`: Group: GitHub pull request commands.
@@ -278,10 +278,11 @@ Options:
 - `--dry-run`: Report changes without writing files.
 
 ### `workbench doctor`
-Check git, config, and expected paths.
+Check repository health and optionally repair deterministic local drift.
 
 Options:
-- `--json`: Output machine-readable JSON.
+- `--json`: Output machine-readable JSON (legacy alias for --format json).
+- `--fix`: Repair deterministic local scaffolding and generated-navigation drift.
 
 ### `workbench finish`
 Idempotently record completion evidence, refresh local derived views, and validate a work item.

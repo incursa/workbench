@@ -1,6 +1,6 @@
 {
   "Paths": {
-    "DocsRoot": "overview",
+    "DocsRoot": "content",
     "SpecsRoot": "specs",
     "ArchitectureDir": "specs/architecture",
     "WorkItemsSpecsDir": "specs/work-items",

@@ -74,7 +74,10 @@ stable automation contracts, and explicit external-system authority.
   findings from 2,142 to 1,390 without adding synthetic relationships.
 - Passing: 13 docs MCP protocol/search/security tests and zero npm audit
   vulnerabilities.
-- Planned: doctor repair and external reconciliation tests.
+- Passing: doctor JSON contract, local scaffolding repair, established-index
+  refresh, idempotence, malformed-config preservation, and optional provider
+  readiness checks.
+- Planned: provider-backed external reconciliation tests.
 
 ## Status
 

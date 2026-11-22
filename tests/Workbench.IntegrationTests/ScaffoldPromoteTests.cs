@@ -92,5 +92,11 @@ public class ScaffoldPromoteTests
 
         Assert.AreNotEqual(default, githubCheck, doctorJson.ToString());
         Assert.IsFalse(string.IsNullOrWhiteSpace(githubCheck.GetProperty("status").GetString()), doctorJson.ToString());
+        foreach (var expected in new[] { "openai", "codex", "voice-transcription" })
+        {
+            Assert.IsTrue(
+                checks.Any(check => string.Equals(check.GetProperty("name").GetString(), expected, StringComparison.Ordinal)),
+                doctorJson.ToString());
+        }
     }
 }
