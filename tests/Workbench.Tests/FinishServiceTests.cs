@@ -7,7 +7,7 @@ namespace Workbench.Tests;
 public class FinishServiceTests
 {
     [TestMethod]
-    public async Task FinishAsync_CompletesCanonicalItemAndDeduplicatesEvidence()
+    public async Task Finish_CompletesCanonicalItemAndDeduplicatesEvidenceAsync()
     {
         using var repo = CreateRepoRoot();
         ScaffoldService.Scaffold(repo.Path, force: true);
@@ -60,7 +60,7 @@ public class FinishServiceTests
     }
 
     [TestMethod]
-    public async Task FinishAsync_DryRunReportsChangesWithoutWriting()
+    public async Task Finish_DryRunReportsChangesWithoutWritingAsync()
     {
         using var repo = CreateRepoRoot();
         ScaffoldService.Scaffold(repo.Path, force: true);
@@ -112,7 +112,7 @@ public class FinishServiceTests
     }
 
     [TestMethod]
-    public async Task FinishAsync_ReturnsStageResultsWhenNavigationFailsAfterMutation()
+    public async Task Finish_ReturnsStageResultsWhenNavigationFailsAfterMutationAsync()
     {
         using var repo = CreateRepoRoot();
         ScaffoldService.Scaffold(repo.Path, force: true);
@@ -153,7 +153,7 @@ public class FinishServiceTests
     }
 
     [TestMethod]
-    public async Task FinishAsync_RejectsNonHttpPullRequest()
+    public async Task Finish_RejectsNonHttpPullRequestAsync()
     {
         using var repo = CreateRepoRoot();
         ScaffoldService.Scaffold(repo.Path, force: true);
@@ -178,7 +178,7 @@ public class FinishServiceTests
     [TestMethod]
     [DataRow("cancelled")]
     [DataRow("superseded")]
-    public async Task FinishAsync_RejectsTerminalOutcomeWithoutRewritingIt(string status)
+    public async Task Finish_RejectsTerminalOutcomeWithoutRewritingItAsync(string status)
     {
         using var repo = CreateRepoRoot();
         ScaffoldService.Scaffold(repo.Path, force: true);

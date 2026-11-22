@@ -7,7 +7,7 @@ namespace Workbench.IntegrationTests;
 public sealed class WebSurfaceTests
 {
     [TestMethod]
-    public async Task LocalWebUi_ServesPrimaryPagesAndEmbeddedAssets()
+    public async Task LocalWebUi_ServesPrimaryPagesAndEmbeddedAssetsAsync()
     {
         using var repo = TempRepo.Create();
         GitTestRepo.InitializeGitRepo(repo.Path);
