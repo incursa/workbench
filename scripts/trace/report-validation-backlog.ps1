@@ -105,6 +105,24 @@ foreach ($profile in @("traceable", "auditable")) {
 }
 
 $sortedFindings = @($findings | Sort-Object profile, category, domain, file, artifactId, targetId)
+$categoryGuidance = @(
+    [ordered]@{
+        category = "downstream-missing"
+        action = "Confirm that an implementation or verification artifact exists, then add the evidenced downstream link on both sides. If delivery is not planned or does not exist, keep the finding visible instead of inventing a target."
+    },
+    [ordered]@{
+        category = "reciprocal-mismatch"
+        action = "Inspect both named artifacts and align their reciprocal fields only when the relationship is materially supported by their content or delivered work. Do not add a backlink solely to reduce the count."
+    },
+    [ordered]@{
+        category = "verification-missing"
+        action = "Link a real verification artifact that defines executable or reviewable evidence. If no such evidence exists yet, author the verification plan before linking it."
+    },
+    [ordered]@{
+        category = "orphan-artifact"
+        action = "Classify the artifact as an intentional entry point, obsolete content, or content missing a real relationship. Document, retire, or link it based on that classification rather than adding a synthetic edge."
+    }
+)
 $summaries = foreach ($profileResult in $profileResults) {
     $profileFindings = @($sortedFindings | Where-Object profile -eq $profileResult.profile)
     [ordered]@{
@@ -125,8 +143,9 @@ $summaries = foreach ($profileResult in $profileResults) {
 }
 
 $report = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     summaries     = @($summaries)
+    categoryGuidance = $categoryGuidance
     findings      = $sortedFindings
 }
 
@@ -139,6 +158,14 @@ $markdown = [System.Text.StringBuilder]::new()
 [void]$markdown.AppendLine("# Trace Validation Backlog")
 [void]$markdown.AppendLine()
 [void]$markdown.AppendLine('Generated from the current repository using the production `workbench validate` command. The JSON companion contains the deterministic, sorted finding backlog.')
+[void]$markdown.AppendLine()
+[void]$markdown.AppendLine("## Remediation guidance")
+[void]$markdown.AppendLine()
+[void]$markdown.AppendLine("Treat every finding as an evidence-review task, not a target-count exercise.")
+[void]$markdown.AppendLine()
+foreach ($guidance in $categoryGuidance) {
+    [void]$markdown.AppendLine("- **$($guidance.category)**: $($guidance.action)")
+}
 foreach ($summary in $summaries) {
     [void]$markdown.AppendLine()
     [void]$markdown.AppendLine("## $($summary.profile)")

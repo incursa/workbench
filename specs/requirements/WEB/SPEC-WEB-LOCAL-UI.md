@@ -180,6 +180,7 @@ The requirement editor MUST expose Save, Delete, and Move Earlier/Move Later con
 Trace:
 - Implemented By:
   - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0027`](../../work-items/WB/WI-WB-0027-complete-web-editing-and-connected-execution-capabilities.md)
 - Related:
   - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 
@@ -206,6 +207,7 @@ The Save All button MUST refuse to persist any requirement card when any card is
 Trace:
 - Implemented By:
   - [`WI-WB-0023`](../../work-items/WB/WI-WB-0023-build-local-web-ui-mode-for-workbench.md)
+  - [`WI-WB-0027`](../../work-items/WB/WI-WB-0027-complete-web-editing-and-connected-execution-capabilities.md)
 - Related:
   - [`ARC-WB-0006`](../../architecture/WB/ARC-WB-0006-local-web-ui-mode.md)
 

@@ -80,7 +80,8 @@ stable automation contracts, and explicit external-system authority.
   repository triage reduced traceable findings from 779 to 445 and auditable
   findings from 2,142 to 1,387 without adding synthetic relationships. The
   remaining backlog is reproducible by category, domain, and artifact kind via
-  `scripts/trace/report-validation-backlog.ps1`.
+  `scripts/trace/report-validation-backlog.ps1`; report schema version 2 adds
+  evidence-first remediation guidance for each remaining category.
 - Passing: 13 docs MCP protocol/search/security tests and zero npm audit
   vulnerabilities; the same checks now run as a required main CI job through
   `scripts/verify.ps1`.

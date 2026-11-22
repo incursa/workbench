@@ -19,7 +19,7 @@ Helper scripts for canonical SpecTrace validation, packaging, and release automa
 
 ## Trace migration
 
-- [`scripts/trace/report-validation-backlog.ps1`](trace/report-validation-backlog.ps1): runs the production validator with the `traceable` and `auditable` profiles and writes a deterministic, sorted JSON backlog plus a Markdown summary under `artifacts/validation/`.
+- [`scripts/trace/report-validation-backlog.ps1`](trace/report-validation-backlog.ps1): runs the production validator with the `traceable` and `auditable` profiles and writes a deterministic, sorted JSON backlog plus a Markdown summary under `artifacts/validation/`. The versioned report includes evidence-first remediation guidance for each finding category; the generated files remain advisory outputs and are not hand-edited.
 
 ## Quality evidence paths
 

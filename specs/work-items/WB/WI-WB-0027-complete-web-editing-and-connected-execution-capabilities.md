@@ -97,6 +97,10 @@ separate from the completed readiness-remediation history.
   versioned `item hierarchy` JSON commands, offline cross-repository URI
   validation, local self/cycle/missing-reference rejection, and derived
   navigation. Existing work items remain valid without migration.
+- Reconciled the two directly evidenced WEB requirement backlinks introduced
+  by this work. Traceable remains at 445 findings and auditable returns to
+  1,387; the versioned backlog report now explains evidence-first remediation
+  for every remaining category instead of encouraging count-driven links.
 
 ## Trace Links
 
