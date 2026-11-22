@@ -324,7 +324,7 @@ internal static partial class ValidationGraphValidator
         var requirements = new List<RequirementNode>();
         foreach (var clause in artifact.Requirements ?? [])
         {
-            var trace = BuildRequirementTrace(clause.Trace);
+            var trace = NormalizeArtifactTrace(BuildRequirementTrace(clause.Trace));
             requirements.Add(new RequirementNode(
                 clause.Id,
                 artifactNode.ArtifactId,
@@ -635,6 +635,7 @@ internal static partial class ValidationGraphValidator
                 }
             }
 
+            var normalizedTrace = NormalizeArtifactTrace(clause.Trace);
             requirements.Add(new RequirementNode(
                 clause.RequirementId,
                 artifactNode.ArtifactId,
@@ -642,11 +643,11 @@ internal static partial class ValidationGraphValidator
                 repoRelative,
                 clause.Title,
                 clause.Clause,
-                clause.Trace ?? new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase),
+                normalizedTrace,
                 relatedArtifacts,
-                ReadTraceList(clause.Trace, "Source Refs"),
-                ReadTraceList(clause.Trace, "Test Refs"),
-                ReadTraceList(clause.Trace, "Code Refs")));
+                ReadTraceList(normalizedTrace, "Source Refs"),
+                ReadTraceList(normalizedTrace, "Test Refs"),
+                ReadTraceList(normalizedTrace, "Code Refs")));
         }
 
         graph.Specifications.Add(new SpecificationNode(artifactNode, relatedArtifacts, requirements));
@@ -967,7 +968,7 @@ internal static partial class ValidationGraphValidator
 
             if (!string.IsNullOrWhiteSpace(line))
             {
-                items.Add(line);
+                items.Add(NormalizeArtifactReference(line));
             }
         }
 
@@ -1140,7 +1141,7 @@ internal static partial class ValidationGraphValidator
 
             if (!string.IsNullOrWhiteSpace(trimmed))
             {
-                working[currentLabel].Add(trimmed);
+                working[currentLabel].Add(NormalizeArtifactReference(trimmed));
             }
         }
 
@@ -1191,6 +1192,31 @@ internal static partial class ValidationGraphValidator
         }
 
         return trace.TryGetValue(label, out var values) ? values : Array.Empty<string>();
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> NormalizeArtifactTrace(
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? trace)
+    {
+        var normalized = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in trace ?? new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase))
+        {
+            normalized[entry.Key] = entry.Key is "Satisfied By" or "Implemented By" or "Verified By" or "Related"
+                ? entry.Value.Select(NormalizeArtifactReference).ToArray()
+                : entry.Value;
+        }
+        return normalized;
+    }
+
+    private static string NormalizeArtifactReference(string value)
+    {
+        var candidate = value.Trim();
+        var linkSeparator = candidate.IndexOf("](", StringComparison.Ordinal);
+        if (candidate.StartsWith("[", StringComparison.Ordinal) && linkSeparator > 1)
+        {
+            candidate = candidate[1..linkSeparator].Trim();
+        }
+
+        return candidate.Trim('`').Trim();
     }
 
     private static List<string> NormalizePrefixes(IList<string>? prefixes)

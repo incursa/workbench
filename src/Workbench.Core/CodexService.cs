@@ -41,7 +41,9 @@ public static class CodexService
         }
         catch (Exception ex)
         {
-            error = ex.ToString();
+            var diagnostic = ex.ToString();
+            var firstLineEnd = diagnostic.IndexOfAny(['\r', '\n']);
+            error = firstLineEnd < 0 ? diagnostic : diagnostic[..firstLineEnd];
             return false;
         }
     }

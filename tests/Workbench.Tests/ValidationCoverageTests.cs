@@ -1455,6 +1455,93 @@ public class ValidationCoverageTests
         Assert.IsEmpty(errors, string.Join(Environment.NewLine, errors));
     }
 
+    [TestMethod]
+    public void ValidateRepo_MarkdownArtifactLinksResolveLikePlainIds()
+    {
+        using var repo = CreateRepoWithSchemas();
+        var requirementId = "REQ-WB-LINKED-0001";
+        var specId = "SPEC-WB-LINKED";
+        var architectureId = "ARC-WB-9100";
+        var workItemId = "WI-WB-9100";
+        var verificationId = "VER-WB-9100";
+        var requirementsDir = Path.Combine(repo.Path, "specs", "requirements", "WB");
+        var architectureDir = Path.Combine(repo.Path, "specs", "architecture", "WB");
+        var workItemsDir = Path.Combine(repo.Path, "specs", "work-items", "WB");
+        var verificationDir = Path.Combine(repo.Path, "specs", "verification", "WB");
+        Directory.CreateDirectory(requirementsDir);
+        Directory.CreateDirectory(architectureDir);
+        Directory.CreateDirectory(workItemsDir);
+        Directory.CreateDirectory(verificationDir);
+
+        File.WriteAllText(
+            Path.Combine(requirementsDir, $"{specId}.md"),
+            BuildSpecificationDoc(
+                specId,
+                "Linked references",
+                requirementId,
+                "Workbench MUST resolve linked trace labels.",
+                [
+                    "- Satisfied By:",
+                    $"  - [`{architectureId}`](../../architecture/WB/{architectureId}.md)",
+                    "- Implemented By:",
+                    $"  - [`{workItemId}`](../../work-items/WB/{workItemId}.md)",
+                    "- Verified By:",
+                    $"  - [`{verificationId}`](../../verification/WB/{verificationId}.md)"
+                ],
+                [architectureId, workItemId, verificationId]));
+        File.WriteAllText(
+            Path.Combine(architectureDir, $"{architectureId}.md"),
+            BuildArchitectureDoc(
+                architectureId,
+                "Linked architecture",
+                [requirementId],
+                [specId, workItemId, verificationId])
+                .Replace(
+                    $"## Requirements Satisfied\n\n- {requirementId}",
+                    $"## Requirements Satisfied\n\n- [`{requirementId}`](../../requirements/WB/{specId}.md)",
+                    StringComparison.Ordinal));
+        File.WriteAllText(
+            Path.Combine(workItemsDir, $"{workItemId}.md"),
+            BuildWorkItemDoc(
+                workItemId,
+                "Linked work item",
+                [requirementId],
+                [architectureId],
+                [verificationId],
+                [specId],
+                [$"[`{requirementId}`](../../requirements/WB/{specId}.md)"],
+                [$"[`{architectureId}`](../../architecture/WB/{architectureId}.md)"],
+                [$"[`{verificationId}`](../../verification/WB/{verificationId}.md)"]));
+        File.WriteAllText(
+            Path.Combine(verificationDir, $"{verificationId}.md"),
+            BuildVerificationDoc(
+                verificationId,
+                "Linked verification",
+                [requirementId],
+                [specId, architectureId, workItemId],
+                [$"[`{requirementId}`](../../requirements/WB/{specId}.md)"],
+                [
+                    $"[`{specId}`](../../requirements/WB/{specId}.md)",
+                    $"[`{architectureId}`](../../architecture/WB/{architectureId}.md)",
+                    $"[`{workItemId}`](../../work-items/WB/{workItemId}.md)"
+                ]));
+
+        var result = ValidationService.ValidateRepo(
+            repo.Path,
+            WorkbenchConfig.Default,
+            new ValidationOptions(Profile: ValidationProfiles.Auditable));
+
+        Assert.IsFalse(
+            result.Findings.Any(finding =>
+                (string.Equals(finding.Category, "unresolved-reference", StringComparison.Ordinal) ||
+                 string.Equals(finding.Category, "body-mismatch", StringComparison.Ordinal)) &&
+                (string.Equals(finding.ArtifactId, specId, StringComparison.Ordinal) ||
+                 string.Equals(finding.ArtifactId, architectureId, StringComparison.Ordinal) ||
+                 string.Equals(finding.ArtifactId, workItemId, StringComparison.Ordinal) ||
+                 string.Equals(finding.ArtifactId, verificationId, StringComparison.Ordinal))),
+            string.Join(Environment.NewLine, result.Errors));
+    }
+
     private static TempRepoRoot CreateRepoWithSchemas()
     {
         var repo = new TempRepoRoot();

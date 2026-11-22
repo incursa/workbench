@@ -45,6 +45,8 @@ const serverName = resourcesManifest.serverName ?? "workbench-docs-mcp";
 const displayName = resourcesManifest.displayName ?? "Workbench Docs MCP";
 const namespace = resourcesManifest.namespace ?? "workbench";
 const defaultPathPrefix = "/workbench";
+const maxSearchQueryLength = 512;
+const maxMcpRequestBytes = 256 * 1024;
 const resources = resourcesManifest.resources as ResourceRecord[];
 const resourceMap = new Map(resources.map((resource) => [resource.uri, resource]));
 const sourcePathMap = new Map<string, ResourceRecord>();
@@ -80,6 +82,37 @@ function escapeHtml(value: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function withResponseHeaders(response: Response, headers: Record<string, string>) {
+  const merged = new Headers(response.headers);
+  for (const [name, value] of Object.entries(headers)) {
+    merged.set(name, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: merged,
+  });
+}
+
+function htmlHeaders() {
+  return {
+    "cache-control": "public, max-age=300",
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+    "content-type": "text/html; charset=utf-8",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+  };
+}
+
+function protocolHeaders() {
+  return {
+    "cache-control": "no-store",
+    "referrer-policy": "no-referrer",
+    "x-content-type-options": "nosniff",
+  };
 }
 
 function titleCase(value: string) {
@@ -699,7 +732,7 @@ function registerTools(server) {
     {
       description: resourcesManifest.searchTool?.description ?? "Search the compiled Workbench docs.",
       inputSchema: {
-        query: z.string().describe("Search text"),
+        query: z.string().max(maxSearchQueryLength).describe("Search text"),
         kind: z.enum(["guide", "reference", "spec", "index", "example", "any"]).default("any"),
         group: z.string().default("any"),
         include_unsearchable: z.boolean().default(false),
@@ -762,7 +795,21 @@ async function handleMcpRequest(request) {
   });
 
   await server.connect(transport);
-  return transport.handleRequest(request);
+  return withResponseHeaders(await transport.handleRequest(request), protocolHeaders());
+}
+
+async function readBoundedMcpRequest(request: Request) {
+  const declaredLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > maxMcpRequestBytes) {
+    return null;
+  }
+
+  const body = await request.arrayBuffer();
+  if (body.byteLength > maxMcpRequestBytes) {
+    return null;
+  }
+
+  return new Request(request, { body });
 }
 
 function findResourceForRequest(url) {
@@ -795,12 +842,16 @@ export async function fetch(request: Request, env?: WorkerEnv) {
   const { request: routedRequest, pathPrefix, url } = routed;
 
   if (routedRequest.method === "POST" && url.pathname === "/mcp") {
-    return handleMcpRequest(routedRequest);
+    const boundedRequest = await readBoundedMcpRequest(routedRequest);
+    if (!boundedRequest) {
+      return withResponseHeaders(new Response("Request body too large", { status: 413 }), protocolHeaders());
+    }
+    return handleMcpRequest(boundedRequest);
   }
 
   if (routedRequest.method === "GET" && (url.pathname === "/mcp" || url.pathname === "/")) {
     return new Response(renderDocsIndexHtml(pathPrefix), {
-      headers: { "content-type": "text/html; charset=utf-8" },
+      headers: htmlHeaders(),
     });
   }
 
@@ -808,10 +859,17 @@ export async function fetch(request: Request, env?: WorkerEnv) {
     const resource = findResourceForRequest(url);
     if (resource) {
       return new Response(renderResourcePage(resource, pathPrefix), {
-        headers: { "content-type": "text/html; charset=utf-8" },
+        headers: htmlHeaders(),
       });
     }
   }
 
-  return new Response("Not found", { status: 404 });
+  if (url.pathname === "/mcp") {
+    return withResponseHeaders(
+      new Response("Method not allowed", { status: 405, headers: { allow: "GET, POST" } }),
+      protocolHeaders(),
+    );
+  }
+
+  return withResponseHeaders(new Response("Not found", { status: 404 }), protocolHeaders());
 }

@@ -59,6 +59,8 @@ namespace Workbench.Core;
 [JsonSerializable(typeof(AttestationSnapshot))]
 [JsonSerializable(typeof(AttestationRunData))]
 [JsonSerializable(typeof(AttestationOutput))]
+[JsonSerializable(typeof(ContextOutput))]
+[JsonSerializable(typeof(FinishOutput))]
 public partial class WorkbenchJsonContext : JsonSerializerContext
 {
 }

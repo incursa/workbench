@@ -40,6 +40,7 @@ Workbench's existing sync/show and JSON-envelope conventions.
 - [`REQ-QE-0004`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 - [`REQ-QE-0005`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 - [`REQ-QE-0006`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
+- [`REQ-QE-0007`](../../requirements/QA/SPEC-QA-QUALITY-EVIDENCE.md)
 
 ## Design Inputs
 

@@ -3,7 +3,7 @@ artifact_id: WI-WB-0023
 artifact_type: work_item
 title: "build local web ui mode for workbench"
 domain: WB
-status: planned
+status: in_progress
 owner: platform
 addresses:
   - REQ-WEB-0001
@@ -102,7 +102,17 @@ State how the work will be proven and link the verification artifact.
 
 ## Completion Notes
 
-Optional implementation notes, deviations, or follow-up items.
+- The baseline local web host and all primary Razor Pages routes are shipped in
+  the main executable and now have page-level HTTP smoke coverage, including an
+  embedded static asset.
+- Production-handler integration coverage now proves work-item create, edit,
+  metadata persistence, and validation, plus requirement validation, targeted
+  save, add, and delete behavior. The coverage found and fixed canonical
+  work-item priority and metadata-only edit persistence.
+- The work item remains in progress because `Move Earlier`, `Move Later`, and
+  atomic `Save All` are not exposed by the current selected-requirement editor,
+  and compact grouping, section toggles, and preview behavior still require a
+  browser walkthrough. These gaps remain tracked by `VER-WB-0007`.
 
 ## Trace Links
 

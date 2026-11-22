@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "incursa.workbench": {
-      "version": "2026.3.23.196",
+      "version": "2026.9.19.293",
       "commands": [
         "workbench"
       ],

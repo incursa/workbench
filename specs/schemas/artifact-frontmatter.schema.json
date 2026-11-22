@@ -236,6 +236,14 @@
             "superseded"
           ]
         },
+        "priority": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
         "owner": {
           "$ref": "#/$defs/nonEmptyString"
         },

@@ -13,6 +13,19 @@ reads front matter from those files, compiles a manifest and search index into
 
 The only dynamic tool in v1 is `search_docs`.
 
+## Production Boundary
+
+The deployed endpoint is public, unauthenticated, deterministic, and
+read-only. `POST /mcp` is JSON-RPC transport; it does not authorize content or
+repository mutation. Runtime content comes only from the build-time manifest,
+and the Worker has no database, LLM, crawler, filesystem write, or external
+search capability.
+
+The Worker bounds search input and MCP request size, emits restrictive browser
+security headers, and disables caching for protocol responses. Deployment
+rate limiting belongs at the Cloudflare/WAF edge because the Worker maintains
+no session or identity state.
+
 ## Local Development
 
 Run all commands from the repository root.

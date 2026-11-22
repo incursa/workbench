@@ -56,18 +56,42 @@ rewrite.
 
 ## Happy path
 
-1. Use `workbench spec new` for requirement specifications.
-2. Use `workbench item new` for work items.
-3. Use `workbench doc new` for architecture and verification artifacts if you
+1. Run `workbench context` to see the repository policy, applicable artifacts,
+   active work, and one recommended next command.
+2. Use `workbench spec new` for requirement specifications when the change
+   needs durable behavioral intent.
+3. Use `workbench item new` for meaningful implementation work. Repositories
+   using `Workflow.Level: light` may omit a work item for trivial changes and
+   emergency hotfixes.
+4. Use `workbench doc new` for architecture and verification artifacts if you
    need a generic path, or edit the Markdown directly when the artifact already
    exists.
-4. Use `workbench item link` to connect work items to specs, architecture docs,
+5. Use `workbench item link` to connect work items to specs, architecture docs,
    and verification artifacts.
-5. Refresh generated views with `workbench nav sync` and run
-   `workbench validate` before review or automation. Use
+6. Finish tracked work with `workbench finish <id> [--pr <url>]`. It records
+   local completion evidence idempotently, refreshes derived navigation, and
+   validates without contacting external systems. Add `--dry-run` to execute
+   the prospective workflow in an isolated mirror without changing the repo.
+7. Run `workbench validate` before review or automation. Use
    `--profile traceable` or `--profile auditable` when you need stronger graph
    checks, and `--scope <path>` to focus validation on a subtree.
-6. Agents should prefer `workbench llm help` and `--format json`.
+8. Agents should prefer `workbench context --format json` and `workbench llm
+   help`.
+
+## Workflow policy
+
+- `light`: low ceremony for trivial changes and emergency hotfixes; work items
+  are optional and core validation remains the default.
+- `standard`: the backward-compatible default; work items are expected for
+  meaningful work, while generated navigation is maintained by orchestration
+  commands.
+- `governed`: explicit work items and traceability with auditable validation by
+  default.
+
+Set the level with `workbench config set --path workflow.level --value
+<light|standard|governed>`. GitHub remains authoritative for PR and issue
+execution state, and deployment systems remain authoritative for release and
+deployment state.
 
 ## Sync model
 
@@ -84,7 +108,8 @@ rewrite.
 - `src/Workbench`: CLI source code.
 - `src/Workbench.Cli`: command composition and dispatch.
 - `src/Workbench.Core`: repository IO, validation, Git/GitHub integration, and shared models.
-- `src/Workbench.Tui`: terminal UI entry point.
+- `src/Workbench.Tui`: unsupported Terminal.Gui prototype retained for design
+  reference; it is not built, packaged, or covered by compatibility guarantees.
 - `src/mcp`: docs MCP Worker source.
 - `content/`: authored docs for the MCP Worker and mirrored docs site.
 - `runbooks/`: operational procedures and release playbooks.
@@ -122,7 +147,8 @@ rewrite.
 
 ## Requirements
 
-- .NET SDK `10.0.100` (see [`global.json`](global.json)).
+- .NET SDK `10.0.100` or a later .NET 10 feature band (see
+  [`global.json`](global.json)). Major-version roll-forward remains disabled.
 - Canonical JSON validation uses the SpecTrace schema snapshot pinned in
   [`src/Workbench.Core/Workbench.Core.csproj`](src/Workbench.Core/Workbench.Core.csproj).
 - Optional: GitHub CLI for the GH-dependent integration tests.
@@ -325,12 +351,17 @@ Optional knobs (env vars):
 
 ## CI
 
-GitHub Actions builds and tests on `ubuntu-latest`, `windows-latest`, and
-`macos-latest` with .NET `10.0.x`:
+GitHub Actions runs once for each pull request revision and once after changes
+land on `main`; feature-branch pushes do not start a duplicate run when a pull
+request is open. CI owns pre-commit, the docs MCP, and the Windows/macOS .NET
+matrix. Quality Gate owns the Ubuntu deterministic build, tests with coverage,
+the critical-coverage contract, and reproducible package comparison. Both
+workflows also support manual dispatch.
+
+The local equivalent is:
 
 ```bash
-dotnet build Workbench.slnx
-dotnet test --solution Workbench.slnx
+pwsh -File scripts/verify.ps1
 ```
 
 ## Known Gaps

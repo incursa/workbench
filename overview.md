@@ -38,6 +38,18 @@ verification.
   output and is not canonical `Verified By` coverage unless explicitly
   projected into a verification artifact.
 
+## Workflow Policy
+
+- `light` is the low-ceremony path for trivial changes and emergency hotfixes.
+- `standard` is the backward-compatible default and expects work items for
+  meaningful work without requiring them for every edit.
+- `governed` requires explicit work and traceability and defaults to auditable
+  validation.
+- `workbench context` reports the effective policy and exactly one recommended
+  next command.
+- `workbench finish` reconciles local completion evidence, generated views,
+  and validation idempotently. External synchronization remains explicit.
+
 ## Derived Attestation
 
 - `workbench quality attest` produces a current repository snapshot of

@@ -47,7 +47,8 @@ behavior.
 
 ## Verification Method
 
-Manual browser inspection plus targeted UI tests.
+Production Razor Page HTTP integration tests plus manual browser inspection for
+client-side interaction details.
 
 ## Preconditions
 
@@ -77,15 +78,25 @@ rejected before a file is written, and the preview remains hidden by default.
 
 ## Evidence
 
-- <browser walkthrough notes>
-- <page-level UI tests>
+- [`WebSurfaceTests`](../../../tests/Workbench.IntegrationTests/WebSurfaceTests.cs)
+  exercises the production host, antiforgery flow, invalid targeted saves,
+  targeted persistence without unrelated changes, requirement addition, and
+  requirement deletion.
+- The same suite exercises work-item creation, editing, persisted metadata, and
+  validation through the production Razor Page handlers.
+- A browser walkthrough is still required for compact grouping, section
+  toggles, and the hidden preview behavior.
+- `Move Earlier`, `Move Later`, and atomic `Save All` are not exposed by the
+  current selected-requirement editor and remain implementation gaps for
+  `REQ-WEB-0012` and `REQ-WEB-0014`.
 - benchmark: not-applicable
 
 ## Status
 
 The status below applies to every requirement listed in `verifies`. If the requirements do not share one outcome, split them into separate verification artifacts.
 
-planned
+planned; server-side interaction evidence is passing, but the missing controls
+and remaining browser walkthrough prevent this verification from passing.
 
 ## Related Artifacts
 

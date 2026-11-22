@@ -5,6 +5,7 @@ namespace Workbench.Core;
 
 public static class ScaffoldService
 {
+    private const string ScaffoldSchemaPrefix = "Workbench.Core.ScaffoldSchemas.";
     /// <summary>
     /// Result payload returned by scaffold operations.
     /// </summary>
@@ -39,6 +40,7 @@ public static class ScaffoldService
         }
 
         EnsureDir(config.Paths.SpecsRoot);
+        EnsureDir(config.Paths.DocsRoot);
         EnsureDir(config.Paths.ArchitectureDir);
         EnsureDir(Path.Combine(config.Paths.SpecsRoot, "requirements"));
         EnsureDir(Path.Combine(config.Paths.SpecsRoot, "verification"));
@@ -56,12 +58,33 @@ public static class ScaffoldService
         WriteFile(Path.Combine(config.Paths.ArchitectureDir, "WB", "_index.md"), BuildArchitectureIndexTemplate());
         WriteFile(Path.Combine(config.Paths.SpecsRoot, "verification", "WB", "_index.md"), BuildVerificationIndexTemplate());
         WriteFile(Path.Combine(config.Paths.SpecsRoot, "work-items", "WB", "_index.md"), BuildWorkItemsIndexTemplate());
+        WriteFile(Path.Combine("schemas", "workbench-config.schema.json"), ReadEmbeddedSchema("workbench-config.schema.json"));
+        foreach (var schemaName in new[]
+        {
+            "artifact-frontmatter.schema.json",
+            "artifact-id-policy.schema.json",
+            "requirement-clause.schema.json",
+            "requirement-trace-fields.schema.json",
+            "work-item-trace-fields.schema.json"
+        })
+        {
+            WriteFile(Path.Combine(config.Paths.SpecsSchemasDir, schemaName), ReadEmbeddedSchema(schemaName));
+        }
 
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
         var configJson = JsonSerializer.Serialize(config, Workbench.Core.WorkbenchJsonContext.Default.WorkbenchConfig);
         WriteFile(Path.Combine(".workbench", "config.json"), configJson + "\n");
 
         return new ScaffoldResult(created, skipped, configPath);
+    }
+
+    private static string ReadEmbeddedSchema(string name)
+    {
+        var assembly = typeof(ScaffoldService).Assembly;
+        using var stream = assembly.GetManifestResourceStream(ScaffoldSchemaPrefix + name)
+            ?? throw new InvalidOperationException($"Embedded scaffold schema is missing: {name}");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 
     private static string BuildRunbooksReadmeTemplate()

@@ -3,7 +3,7 @@ artifact_id: ARC-WB-0003
 artifact_type: architecture
 title: "Terminal UI mode in CLI executable"
 domain: WB
-status: approved
+status: superseded
 owner: platform
 satisfies:
   - REQ-TUI-0001
@@ -27,8 +27,9 @@ Workbench uses Markdown as its primary data model with a CLI for manipulation. U
 want a more discoverable interface that still preserves a single executable and the
 existing CLI workflows. The UI must show which CLI command was invoked and support
 a global dry-run mode that is clearly indicated in outputs.
-The current shipped CLI does not expose this mode yet; this architecture
-documents the planned contract and its shared-service boundary.
+The shipped CLI never exposed this mode. This decision is superseded by the
+supported local browser UI and the explicit archival of `src/Workbench.Tui` as
+an unsupported prototype.
 
 ## Requirements Satisfied
 
@@ -40,7 +41,8 @@ documents the planned contract and its shared-service boundary.
 
 ## Design Summary
 
-Implement a terminal UI mode as a `workbench tui` subcommand using Terminal.Gui.
+The superseded design proposed a terminal UI mode as a `workbench tui`
+subcommand using Terminal.Gui.
 Refactor shared logic into a core library so both CLI and TUI reuse the same parsing,
 validation, and command execution paths. Publish as a single-file executable that
 contains CLI and TUI projects. The TUI must surface the last command invoked and
@@ -76,4 +78,5 @@ The TUI must reuse the same repository state and command execution paths as the 
 
 ## Open Questions
 
-- None.
+- A future TUI requires a new product decision and must not reactivate this
+  superseded design implicitly.

@@ -5,45 +5,46 @@ description: Work item management for Workbench CLI. Use when creating, updating
 
 ## Key settings
 
-- [`.workbench/config.json`](../../../.workbench/config.json): paths.itemsDir, paths.doneDir, ids.width, prefixes, git.branchPattern.
-- Status values: draft, ready, in-progress, blocked, done, dropped.
+- [`.workbench/config.json`](../../../.workbench/config.json): `Workflow.Level`, `Paths.ItemsDir`, `Ids.Width`, and `Git.BranchPattern`.
+- Status values: `planned`, `in_progress`, `blocked`, `complete`, `cancelled`, `superseded`.
 
 ## Core workflows
 
-1. Ensure planning artifacts exist (specs, ADRs, architecture docs) before major work.
-2. Create a work item and set its initial status.
-3. Link related specs, ADRs, files, PRs, or issues.
-4. Update status and close work items when done.
+1. Run `workbench context` to resolve the repository policy and next action.
+2. Under `light`, skip a work item for trivial or emergency work when durable coordination is unnecessary.
+3. Under `standard`, create a work item for meaningful multi-step or handoff work.
+4. Under `governed`, link the work item to requirements, architecture, and verification.
+5. Finish tracked work with the idempotent `workbench finish` command.
 
 ## Commands
 
 Create a task:
 ```bash
-workbench.ps1 item new --type task --title "Do the thing" --status draft --priority medium --owner platform
+dotnet tool run workbench item new --type work_item --title "Do the thing" --status planned --priority medium --owner platform
 ```
 
 Update status:
 ```bash
-workbench.ps1 item status WI-WB-0001 in-progress --note "started implementation"
+dotnet tool run workbench item status WI-WB-0001 in_progress --note "started implementation"
 ```
 
-Close and move to done:
+Finish local reconciliation:
 ```bash
-workbench.ps1 item close WI-WB-0001
+dotnet tool run workbench finish WI-WB-0001 --pr https://github.com/org/repo/pull/1
 ```
 
 Link docs or PRs:
 ```bash
-workbench.ps1 item link WI-WB-0001 --spec /overview/spec.md --adr /decisions/ADR-YYYY-MM-DD-title.md --pr https://github.com/org/repo/pull/1
+dotnet tool run workbench item link WI-WB-0001 --spec SPEC-WB-EXAMPLE
 ```
 
 ## Output
 
-- Work items in `work/items` (active) and `work/done` (closed).
-- Linked docs and external artifacts tracked in front matter.
+- Work items in `specs/work-items/<domain>/`.
+- Linked canonical artifacts in front matter and completion evidence in the work-item body.
 
 ## Guardrails
 
-- Use a work item for every meaningful change and link the supporting docs.
-- Keep status accurate so reports and boards stay reliable.
+- Use a work item when the selected workflow policy requires durable execution context.
+- Let GitHub and deployment systems remain authoritative for execution state.
 - If a decision happens during work, update/create the ADR and link it.

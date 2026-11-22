@@ -38,6 +38,11 @@ The public surface is intentionally small:
 - the `workbench://file/{path}` resource template
 - the `search_docs` tool
 
+The surface is public, unauthenticated, and read-only. `POST /mcp` exists only
+because MCP uses JSON-RPC transport; it exposes no content, repository, or
+deployment mutation. Search queries and request bodies are bounded, and edge
+rate limiting is a Cloudflare/WAF deployment responsibility.
+
 Everything else stays internal to the build output and Worker implementation.
 The docs page should mirror the generated manifest rather than inventing new
 surface area at runtime.

@@ -100,6 +100,10 @@ public static class WorkItemService
             ["verification_links"] = new List<string> { verificationLinks },
             ["related_artifacts"] = new List<string> { relatedArtifacts }
         };
+        if (!string.IsNullOrWhiteSpace(priority))
+        {
+            data["priority"] = priority.Trim();
+        }
 
         File.WriteAllText(canonicalItemPath, new FrontMatter(data, body).Serialize());
         return new WorkItemResult(artifactId, canonicalSlug, canonicalItemPath);
@@ -867,6 +871,7 @@ public static class WorkItemService
             var canonicalArtifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId") ?? string.Empty;
             var canonicalStatus = GetString(data, "status") ?? string.Empty;
             var canonicalTitle = GetString(data, "title") ?? DeriveTitleFromPath(path, canonicalArtifactId);
+            var canonicalPriority = GetString(data, "priority");
             var canonicalOwner = GetString(data, "owner");
             var canonicalDomain = GetString(data, "domain") ?? string.Empty;
             var canonicalAddresses = GetStringList(data, "addresses");
@@ -890,7 +895,7 @@ public static class WorkItemService
                 "work_item",
                 canonicalStatus,
                 canonicalTitle,
-                null,
+                canonicalPriority,
                 canonicalOwner,
                 canonicalCreated,
                 canonicalUpdated,
@@ -1101,6 +1106,7 @@ public static class WorkItemService
             var canonicalSummaryUpdated = false;
             var canonicalAcceptanceCriteriaUpdated = false;
             var canonicalNotesAppended = false;
+            var canonicalMetadataUpdated = false;
 
             var canonicalNormalizedTitle = title?.Trim();
             if (!string.IsNullOrWhiteSpace(canonicalNormalizedTitle) &&
@@ -1119,6 +1125,26 @@ public static class WorkItemService
                 if (!string.Equals(currentStatus, canonicalStatus, StringComparison.Ordinal))
                 {
                     data["status"] = canonicalStatus;
+                    canonicalMetadataUpdated = true;
+                }
+            }
+
+            if (priority is not null)
+            {
+                var normalizedPriority = priority.Trim();
+                var currentPriority = GetString(data, "priority");
+                if (string.IsNullOrWhiteSpace(normalizedPriority))
+                {
+                    if (currentPriority is not null)
+                    {
+                        data.Remove("priority");
+                        canonicalMetadataUpdated = true;
+                    }
+                }
+                else if (!string.Equals(currentPriority, normalizedPriority, StringComparison.Ordinal))
+                {
+                    data["priority"] = normalizedPriority;
+                    canonicalMetadataUpdated = true;
                 }
             }
 
@@ -1129,6 +1155,7 @@ public static class WorkItemService
                     !string.Equals(canonicalOwner, normalizedOwner, StringComparison.Ordinal))
                 {
                     data["owner"] = normalizedOwner;
+                    canonicalMetadataUpdated = true;
                 }
             }
 
@@ -1156,7 +1183,11 @@ public static class WorkItemService
                 canonicalNotesAppended = true;
             }
 
-            if (!canonicalTitleUpdated && !canonicalSummaryUpdated && !canonicalAcceptanceCriteriaUpdated && !canonicalNotesAppended)
+            if (!canonicalTitleUpdated &&
+                !canonicalSummaryUpdated &&
+                !canonicalAcceptanceCriteriaUpdated &&
+                !canonicalNotesAppended &&
+                !canonicalMetadataUpdated)
             {
                 throw new InvalidOperationException("No work item edits were requested.");
             }

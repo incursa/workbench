@@ -77,6 +77,17 @@
     },
     "Tui": {
       "type": "object"
+    },
+    "Workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Level"],
+      "properties": {
+        "Level": {
+          "type": "string",
+          "enum": ["light", "standard", "governed"]
+        }
+      }
     }
   }
 }

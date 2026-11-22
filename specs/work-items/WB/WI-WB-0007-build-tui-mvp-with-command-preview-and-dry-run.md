@@ -3,7 +3,7 @@ artifact_id: WI-WB-0007
 artifact_type: work_item
 title: "Build TUI MVP with command preview and dry-run"
 domain: WB
-status: planned
+status: cancelled
 owner: platform
 addresses:
   - REQ-TUI-0001
@@ -64,7 +64,8 @@ State how the work will be proven and link the verification artifact.
 
 ## Completion Notes
 
-Optional implementation notes, deviations, or follow-up items.
+Cancelled because the prototype was never integrated into the solution or
+package and the local browser UI is the supported interactive surface.
 
 ## Trace Links
 

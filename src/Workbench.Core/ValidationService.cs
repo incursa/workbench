@@ -1,6 +1,5 @@
 // Repository validation orchestration for work items, docs, and links.
 // Invariants: validation is read-only; counts reflect items present at scan time.
-#pragma warning disable S1144, S1172
 using System.Text.RegularExpressions;
 
 namespace Workbench.Core;
@@ -192,196 +191,6 @@ public static class ValidationService
         }
     }
 
-    private static void ValidateDocs(
-        string repoRoot,
-        WorkbenchConfig config,
-        ValidationResult result,
-        ValidationOptions options)
-    {
-        var docExcludePrefixes = NormalizePrefixes(config.Validation?.DocExclude);
-        var seenArtifactIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var artifactIdPolicyPath = Path.Combine(repoRoot, "artifact-id-policy.json");
-        var artifactIdPolicyEnabled = File.Exists(artifactIdPolicyPath);
-        string? artifactIdPolicyError = null;
-        var artifactIdPolicy = artifactIdPolicyEnabled
-            ? ArtifactIdPolicy.Load(repoRoot, out artifactIdPolicyError)
-            : ArtifactIdPolicy.Default;
-        if (!string.IsNullOrWhiteSpace(artifactIdPolicyError))
-        {
-            result.Errors.Add(artifactIdPolicyError);
-        }
-        var specsRoot = GetSpecsRoot(config);
-        var architectureRoot = Path.Combine(repoRoot, GetArchitectureRoot(config));
-        var requirementsRoot = Path.Combine(repoRoot, specsRoot, "requirements");
-        var verificationRoot = Path.Combine(repoRoot, specsRoot, "verification");
-        if (!Directory.Exists(requirementsRoot) &&
-            !Directory.Exists(architectureRoot) &&
-            !Directory.Exists(verificationRoot))
-        {
-            return;
-        }
-
-        foreach (var root in new[] { requirementsRoot, architectureRoot, verificationRoot })
-        {
-            if (!Directory.Exists(root))
-            {
-                continue;
-            }
-
-            foreach (var file in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories))
-            {
-                var repoRelative = NormalizeRepoRelative(repoRoot, file);
-                if (SpecTraceLayout.IsCanonicalWorkItemPath(repoRelative))
-                {
-                    continue;
-                }
-
-                if (repoRelative.StartsWith("templates/", StringComparison.OrdinalIgnoreCase) ||
-                    repoRelative.StartsWith($"{specsRoot}/templates/", StringComparison.OrdinalIgnoreCase) ||
-                    repoRelative.StartsWith($"{specsRoot}/schemas/", StringComparison.OrdinalIgnoreCase) ||
-                    repoRelative.StartsWith($"{specsRoot}/generated/", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                if (docExcludePrefixes.Count > 0 &&
-                    docExcludePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
-                {
-                    continue;
-                }
-
-                var content = File.ReadAllText(file);
-                if (!LooksLikeFrontMatter(content))
-                {
-                    continue;
-                }
-                if (!FrontMatter.TryParse(content, out var frontMatter, out var error))
-                {
-                    result.Errors.Add($"{file}: {error}");
-                    continue;
-                }
-
-                var data = frontMatter!.Data;
-                var artifactType = GetString(data, "artifact_type");
-                var repoRelativeSpecs = NormalizeRepoRelative(repoRoot, file);
-                if (string.IsNullOrWhiteSpace(artifactType))
-                {
-                    continue;
-                }
-
-                if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase) &&
-                    !SpecTraceLayout.IsSpecificationRootFile(repoRelativeSpecs))
-                {
-                    result.Errors.Add($"{file}: specifications must live under '{specsRoot}/requirements/<domain>/'.");
-                    continue;
-                }
-
-                if (string.Equals(artifactType, "architecture", StringComparison.OrdinalIgnoreCase) &&
-                    !SpecTraceLayout.IsCanonicalArchitecturePath(repoRelativeSpecs))
-                {
-                    result.Errors.Add($"{file}: architecture artifacts must live under '{SpecTraceLayout.ArchitectureRoot}/<domain>/'.");
-                    continue;
-                }
-
-                if (string.Equals(artifactType, "verification", StringComparison.OrdinalIgnoreCase) &&
-                    !SpecTraceLayout.IsCanonicalVerificationPath(repoRelativeSpecs))
-                {
-                    result.Errors.Add($"{file}: verification artifacts must live under '{SpecTraceLayout.VerificationRoot}/<domain>/'.");
-                    continue;
-                }
-
-                ValidateCanonicalDoc(
-                    repoRoot,
-                    file,
-                    data,
-                    frontMatter!.Body,
-                    artifactType,
-                    artifactIdPolicyEnabled,
-                    artifactIdPolicy,
-                    seenArtifactIds,
-                    result);
-            }
-        }
-    }
-
-    private static void ValidateCanonicalDoc(
-        string repoRoot,
-        string file,
-        IDictionary<string, object?> data,
-        string body,
-        string artifactType,
-        bool artifactIdPolicyEnabled,
-        ArtifactIdPolicy artifactIdPolicy,
-        HashSet<string> seenArtifactIds,
-        ValidationResult result)
-    {
-        var artifactId = GetString(data, "artifact_id") ?? GetString(data, "artifactId");
-        var domain = GetString(data, "domain");
-        var capability = GetString(data, "capability");
-        var schemaErrors = SchemaValidationService.ValidateArtifactFrontMatter(repoRoot, file, data);
-        foreach (var schemaError in schemaErrors)
-        {
-            result.Errors.Add(schemaError);
-        }
-
-        if (string.IsNullOrWhiteSpace(artifactId))
-        {
-            result.Errors.Add($"{file}: missing artifact_id for {artifactType} doc.");
-        }
-        else if (!seenArtifactIds.Add(artifactId))
-        {
-            result.Errors.Add($"{file}: duplicate artifact_id '{artifactId ?? "<missing>"}'.");
-        }
-
-        if (artifactIdPolicyEnabled &&
-            !string.IsNullOrWhiteSpace(artifactId) &&
-            !artifactIdPolicy.MatchesArtifactId(
-                artifactType,
-                artifactId,
-                domain,
-                capability))
-        {
-            result.Errors.Add($"{file}: artifact_id '{artifactId ?? "<missing>"}' does not match the configured artifact ID policy.");
-        }
-
-        if (string.Equals(artifactType, "specification", StringComparison.OrdinalIgnoreCase))
-        {
-            var requirementClauses = SpecTraceMarkdown.ParseRequirementClauses(body, out var parseErrors);
-
-            foreach (var parseError in parseErrors)
-            {
-                result.Errors.Add($"{file}: {parseError}");
-            }
-
-            if (requirementClauses.Count == 0)
-            {
-                result.Errors.Add($"{file}: no requirement clauses found in specification body.");
-            }
-
-            foreach (var clause in requirementClauses)
-            {
-                var clauseErrors = SchemaValidationService.ValidateRequirementClause(repoRoot, file, clause);
-                foreach (var clauseError in clauseErrors)
-                {
-                    result.Errors.Add(clauseError);
-                }
-
-                if (clause.Trace is not null)
-                {
-                    var traceData = clause.Trace.ToDictionary(
-                        entry => entry.Key,
-                        entry => (object?)entry.Value,
-                        StringComparer.OrdinalIgnoreCase);
-                    var traceErrors = SchemaValidationService.ValidateRequirementTraceFields(repoRoot, file, traceData);
-                    foreach (var traceError in traceErrors)
-                    {
-                        result.Errors.Add(traceError);
-                    }
-                }
-            }
-        }
-    }
-
     private static string GetSpecsRoot(WorkbenchConfig config)
     {
         return string.IsNullOrWhiteSpace(config.Paths.SpecsRoot)
@@ -397,13 +206,6 @@ public static class ValidationService
         }
 
         return value.ToString();
-    }
-
-    private static string GetArchitectureRoot(WorkbenchConfig config)
-    {
-        return string.IsNullOrWhiteSpace(config.Paths.ArchitectureDir)
-            ? SpecTraceLayout.ArchitectureRoot
-            : config.Paths.ArchitectureDir;
     }
 
     private static int ValidateMarkdownLinks(
@@ -571,13 +373,6 @@ public static class ValidationService
         }
 
         return includePrefixes.Any(prefix => repoRelative.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool LooksLikeFrontMatter(string content)
-    {
-        var trimmed = content.TrimStart();
-        return trimmed.StartsWith("---\n", StringComparison.Ordinal) ||
-               trimmed.StartsWith("---\r\n", StringComparison.Ordinal);
     }
 
     private sealed record WorkItemRecord(string Path, bool IsCanonical);

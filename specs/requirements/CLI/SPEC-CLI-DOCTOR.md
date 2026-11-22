@@ -35,7 +35,8 @@ enough that automation can compare successive runs.
 
 ## REQ-CLI-DOCTOR-0003 Non-mutating behavior
 
-`doctor` MUST not change repository files, config values, or credential files.
+`doctor` MUST not change repository files, config values, or credential files
+unless the caller explicitly selects `--fix`.
 
 ## REQ-CLI-DOCTOR-0004 Output stability
 
@@ -45,8 +46,19 @@ automation to parse when `--format json` is not selected.
 ## REQ-CLI-DOCTOR-0005 Machine-readable output
 
 `doctor` MUST emit the repository readiness state in a structured format when
-machine-readable output is requested.
+machine-readable output is requested, including an explicit schema version,
+the checks performed, repairs applied, and at most one exact recommended next
+action.
 
 ## REQ-CLI-DOCTOR-0006 Check coverage summary
 
-`doctor` MUST summarize git, config, and path checks in its reported results.
+`doctor` MUST summarize git, config, expected paths, generated navigation,
+GitHub, OpenAI, Codex, and voice-transcription readiness in its reported
+results.
+
+## REQ-CLI-DOCTOR-0007 Deterministic repairs
+
+`doctor --fix` MUST limit repair to missing repository scaffolding and refresh
+of established generated-navigation files, without overwriting malformed
+configuration, inventing absent optional index files, mutating credentials, or
+contacting an external system to change state.

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Workbench.Core;
 
 namespace Workbench.IntegrationTests;
 
@@ -32,6 +33,74 @@ public class ResilienceTests
                 string.Equals(c.GetProperty("name").GetString(), "paths", StringComparison.Ordinal)
                 && string.Equals(c.GetProperty("status").GetString(), "warn", StringComparison.Ordinal)),
             result.StdOut);
+        Assert.AreEqual(1, payload.GetProperty("data").GetProperty("schemaVersion").GetInt32());
+        Assert.AreEqual("workbench doctor --fix", payload.GetProperty("data").GetProperty("recommendedNextAction").GetString());
+    }
+
+    [TestMethod]
+    public void Doctor_FixRepairsScaffoldingAndGeneratedIndexesIdempotently()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+
+        var first = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "doctor",
+            "--json",
+            "--fix");
+
+        Assert.IsTrue(first.ExitCode is 0 or 1, $"stderr: {first.StdErr}\nstdout: {first.StdOut}");
+        var firstData = TestAssertions.ParseJson(first.StdOut).GetProperty("data");
+        Assert.IsTrue(firstData.GetProperty("fixRequested").GetBoolean());
+        Assert.IsGreaterThan(0, firstData.GetProperty("repairs").GetArrayLength());
+        Assert.IsTrue(File.Exists(WorkbenchConfig.GetConfigPath(repo.Path)));
+        Assert.IsTrue(Directory.Exists(Path.Combine(repo.Path, "specs", "work-items", "WB")));
+        Assert.IsFalse(File.Exists(Path.Combine(repo.Path, "overview", "README.md")));
+        Assert.IsFalse(File.Exists(Path.Combine(repo.Path, "specs", "README.md")));
+        Assert.IsFalse(File.Exists(Path.Combine(repo.Path, "specs", "architecture", "README.md")));
+        Assert.IsFalse(File.Exists(Path.Combine(repo.Path, "specs", "work-items", "README.md")));
+
+        var second = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "doctor",
+            "--json",
+            "--fix");
+
+        Assert.IsTrue(second.ExitCode is 0 or 1, $"stderr: {second.StdErr}\nstdout: {second.StdOut}");
+        var secondData = TestAssertions.ParseJson(second.StdOut).GetProperty("data");
+        Assert.AreEqual(0, secondData.GetProperty("repairs").GetArrayLength(), second.StdOut);
+        Assert.IsFalse(secondData.GetProperty("checks").EnumerateArray().Any(check =>
+            string.Equals(check.GetProperty("name").GetString(), "generated-navigation", StringComparison.Ordinal) &&
+            string.Equals(check.GetProperty("status").GetString(), "warn", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void Doctor_FixRefusesToOverwriteMalformedConfiguration()
+    {
+        using var repo = TempRepo.Create();
+        GitTestRepo.InitializeGitRepo(repo.Path);
+        Directory.CreateDirectory(Path.Combine(repo.Path, ".workbench"));
+        var configPath = WorkbenchConfig.GetConfigPath(repo.Path);
+        const string Malformed = "{ invalid";
+        File.WriteAllText(configPath, Malformed);
+
+        var result = WorkbenchCli.Run(
+            repo.Path,
+            "--repo",
+            repo.Path,
+            "doctor",
+            "--json",
+            "--fix");
+
+        Assert.AreEqual(2, result.ExitCode, $"stderr: {result.StdErr}\nstdout: {result.StdOut}");
+        var data = TestAssertions.ParseJson(result.StdOut).GetProperty("data");
+        Assert.AreEqual(0, data.GetProperty("repairs").GetArrayLength());
+        Assert.IsFalse(string.IsNullOrWhiteSpace(data.GetProperty("recommendedNextAction").GetString()));
+        Assert.AreEqual(Malformed, File.ReadAllText(configPath));
     }
 
     [TestMethod]
