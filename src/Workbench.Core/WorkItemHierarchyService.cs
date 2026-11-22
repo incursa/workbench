@@ -27,7 +27,9 @@ public static class WorkItemHierarchyService
     {
         var diagnostics = new List<string>();
         var items = WorkItemService.ListItems(repoRoot, config, includeDone: true).Items;
-        var itemsById = items.ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
+        var itemsById = items
+            .GroupBy(item => item.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         foreach (var item in items)
         {
             ValidateAuthoredReference(item, item.ParentRef, "parent_ref", itemsById, diagnostics);
