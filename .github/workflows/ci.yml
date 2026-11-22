@@ -2,17 +2,19 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
     paths-ignore:
-      - ".github/**"
       - "assets/**"
       - "examples/**"
   pull_request:
     paths-ignore:
-      - ".github/**"
       - "assets/**"
       - "examples/**"
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pre-commit:
@@ -70,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest, macos-latest]
         dotnet: ["10.0.x"]
 
     steps:
@@ -232,7 +234,7 @@ jobs:
             echo "## Executive Gates"
             echo "| Gate | Status | Metric | Threshold | Notes |"
             echo "|---|---|---:|---:|---|"
-            echo "| Build | $build_status | Matrix build-test: $build_result | Success | ubuntu/windows/macos |"
+            echo "| Build | $build_status | Matrix build-test: $build_result | Success | windows/macos; Ubuntu is covered by Quality Gate |"
             echo "| 🧪 Tests | $tests_status | $tests_metric | $tests_threshold | $tests_notes |"
             echo "| Docs MCP | $mcp_status | Build, 13 tests, npm audit: $mcp_result | Success | Node 22 |"
             echo "| 📊 Coverage | N/A | Not run in this workflow | n/a | Use Quality Gate workflow |"

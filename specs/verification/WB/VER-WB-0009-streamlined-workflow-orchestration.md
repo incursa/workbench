@@ -75,6 +75,8 @@ stable automation contracts, and explicit external-system authority.
 - Passing: 13 docs MCP protocol/search/security tests and zero npm audit
   vulnerabilities; the same checks now run as a required main CI job through
   `scripts/verify.ps1`.
+- Passing: CI trigger and job ownership no longer duplicate feature-branch
+  push/PR runs, Ubuntu test execution, or format/analyzer verification.
 - Passing: doctor JSON contract, local scaffolding repair, established-index
   refresh, idempotence, malformed-config preservation, and optional provider
   readiness checks.

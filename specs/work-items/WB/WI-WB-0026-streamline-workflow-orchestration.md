@@ -95,8 +95,10 @@ intent and project memory.
   configuration, and does not create index files a repository has not adopted.
 - Added a cross-platform composable verification entry point and made the docs
   MCP build, protocol/security tests, and npm audit a required main CI job.
-  Existing .NET quality/coverage jobs remain until their equivalence can be
-  demonstrated before deduplication.
+  CI now runs once per pull-request revision or `main` push: Windows/macOS and
+  MCP checks remain in CI, while the Quality Gate owns Ubuntu coverage and
+  reproducible packaging. Format/analyzer verification has one owner in the
+  pre-commit job instead of running again in Quality Gate.
 
 ## Traceability Migration Backlog
 

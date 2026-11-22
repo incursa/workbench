@@ -3,22 +3,14 @@ name: Quality Gate
 on:
   pull_request:
     paths-ignore:
-      - ".github/**"
       - "assets/**"
       - "examples/**"
   push:
-    branches:
-      - main
-      - release/**
-      - feature/**
-      - features/**
-      - user/**
-      - users/**
-      - hotfix/**
+    branches: [main]
     paths-ignore:
-      - ".github/**"
       - "assets/**"
       - "examples/**"
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -42,10 +34,6 @@ jobs:
 
       - name: Restore local tools
         run: dotnet tool restore
-
-      - name: Verify formatting and analyzers
-        id: format_gate
-        run: dotnet format --verify-no-changes --no-restore Workbench.slnx
 
       - name: Build (deterministic)
         id: build_gate
@@ -273,7 +261,6 @@ jobs:
 
           mkdir -p metrics/quality
 
-          format_outcome="${{ steps.format_gate.outcome }}"
           build_outcome="${{ steps.build_gate.outcome }}"
           unit_outcome="${{ steps.test_unit.outcome }}"
           integration_outcome="${{ steps.test_integration.outcome }}"
@@ -347,7 +334,7 @@ jobs:
             "job": "verify",
             "status": "${{ job.status }}",
             "gates": {
-              "format": "${format_outcome}",
+              "format": "delegated-to-ci-pre-commit",
               "build": "${build_outcome}",
               "tests": {
                 "unit": "${unit_outcome}",
@@ -418,7 +405,6 @@ jobs:
           set -euo pipefail
           source scripts/ci/reporting.sh
 
-          format_outcome="${{ steps.format_gate.outcome }}"
           build_outcome="${{ steps.build_gate.outcome }}"
           unit_outcome="${{ steps.test_unit.outcome }}"
           integration_outcome="${{ steps.test_integration.outcome }}"
@@ -506,7 +492,6 @@ jobs:
           fi
 
           build_status="$(status_from_outcome "$build_outcome")"
-          format_status="$(status_from_outcome "$format_outcome")"
           overall="✅ Passed"
           if [[ "${{ job.status }}" != "success" ]]; then
             overall="❌ Failed"
@@ -530,7 +515,7 @@ jobs:
             echo "| 🌀 Fuzzing | N/A | Not configured | n/a | n/a |"
             echo "| 🧬 Mutation | N/A | Not run in this workflow | n/a | Separate scheduled workflow |"
             echo "| 📦 Packaging | $packaging_status | ${package_count} packages | >= 1 | ${package_details} |"
-            echo "| 📝 Format/Analyzers | $format_status | dotnet format --verify-no-changes | Success | Policy gate |"
+            echo "| 📝 Format/Analyzers | N/A | Enforced by CI / Pre-commit | Success | Separate required concern |"
             echo ""
             echo "## Artifacts"
             echo "- coverage-cobertura"

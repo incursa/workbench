@@ -351,12 +351,17 @@ Optional knobs (env vars):
 
 ## CI
 
-GitHub Actions builds and tests on `ubuntu-latest`, `windows-latest`, and
-`macos-latest` with .NET `10.0.x`:
+GitHub Actions runs once for each pull request revision and once after changes
+land on `main`; feature-branch pushes do not start a duplicate run when a pull
+request is open. CI owns pre-commit, the docs MCP, and the Windows/macOS .NET
+matrix. Quality Gate owns the Ubuntu deterministic build, tests with coverage,
+the critical-coverage contract, and reproducible package comparison. Both
+workflows also support manual dispatch.
+
+The local equivalent is:
 
 ```bash
-dotnet build Workbench.slnx
-dotnet test --solution Workbench.slnx
+pwsh -File scripts/verify.ps1
 ```
 
 ## Known Gaps
