@@ -70,8 +70,10 @@ stable automation contracts, and explicit external-system authority.
 - Passing: finish idempotence, prospective no-mutation dry-run, structured
   post-mutation failure, terminal-status safety, and JSON contract tests.
 - Passing: Markdown-linked trace references resolve identically to plain IDs;
-  repository triage reduced traceable findings from 779 to 444 and auditable
-  findings from 2,142 to 1,390 without adding synthetic relationships.
+  repository triage reduced traceable findings from 779 to 445 and auditable
+  findings from 2,142 to 1,387 without adding synthetic relationships. The
+  remaining backlog is reproducible by category, domain, and artifact kind via
+  `scripts/trace/report-validation-backlog.ps1`.
 - Passing: 13 docs MCP protocol/search/security tests and zero npm audit
   vulnerabilities; the same checks now run as a required main CI job through
   `scripts/verify.ps1`.

@@ -105,11 +105,14 @@ intent and project memory.
 The validator now treats Markdown artifact links and plain IDs equivalently.
 After removing duplicate clauses, stale external-local references, and two body
 mismatches, the remaining findings are genuine authoring work rather than
-parser noise:
+parser noise. Run
+[`report-validation-backlog.ps1`](../../../scripts/trace/report-validation-backlog.ps1)
+to reproduce the sorted JSON backlog and Markdown summary:
 
-- traceable: 444 requirements without a downstream relationship
-- auditable: the same 444 downstream gaps, 479 missing verification links,
-  453 reciprocal mismatches, and 14 orphan artifacts
+- traceable: 445 requirements without a downstream relationship (440 CLI,
+  4 WB, and 1 QA)
+- auditable: the same 445 downstream gaps, 480 missing verification links,
+  448 reciprocal mismatches, and 14 orphan artifacts
 
 Migration order is reciprocal-claim review, real verification evidence, then
 unimplemented requirement disposition. Do not bulk-link generic artifacts to

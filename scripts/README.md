@@ -17,6 +17,10 @@ Helper scripts for canonical SpecTrace validation, packaging, and release automa
 - [`scripts/testing/run-quality-evidence.sh`](testing/run-quality-evidence.sh): bash equivalent of the quality-evidence runner for CI or Unix-like environments.
 - [`scripts/testing/verify-critical-coverage.ps1`](testing/verify-critical-coverage.ps1): validates critical-surface coverage thresholds and required scenario tests declared in [`quality/testing-intent.yaml`](../quality/testing-intent.yaml).
 
+## Trace migration
+
+- [`scripts/trace/report-validation-backlog.ps1`](trace/report-validation-backlog.ps1): runs the production validator with the `traceable` and `auditable` profiles and writes a deterministic, sorted JSON backlog plus a Markdown summary under `artifacts/validation/`.
+
 ## Quality evidence paths
 
 - Authored intent: [`quality/testing-intent.yaml`](../quality/testing-intent.yaml)
