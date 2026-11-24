@@ -114,6 +114,7 @@ public class JsonCanonicalArtifactTests
                   "requirements": [
                     {
                       "id": "REQ-WB-JSON-0001",
+                      "revision": 1,
                       "title": "Load canonical JSON artifacts",
                       "statement": "The tool MUST load canonical JSON artifacts from the spec-trace roots.",
                       "coverage": {

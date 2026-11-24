@@ -29,6 +29,7 @@ public sealed partial class WorkbenchWorkspace
     private static readonly string[] requirementKeys =
     [
         "id",
+        "revision",
         "title",
         "statement",
         "trace",
@@ -419,6 +420,9 @@ public sealed partial class WorkbenchWorkspace
         var data = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         ApplyExtensionJson(data, requirement.ExtensionJson, requirementKeys);
         data["id"] = RequireNonEmpty(requirement.Id, "Requirement ID");
+        data["revision"] = requirement.Revision > 0
+            ? requirement.Revision
+            : throw new InvalidOperationException("Requirement revision must be a positive integer.");
         data["title"] = RequireNonEmpty(requirement.Title, "Requirement title");
         data["statement"] = RequireNonEmpty(requirement.Statement, "Requirement statement");
         SetOrRemoveList(data, "notes", ParseLineList(requirement.NotesText));
@@ -469,6 +473,7 @@ public sealed partial class WorkbenchWorkspace
         return new SpecRequirementEditorInput
         {
             Id = GetDocString(data, "id") ?? string.Empty,
+            Revision = GetDocPositiveLong(data, "revision") ?? 1,
             Title = GetDocString(data, "title") ?? string.Empty,
             Statement = GetDocString(data, "statement") ?? string.Empty,
             NotesText = string.Join(Environment.NewLine, GetDocStringList(data, "notes")),
@@ -493,6 +498,7 @@ public sealed partial class WorkbenchWorkspace
         return new SpecRequirementEditorInput
         {
             Id = clause.RequirementId,
+            Revision = 1,
             Title = clause.Title,
             Statement = clause.Clause,
             NotesText = string.Join(Environment.NewLine, clause.Notes ?? Array.Empty<string>()),
@@ -914,6 +920,24 @@ public sealed partial class WorkbenchWorkspace
             JsonElement element => element.ToString(),
             _ => value.ToString()
         };
+    }
+
+    private static long? GetDocPositiveLong(IReadOnlyDictionary<string, object?> data, string key)
+    {
+        if (!data.TryGetValue(key, out var value) || value is null)
+        {
+            return null;
+        }
+
+        var result = value switch
+        {
+            long longValue => longValue,
+            int intValue => intValue,
+            JsonElement element when element.ValueKind == JsonValueKind.Number && element.TryGetInt64(out var elementValue) => elementValue,
+            _ => -1
+        };
+
+        return result > 0 ? result : null;
     }
 
     private static List<string> GetDocStringList(IReadOnlyDictionary<string, object?> data, string key)

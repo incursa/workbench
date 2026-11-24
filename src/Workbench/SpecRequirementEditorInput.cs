@@ -6,6 +6,8 @@ public sealed class SpecRequirementEditorInput
 
     public string IdSuffix { get; set; } = string.Empty;
 
+    public long Revision { get; set; } = 1;
+
     public string Title { get; set; } = string.Empty;
 
     public string Statement { get; set; } = string.Empty;

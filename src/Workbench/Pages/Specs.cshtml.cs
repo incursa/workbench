@@ -875,6 +875,7 @@ public class SpecsModel : RepoPageModel
         {
             Id = source.Id,
             IdSuffix = source.IdSuffix,
+            Revision = source.Revision,
             Title = source.Title,
             Statement = source.Statement,
             NotesText = source.NotesText,
