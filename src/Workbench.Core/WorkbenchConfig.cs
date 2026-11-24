@@ -25,6 +25,11 @@ public sealed record WorkbenchConfig(
     public WorkflowConfig Workflow { get; init; } = new();
 
     /// <summary>
+    /// Optional provider-neutral resource and authority configuration. Empty by default for backward compatibility.
+    /// </summary>
+    public ResourceProvidersConfig ResourceProviders { get; init; } = new();
+
+    /// <summary>
     /// Default configuration used when no config file exists or load fails.
     /// </summary>
     public static WorkbenchConfig Default => new(
@@ -74,6 +79,10 @@ public sealed record WorkbenchConfig(
             if (config.Workflow is null)
             {
                 config = config with { Workflow = new WorkflowConfig() };
+            }
+            if (config.ResourceProviders is null)
+            {
+                config = config with { ResourceProviders = new ResourceProvidersConfig() };
             }
             return config;
         }

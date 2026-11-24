@@ -22,6 +22,7 @@
     <EmbeddedResource Include="$(PinnedSpecTraceSchemaPath)" LogicalName="$(PinnedSpecTraceSchemaResourceName)" Visible="false" />
     <EmbeddedResource Include="../../schemas/workbench-config.schema.json" LogicalName="Workbench.Core.ScaffoldSchemas.workbench-config.schema.json" />
     <EmbeddedResource Include="../../specs/schemas/*.schema.json" LogicalName="Workbench.Core.ScaffoldSchemas.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../specs/templates/csv-*.csv" LogicalName="Workbench.Core.ScaffoldTemplates.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

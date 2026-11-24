@@ -72,6 +72,35 @@ Read first:
 - [`quality/attestation.yaml`](quality/attestation.yaml) if the repo defines
   local evidence-root or rollup defaults
 
+### CSV Authority Or Editable Projection
+
+Use the first-party CSV provider when a resource set is intentionally authored
+in a local spreadsheet-compatible store, or when reviewers need an editable
+projection of another provider's immutable snapshot. Read
+[`content/reference/csv-provider.md`](content/reference/csv-provider.md) before
+editing. A projection remains non-authoritative: mark each intended operation,
+review the reconciliation preview, and use the declared authority's explicit
+plan/apply workflow.
+
+### SpecAttest Manager Review Snapshot
+
+Use the SpecAttest provider only as a read-only enricher until Manager exposes
+the exact-pin, staged, atomic, optimistic-concurrency-protected, idempotent
+interchange apply contract required by `SPEC-001`. Read
+[`content/reference/specattest-provider.md`](content/reference/specattest-provider.md)
+before configuring an endpoint. Exporting or inspecting a Manager snapshot
+never transfers authority, and an unattested snapshot cannot be accepted or
+published as authoritative content.
+
+### ClickUp Execution Resources
+
+Use the ClickUp provider for operational execution fields only; canonical work
+items and trace remain under Workbench authority. Read
+[`content/reference/clickup-provider.md`](content/reference/clickup-provider.md)
+before enabling `plan` or `apply`. Review the provider's single-task atomicity,
+stable create marker, idempotency, archive-only delete, and residual ClickUp
+compare-before-write race constraints.
+
 ## Workflow
 
 1. Run `workbench context` to resolve the repository's workflow level,

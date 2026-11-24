@@ -43,9 +43,13 @@ artifact-id-policy.json
     architecture-template.md
     work-item-template.md
     verification-template.md
+    csv-work-items-v1.csv
+    csv-specifications-v1.csv
   /schemas
     artifact-frontmatter.schema.json
     artifact-id-policy.schema.json
+    csv-work-item-row-v1.schema.json
+    csv-specification-row-v1.schema.json
     requirement-clause.schema.json
     requirement-trace-fields.schema.json
     work-item-trace-fields.schema.json
@@ -67,3 +71,9 @@ artifact-id-policy.json
 - Keep file names stable and readable.
 - Keep generated views derived from the canonical artifacts, not the other way
   around.
+- Keep editable CSV projections outside canonical artifact roots and reconcile
+  them through validation, preview, authority planning, and explicit apply.
+- Keep SpecAttest store-and-forward snapshots outside canonical artifact roots;
+  importing or inspecting one never changes the declared live authority.
+- Keep ClickUp task descriptions and canonical Workbench trace content outside
+  the execution provider; only explicitly mapped execution fields are remote.
