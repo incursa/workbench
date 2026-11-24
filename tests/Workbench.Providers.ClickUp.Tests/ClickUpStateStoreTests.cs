@@ -4,7 +4,7 @@ namespace Workbench.Providers.ClickUp.Tests;
 public sealed class ClickUpStateStoreTests
 {
     [TestMethod]
-    public async Task ApplyLeaseSerializesProviderProcessesSharingState()
+    public async Task ApplyLeaseSerializesProviderProcessesSharingStateAsync()
     {
         using var temporary = new TemporaryDirectory();
         var firstStore = new ClickUpStateStore(temporary.Path);

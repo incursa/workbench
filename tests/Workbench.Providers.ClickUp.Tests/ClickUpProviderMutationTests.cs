@@ -7,7 +7,7 @@ namespace Workbench.Providers.ClickUp.Tests;
 public sealed class ClickUpProviderMutationTests
 {
     [TestMethod]
-    public async Task AmbiguousCreateNeverIssuesSecondPostForSameKey()
+    public async Task AmbiguousCreateNeverIssuesSecondPostForSameKeyAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -57,7 +57,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task ApplyRejectsTamperedStoredPlanBeforeRemoteMutation()
+    public async Task ApplyRejectsTamperedStoredPlanBeforeRemoteMutationAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((_, count) => count is 1 or 2
@@ -103,7 +103,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task AmbiguousPutIsNotRetriedAndSameKeyReconciles()
+    public async Task AmbiguousPutIsNotRetriedAndSameKeyReconcilesAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -155,7 +155,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task SuccessfulWriteWithInvalidResponseIsOutcomeUnknownAndReconciles()
+    public async Task SuccessfulWriteWithInvalidResponseIsOutcomeUnknownAndReconcilesAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -206,7 +206,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task TamperedReceiptFailsClosedBeforeReturningAlreadyApplied()
+    public async Task TamperedReceiptFailsClosedBeforeReturningAlreadyAppliedAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -260,7 +260,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task CreateUsesLocalReferenceAndDoesNotBlindlyRetry()
+    public async Task CreateUsesLocalReferenceAndDoesNotBlindlyRetryAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -320,7 +320,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task PlanApplyAndRetryUpdateExecutionFieldsOnly()
+    public async Task PlanApplyAndRetryUpdateExecutionFieldsOnlyAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -379,7 +379,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task DeleteChangeArchivesAndNeverUsesRemoteDelete()
+    public async Task DeleteChangeArchivesAndNeverUsesRemoteDeleteAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((request, count) => count switch
@@ -428,7 +428,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task StaleVersionProducesConflictWithoutMutation()
+    public async Task StaleVersionProducesConflictWithoutMutationAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((_, _) =>
@@ -459,7 +459,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task PlanRejectsUnknownDescriptionFieldInsteadOfSilentlyIgnoringIt()
+    public async Task PlanRejectsUnknownDescriptionFieldInsteadOfSilentlyIgnoringItAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((_, _) =>
@@ -494,7 +494,7 @@ public sealed class ClickUpProviderMutationTests
     }
 
     [TestMethod]
-    public async Task PlanRejectsMissingRequiredAssigneeCollection()
+    public async Task PlanRejectsMissingRequiredAssigneeCollectionAsync()
     {
         using var temporary = new TemporaryDirectory();
         var handler = new StubHttpMessageHandler((_, _) =>
