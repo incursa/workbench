@@ -4,11 +4,11 @@ Original draft.1 status: **NOT READY**
 
 Qualification date: 2026-11-23/24 UTC
 
-Current follow-up status (2026-11-24 UTC): **DRAFT.2 QUALIFIED; RC EVIDENCE
-INCOMPLETE**. The original `0.1.0-draft.1` findings below are retained as the
-behavioral-review record. The draft.2 implementation, deployment, and package
-publication follow-ups close those findings except for one release-candidate
-evidence item described in **RC readiness double-check**.
+Current follow-up status (2026-11-24 UTC): **DRAFT.2 QUALIFIED; READY FOR RC
+OWNER APPROVAL**. The original `0.1.0-draft.1` findings below are retained as
+the behavioral-review record. The draft.2 implementation, deployment, package
+publication, and retained cross-transport evidence close the technical
+release-candidate preparation gates described in **RC readiness double-check**.
 
 ## Qualification subjects
 
@@ -309,25 +309,37 @@ authenticated disposable integration environment is sufficient if it runs the
 frozen corpus bytes through the real REST and MCP bindings and retains the
 result artifact.
 
-Current evidence is strong but not identical to that requested artifact:
+Manager now retains the requested machine-readable result artifact at the
+immutable source commit
+[`c2f8ae7fde399d2b6dcb6748aaa2c3f1bb2d610d`](https://github.com/incursa/spec-trace-manager/blob/c2f8ae7fde399d2b6dcb6748aaa2c3f1bb2d610d/docs/qualification/specattest-0.1.0-draft.2-rest-mcp-results.json).
+Its whole-file SHA-256 is
+`32874adfc64d33cf1bd45a8554c48b5da02b0482168e41009fe60de53213f529`;
+the canonical validation-subject SHA-256 is
+`97186df819d0d63f2094b775ea80c14adc1a73e26e782b68dde1e6259ee5ccee`.
 
-- Workbench independently accepts all 20 frozen corpus cases.
-- Manager safe-mutation and intake-lifecycle REST/store tests collectively cover
-  stale rejection, atomic failure, deterministic replay, commit, cancel, and
-  resume behavior.
-- Manager MCP tests cover authenticated safe mutation, exact revision
-  preservation, deterministic replay, and commit.
-- The deployed Manager reports the exact draft.2 tuple and passed readiness and
-  restart qualification.
+The disposable authenticated harness executed the exact frozen input bytes for
+all five named protocol cases through the real REST and MCP bindings. All 10
+transport observations matched their declared outcomes, including rejection
+without partial mutation, deterministic replay, cancellation without mutation,
+and atomic resume/commit. A second generated run reproduced the same evidence
+hash. The retained record identifies the qualified Standard and Manager source,
+and retains no credential, timestamp, random identifier, production mutation,
+Kubernetes dependency, or other environment-specific value.
 
-The repositories do not yet contain one retained result artifact that executes
-all five frozen protocol vectors through **both** transport bindings and maps the
-observed results back to the corpus case names. Consequently:
+The Manager pull-request gates also passed browser qualification, Debian LXC
+package validation, and release-evidence/provenance generation. Local Release
+build and applicable tests passed; the only excluded Manager tests are the two
+pre-existing macOS `EphemeralKeySet` platform cases documented above.
+
+Consequently:
 
 - `0.1.0-draft.2` is qualified for continued Workbench and Manager use.
-- Workbench implementation, Manager deployment, and package distribution are
-  not RC blockers.
-- Publishing `0.1.0-rc.1` should wait for the cross-transport result matrix,
-  its hash, and the normal candidate-edition validation and human approval.
+- Workbench implementation, Manager deployment, package distribution, and the
+  retained REST/MCP protocol matrix are not RC blockers.
+- No technical preparation blocker remains before creating `0.1.0-rc.1`.
+- Candidate publication still requires Incursa owner approval, followed by the
+  candidate build/manifest validation, signed immutable tag, GitHub prerelease,
+  published checksums/results, and independent redownload verification.
 
-Current recommendation: **READY TO PREPARE RC; NOT YET READY TO PUBLISH RC.**
+Current recommendation: **TECHNICAL RC PREPARATION GATES CLOSED; OWNER APPROVAL
+REQUIRED BEFORE PUBLICATION.**
