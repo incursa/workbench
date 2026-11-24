@@ -94,6 +94,9 @@ jobs:
     name: Publish NuGet
     runs-on: ubuntu-latest
     needs: version
+    permissions:
+      contents: read
+      id-token: write
     outputs:
       package_count: ${{ steps.nuget_metrics.outputs.package_count }}
       package_details: ${{ steps.nuget_metrics.outputs.package_details }}
@@ -129,9 +132,15 @@ jobs:
         id: pack
         run: dotnet pack src/Workbench/Workbench.csproj -c Release -o ./artifacts -p:PackageVersion=${{ needs.version.outputs.semver }}
 
+      - name: Authenticate to NuGet.org
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: McAravey
+
       - name: Publish
         id: publish
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --source "https://api.nuget.org/v3/index.json" --skip-duplicate
 
       - name: Collect NuGet metrics
         id: nuget_metrics
