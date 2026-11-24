@@ -320,7 +320,10 @@ public sealed class ResourceProviderProtocolTests
         var dotnetHost = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet";
         var configuration = new ResourceProvidersConfig
         {
-            DefaultTimeoutSeconds = 1,
+            // A real dotnet child process can take more than one second to
+            // cold-start on a loaded Windows runner. Keep the timeout test
+            // deterministic without making process startup itself the subject.
+            DefaultTimeoutSeconds = 5,
             Providers =
             [
                 new ResourceProviderProcessConfig
@@ -328,7 +331,7 @@ public sealed class ResourceProviderProtocolTests
                     Id = "test-process",
                     Executable = dotnetHost,
                     Arguments = [providerAssembly],
-                    TimeoutSeconds = 1
+                    TimeoutSeconds = 5
                 }
             ],
             ResourceSets =
