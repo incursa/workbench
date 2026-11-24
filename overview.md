@@ -79,3 +79,12 @@ verification.
 - Canonical templates live in `specs/templates/`.
 - Canonical schemas live in `specs/schemas/`.
 - Local quality-intent inputs live in `quality/`.
+- First-party CSV authority and editable-projection behavior is documented in
+  [`content/reference/csv-provider.md`](content/reference/csv-provider.md);
+  CSV projections never become canonical merely by being edited.
+- SpecAttest Manager review/export behavior and its fail-closed mutation
+  boundary are documented in
+  [`content/reference/specattest-provider.md`](content/reference/specattest-provider.md).
+- ClickUp execution-resource mapping, explicit plan/apply modes, retry safety,
+  and the documented remote compare-before-write limitation are covered in
+  [`content/reference/clickup-provider.md`](content/reference/clickup-provider.md).

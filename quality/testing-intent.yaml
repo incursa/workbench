@@ -5,6 +5,11 @@ scope:
   includes:
     - src/Workbench.Cli
     - src/Workbench.Core
+    - src/Workbench.CsvProvider
+    - src/Workbench.Providers.ClickUp
+    - src/Workbench.SpecAttestProvider
+    - tests/Workbench.Providers.ClickUp.Tests
+    - tests/Workbench.SpecAttestProvider.Tests
     - tests/Workbench.Tests
     - tests/Workbench.IntegrationTests
   excludes:
@@ -21,6 +26,9 @@ expectations:
     - integration
   criticalAreas:
     - CLI command surface and JSON/table output contracts
+    - ClickUp provider authority, idempotency, conflict, credential, and archive safety
+    - CSV provider authority, reconciliation, and spreadsheet round-trip safety
+    - SpecAttest provider pin, authority, interchange, digest, and read-only mutation safety
     - Repo-native docs, work-item, and validation flows in Workbench.Core
     - Quality evidence discovery, ingestion, and report generation
   intentionallyUntested:
@@ -99,7 +107,7 @@ intentionalGaps:
 related:
   docs:
     - /specs/SPEC-QA-QUALITY-EVIDENCE.md
-    - /specs/SPEC-QA-QUALITY-EVIDENCE.md
+    - /specs/verification/WB/VER-WB-0011-first-party-resource-provider-adapters.md
   files:
     - scripts/testing/run-quality-evidence.ps1
     - scripts/testing/run-quality-evidence.sh

@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <PinnedSpecTraceSchemaVersion>79371b948e6bb83ca25136490d18615ad3ebf704</PinnedSpecTraceSchemaVersion>
+    <PinnedSpecTraceSchemaVersion>3dedb948549ee3bc07adc7360e80f9c4125076a0</PinnedSpecTraceSchemaVersion>
     <PinnedSpecTraceSchemaUrl>https://raw.githubusercontent.com/incursa/spec-trace/$(PinnedSpecTraceSchemaVersion)/model/model.schema.json</PinnedSpecTraceSchemaUrl>
     <PinnedSpecTraceSchemaPath>$(MSBuildProjectDirectory)\obj\PinnedSpecTrace\$(PinnedSpecTraceSchemaVersion)\model.schema.json</PinnedSpecTraceSchemaPath>
     <PinnedSpecTraceSchemaResourceName>Workbench.Core.PinnedSchemas.SpecTrace.model.schema.json</PinnedSpecTraceSchemaResourceName>
@@ -22,6 +22,7 @@
     <EmbeddedResource Include="$(PinnedSpecTraceSchemaPath)" LogicalName="$(PinnedSpecTraceSchemaResourceName)" Visible="false" />
     <EmbeddedResource Include="../../schemas/workbench-config.schema.json" LogicalName="Workbench.Core.ScaffoldSchemas.workbench-config.schema.json" />
     <EmbeddedResource Include="../../specs/schemas/*.schema.json" LogicalName="Workbench.Core.ScaffoldSchemas.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../specs/templates/csv-*.csv" LogicalName="Workbench.Core.ScaffoldTemplates.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

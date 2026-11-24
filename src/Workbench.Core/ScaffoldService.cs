@@ -6,6 +6,7 @@ namespace Workbench.Core;
 public static class ScaffoldService
 {
     private const string ScaffoldSchemaPrefix = "Workbench.Core.ScaffoldSchemas.";
+    private const string ScaffoldTemplatePrefix = "Workbench.Core.ScaffoldTemplates.";
     /// <summary>
     /// Result payload returned by scaffold operations.
     /// </summary>
@@ -63,12 +64,27 @@ public static class ScaffoldService
         {
             "artifact-frontmatter.schema.json",
             "artifact-id-policy.schema.json",
+            "csv-specification-row-v1.schema.json",
+            "csv-work-item-row-v1.schema.json",
+            "resource-authority-config.schema.json",
+            "resource-provider-protocol-v1.schema.json",
             "requirement-clause.schema.json",
             "requirement-trace-fields.schema.json",
             "work-item-trace-fields.schema.json"
         })
         {
             WriteFile(Path.Combine(config.Paths.SpecsSchemasDir, schemaName), ReadEmbeddedSchema(schemaName));
+        }
+
+        foreach (var templateName in new[]
+        {
+            "csv-specifications-v1.csv",
+            "csv-work-items-v1.csv"
+        })
+        {
+            WriteFile(
+                Path.Combine(config.Paths.SpecsRoot, "templates", templateName),
+                ReadEmbeddedResource(ScaffoldTemplatePrefix, templateName));
         }
 
         var configPath = WorkbenchConfig.GetConfigPath(repoRoot);
@@ -80,9 +96,14 @@ public static class ScaffoldService
 
     private static string ReadEmbeddedSchema(string name)
     {
+        return ReadEmbeddedResource(ScaffoldSchemaPrefix, name);
+    }
+
+    private static string ReadEmbeddedResource(string prefix, string name)
+    {
         var assembly = typeof(ScaffoldService).Assembly;
-        using var stream = assembly.GetManifestResourceStream(ScaffoldSchemaPrefix + name)
-            ?? throw new InvalidOperationException($"Embedded scaffold schema is missing: {name}");
+        using var stream = assembly.GetManifestResourceStream(prefix + name)
+            ?? throw new InvalidOperationException($"Embedded scaffold resource is missing: {name}");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }

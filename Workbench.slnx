@@ -2,6 +2,9 @@
   <Folder Name="/src/">
     <Project Path="src/Workbench.Core/Workbench.Core.csproj" />
     <Project Path="src/Workbench.Cli/Workbench.Cli.csproj" />
+    <Project Path="src/Workbench.CsvProvider/Workbench.CsvProvider.csproj" />
+    <Project Path="src/Workbench.Providers.ClickUp/Workbench.Providers.ClickUp.csproj" />
+    <Project Path="src/Workbench.SpecAttestProvider/Workbench.SpecAttestProvider.csproj" />
     <Project Path="src/Workbench/Workbench.csproj" />
   </Folder>
   <Folder Name="/benchmarks/">
@@ -11,6 +14,9 @@
     <Project Path="fuzz/Workbench.Fuzz.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Workbench.ProviderTestHost/Workbench.ProviderTestHost.csproj" />
+    <Project Path="tests/Workbench.Providers.ClickUp.Tests/Workbench.Providers.ClickUp.Tests.csproj" />
+    <Project Path="tests/Workbench.SpecAttestProvider.Tests/Workbench.SpecAttestProvider.Tests.csproj" />
     <Project Path="tests/Workbench.Tests/Workbench.Tests.csproj" />
     <Project Path="tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj" />
   </Folder>

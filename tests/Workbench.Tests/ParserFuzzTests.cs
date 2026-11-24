@@ -159,6 +159,7 @@ public class ParserFuzzTests
                   "requirements": [
                     {
                       "id": "REQ-WB-FUZZ-0001",
+                      "revision": 1,
                       "title": "Fuzz validation requirement",
                       "statement": "The tool MUST accept fuzzed canonical JSON."
                     }

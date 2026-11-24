@@ -34,6 +34,14 @@ $projects = @(
     [pscustomobject]@{
         Name = "workbench-integration"
         Path = Join-Path $repoRoot "tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj"
+    },
+    [pscustomobject]@{
+        Name = "workbench-clickup-provider-tests"
+        Path = Join-Path $repoRoot "tests/Workbench.Providers.ClickUp.Tests/Workbench.Providers.ClickUp.Tests.csproj"
+    },
+    [pscustomobject]@{
+        Name = "workbench-specattest-provider-tests"
+        Path = Join-Path $repoRoot "tests/Workbench.SpecAttestProvider.Tests/Workbench.SpecAttestProvider.Tests.csproj"
     }
 )
 

@@ -88,6 +88,63 @@
           "enum": ["light", "standard", "governed"]
         }
       }
+    },
+    "ResourceProviders": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["Providers", "ResourceSets", "DefaultTimeoutSeconds"],
+      "properties": {
+        "DefaultTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+        "Providers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["Id", "Executable", "Arguments", "Enabled"],
+            "properties": {
+              "Id": { "type": "string", "minLength": 1 },
+              "Executable": { "type": "string", "minLength": 1 },
+              "Arguments": { "type": "array", "items": { "type": "string" } },
+              "WorkingDirectory": { "type": ["string", "null"] },
+              "TimeoutSeconds": { "type": ["integer", "null"], "minimum": 1, "maximum": 3600 },
+              "Enabled": { "type": "boolean" }
+            }
+          }
+        },
+        "ResourceSets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ResourceType",
+              "ResourceSet",
+              "AuthorityProvider",
+              "ReadOnlyEnrichers",
+              "PublicationTargets",
+              "ConflictPolicy",
+              "OfflinePolicy"
+            ],
+            "properties": {
+              "ResourceType": { "type": "string", "minLength": 1 },
+              "ResourceSet": { "type": "string", "minLength": 1 },
+              "AuthorityProvider": { "type": "string", "minLength": 1 },
+              "ReadOnlyEnrichers": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "PublicationTargets": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "ConflictPolicy": { "const": "fail" },
+              "OfflinePolicy": { "const": "store-and-forward" }
+            }
+          }
+        }
+      }
     }
   }
 }

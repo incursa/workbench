@@ -61,6 +61,8 @@ run_project() {
 
 run_project "workbench-tests" "tests/Workbench.Tests/Workbench.Tests.csproj"
 run_project "workbench-integration" "tests/Workbench.IntegrationTests/Workbench.IntegrationTests.csproj"
+run_project "workbench-clickup-provider-tests" "tests/Workbench.Providers.ClickUp.Tests/Workbench.Providers.ClickUp.Tests.csproj"
+run_project "workbench-specattest-provider-tests" "tests/Workbench.SpecAttestProvider.Tests/Workbench.SpecAttestProvider.Tests.csproj"
 
 echo "Quality evidence raw artifacts"
 echo " - Test results: $results_path"

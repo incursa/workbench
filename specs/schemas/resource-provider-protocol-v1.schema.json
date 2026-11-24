@@ -1,0 +1,571 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "resource-provider-protocol-v1.schema.json",
+  "title": "Workbench Resource Provider Protocol v1",
+  "description": "Schema for each newline-delimited JSON request or response value exchanged over provider stdin/stdout.",
+  "oneOf": [
+    { "$ref": "#/$defs/requestEnvelope" },
+    { "$ref": "#/$defs/responseEnvelope" }
+  ],
+  "$defs": {
+    "protocolVersion": { "const": "workbench.resource-provider.v1" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "nullableSha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/sha256" }
+      ]
+    },
+    "nullableString": { "type": ["string", "null"] },
+    "operation": {
+      "enum": ["handshake", "query", "get", "validate", "planChanges", "applyChanges", "health"]
+    },
+    "requestEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolVersion", "requestId", "operation", "deadlineUtc", "idempotencyKey", "body"],
+      "properties": {
+        "protocolVersion": { "$ref": "#/$defs/protocolVersion" },
+        "requestId": { "type": "string", "minLength": 1 },
+        "operation": { "$ref": "#/$defs/operation" },
+        "deadlineUtc": { "type": "string", "format": "date-time" },
+        "idempotencyKey": { "$ref": "#/$defs/nullableString" },
+        "body": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "operation": { "const": "handshake" } }, "required": ["operation"] },
+          "then": { "properties": { "body": { "$ref": "#/$defs/handshakeRequest" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "query" } }, "required": ["operation"] },
+          "then": { "properties": { "body": { "$ref": "#/$defs/queryRequest" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "get" } }, "required": ["operation"] },
+          "then": { "properties": { "body": { "$ref": "#/$defs/getRequest" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "validate" } }, "required": ["operation"] },
+          "then": { "properties": { "body": { "$ref": "#/$defs/validateRequest" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "planChanges" } }, "required": ["operation"] },
+          "then": { "properties": { "body": { "$ref": "#/$defs/planChangesRequest" } } }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "applyChanges" } }, "required": ["operation"] },
+          "then": {
+            "properties": {
+              "idempotencyKey": { "type": "string", "minLength": 1 },
+              "body": { "$ref": "#/$defs/applyChangesRequest" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "health" } }, "required": ["operation"] },
+          "then": { "properties": { "body": { "$ref": "#/$defs/healthRequest" } } }
+        }
+      ]
+    },
+    "responseEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocolVersion", "requestId", "ok", "body", "diagnostics", "error"],
+      "properties": {
+        "protocolVersion": { "$ref": "#/$defs/protocolVersion" },
+        "requestId": { "type": "string" },
+        "ok": { "type": "boolean" },
+        "body": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/handshakeResponse" },
+            { "$ref": "#/$defs/queryResponse" },
+            { "$ref": "#/$defs/getResponse" },
+            { "$ref": "#/$defs/validateResponse" },
+            { "$ref": "#/$defs/planChangesResponse" },
+            { "$ref": "#/$defs/applyChangesResponse" },
+            { "$ref": "#/$defs/healthResponse" }
+          ]
+        },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" },
+        "error": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/error" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "ok": { "const": true } }, "required": ["ok"] },
+          "then": { "properties": { "body": { "not": { "type": "null" } }, "error": { "type": "null" } } },
+          "else": { "properties": { "body": { "type": "null" }, "error": { "$ref": "#/$defs/error" } } }
+        }
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "target", "retryable", "data"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "message": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/nullableString" },
+        "retryable": { "type": "boolean" },
+        "data": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "object", "additionalProperties": { "type": "string" } }
+          ]
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "retryable": { "type": "boolean" }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerId", "displayName", "providerVersion", "protocolVersions", "operations", "resourceTypes", "roles", "batch", "supportsIdempotency", "supportsOptimisticConcurrency", "supportsOfflineSnapshots"],
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "providerVersion": { "type": "string", "minLength": 1 },
+        "protocolVersions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "operations": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/operation" } },
+        "resourceTypes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["authority", "readOnlyEnricher", "publicationTarget"] }
+        },
+        "batch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxItems", "atomicApply", "orderedResults"],
+          "properties": {
+            "maxItems": { "type": "integer", "minimum": 1 },
+            "atomicApply": { "type": "boolean" },
+            "orderedResults": { "type": "boolean" }
+          }
+        },
+        "supportsIdempotency": { "type": "boolean" },
+        "supportsOptimisticConcurrency": { "type": "boolean" },
+        "supportsOfflineSnapshots": { "type": "boolean" }
+      }
+    },
+    "resourceAddress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resourceType", "resourceSet", "resourceId"],
+      "properties": {
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "resourceId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "compatibilityPin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "repository", "edition", "revision", "schemaPath", "schemaSha256", "canonicalization", "profile"],
+      "properties": {
+        "contract": { "type": "string", "minLength": 1 },
+        "repository": { "type": "string", "minLength": 1 },
+        "edition": { "$ref": "#/$defs/nullableString" },
+        "revision": { "type": "string", "minLength": 1 },
+        "schemaPath": { "type": "string", "minLength": 1 },
+        "schemaSha256": { "$ref": "#/$defs/sha256" },
+        "canonicalization": { "type": "string", "minLength": 1 },
+        "profile": { "$ref": "#/$defs/nullableString" },
+        "editionManifestSha256": { "$ref": "#/$defs/nullableSha256" },
+        "editionManifestSchemaPath": { "$ref": "#/$defs/nullableString" },
+        "editionManifestSchemaSha256": { "$ref": "#/$defs/nullableSha256" },
+        "payloadSha256": { "$ref": "#/$defs/nullableSha256" },
+        "conformanceCorpusSha256": { "$ref": "#/$defs/nullableSha256" },
+        "signatureReference": { "$ref": "#/$defs/nullableString" },
+        "signatureSha256": { "$ref": "#/$defs/nullableSha256" },
+        "canonicalProfiles": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+          ]
+        },
+        "proofProfile": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerId", "recordedAtUtc", "actor", "sourceRevision", "payloadSha256", "transferId", "approvalReference"],
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1 },
+        "recordedAtUtc": { "type": "string", "format": "date-time" },
+        "actor": { "$ref": "#/$defs/nullableString" },
+        "sourceRevision": { "$ref": "#/$defs/nullableString" },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "transferId": { "$ref": "#/$defs/nullableString" },
+        "approvalReference": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "authorityDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resourceType", "resourceSet", "authorityProviderId", "authorityEpoch", "declaredAtUtc", "declarationDigest"],
+      "properties": {
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "authorityProviderId": { "type": "string", "minLength": 1 },
+        "authorityEpoch": { "type": "string", "minLength": 1 },
+        "declaredAtUtc": { "type": "string", "format": "date-time" },
+        "declarationDigest": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "resourceDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "content", "versionToken", "payloadSha256", "compatibilityPin", "provenance"],
+      "properties": {
+        "address": { "$ref": "#/$defs/resourceAddress" },
+        "content": true,
+        "versionToken": { "type": "string", "minLength": 1 },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "compatibilityPin": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/compatibilityPin" }] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "resourceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["address", "versionToken", "payloadSha256", "modifiedAtUtc"],
+      "properties": {
+        "address": { "$ref": "#/$defs/resourceAddress" },
+        "versionToken": { "type": "string", "minLength": 1 },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "modifiedAtUtc": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotId", "resourceType", "resourceSet", "createdAtUtc", "payloadSha256", "authoritative", "authority", "compatibilityPin", "resources", "provenance"],
+      "properties": {
+        "snapshotId": { "type": "string", "minLength": 1 },
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "createdAtUtc": { "type": "string", "format": "date-time" },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "authoritative": { "type": "boolean" },
+        "authority": { "$ref": "#/$defs/authorityDeclaration" },
+        "compatibilityPin": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/compatibilityPin" }] },
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resourceDocument" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baselineId", "snapshotId", "snapshotPayloadSha256", "createdAtUtc", "provenance"],
+      "properties": {
+        "baselineId": { "type": "string", "minLength": 1 },
+        "snapshotId": { "type": "string", "minLength": 1 },
+        "snapshotPayloadSha256": { "$ref": "#/$defs/sha256" },
+        "createdAtUtc": { "type": "string", "format": "date-time" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectionId", "sourceSnapshotId", "providerId", "mediaType", "payloadSha256", "content", "provenance"],
+      "properties": {
+        "projectionId": { "type": "string", "minLength": 1 },
+        "sourceSnapshotId": { "type": "string", "minLength": 1 },
+        "providerId": { "type": "string", "minLength": 1 },
+        "mediaType": { "type": "string", "minLength": 1 },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "content": true,
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "publicationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publicationId", "publicationTargetProviderId", "sourceSnapshotId", "sourcePayloadSha256", "manifestSha256", "publishedAtUtc", "immutableReference", "provenance"],
+      "properties": {
+        "publicationId": { "type": "string", "minLength": 1 },
+        "publicationTargetProviderId": { "type": "string", "minLength": 1 },
+        "sourceSnapshotId": { "type": "string", "minLength": 1 },
+        "sourcePayloadSha256": { "$ref": "#/$defs/sha256" },
+        "manifestSha256": { "$ref": "#/$defs/sha256" },
+        "publishedAtUtc": { "type": "string", "format": "date-time" },
+        "immutableReference": { "type": "string", "minLength": 1 },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "authorityTransfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transferId", "resourceType", "resourceSet", "fromProviderId", "toProviderId", "fromAuthorityEpoch", "toAuthorityEpoch", "sourceVersion", "targetVersion", "payloadSha256", "frozenAtUtc", "approvedBy", "approvalReference", "approvedAtUtc", "rollbackUntilUtc"],
+      "properties": {
+        "transferId": { "type": "string", "minLength": 1 },
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "fromProviderId": { "type": "string", "minLength": 1 },
+        "toProviderId": { "type": "string", "minLength": 1 },
+        "fromAuthorityEpoch": { "type": "string", "minLength": 1 },
+        "toAuthorityEpoch": { "type": "string", "minLength": 1 },
+        "sourceVersion": { "type": "string", "minLength": 1 },
+        "targetVersion": { "type": "string", "minLength": 1 },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "frozenAtUtc": { "type": "string", "format": "date-time" },
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "approvalReference": { "type": "string", "minLength": 1 },
+        "approvedAtUtc": { "type": "string", "format": "date-time" },
+        "rollbackUntilUtc": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changeId", "kind", "address", "content", "expectedVersionToken", "payloadSha256", "provenance", "authorityTransfer"],
+      "properties": {
+        "changeId": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["create", "update", "delete", "publish", "transferAuthority"] },
+        "address": { "$ref": "#/$defs/resourceAddress" },
+        "content": true,
+        "expectedVersionToken": { "$ref": "#/$defs/nullableString" },
+        "payloadSha256": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sha256" }] },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "authorityTransfer": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/authorityTransfer" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "enum": ["create", "update", "publish"] } }, "required": ["kind"] },
+          "then": {
+            "properties": {
+              "content": { "not": { "type": "null" } },
+              "payloadSha256": { "$ref": "#/$defs/sha256" },
+              "authorityTransfer": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "create" } }, "required": ["kind"] },
+          "then": { "properties": { "expectedVersionToken": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "enum": ["update", "delete", "transferAuthority"] } }, "required": ["kind"] },
+          "then": { "properties": { "expectedVersionToken": { "type": "string", "minLength": 1 } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "delete" } }, "required": ["kind"] },
+          "then": {
+            "properties": {
+              "content": { "type": "null" },
+              "payloadSha256": { "type": "null" },
+              "authorityTransfer": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "transferAuthority" } }, "required": ["kind"] },
+          "then": {
+            "properties": {
+              "payloadSha256": { "$ref": "#/$defs/sha256" },
+              "authorityTransfer": { "$ref": "#/$defs/authorityTransfer" }
+            }
+          },
+          "else": { "properties": { "authorityTransfer": { "type": "null" } } }
+        }
+      ]
+    },
+    "handshakeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clientName", "clientVersion", "acceptedProtocolVersions"],
+      "properties": {
+        "clientName": { "type": "string", "minLength": 1 },
+        "clientVersion": { "type": "string", "minLength": 1 },
+        "acceptedProtocolVersions": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } }
+      }
+    },
+    "handshakeResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selectedProtocolVersion", "capabilities"],
+      "properties": {
+        "selectedProtocolVersion": { "$ref": "#/$defs/protocolVersion" },
+        "capabilities": { "$ref": "#/$defs/capabilities" }
+      }
+    },
+    "queryRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resourceType", "resourceSet", "filter", "pageSize", "continuationToken"],
+      "properties": {
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "filter": true,
+        "pageSize": { "type": "integer", "minimum": 1 },
+        "continuationToken": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "queryResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resources", "continuationToken", "diagnostics"],
+      "properties": {
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resourceSummary" } },
+        "continuationToken": { "$ref": "#/$defs/nullableString" },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    },
+    "getRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resources"],
+      "properties": {
+        "resources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/resourceAddress" } }
+      }
+    },
+    "getResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resources", "diagnostics"],
+      "properties": {
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resourceDocument" } },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    },
+    "validateRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshots"],
+      "properties": {
+        "snapshots": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/snapshot" } }
+      }
+    },
+    "validationResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotId", "payloadSha256", "valid", "compatibilityPin", "diagnostics"],
+      "properties": {
+        "snapshotId": { "type": "string", "minLength": 1 },
+        "payloadSha256": { "$ref": "#/$defs/sha256" },
+        "valid": { "type": "boolean" },
+        "compatibilityPin": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/compatibilityPin" }] },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    },
+    "validateResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["results"],
+      "properties": {
+        "results": { "type": "array", "items": { "$ref": "#/$defs/validationResult" } }
+      }
+    },
+    "planChangesRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resourceType", "resourceSet", "expectedAuthorityEpoch", "changes"],
+      "properties": {
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "expectedAuthorityEpoch": { "type": "string", "minLength": 1 },
+        "changes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/change" } }
+      }
+    },
+    "plannedChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changeId", "disposition", "observedVersionToken", "diagnostics"],
+      "properties": {
+        "changeId": { "type": "string", "minLength": 1 },
+        "disposition": { "enum": ["ready", "conflict", "invalid", "unsupported"] },
+        "observedVersionToken": { "$ref": "#/$defs/nullableString" },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    },
+    "planChangesResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planId", "planDigest", "authorityEpoch", "createdAtUtc", "expiresAtUtc", "requiresExplicitApproval", "changes", "diagnostics"],
+      "properties": {
+        "planId": { "type": "string", "minLength": 1 },
+        "planDigest": { "$ref": "#/$defs/sha256" },
+        "authorityEpoch": { "type": "string", "minLength": 1 },
+        "createdAtUtc": { "type": "string", "format": "date-time" },
+        "expiresAtUtc": { "type": ["string", "null"], "format": "date-time" },
+        "requiresExplicitApproval": { "const": true },
+        "changes": { "type": "array", "items": { "$ref": "#/$defs/plannedChange" } },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvedBy", "approvalReference", "approvedAtUtc"],
+      "properties": {
+        "approvedBy": { "type": "string", "minLength": 1 },
+        "approvalReference": { "type": "string", "minLength": 1 },
+        "approvedAtUtc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "applyChangesRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resourceType", "resourceSet", "planId", "planDigest", "idempotencyKey", "expectedAuthorityEpoch", "approval"],
+      "properties": {
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceSet": { "type": "string", "minLength": 1 },
+        "planId": { "type": "string", "minLength": 1 },
+        "planDigest": { "$ref": "#/$defs/sha256" },
+        "idempotencyKey": { "type": "string", "minLength": 1 },
+        "expectedAuthorityEpoch": { "type": "string", "minLength": 1 },
+        "approval": { "$ref": "#/$defs/approval" }
+      }
+    },
+    "applyChangesResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "planId", "idempotencyKey", "authorityEpoch", "snapshot", "diagnostics"],
+      "properties": {
+        "status": { "enum": ["applied", "alreadyApplied", "conflict", "rejected"] },
+        "planId": { "type": "string", "minLength": 1 },
+        "idempotencyKey": { "type": "string", "minLength": 1 },
+        "authorityEpoch": { "type": "string", "minLength": 1 },
+        "snapshot": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/snapshot" }] },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    },
+    "healthRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deep"],
+      "properties": { "deep": { "type": "boolean" } }
+    },
+    "healthResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "checkedAtUtc", "providerVersion", "diagnostics"],
+      "properties": {
+        "state": { "enum": ["healthy", "degraded", "unavailable"] },
+        "checkedAtUtc": { "type": "string", "format": "date-time" },
+        "providerVersion": { "type": "string", "minLength": 1 },
+        "diagnostics": { "$ref": "#/$defs/diagnostics" }
+      }
+    }
+  }
+}

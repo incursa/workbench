@@ -738,11 +738,13 @@ public class QualityServiceTests
               "requirements": [
                 {
                   "id": "REQ-SAMPLE-0004",
+                  "revision": 1,
                   "title": "Widget class requirement",
                   "statement": "The widget test class MUST be documented with generated requirement comments."
                 },
                 {
                   "id": "REQ-SAMPLE-0001",
+                  "revision": 1,
                   "title": "Adds numbers requirement",
                   "statement": "The system MUST verify addition behavior.",
                   "trace": {
@@ -753,11 +755,13 @@ public class QualityServiceTests
                 },
                 {
                   "id": "REQ-SAMPLE-0002",
+                  "revision": 1,
                   "title": "Handles zero requirement",
                   "statement": "The system MUST document zero handling."
                 },
                 {
                   "id": "REQ-SAMPLE-0003",
+                  "revision": 1,
                   "title": "Handles zero fallback requirement",
                   "statement": "The system MUST document the fallback path."
                 }

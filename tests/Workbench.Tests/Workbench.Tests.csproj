@@ -2,7 +2,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Workbench.Core\Workbench.Core.csproj" />
+    <ProjectReference Include="..\..\src\Workbench.CsvProvider\Workbench.CsvProvider.csproj" />
     <ProjectReference Include="..\..\src\Workbench\Workbench.csproj" />
+    <ProjectReference Include="..\Workbench.ProviderTestHost\Workbench.ProviderTestHost.csproj" />
   </ItemGroup>
 
 </Project>

@@ -622,11 +622,13 @@ public class QualityCommandTests
               "requirements": [
                 {
                   "id": "REQ-SAMPLE-0004",
+                  "revision": 1,
                   "title": "Widget class requirement",
                   "statement": "The widget test class MUST be documented with generated requirement comments."
                 },
                 {
                   "id": "REQ-SAMPLE-0001",
+                  "revision": 1,
                   "title": "Adds numbers requirement",
                   "statement": "The system MUST verify addition behavior.",
                   "trace": {
@@ -637,11 +639,13 @@ public class QualityCommandTests
                 },
                 {
                   "id": "REQ-SAMPLE-0002",
+                  "revision": 1,
                   "title": "Handles zero requirement",
                   "statement": "The system MUST document zero handling."
                 },
                 {
                   "id": "REQ-SAMPLE-0003",
+                  "revision": 1,
                   "title": "Handles zero fallback requirement",
                   "statement": "The system MUST document the fallback path."
                 }
@@ -711,6 +715,7 @@ public class QualityCommandTests
               "requirements": [
                 {
                   "id": "REQ-SAMPLE-PROOF-0001",
+                  "revision": 1,
                   "title": "Clean proof",
                   "statement": "The system MUST report a clean proof when focused positive and negative tests are linked.",
                   "coverage": {
@@ -728,6 +733,7 @@ public class QualityCommandTests
                 },
                 {
                   "id": "REQ-SAMPLE-PROOF-0002",
+                  "revision": 1,
                   "title": "Partial proof",
                   "statement": "The system MUST report partial proof when required evidence kinds are missing.",
                   "coverage": {
@@ -744,6 +750,7 @@ public class QualityCommandTests
                 },
                 {
                   "id": "REQ-SAMPLE-PROOF-0003",
+                  "revision": 1,
                   "title": "Blocked proof",
                   "statement": "The system MUST report blocked uncovered proof when the gap ledger references the requirement.",
                   "coverage": {
@@ -755,6 +762,7 @@ public class QualityCommandTests
                 },
                 {
                   "id": "REQ-SAMPLE-PROOF-0004",
+                  "revision": 1,
                   "title": "Missing coverage contract",
                   "statement": "The system MUST report missing coverage contract when no authored coverage metadata exists."
                 }

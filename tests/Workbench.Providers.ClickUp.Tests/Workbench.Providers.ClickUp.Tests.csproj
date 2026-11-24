@@ -1,0 +1,8 @@
+<Project Sdk="MSTest.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Workbench.Core\Workbench.Core.csproj" />
+    <ProjectReference Include="..\..\src\Workbench.Providers.ClickUp\Workbench.Providers.ClickUp.csproj" />
+  </ItemGroup>
+
+</Project>

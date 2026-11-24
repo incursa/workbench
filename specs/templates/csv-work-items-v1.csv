@@ -1,0 +1,1 @@
+csv_schema,record_mode,operation,resource_type,resource_set,resource_id,provider_id,provider_version,authority_provider_id,authority_epoch,base_version_token,base_payload_sha256,recorded_at_utc,actor,source_revision,transfer_id,approval_reference,title,status,type,owner,priority,description,metadata_json

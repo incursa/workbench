@@ -87,6 +87,7 @@ public class JsonDocCoverageTests
                   "requirements": [
                     {
                       "id": "REQ-WB-JSONDOC-0001",
+                      "revision": 1,
                       "title": "Load JSON spec docs",
                       "statement": "The tool MUST load canonical JSON specification artifacts."
                     }

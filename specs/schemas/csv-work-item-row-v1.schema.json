@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "csv-work-item-row-v1.schema.json",
+  "title": "Workbench CSV work-item row v1",
+  "description": "Normalized row contract for work-items.v1.csv. Unknown columns are preserved as string-valued CSV extensions.",
+  "x-csv": {
+    "schemaCoordinate": "workbench.csv.work-item.v1",
+    "fileName": "work-items.v1.csv",
+    "encoding": "UTF-8 with optional BOM",
+    "delimiter": ",",
+    "recordSeparator": "CRLF on provider output; CRLF or LF accepted on input",
+    "quoting": "RFC 4180-compatible double quote escaping"
+  },
+  "type": "object",
+  "required": [
+    "csv_schema",
+    "record_mode",
+    "operation",
+    "resource_type",
+    "resource_set",
+    "resource_id",
+    "provider_id",
+    "provider_version",
+    "authority_provider_id",
+    "authority_epoch",
+    "base_version_token",
+    "base_payload_sha256",
+    "recorded_at_utc",
+    "actor",
+    "source_revision",
+    "transfer_id",
+    "approval_reference",
+    "title",
+    "status",
+    "type",
+    "owner",
+    "priority",
+    "description",
+    "metadata_json"
+  ],
+  "properties": {
+    "csv_schema": { "const": "workbench.csv.work-item.v1" },
+    "record_mode": { "enum": ["authoritative", "projection"] },
+    "operation": { "enum": ["none", "upsert", "delete"] },
+    "resource_type": { "const": "work_item" },
+    "resource_set": { "$ref": "#/$defs/nonEmpty" },
+    "resource_id": { "$ref": "#/$defs/nonEmpty" },
+    "provider_id": { "$ref": "#/$defs/nonEmpty" },
+    "provider_version": { "$ref": "#/$defs/nonEmpty" },
+    "authority_provider_id": { "$ref": "#/$defs/nonEmpty" },
+    "authority_epoch": { "$ref": "#/$defs/nonEmpty" },
+    "base_version_token": { "type": "string" },
+    "base_payload_sha256": { "type": "string", "pattern": "^(?:|[0-9a-fA-F]{64})$" },
+    "recorded_at_utc": { "type": "string", "format": "date-time" },
+    "actor": { "type": "string" },
+    "source_revision": { "type": "string" },
+    "transfer_id": { "type": "string" },
+    "approval_reference": { "type": "string" },
+    "title": { "$ref": "#/$defs/nonEmpty" },
+    "status": { "$ref": "#/$defs/nonEmpty" },
+    "type": { "type": "string" },
+    "owner": { "type": "string" },
+    "priority": { "type": "string" },
+    "description": { "type": "string" },
+    "metadata_json": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "record_mode": { "const": "authoritative" } } },
+      "then": { "properties": { "operation": { "const": "none" } } }
+    }
+  ],
+  "additionalProperties": { "type": "string" },
+  "$defs": {
+    "nonEmpty": { "type": "string", "minLength": 1 }
+  }
+}
