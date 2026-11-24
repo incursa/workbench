@@ -8,22 +8,22 @@ namespace Workbench.SpecAttestProvider.Tests;
 public sealed class SpecAttestConformanceTests
 {
     [TestMethod]
-    public void StandardPin_ExactlyMatchesPublishedDraft2Tuple()
+    public void StandardPin_ExactlyMatchesPublishedRc1Tuple()
     {
         ResourceCompatibilityPin pin = SpecAttestInterchangeContract.StandardPin();
 
-        Assert.AreEqual("0.1.0-draft.2", pin.Edition);
-        Assert.AreEqual("3dedb948549ee3bc07adc7360e80f9c4125076a0", pin.Revision);
+        Assert.AreEqual("0.1.0-rc.1", pin.Edition);
+        Assert.AreEqual("afb4885980bdcbe250bb18fd07948c8999450330", pin.Revision);
         Assert.AreEqual("27fbfef7d11743adaa5f95b14e16b9f9e71fd9de522e3a9f7e22e62c12e88ddb", pin.SchemaSha256);
-        Assert.AreEqual("885cb5168dcdd528b53046c6e50fe65ca4ebd8aa903ea4867b4e78b12f92abea", pin.EditionManifestSha256);
+        Assert.AreEqual("22ef8a5347aaa2b430ff5fbca8495f54a0e078ffbcc12d92d9f38389a47fbe98", pin.EditionManifestSha256);
         Assert.AreEqual("eb12cb68f01bd03cb2c29ae549ca8d202a129f75c304ebcbf1b4e64a975048ef", pin.EditionManifestSchemaSha256);
         Assert.AreEqual("0643a8067ed5684dcbaa29da5c9a206af813c142d1a7620bce2a81bddedd4b92", pin.PayloadSha256);
-        Assert.AreEqual("19498f4987e2babde1e8151c9886bc74ac491aca44f5ecdfb7af6added24cc87", pin.ConformanceCorpusSha256);
-        Assert.AreEqual("refs/tags/standard-v0.1.0-draft.2", pin.SignatureReference);
-        Assert.AreEqual("607d32b380053b7cb2c748e0e81dd0d3dd943f2d9a71df7dc2ff8575fa88c865", pin.SignatureSha256);
+        Assert.AreEqual("b4ab6783a4693069a9eb5f0f96f01f49ae70bf56bb10ba9d9499a5e9c4b554a2", pin.ConformanceCorpusSha256);
+        Assert.AreEqual("refs/tags/standard-v0.1.0-rc.1", pin.SignatureReference);
+        Assert.AreEqual("de2dc61fee3b0f4137612696b910d8e6b3455011bd46222d1a8a8cfb731ec844", pin.SignatureSha256);
     }
 
-    public static IEnumerable<object[]> PublishedDraft2ProtocolVectors
+    public static IEnumerable<object[]> PublishedRc1ProtocolVectors
     {
         get
         {
@@ -38,8 +38,8 @@ public sealed class SpecAttestConformanceTests
     }
 
     [TestMethod]
-    [DynamicData(nameof(PublishedDraft2ProtocolVectors))]
-    public void Runner_AgreesWithPublishedDraft2ProtocolVector(string name, JsonObject vector)
+    [DynamicData(nameof(PublishedRc1ProtocolVectors))]
+    public void Runner_AgreesWithPublishedRc1ProtocolVector(string name, JsonObject vector)
     {
         Assert.IsTrue(SpecAttestConformanceCorpusRunner.Validate(vector), name);
     }

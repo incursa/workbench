@@ -4,11 +4,11 @@ Original draft.1 status: **NOT READY**
 
 Qualification date: 2026-11-23/24 UTC
 
-Current follow-up status (2026-11-24 UTC): **DRAFT.2 QUALIFIED; READY FOR RC
-OWNER APPROVAL**. The original `0.1.0-draft.1` findings below are retained as
-the behavioral-review record. The draft.2 implementation, deployment, package
-publication, and retained cross-transport evidence close the technical
-release-candidate preparation gates described in **RC readiness double-check**.
+Current follow-up status (2026-11-24 UTC): **RC.1 PUBLISHED; WORKBENCH PIN
+QUALIFIED**. The original `0.1.0-draft.1` findings below are retained as the
+behavioral-review record. The draft.2 implementation, deployment, package
+publication, retained cross-transport evidence, and owner-approved candidate
+publication close the release-candidate gates described below.
 
 ## Qualification subjects
 
@@ -343,3 +343,35 @@ Consequently:
 
 Current recommendation: **TECHNICAL RC PREPARATION GATES CLOSED; OWNER APPROVAL
 REQUIRED BEFORE PUBLICATION.**
+
+## RC.1 publication and Workbench pin: 2026-11-24 UTC
+
+Incursa owner approval was recorded and
+[SpecAttest Standard `0.1.0-rc.1`](https://github.com/incursa/spec-trace/releases/tag/standard-v0.1.0-rc.1)
+was published as a GitHub prerelease from signed source commit
+`afb4885980bdcbe250bb18fd07948c8999450330`. The candidate manifest records
+`maturity: candidate`, `bootstrap: false`, predecessor `0.1.0-draft.2`, and
+`compatibility: non-normative`.
+
+Workbench now pins the complete immutable candidate tuple:
+
+| Coordinate | `0.1.0-rc.1` value |
+| --- | --- |
+| Edition manifest | `22ef8a5347aaa2b430ff5fbca8495f54a0e078ffbcc12d92d9f38389a47fbe98` |
+| Model schema | `27fbfef7d11743adaa5f95b14e16b9f9e71fd9de522e3a9f7e22e62c12e88ddb` |
+| Manifest schema | `eb12cb68f01bd03cb2c29ae549ca8d202a129f75c304ebcbf1b4e64a975048ef` |
+| Ordered payload | `0643a8067ed5684dcbaa29da5c9a206af813c142d1a7620bce2a81bddedd4b92` |
+| Corpus bundle | `b4ab6783a4693069a9eb5f0f96f01f49ae70bf56bb10ba9d9499a5e9c4b554a2` |
+| Signed tag object | `de2dc61fee3b0f4137612696b910d8e6b3455011bd46222d1a8a8cfb731ec844` |
+| Validation subject | `7ee6d7a166c8d8d83cebb5da19bd9aa20fd35d23c5640e5946ac205b6ca04af2` |
+
+The normative payload, schemas, validator implementation, and 20 conformance
+cases are byte-identical to draft.2. Both the accepted draft.2 validator and the
+candidate validator passed all 235 exact requirement coordinates and 20 corpus
+cases. The signed tag is GitHub-verified, every release asset passed its
+published checksum after independent redownload, and the retained REST/MCP
+matrix remains applicable because the five protocol vectors and required
+behavior did not change.
+
+Current recommendation: **ADOPT `0.1.0-rc.1` FOR CANDIDATE INTERCHANGE AND
+CROSS-TOOL REVIEW; DO NOT REPRESENT IT AS A STABLE EDITION.**
