@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <PinnedSpecTraceSchemaVersion>3dedb948549ee3bc07adc7360e80f9c4125076a0</PinnedSpecTraceSchemaVersion>
+    <PinnedSpecTraceSchemaVersion>afb4885980bdcbe250bb18fd07948c8999450330</PinnedSpecTraceSchemaVersion>
     <PinnedSpecTraceSchemaUrl>https://raw.githubusercontent.com/incursa/spec-trace/$(PinnedSpecTraceSchemaVersion)/model/model.schema.json</PinnedSpecTraceSchemaUrl>
     <PinnedSpecTraceSchemaPath>$(MSBuildProjectDirectory)\obj\PinnedSpecTrace\$(PinnedSpecTraceSchemaVersion)\model.schema.json</PinnedSpecTraceSchemaPath>
     <PinnedSpecTraceSchemaResourceName>Workbench.Core.PinnedSchemas.SpecTrace.model.schema.json</PinnedSpecTraceSchemaResourceName>

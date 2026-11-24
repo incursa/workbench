@@ -15,17 +15,17 @@ public static class SpecAttestInterchangeContract
     public const string PayloadMediaType = "application/vnd.specattest.interchange+zip";
     public const string ResourceType = "specattest_set";
     public const string StandardRepository = "https://github.com/incursa/spec-trace";
-    public const string StandardEdition = "0.1.0-draft.2";
-    public const string StandardCommit = "3dedb948549ee3bc07adc7360e80f9c4125076a0";
+    public const string StandardEdition = "0.1.0-rc.1";
+    public const string StandardCommit = "afb4885980bdcbe250bb18fd07948c8999450330";
     public const string StandardSchemaPath = "model/model.schema.json";
     public const string StandardSchemaSha256 = "27fbfef7d11743adaa5f95b14e16b9f9e71fd9de522e3a9f7e22e62c12e88ddb";
-    public const string EditionManifestSha256 = "885cb5168dcdd528b53046c6e50fe65ca4ebd8aa903ea4867b4e78b12f92abea";
+    public const string EditionManifestSha256 = "22ef8a5347aaa2b430ff5fbca8495f54a0e078ffbcc12d92d9f38389a47fbe98";
     public const string EditionManifestSchemaPath = "schemas/standard-edition.schema.json";
     public const string EditionManifestSchemaSha256 = "eb12cb68f01bd03cb2c29ae549ca8d202a129f75c304ebcbf1b4e64a975048ef";
     public const string StandardPayloadSha256 = "0643a8067ed5684dcbaa29da5c9a206af813c142d1a7620bce2a81bddedd4b92";
-    public const string ConformanceCorpusSha256 = "19498f4987e2babde1e8151c9886bc74ac491aca44f5ecdfb7af6added24cc87";
-    public const string SignatureReference = "refs/tags/standard-v0.1.0-draft.2";
-    public const string SignatureSha256 = "607d32b380053b7cb2c748e0e81dd0d3dd943f2d9a71df7dc2ff8575fa88c865";
+    public const string ConformanceCorpusSha256 = "b4ab6783a4693069a9eb5f0f96f01f49ae70bf56bb10ba9d9499a5e9c4b554a2";
+    public const string SignatureReference = "refs/tags/standard-v0.1.0-rc.1";
+    public const string SignatureSha256 = "de2dc61fee3b0f4137612696b910d8e6b3455011bd46222d1a8a8cfb731ec844";
     public const string ProofProfile = "auditable";
     public const string SafeMutationContract = "specattest.manager-safe-mutation.v1";
 
