@@ -1,8 +1,14 @@
 # Workbench qualification against SpecAttest Standard 0.1.0-draft.1
 
-Status: **NOT READY**
+Original draft.1 status: **NOT READY**
 
 Qualification date: 2026-11-23/24 UTC
+
+Current follow-up status (2026-11-24 UTC): **DRAFT.2 QUALIFIED; RC EVIDENCE
+INCOMPLETE**. The original `0.1.0-draft.1` findings below are retained as the
+behavioral-review record. The draft.2 implementation, deployment, and package
+publication follow-ups close those findings except for one release-candidate
+evidence item described in **RC readiness double-check**.
 
 ## Qualification subjects
 
@@ -173,7 +179,7 @@ For `0.1.0-draft.2`, propose:
 
 These are proposals only; this qualification did not change the immutable draft.
 
-## Recommendation
+## Original draft.1 recommendation
 
 **NOT READY for SpecAttest Standard 0.1.0-rc.1.**
 
@@ -258,6 +264,70 @@ gate:
   Manager retained the qualified state across that service restart.
 
 The repo-local implementation gates and deployed immutable-tuple gates are now
-closed. The NuGet publication workflow remains separately blocked by an expired
-external API key (HTTP 403); this is a credential-rotation issue and does not
-change the qualified runtime or Standard contract.
+closed.
+
+### Distribution gate closure: 2026-11-24 UTC
+
+Workbench package publication no longer depends on the expired organization-wide
+NuGet API key. NuGet Trusted Publishing now grants a short-lived credential only
+to `incursa/workbench`, workflow `nuget-publish.yml`, for new versions of
+`Incursa.Workbench`.
+
+- Workbench PR `#622` merged the OIDC-based publishing workflow at main commit
+  `8523bd338745b65b5f4a4f8fe0c98e1c1cbd7c5b`.
+- GitHub Actions run `45452275174` completed successfully, including all six AOT
+  targets, release assembly, reporting, and the NuGet job.
+- NuGet accepted `Incursa.Workbench.2026.11.24.1066.nupkg` and its symbol
+  package. Both the NuGet flat-container and registration indexes subsequently
+  reported `2026.11.24.1066`, and the public package page returned HTTP 200.
+
+This closes the package-distribution gate without rotating or introducing a
+long-lived NuGet secret.
+
+## RC readiness double-check: 2026-11-24 UTC
+
+The draft.2 release explicitly records this known gap:
+
+> REST and MCP implementations must record their results against the shared
+> protocol vectors before release-candidate promotion.
+
+Here, **record their results** means retaining a machine-readable result matrix,
+with tool/version identity and a digest, showing that REST and MCP each produced
+the declared outcome for the five published safe-mutation vectors:
+
+| Published vector | Required REST result | Required MCP result |
+| --- | --- | --- |
+| `protocol-stale-commit` | rejected, no partial mutation | rejected, no partial mutation |
+| `protocol-atomic-failure` | rejected, no partial mutation | rejected, no partial mutation |
+| `protocol-deterministic-replay` | staged deterministically | staged deterministically |
+| `protocol-cancel` | canceled, no partial mutation | canceled, no partial mutation |
+| `protocol-resume` | committed atomically | committed atomically |
+
+This evidence does **not** require a persistent production credential, mutation
+of production data, Kubernetes, or a continuously running qualification job. An
+authenticated disposable integration environment is sufficient if it runs the
+frozen corpus bytes through the real REST and MCP bindings and retains the
+result artifact.
+
+Current evidence is strong but not identical to that requested artifact:
+
+- Workbench independently accepts all 20 frozen corpus cases.
+- Manager safe-mutation and intake-lifecycle REST/store tests collectively cover
+  stale rejection, atomic failure, deterministic replay, commit, cancel, and
+  resume behavior.
+- Manager MCP tests cover authenticated safe mutation, exact revision
+  preservation, deterministic replay, and commit.
+- The deployed Manager reports the exact draft.2 tuple and passed readiness and
+  restart qualification.
+
+The repositories do not yet contain one retained result artifact that executes
+all five frozen protocol vectors through **both** transport bindings and maps the
+observed results back to the corpus case names. Consequently:
+
+- `0.1.0-draft.2` is qualified for continued Workbench and Manager use.
+- Workbench implementation, Manager deployment, and package distribution are
+  not RC blockers.
+- Publishing `0.1.0-rc.1` should wait for the cross-transport result matrix,
+  its hash, and the normal candidate-edition validation and human approval.
+
+Current recommendation: **READY TO PREPARE RC; NOT YET READY TO PUBLISH RC.**
