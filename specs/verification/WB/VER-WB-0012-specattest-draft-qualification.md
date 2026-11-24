@@ -244,7 +244,7 @@ This closes the identified Workbench implementation gaps.
 The public Manager deployment subsequently closed the remaining deployed-tuple
 gate:
 
-- `https://spectrace.incursa.com/ready` returned HTTP 200.
+- `https://spectrace.incursa.com/health/ready` returned HTTP 200.
 - `/version` reported Manager `0.0.0-ci.165` from source
   `01df7945e11980bb68ac8132cb7dd2585b537f24` and the complete immutable
   `0.1.0-draft.2` tuple matched Workbench exactly.
@@ -253,8 +253,9 @@ gate:
   `8b61f54c67494f2ffeb1d3231dadd3066df5ff547b9cf2ea90652f08b5f4cdcb`.
 - Workbench `verify-corpus` passed all 20/20 published cases independently of
   the live Manager.
-- The Chromium sandbox qualification passed against the public host, and the
-  Manager retained the qualified state across a service restart.
+- The container's service identity launched sandboxed Chromium successfully,
+  the public readiness endpoint returned HTTP 200 after restart, and the
+  Manager retained the qualified state across that service restart.
 
 The repo-local implementation gates and deployed immutable-tuple gates are now
 closed. The NuGet publication workflow remains separately blocked by an expired
