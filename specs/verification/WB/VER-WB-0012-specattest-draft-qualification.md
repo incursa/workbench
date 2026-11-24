@@ -200,9 +200,44 @@ Workbench subsequently closed these adapter-specific gates on the
 - focused tests exercise pin drift rejection, all safe-mutation REST routes,
   atomic provider plan/apply, and exact revision/lineage round trips.
 
-This follow-up does **not** change the original NOT READY recommendation. The
-remaining Workbench gates are migration of Core/editor validation to the
-published Standard schema and an independent edition-manifest/canonical-payload
-and conformance-corpus runner. The complete cross-tool qualification must also
-be rerun against the immutable `0.1.0-draft.2` tuple after that edition and the
-corrected Manager build are published and deployed.
+### Draft.2 gate closure: 2026-11-24 UTC
+
+Workbench now pins the immutable `0.1.0-draft.2` edition tuple from
+`incursa/spec-trace@3dedb948549ee3bc07adc7360e80f9c4125076a0`. The model,
+manifest, manifest-schema, payload, corpus, signed-tag reference, and tag-object
+digests are asserted independently in the provider test suite.
+
+The remaining adapter-specific Workbench gates were closed as follows:
+
+- Core embeds the model schema from the frozen draft.2 commit. Canonical JSON
+  fixtures and the specification editor now require, load, preserve, and emit
+  each positive normative requirement `revision`; Manager `recordVersion`
+  remains a separate provider concurrency coordinate.
+- `workbench-specattest-provider verify-edition <root> <manifest>` independently
+  validates the edition-manifest schema, full trusted pin, manifest and schema
+  bytes, canonical requirement coordinates and digests, ordered payload digest,
+  validator roles, signed reference, and commit-addressed corpus archive.
+- `workbench-specattest-provider verify-corpus <directory>` evaluates all
+  versioning, pin-substitution, interchange, canonical-reordering, and safe
+  mutation vectors without requiring a live Manager.
+- The verifier accepted the exact frozen manifest (`885cb516...`) with 12
+  specifications, 235 requirement revisions, and all 20 corpus cases. Its
+  validation-subject digest was
+  `8b61f54c67494f2ffeb1d3231dadd3066df5ff547b9cf2ea90652f08b5f4cdcb`,
+  agreeing with the independent Standard validator.
+- Published protocol-vector tests cover stale and atomic rejection, deterministic
+  replay, cancel, resume, normative revision/storage-version divergence, and
+  canonical object-key reorder equivalence.
+
+Final Workbench gates for this follow-up passed:
+
+- `dotnet format Workbench.slnx --verify-no-changes`
+- `dotnet build Workbench.slnx -c Release --no-restore` with zero warnings and
+  errors
+- `dotnet test --solution Workbench.slnx -c Release --no-build --no-restore`
+  with 298/298 tests passed
+
+This closes the identified Workbench implementation gaps. Promotion to a
+release candidate still depends on the cross-tool qualification decision and
+the deployed Manager presenting and enforcing the same immutable draft.2 tuple;
+that deployment evidence is outside this repository-only follow-up.

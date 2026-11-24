@@ -663,7 +663,7 @@ public static partial class SpecAttestInterchangeValidator
             || !string.Equals(pin.ProofProfile, SpecAttestInterchangeContract.ProofProfile, StringComparison.Ordinal))
         {
             throw new ArgumentException(
-                "Standard pin must exactly match immutable SpecAttest Standard edition 0.1.0-draft.1, including its manifest, schemas, payload, corpus, signed tag, canonicalization, and profiles.",
+                "Standard pin must exactly match immutable SpecAttest Standard edition 0.1.0-draft.2, including its manifest, schemas, payload, corpus, signed tag, canonicalization, and profiles.",
                 nameof(pin));
         }
     }

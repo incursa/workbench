@@ -15,17 +15,17 @@ public static class SpecAttestInterchangeContract
     public const string PayloadMediaType = "application/vnd.specattest.interchange+zip";
     public const string ResourceType = "specattest_set";
     public const string StandardRepository = "https://github.com/incursa/spec-trace";
-    public const string StandardEdition = "0.1.0-draft.1";
-    public const string StandardCommit = "569569f7ffb2b68a45e4b5c3c276951404973470";
+    public const string StandardEdition = "0.1.0-draft.2";
+    public const string StandardCommit = "3dedb948549ee3bc07adc7360e80f9c4125076a0";
     public const string StandardSchemaPath = "model/model.schema.json";
     public const string StandardSchemaSha256 = "27fbfef7d11743adaa5f95b14e16b9f9e71fd9de522e3a9f7e22e62c12e88ddb";
-    public const string EditionManifestSha256 = "6b54ca666d90456ae7edb277114945fcc4163e6084a3f44e913fc19e40691fda";
+    public const string EditionManifestSha256 = "885cb5168dcdd528b53046c6e50fe65ca4ebd8aa903ea4867b4e78b12f92abea";
     public const string EditionManifestSchemaPath = "schemas/standard-edition.schema.json";
-    public const string EditionManifestSchemaSha256 = "456de53b5359691b21540bd2803529119930c0db507d760060a224f42e0a7364";
-    public const string StandardPayloadSha256 = "288593ff470fc5661a370c22377ec7c7503ae24a66f50e014e1f42b0426f3db4";
-    public const string ConformanceCorpusSha256 = "8d6a2d02d5293ca531aee9eaa9aff771dceb88d34f6d8dd45c396710e0881d33";
-    public const string SignatureReference = "refs/tags/standard-v0.1.0-draft.1";
-    public const string SignatureSha256 = "c0c4e93600a803a3c3f48780e307666cfd76f7122a155c19e416f21774f6d056";
+    public const string EditionManifestSchemaSha256 = "eb12cb68f01bd03cb2c29ae549ca8d202a129f75c304ebcbf1b4e64a975048ef";
+    public const string StandardPayloadSha256 = "0643a8067ed5684dcbaa29da5c9a206af813c142d1a7620bce2a81bddedd4b92";
+    public const string ConformanceCorpusSha256 = "19498f4987e2babde1e8151c9886bc74ac491aca44f5ecdfb7af6added24cc87";
+    public const string SignatureReference = "refs/tags/standard-v0.1.0-draft.2";
+    public const string SignatureSha256 = "607d32b380053b7cb2c748e0e81dd0d3dd943f2d9a71df7dc2ff8575fa88c865";
     public const string ProofProfile = "auditable";
     public const string SafeMutationContract = "specattest.manager-safe-mutation.v1";
 

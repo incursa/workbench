@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Workbench.SpecAttestProvider;
@@ -10,7 +11,11 @@ public static class SpecAttestCanonicalJson
     public static byte[] Serialize(JsonElement value)
     {
         ArrayBufferWriter<byte> buffer = new();
-        using (Utf8JsonWriter writer = new(buffer, new JsonWriterOptions { Indented = false }))
+        using (Utf8JsonWriter writer = new(buffer, new JsonWriterOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            Indented = false
+        }))
         {
             Write(value, writer);
         }

@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Workbench.Core\Workbench.Core.csproj" />
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 
 </Project>
