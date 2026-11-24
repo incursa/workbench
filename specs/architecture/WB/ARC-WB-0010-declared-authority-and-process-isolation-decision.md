@@ -23,8 +23,8 @@ related_artifacts:
 
 ## Decision ID and status
 
-Repository decision alias: `ADR-WB-PROVIDER-0001`  
-Status: accepted  
+Repository decision alias: `ADR-WB-PROVIDER-0001`
+Status: accepted
 Decision date: 2026-11-21
 
 Workbench records this decision as an `ARC-*` artifact because the current

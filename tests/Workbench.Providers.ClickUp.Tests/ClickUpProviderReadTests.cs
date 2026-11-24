@@ -7,7 +7,7 @@ namespace Workbench.Providers.ClickUp.Tests;
 public sealed class ClickUpProviderReadTests
 {
     [TestMethod]
-    public async Task CapabilitiesReflectExplicitModeAndSafeBatchLimit()
+    public async Task CapabilitiesReflectExplicitModeAndSafeBatchLimitAsync()
     {
         using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             throw new AssertFailedException("Capability discovery must not contact ClickUp.")));
@@ -29,7 +29,7 @@ public sealed class ClickUpProviderReadTests
     }
 
     [TestMethod]
-    public async Task ProtocolHandshakeReturnsClickUpCapabilities()
+    public async Task ProtocolHandshakeReturnsClickUpCapabilitiesAsync()
     {
         using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             throw new AssertFailedException("Handshake must not contact ClickUp.")));
@@ -57,7 +57,7 @@ public sealed class ClickUpProviderReadTests
     }
 
     [TestMethod]
-    public async Task GetMapsOnlyExecutionFieldsDeterministically()
+    public async Task GetMapsOnlyExecutionFieldsDeterministicallyAsync()
     {
         var handler = new StubHttpMessageHandler((request, _) =>
         {
@@ -91,7 +91,7 @@ public sealed class ClickUpProviderReadTests
     }
 
     [TestMethod]
-    public async Task QueryUsesOpaqueContinuationWithinClickUpPage()
+    public async Task QueryUsesOpaqueContinuationWithinClickUpPageAsync()
     {
         var pageJson = $$"""
             {
@@ -132,7 +132,7 @@ public sealed class ClickUpProviderReadTests
     }
 
     [TestMethod]
-    public async Task RateLimitFailureIsStructuredRetryableAndRedacted()
+    public async Task RateLimitFailureIsStructuredRetryableAndRedactedAsync()
     {
         var handler = new StubHttpMessageHandler((_, _) =>
         {
@@ -166,7 +166,7 @@ public sealed class ClickUpProviderReadTests
     }
 
     [TestMethod]
-    public async Task ValidationRejectsTamperedSnapshotCoordinates()
+    public async Task ValidationRejectsTamperedSnapshotCoordinatesAsync()
     {
         var handler = new StubHttpMessageHandler((_, _) =>
             ClickUpProviderTestSupport.Json(HttpStatusCode.OK, ClickUpProviderTestSupport.TaskJson()));

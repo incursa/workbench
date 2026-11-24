@@ -237,7 +237,26 @@ Final Workbench gates for this follow-up passed:
 - `dotnet test --solution Workbench.slnx -c Release --no-build --no-restore`
   with 298/298 tests passed
 
-This closes the identified Workbench implementation gaps. Promotion to a
-release candidate still depends on the cross-tool qualification decision and
-the deployed Manager presenting and enforcing the same immutable draft.2 tuple;
-that deployment evidence is outside this repository-only follow-up.
+This closes the identified Workbench implementation gaps.
+
+### Deployed cross-tool evidence: 2026-11-24 UTC
+
+The public Manager deployment subsequently closed the remaining deployed-tuple
+gate:
+
+- `https://spectrace.incursa.com/ready` returned HTTP 200.
+- `/version` reported Manager `0.0.0-ci.165` from source
+  `01df7945e11980bb68ac8132cb7dd2585b537f24` and the complete immutable
+  `0.1.0-draft.2` tuple matched Workbench exactly.
+- Workbench `verify-edition` passed the frozen bundle with 12 specifications,
+  235 requirement revisions, 20 corpus cases, and validation-subject digest
+  `8b61f54c67494f2ffeb1d3231dadd3066df5ff547b9cf2ea90652f08b5f4cdcb`.
+- Workbench `verify-corpus` passed all 20/20 published cases independently of
+  the live Manager.
+- The Chromium sandbox qualification passed against the public host, and the
+  Manager retained the qualified state across a service restart.
+
+The repo-local implementation gates and deployed immutable-tuple gates are now
+closed. The NuGet publication workflow remains separately blocked by an expired
+external API key (HTTP 403); this is a credential-rotation issue and does not
+change the qualified runtime or Standard contract.

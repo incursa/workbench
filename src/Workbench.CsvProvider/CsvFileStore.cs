@@ -106,30 +106,7 @@ internal sealed class CsvFileStore(CsvProviderOptions options, TimeProvider time
         string temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
         try
         {
-            using FileStream stream = new(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            using StreamWriter writer = new(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true))
-            {
-                NewLine = "\r\n"
-            };
-            using CsvWriter csv = new(writer, CreateWriterConfiguration());
-            foreach (string header in headers)
-            {
-                csv.WriteField(header);
-            }
-
-            csv.NextRecord();
-            foreach (IReadOnlyDictionary<string, string> row in materializedRows)
-            {
-                foreach (string header in headers)
-                {
-                    csv.WriteField(row.TryGetValue(header, out string? value) ? value : string.Empty);
-                }
-
-                csv.NextRecord();
-            }
-
-            writer.Flush();
-            stream.Flush(flushToDisk: true);
+            WriteTemporaryFile(temporaryPath, headers, materializedRows);
             File.Move(temporaryPath, path, overwrite: true);
         }
         finally
@@ -139,6 +116,37 @@ internal sealed class CsvFileStore(CsvProviderOptions options, TimeProvider time
                 File.Delete(temporaryPath);
             }
         }
+    }
+
+    private static void WriteTemporaryFile(
+        string temporaryPath,
+        IReadOnlyList<string> headers,
+        IReadOnlyList<IReadOnlyDictionary<string, string>> rows)
+    {
+        using FileStream stream = new(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        using StreamWriter writer = new(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true))
+        {
+            NewLine = "\r\n"
+        };
+        using CsvWriter csv = new(writer, CreateWriterConfiguration());
+        foreach (string header in headers)
+        {
+            csv.WriteField(header);
+        }
+
+        csv.NextRecord();
+        foreach (IReadOnlyDictionary<string, string> row in rows)
+        {
+            foreach (string header in headers)
+            {
+                csv.WriteField(row.TryGetValue(header, out string? value) ? value : string.Empty);
+            }
+
+            csv.NextRecord();
+        }
+
+        writer.Flush();
+        stream.Flush(flushToDisk: true);
     }
 
     public ResourceSnapshot CreateSnapshot(string resourceType, CsvTable table, bool authoritative)

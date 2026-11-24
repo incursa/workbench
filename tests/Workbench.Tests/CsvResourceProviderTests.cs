@@ -170,7 +170,7 @@ public sealed class CsvResourceProviderTests
     }
 
     [TestMethod]
-    public void Projection_RejectsStaleCoordinatesAndDoesNotInferEditsAsync()
+    public void Projection_RejectsStaleCoordinatesAndDoesNotInferEdits()
     {
         using TempDirectory directory = new();
         ResourceDocument resource = CreateDocument(
