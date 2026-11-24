@@ -10,6 +10,12 @@
   "$defs": {
     "protocolVersion": { "const": "workbench.resource-provider.v1" },
     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "nullableSha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/sha256" }
+      ]
+    },
     "nullableString": { "type": ["string", "null"] },
     "operation": {
       "enum": ["handshake", "query", "get", "validate", "planChanges", "applyChanges", "health"]
@@ -181,7 +187,21 @@
         "schemaPath": { "type": "string", "minLength": 1 },
         "schemaSha256": { "$ref": "#/$defs/sha256" },
         "canonicalization": { "type": "string", "minLength": 1 },
-        "profile": { "$ref": "#/$defs/nullableString" }
+        "profile": { "$ref": "#/$defs/nullableString" },
+        "editionManifestSha256": { "$ref": "#/$defs/nullableSha256" },
+        "editionManifestSchemaPath": { "$ref": "#/$defs/nullableString" },
+        "editionManifestSchemaSha256": { "$ref": "#/$defs/nullableSha256" },
+        "payloadSha256": { "$ref": "#/$defs/nullableSha256" },
+        "conformanceCorpusSha256": { "$ref": "#/$defs/nullableSha256" },
+        "signatureReference": { "$ref": "#/$defs/nullableString" },
+        "signatureSha256": { "$ref": "#/$defs/nullableSha256" },
+        "canonicalProfiles": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+          ]
+        },
+        "proofProfile": { "$ref": "#/$defs/nullableString" }
       }
     },
     "provenance": {

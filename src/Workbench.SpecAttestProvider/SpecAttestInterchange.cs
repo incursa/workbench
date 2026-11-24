@@ -549,23 +549,49 @@ public static partial class SpecAttestInterchangeValidator
     {
         ArgumentNullException.ThrowIfNull(pin);
         if (!string.Equals(pin.Contract, SpecAttestInterchangeContract.StandardPinContract, StringComparison.Ordinal)
-            || string.IsNullOrWhiteSpace(pin.Repository)
-            || string.IsNullOrWhiteSpace(pin.Edition)
-            || !CommitSha().IsMatch(pin.Revision)
-            || string.IsNullOrWhiteSpace(pin.SchemaPath)
-            || !Sha256().IsMatch(pin.SchemaSha256)
+            || !string.Equals(pin.Repository, SpecAttestInterchangeContract.StandardRepository, StringComparison.Ordinal)
+            || !string.Equals(pin.Edition, SpecAttestInterchangeContract.StandardEdition, StringComparison.Ordinal)
+            || !string.Equals(pin.Revision, SpecAttestInterchangeContract.StandardCommit, StringComparison.Ordinal)
+            || !string.Equals(pin.SchemaPath, SpecAttestInterchangeContract.StandardSchemaPath, StringComparison.Ordinal)
+            || !string.Equals(pin.SchemaSha256, SpecAttestInterchangeContract.StandardSchemaSha256, StringComparison.Ordinal)
+            || !string.Equals(pin.EditionManifestSha256, SpecAttestInterchangeContract.EditionManifestSha256, StringComparison.Ordinal)
+            || !string.Equals(pin.EditionManifestSchemaPath, SpecAttestInterchangeContract.EditionManifestSchemaPath, StringComparison.Ordinal)
+            || !string.Equals(pin.EditionManifestSchemaSha256, SpecAttestInterchangeContract.EditionManifestSchemaSha256, StringComparison.Ordinal)
+            || !string.Equals(pin.PayloadSha256, SpecAttestInterchangeContract.StandardPayloadSha256, StringComparison.Ordinal)
+            || !string.Equals(pin.ConformanceCorpusSha256, SpecAttestInterchangeContract.ConformanceCorpusSha256, StringComparison.Ordinal)
+            || !string.Equals(pin.SignatureReference, SpecAttestInterchangeContract.SignatureReference, StringComparison.Ordinal)
+            || !string.Equals(pin.SignatureSha256, SpecAttestInterchangeContract.SignatureSha256, StringComparison.Ordinal)
             || !string.Equals(pin.Canonicalization, SpecAttestInterchangeContract.Canonicalization, StringComparison.Ordinal)
-            || pin.Profile is not ("core" or "traceable" or "auditable"))
+            || pin.Profile is not ("core" or "traceable" or "auditable")
+            || pin.CanonicalProfiles is null
+            || !pin.CanonicalProfiles.SequenceEqual(["core", "traceable", "auditable"], StringComparer.Ordinal)
+            || !string.Equals(pin.ProofProfile, SpecAttestInterchangeContract.ProofProfile, StringComparison.Ordinal))
         {
             throw new ArgumentException(
-                "Standard pin must use specattest.standard-pin.v1 with an exact commit, schema digest, canonicalization, and canonical profile.",
+                "Standard pin must exactly match immutable SpecAttest Standard edition 0.1.0-draft.1, including its manifest, schemas, payload, corpus, signed tag, canonicalization, and profiles.",
                 nameof(pin));
         }
     }
 
     private static bool PinsEqual(ResourceCompatibilityPin left, ResourceCompatibilityPin right)
     {
-        return left == right;
+        return string.Equals(left.Contract, right.Contract, StringComparison.Ordinal)
+            && string.Equals(left.Repository, right.Repository, StringComparison.Ordinal)
+            && string.Equals(left.Edition, right.Edition, StringComparison.Ordinal)
+            && string.Equals(left.Revision, right.Revision, StringComparison.Ordinal)
+            && string.Equals(left.SchemaPath, right.SchemaPath, StringComparison.Ordinal)
+            && string.Equals(left.SchemaSha256, right.SchemaSha256, StringComparison.Ordinal)
+            && string.Equals(left.Canonicalization, right.Canonicalization, StringComparison.Ordinal)
+            && string.Equals(left.Profile, right.Profile, StringComparison.Ordinal)
+            && string.Equals(left.EditionManifestSha256, right.EditionManifestSha256, StringComparison.Ordinal)
+            && string.Equals(left.EditionManifestSchemaPath, right.EditionManifestSchemaPath, StringComparison.Ordinal)
+            && string.Equals(left.EditionManifestSchemaSha256, right.EditionManifestSchemaSha256, StringComparison.Ordinal)
+            && string.Equals(left.PayloadSha256, right.PayloadSha256, StringComparison.Ordinal)
+            && string.Equals(left.ConformanceCorpusSha256, right.ConformanceCorpusSha256, StringComparison.Ordinal)
+            && string.Equals(left.SignatureReference, right.SignatureReference, StringComparison.Ordinal)
+            && string.Equals(left.SignatureSha256, right.SignatureSha256, StringComparison.Ordinal)
+            && (left.CanonicalProfiles ?? []).SequenceEqual(right.CanonicalProfiles ?? [], StringComparer.Ordinal)
+            && string.Equals(left.ProofProfile, right.ProofProfile, StringComparison.Ordinal);
     }
 
     private static void ValidateSource(

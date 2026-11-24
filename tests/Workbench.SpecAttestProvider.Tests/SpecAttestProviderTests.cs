@@ -35,6 +35,25 @@ public sealed class SpecAttestProviderTests
     }
 
     [TestMethod]
+    public void Options_RequireTheCompleteImmutablePublishedEditionTuple()
+    {
+        CreateOptions().Validate();
+
+        Assert.Throws<ArgumentException>(() => (CreateOptions() with
+        {
+            StandardPin = CreatePin() with { Revision = "main" }
+        }).Validate());
+        Assert.Throws<ArgumentException>(() => (CreateOptions() with
+        {
+            StandardPin = CreatePin() with { PayloadSha256 = new string('0', 64) }
+        }).Validate());
+        Assert.Throws<ArgumentException>(() => (CreateOptions() with
+        {
+            StandardPin = CreatePin() with { SignatureReference = "refs/heads/main" }
+        }).Validate());
+    }
+
+    [TestMethod]
     public async Task ManagerClient_ReadsCanonicalExportAndUsesBearerAuthenticationAsync()
     {
         RecordingHandler handler = new(CreateManagerExportJson());
@@ -95,7 +114,12 @@ public sealed class SpecAttestProviderTests
 
         Assert.HasCount(1, first.Resources);
         Assert.AreEqual(first.Resources[0].PayloadSha256, second.Resources[0].PayloadSha256);
-        Assert.AreEqual(CreatePin(), first.Resources[0].CompatibilityPin);
+        ResourceCompatibilityPin actualPin = first.Resources[0].CompatibilityPin
+            ?? throw new AssertFailedException("The exported resource did not retain its Standard pin.");
+        Assert.AreEqual(CreatePin().Revision, actualPin.Revision);
+        CollectionAssert.AreEqual(
+            CreatePin().CanonicalProfiles!.ToArray(),
+            actualPin.CanonicalProfiles!.ToArray());
         Assert.HasCount(1, first.Diagnostics);
         Assert.AreEqual("specattest.validation.not-attested", first.Diagnostics[0].Code);
         CollectionAssert.AreEqual(
@@ -118,6 +142,15 @@ public sealed class SpecAttestProviderTests
                 "REQ-DEMO-0001",
                 StringComparison.Ordinal))
             .CanonicalContent.TryGetProperty("x_extension", out _));
+        JsonElement requirement = package.Entries.Single(entry => string.Equals(
+                entry.StableId,
+                "REQ-DEMO-0001",
+                StringComparison.Ordinal))
+            .CanonicalContent;
+        Assert.AreEqual(7, requirement.GetProperty("revision").GetInt32());
+        Assert.AreEqual(
+            "REQ-DEMO-LEGACY-0001",
+            requirement.GetProperty("trace").GetProperty("supersedes")[0].GetString());
 
         byte[] firstArchive = SpecAttestInterchange.BuildPayloadArchive(package);
         byte[] secondArchive = SpecAttestInterchange.BuildPayloadArchive(package);
@@ -319,15 +352,7 @@ public sealed class SpecAttestProviderTests
 
     private static ResourceCompatibilityPin CreatePin()
     {
-        return new ResourceCompatibilityPin(
-            SpecAttestInterchangeContract.StandardPinContract,
-            "https://github.com/incursa/spec-trace",
-            "test-fixture",
-            new string('a', 40),
-            "model/model.schema.json",
-            new string('b', 64),
-            SpecAttestInterchangeContract.Canonicalization,
-            "core");
+        return SpecAttestInterchangeContract.StandardPin("core");
     }
 
     private static SpecAttestManagerExport CreateManagerExport()
@@ -354,8 +379,10 @@ public sealed class SpecAttestProviderTests
               "requirements": [
                 {
                   "id": "REQ-DEMO-0001",
+                  "revision": 7,
                   "title": "Preserve extensions",
                   "statement": "The adapter MUST preserve extension fields.",
+                  "trace": { "supersedes": ["REQ-DEMO-LEGACY-0001"] },
                   "x_extension": { "value": 1 }
                 }
               ],

@@ -13,6 +13,38 @@ public static class SpecAttestInterchangeContract
     public const string Canonicalization = "utf8-json-sorted-object-keys-v1";
     public const string PayloadMediaType = "application/vnd.specattest.interchange+zip";
     public const string ResourceType = "specattest_set";
+    public const string StandardRepository = "https://github.com/incursa/spec-trace";
+    public const string StandardEdition = "0.1.0-draft.1";
+    public const string StandardCommit = "569569f7ffb2b68a45e4b5c3c276951404973470";
+    public const string StandardSchemaPath = "model/model.schema.json";
+    public const string StandardSchemaSha256 = "27fbfef7d11743adaa5f95b14e16b9f9e71fd9de522e3a9f7e22e62c12e88ddb";
+    public const string EditionManifestSha256 = "6b54ca666d90456ae7edb277114945fcc4163e6084a3f44e913fc19e40691fda";
+    public const string EditionManifestSchemaPath = "schemas/standard-edition.schema.json";
+    public const string EditionManifestSchemaSha256 = "456de53b5359691b21540bd2803529119930c0db507d760060a224f42e0a7364";
+    public const string StandardPayloadSha256 = "288593ff470fc5661a370c22377ec7c7503ae24a66f50e014e1f42b0426f3db4";
+    public const string ConformanceCorpusSha256 = "8d6a2d02d5293ca531aee9eaa9aff771dceb88d34f6d8dd45c396710e0881d33";
+    public const string SignatureReference = "refs/tags/standard-v0.1.0-draft.1";
+    public const string SignatureSha256 = "c0c4e93600a803a3c3f48780e307666cfd76f7122a155c19e416f21774f6d056";
+    public const string ProofProfile = "auditable";
+
+    public static ResourceCompatibilityPin StandardPin(string profile = "auditable") => new(
+        StandardPinContract,
+        StandardRepository,
+        StandardEdition,
+        StandardCommit,
+        StandardSchemaPath,
+        StandardSchemaSha256,
+        Canonicalization,
+        profile,
+        EditionManifestSha256,
+        EditionManifestSchemaPath,
+        EditionManifestSchemaSha256,
+        StandardPayloadSha256,
+        ConformanceCorpusSha256,
+        SignatureReference,
+        SignatureSha256,
+        ["core", "traceable", "auditable"],
+        ProofProfile);
 }
 
 public sealed record SpecAttestInterchangePackage(

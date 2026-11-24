@@ -129,7 +129,16 @@ public sealed record ResourceCompatibilityPin(
     string SchemaPath,
     string SchemaSha256,
     string Canonicalization,
-    string? Profile);
+    string? Profile,
+    string? EditionManifestSha256 = null,
+    string? EditionManifestSchemaPath = null,
+    string? EditionManifestSchemaSha256 = null,
+    string? PayloadSha256 = null,
+    string? ConformanceCorpusSha256 = null,
+    string? SignatureReference = null,
+    string? SignatureSha256 = null,
+    IReadOnlyList<string>? CanonicalProfiles = null,
+    string? ProofProfile = null);
 
 /// <summary>Provenance retained whenever a resource crosses an authority boundary.</summary>
 public sealed record ResourceProvenance(
