@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json.Nodes;
 using Workbench.Core;
 
 #pragma warning disable MA0048 // Interface and HTTP implementation form one endpoint boundary.
@@ -8,12 +10,40 @@ namespace Workbench.SpecAttestProvider;
 
 public interface ISpecAttestManagerClient
 {
+    Task VerifyStandardPinAsync(CancellationToken cancellationToken = default);
+
+    Task<SpecAttestSafeMutationCapabilities> GetSafeMutationCapabilitiesAsync(
+        CancellationToken cancellationToken = default);
+
     Task<SpecAttestManagerExport> GetCanonicalExportAsync(
         string projectId,
         CancellationToken cancellationToken = default);
 
     Task<SpecAttestManagerStatus> GetStatusAsync(
         bool deep,
+        CancellationToken cancellationToken = default);
+
+    Task<SpecAttestSafeMutationOperation> StageSafeMutationAsync(
+        string projectId,
+        JsonElement stageRequest,
+        string idempotencyKey,
+        CancellationToken cancellationToken = default);
+
+    Task<JsonElement> GetIntakePackageAsync(
+        string projectId,
+        CancellationToken cancellationToken = default);
+
+    Task<SpecAttestSafeMutationOperation> GetSafeMutationAsync(
+        string projectId,
+        string importRunId,
+        CancellationToken cancellationToken = default);
+
+    Task<SpecAttestSafeMutationOperation> ExecuteSafeMutationAsync(
+        string projectId,
+        string importRunId,
+        string operation,
+        long expectedProjectVersion,
+        long expectedOperationVersion,
         CancellationToken cancellationToken = default);
 }
 
@@ -35,6 +65,7 @@ public sealed class SpecAttestManagerClient : ISpecAttestManagerClient
         string projectId,
         CancellationToken cancellationToken = default)
     {
+        await this.VerifyStandardPinAsync(cancellationToken).ConfigureAwait(false);
         using HttpRequestMessage request = this.CreateRequest(
             HttpMethod.Get,
             $"api/v1/projects/{Uri.EscapeDataString(projectId)}/canonical-export");
@@ -56,6 +87,144 @@ public sealed class SpecAttestManagerClient : ISpecAttestManagerClient
             recordVersion,
             updatedAt,
             root.Clone());
+    }
+
+    public async Task VerifyStandardPinAsync(CancellationToken cancellationToken = default)
+    {
+        using HttpRequestMessage request = this.CreateRequest(HttpMethod.Get, "version");
+        using HttpResponseMessage response = await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response);
+        using JsonDocument document = await ReadJsonAsync(response, cancellationToken).ConfigureAwait(false);
+        if (!document.RootElement.TryGetProperty("standardPin", out JsonElement pin)
+            || pin.ValueKind != JsonValueKind.Object
+            || !SpecAttestInterchangeContract.MatchesManagerPin(pin, this.options.StandardPin))
+        {
+            throw Failure(
+                "specattest.manager.standard-pin.conflict",
+                "SpecAttest Manager does not advertise the exact configured immutable Standard pin.");
+        }
+    }
+
+    public async Task<SpecAttestSafeMutationCapabilities> GetSafeMutationCapabilitiesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        using HttpRequestMessage request = this.CreateRequest(HttpMethod.Get, "api/v1/interoperability/specattest");
+        using HttpResponseMessage response = await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response);
+        using JsonDocument document = await ReadJsonAsync(response, cancellationToken).ConfigureAwait(false);
+        JsonElement root = document.RootElement;
+        if (!root.TryGetProperty("standardPin", out JsonElement pin)
+            || !SpecAttestInterchangeContract.MatchesManagerPin(pin, this.options.StandardPin))
+        {
+            throw Failure(
+                "specattest.manager.standard-pin.conflict",
+                "SpecAttest safe-mutation capabilities do not match the configured immutable Standard pin.");
+        }
+
+        string contract = RequiredText(root, "contract");
+        string[] operations = RequiredStringArray(root, "operations");
+        SpecAttestSafeMutationCapabilities capabilities = new(
+            contract,
+            operations,
+            RequiredBoolean(root, "idempotencyKeysRequired"),
+            RequiredBoolean(root, "expectedVersionsRequired"),
+            RequiredBoolean(root, "atomicCommit"),
+            RequiredBoolean(root, "automaticMerge"),
+            RequiredBoolean(root, "immutableAuditAndVersions"),
+            RequiredBoolean(root, "deterministicRetry"));
+        if (!string.Equals(contract, SpecAttestInterchangeContract.SafeMutationContract, StringComparison.Ordinal)
+            || !operations.SequenceEqual(["stage", "inspect", "commit", "cancel", "resume"], StringComparer.Ordinal)
+            || !capabilities.IdempotencyKeysRequired
+            || !capabilities.ExpectedVersionsRequired
+            || !capabilities.AtomicCommit
+            || capabilities.AutomaticMerge
+            || !capabilities.ImmutableAuditAndVersions
+            || !capabilities.DeterministicRetry)
+        {
+            throw Failure(
+                "specattest.manager.safe-mutation.incompatible",
+                "SpecAttest Manager does not advertise the required safe-mutation guarantees.");
+        }
+
+        return capabilities;
+    }
+
+    public async Task<SpecAttestSafeMutationOperation> StageSafeMutationAsync(
+        string projectId,
+        JsonElement stageRequest,
+        string idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            throw new ArgumentException("An idempotency key is required.", nameof(idempotencyKey));
+        }
+
+        await this.GetSafeMutationCapabilitiesAsync(cancellationToken).ConfigureAwait(false);
+        using HttpRequestMessage request = this.CreateRequest(
+            HttpMethod.Post,
+            $"api/v1/projects/{Uri.EscapeDataString(projectId)}/interoperability/specattest/mutations/stage");
+        request.Headers.Add("Idempotency-Key", idempotencyKey);
+        request.Content = JsonContent.Create(stageRequest);
+        using HttpResponseMessage response = await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response);
+        return await ParseOperationAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<JsonElement> GetIntakePackageAsync(
+        string projectId,
+        CancellationToken cancellationToken = default)
+    {
+        await this.VerifyStandardPinAsync(cancellationToken).ConfigureAwait(false);
+        using HttpRequestMessage request = this.CreateRequest(
+            HttpMethod.Get,
+            $"api/v1/projects/{Uri.EscapeDataString(projectId)}/intake-packages/export");
+        using HttpResponseMessage response = await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response);
+        using JsonDocument document = await ReadJsonAsync(response, cancellationToken).ConfigureAwait(false);
+        return document.RootElement.Clone();
+    }
+
+    public async Task<SpecAttestSafeMutationOperation> GetSafeMutationAsync(
+        string projectId,
+        string importRunId,
+        CancellationToken cancellationToken = default)
+    {
+        using HttpRequestMessage request = this.CreateRequest(
+            HttpMethod.Get,
+            $"api/v1/projects/{Uri.EscapeDataString(projectId)}/interoperability/specattest/mutations/{Uri.EscapeDataString(importRunId)}");
+        using HttpResponseMessage response = await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response);
+        return await ParseOperationAsync(response, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<SpecAttestSafeMutationOperation> ExecuteSafeMutationAsync(
+        string projectId,
+        string importRunId,
+        string operation,
+        long expectedProjectVersion,
+        long expectedOperationVersion,
+        CancellationToken cancellationToken = default)
+    {
+        if (operation is not ("commit" or "cancel" or "resume"))
+        {
+            throw new ArgumentException("Operation must be commit, cancel, or resume.", nameof(operation));
+        }
+
+        JsonObject command = new()
+        {
+            ["contract"] = SpecAttestInterchangeContract.SafeMutationContract,
+            ["standardPin"] = SpecAttestInterchangeContract.ManagerPin(this.options.StandardPin),
+            ["expectedProjectVersion"] = expectedProjectVersion,
+            ["expectedOperationVersion"] = expectedOperationVersion
+        };
+        using HttpRequestMessage request = this.CreateRequest(
+            HttpMethod.Post,
+            $"api/v1/projects/{Uri.EscapeDataString(projectId)}/interoperability/specattest/mutations/{Uri.EscapeDataString(importRunId)}/{operation}");
+        request.Content = JsonContent.Create(command);
+        using HttpResponseMessage response = await this.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        EnsureSuccess(response);
+        return await ParseOperationAsync(response, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<SpecAttestManagerStatus> GetStatusAsync(
@@ -103,14 +272,21 @@ public sealed class SpecAttestManagerClient : ISpecAttestManagerClient
             using HttpResponseMessage versionResponse = await this.SendAsync(versionRequest, cancellationToken).ConfigureAwait(false);
             if (versionResponse.IsSuccessStatusCode)
             {
-                using Stream stream = await versionResponse.Content
-                    .ReadAsStreamAsync(cancellationToken)
-                    .ConfigureAwait(false);
-                using JsonDocument document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+                using JsonDocument document = await ReadJsonAsync(versionResponse, cancellationToken).ConfigureAwait(false);
                 if (document.RootElement.TryGetProperty("version", out JsonElement value)
                     && value.ValueKind == JsonValueKind.String)
                 {
                     version = value.GetString() ?? version;
+                }
+
+                if (!document.RootElement.TryGetProperty("standardPin", out JsonElement pin)
+                    || !SpecAttestInterchangeContract.MatchesManagerPin(pin, this.options.StandardPin))
+                {
+                    diagnostics.Add(new ProviderDiagnostic(
+                        "specattest.manager.standard-pin.conflict",
+                        ProviderDiagnosticSeverity.Error,
+                        "SpecAttest Manager does not advertise the configured immutable Standard pin.",
+                        this.options.Endpoint.ToString()));
                 }
             }
             else
@@ -217,6 +393,50 @@ public sealed class SpecAttestManagerClient : ISpecAttestManagerClient
             ? result
             : throw new JsonException($"SpecAttest response is missing date-time '{propertyName}'.");
     }
+
+    private static bool RequiredBoolean(JsonElement value, string propertyName)
+    {
+        return value.TryGetProperty(propertyName, out JsonElement property)
+            && property.ValueKind is JsonValueKind.True or JsonValueKind.False
+            ? property.GetBoolean()
+            : throw new JsonException($"SpecAttest response is missing boolean '{propertyName}'.");
+    }
+
+    private static string[] RequiredStringArray(JsonElement value, string propertyName)
+    {
+        return value.TryGetProperty(propertyName, out JsonElement property)
+            && property.ValueKind == JsonValueKind.Array
+            && property.EnumerateArray().All(static item => item.ValueKind == JsonValueKind.String)
+            ? property.EnumerateArray().Select(static item => item.GetString()!).ToArray()
+            : throw new JsonException($"SpecAttest response is missing string array '{propertyName}'.");
+    }
+
+    private static async Task<JsonDocument> ReadJsonAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<SpecAttestSafeMutationOperation> ParseOperationAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        using JsonDocument document = await ReadJsonAsync(response, cancellationToken).ConfigureAwait(false);
+        JsonElement root = document.RootElement;
+        return new SpecAttestSafeMutationOperation(
+            RequiredText(root, "importRunId"),
+            RequiredText(root, "projectId"),
+            RequiredText(root, "status"),
+            RequiredInt64(root, "recordVersion"),
+            RequiredInt64(root, "expectedProjectVersion"),
+            RequiredText(root, "requestDigest"),
+            root.Clone());
+    }
+
+    private static ResourceProviderProtocolException Failure(string code, string message)
+        => new(new ProviderError(code, message), [new ProviderDiagnostic(code, ProviderDiagnosticSeverity.Error, message)]);
 }
 
 #pragma warning restore MA0048

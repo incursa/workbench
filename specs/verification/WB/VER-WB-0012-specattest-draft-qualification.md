@@ -178,3 +178,31 @@ These are proposals only; this qualification did not change the immutable draft.
 **NOT READY for SpecAttest Standard 0.1.0-rc.1.**
 
 The gates are: migrate Workbench Core to the published schema; implement independent edition/corpus validation; implement Standard import/export round trips; implement and qualify REST safe mutation in Workbench; fix Manager revision preservation and timestamp-independent idempotent replay; add the missing interoperability/conformance fixtures; then rerun full Workbench formatting, Release build, tests, Spec Trace validation, and quality evidence with a clean worktree.
+
+## Implementation follow-up: 2026-11-24 UTC
+
+Workbench subsequently closed these adapter-specific gates on the
+`codex/specattest-draft2-gates` branch as a follow-up to
+[WI-WB-0029](../../work-items/WB/WI-WB-0029-first-party-resource-provider-adapters.md):
+
+- canonical Manager and intake reads now verify the live `/version` Standard
+  pin against every configured immutable coordinate before accepting content;
+- the Manager client verifies the deployed safe-mutation capability contract
+  and implements REST stage, inspect, commit, cancel, and resume;
+- Manager-authority provider planning requires the exact authority epoch,
+  project version, attested interchange payload, and unchanged artifact set;
+- apply uses Manager intake concurrency coordinates and the staged atomic
+  safe-mutation contract;
+- the intake mapping sends the normative top-level requirement `revision`
+  independently from Manager `recordVersion`;
+- deterministic ZIP import/export now rejects noncanonical or digest-mismatched
+  archives and round-trips exact revision and `trace.supersedes`; and
+- focused tests exercise pin drift rejection, all safe-mutation REST routes,
+  atomic provider plan/apply, and exact revision/lineage round trips.
+
+This follow-up does **not** change the original NOT READY recommendation. The
+remaining Workbench gates are migration of Core/editor validation to the
+published Standard schema and an independent edition-manifest/canonical-payload
+and conformance-corpus runner. The complete cross-tool qualification must also
+be rerun against the immutable `0.1.0-draft.2` tuple after that edition and the
+corrected Manager build are published and deployed.

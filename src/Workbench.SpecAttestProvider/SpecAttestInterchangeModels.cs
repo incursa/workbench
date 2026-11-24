@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Workbench.Core;
 
@@ -26,6 +27,7 @@ public static class SpecAttestInterchangeContract
     public const string SignatureReference = "refs/tags/standard-v0.1.0-draft.1";
     public const string SignatureSha256 = "c0c4e93600a803a3c3f48780e307666cfd76f7122a155c19e416f21774f6d056";
     public const string ProofProfile = "auditable";
+    public const string SafeMutationContract = "specattest.manager-safe-mutation.v1";
 
     public static ResourceCompatibilityPin StandardPin(string profile = "auditable") => new(
         StandardPinContract,
@@ -45,6 +47,63 @@ public static class SpecAttestInterchangeContract
         SignatureSha256,
         ["core", "traceable", "auditable"],
         ProofProfile);
+
+    public static bool MatchesManagerPin(JsonElement pin, ResourceCompatibilityPin expected)
+    {
+        ArgumentNullException.ThrowIfNull(expected);
+        return string.Equals(Text(pin, "contract"), expected.Contract, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "repository"), expected.Repository, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "edition"), expected.Edition, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "commit"), expected.Revision, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "schemaPath"), expected.SchemaPath, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "schemaSha256"), expected.SchemaSha256, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "editionManifestSha256"), expected.EditionManifestSha256, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "editionManifestSchemaPath"), expected.EditionManifestSchemaPath, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "editionManifestSchemaSha256"), expected.EditionManifestSchemaSha256, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "payloadSha256"), expected.PayloadSha256, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "conformanceCorpusSha256"), expected.ConformanceCorpusSha256, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "signatureReference"), expected.SignatureReference, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "signatureSha256"), expected.SignatureSha256, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "canonicalization"), expected.Canonicalization, StringComparison.Ordinal)
+            && string.Equals(Text(pin, "proofProfile"), expected.ProofProfile, StringComparison.Ordinal)
+            && pin.TryGetProperty("canonicalProfiles", out JsonElement profiles)
+            && profiles.ValueKind == JsonValueKind.Array
+            && profiles.EnumerateArray().Select(static item => item.GetString()).SequenceEqual(
+                expected.CanonicalProfiles ?? [],
+                StringComparer.Ordinal);
+    }
+
+    public static JsonObject ManagerPin(ResourceCompatibilityPin pin)
+    {
+        ArgumentNullException.ThrowIfNull(pin);
+        SpecAttestInterchangeValidator.ValidatePin(pin);
+        return new JsonObject
+        {
+            ["contract"] = pin.Contract,
+            ["repository"] = pin.Repository,
+            ["edition"] = pin.Edition,
+            ["commit"] = pin.Revision,
+            ["schemaPath"] = pin.SchemaPath,
+            ["schemaSha256"] = pin.SchemaSha256,
+            ["editionManifestSha256"] = pin.EditionManifestSha256,
+            ["editionManifestSchemaPath"] = pin.EditionManifestSchemaPath,
+            ["editionManifestSchemaSha256"] = pin.EditionManifestSchemaSha256,
+            ["payloadSha256"] = pin.PayloadSha256,
+            ["conformanceCorpusSha256"] = pin.ConformanceCorpusSha256,
+            ["signatureReference"] = pin.SignatureReference,
+            ["signatureSha256"] = pin.SignatureSha256,
+            ["canonicalization"] = pin.Canonicalization,
+            ["canonicalProfiles"] = new JsonArray((pin.CanonicalProfiles ?? [])
+                .Select(static profile => (JsonNode?)JsonValue.Create(profile)).ToArray()),
+            ["proofProfile"] = pin.ProofProfile
+        };
+    }
+
+    private static string? Text(JsonElement value, string propertyName)
+        => value.TryGetProperty(propertyName, out JsonElement property)
+            && property.ValueKind == JsonValueKind.String
+            ? property.GetString()
+            : null;
 }
 
 public sealed record SpecAttestInterchangePackage(
@@ -127,5 +186,24 @@ public sealed record SpecAttestManagerStatus(
     ProviderHealthState State,
     string Version,
     IReadOnlyList<ProviderDiagnostic> Diagnostics);
+
+public sealed record SpecAttestSafeMutationCapabilities(
+    string Contract,
+    IReadOnlyList<string> Operations,
+    bool IdempotencyKeysRequired,
+    bool ExpectedVersionsRequired,
+    bool AtomicCommit,
+    bool AutomaticMerge,
+    bool ImmutableAuditAndVersions,
+    bool DeterministicRetry);
+
+public sealed record SpecAttestSafeMutationOperation(
+    string ImportRunId,
+    string ProjectId,
+    string Status,
+    long RecordVersion,
+    long ExpectedProjectVersion,
+    string RequestDigest,
+    JsonElement Content);
 
 #pragma warning restore MA0048

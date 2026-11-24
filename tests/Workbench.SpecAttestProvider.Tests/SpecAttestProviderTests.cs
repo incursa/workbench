@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.Json.Nodes;
 using Workbench.Core;
 using Workbench.SpecAttestProvider;
 
@@ -56,7 +57,11 @@ public sealed class SpecAttestProviderTests
     [TestMethod]
     public async Task ManagerClient_ReadsCanonicalExportAndUsesBearerAuthenticationAsync()
     {
-        RecordingHandler handler = new(CreateManagerExportJson());
+        RecordingHandler handler = new(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["/version"] = CreateVersionJson(),
+            ["/api/v1/projects/manager-project-1/canonical-export"] = CreateManagerExportJson()
+        });
         using HttpClient httpClient = new(handler);
         SpecAttestProviderOptions options = CreateOptions() with { AccessToken = "test-token" };
         SpecAttestManagerClient client = new(httpClient, options);
@@ -66,9 +71,15 @@ public sealed class SpecAttestProviderTests
         Assert.AreEqual("spec-trace-manager.project.v5", result.PackageVersion);
         Assert.AreEqual("manager-project-1", result.ProjectId);
         Assert.AreEqual(7, result.RecordVersion);
+        CollectionAssert.Contains(
+            handler.RequestUris.Select(static uri => uri.AbsolutePath).ToArray(),
+            "/version");
+        CollectionAssert.Contains(
+            handler.RequestUris.Select(static uri => uri.AbsolutePath).ToArray(),
+            "/api/v1/projects/manager-project-1/canonical-export");
         Assert.AreEqual(
             new Uri("http://127.0.0.1:5080/api/v1/projects/manager-project-1/canonical-export"),
-            handler.RequestUri);
+            handler.RequestUris[^1]);
         Assert.AreEqual(new AuthenticationHeaderValue("Bearer", "test-token"), handler.Authorization);
     }
 
@@ -123,9 +134,11 @@ public sealed class SpecAttestProviderTests
         Assert.HasCount(1, first.Diagnostics);
         Assert.AreEqual("specattest.validation.not-attested", first.Diagnostics[0].Code);
         CollectionAssert.AreEqual(
-            new[] { ResourceProviderRole.ReadOnlyEnricher },
+            new[] { ResourceProviderRole.Authority },
             capabilities.Roles.ToArray());
-        CollectionAssert.DoesNotContain(capabilities.Operations.ToArray(), ResourceProviderOperations.PlanChanges);
+        CollectionAssert.Contains(capabilities.Operations.ToArray(), ResourceProviderOperations.PlanChanges);
+        Assert.IsTrue(capabilities.SupportsIdempotency);
+        Assert.IsTrue(capabilities.SupportsOptimisticConcurrency);
 
         SpecAttestInterchangePackage? package = first.Resources[0].Content.Deserialize(
             SpecAttestProviderJsonContext.Default.SpecAttestInterchangePackage);
@@ -163,6 +176,21 @@ public sealed class SpecAttestProviderTests
         CollectionAssert.Contains(
             archive.Entries.Select(static entry => entry.FullName).ToArray(),
             "requirements/REQ-DEMO-0001.json");
+
+        SpecAttestInterchangePackage imported = SpecAttestInterchange.ImportPayloadArchive(
+            firstArchive,
+            package.Manifest);
+        byte[] roundTrippedArchive = SpecAttestInterchange.BuildPayloadArchive(imported);
+        CollectionAssert.AreEqual(firstArchive, roundTrippedArchive);
+        JsonElement roundTrippedRequirement = imported.Entries.Single(entry => string.Equals(
+                entry.StableId,
+                "REQ-DEMO-0001",
+                StringComparison.Ordinal))
+            .CanonicalContent;
+        Assert.AreEqual(7, roundTrippedRequirement.GetProperty("revision").GetInt64());
+        Assert.AreEqual(
+            "REQ-DEMO-LEGACY-0001",
+            roundTrippedRequirement.GetProperty("trace").GetProperty("supersedes")[0].GetString());
     }
 
     [TestMethod]
@@ -276,23 +304,125 @@ public sealed class SpecAttestProviderTests
     }
 
     [TestMethod]
-    public async Task Provider_RejectsMutationBecauseManagerLacksSafeInterchangeApplyAsync()
+    public async Task Provider_PlansAndAppliesSafeMutationThroughManagerRestAsync()
     {
         SpecAttestProviderOptions options = CreateOptions();
+        FakeManagerClient manager = new(CreateManagerExport());
         SpecAttestResourceProvider provider = new(
-            new FakeManagerClient(CreateManagerExport()),
+            manager,
             options,
             new FixedTimeProvider(now));
+        SpecAttestInterchangePackage package = SpecAttestInterchange.FromManagerExport(
+            CreateManagerExport(),
+            options,
+            "test-version");
+        package = package with
+        {
+            Manifest = package.Manifest with
+            {
+                Validation = new SpecAttestInterchangeValidation(
+                    CanonicalProfilePassed: true,
+                    now,
+                    SpecAttestCanonicalJson.Sha256("passed"))
+            }
+        };
+        JsonElement content = JsonSerializer.SerializeToElement(
+            package,
+            SpecAttestProviderJsonContext.Default.SpecAttestInterchangePackage);
+        string digest = SpecAttestCanonicalJson.Sha256(content);
+        ResourceChange change = new(
+            "change-1",
+            ResourceChangeKind.Update,
+            new ResourceAddress(SpecAttestInterchangeContract.ResourceType, SetId, SetId),
+            content,
+            "spec-trace-manager.project.v5:7",
+            digest,
+            new ResourceProvenance("workbench", now, "tester", "git:abc", digest, "transfer-1", "approval-1"));
         ProviderPlanChangesRequest request = new(
             SpecAttestInterchangeContract.ResourceType,
             SetId,
             options.AuthorityEpoch,
-            []);
+            [change]);
+
+        ProviderPlanChangesResponse plan = await provider.PlanChangesAsync(request);
+        ProviderApplyChangesResponse applied = await provider.ApplyChangesAsync(new ProviderApplyChangesRequest(
+            SpecAttestInterchangeContract.ResourceType,
+            SetId,
+            plan.PlanId,
+            plan.PlanDigest,
+            "apply-1",
+            options.AuthorityEpoch,
+            new ProviderApproval("tester", "approval-1", now)));
+
+        Assert.AreEqual(ProviderChangeDisposition.Ready, plan.Changes[0].Disposition);
+        Assert.AreEqual(ProviderApplyStatus.Applied, applied.Status);
+        Assert.IsNotNull(applied.Snapshot);
+        Assert.AreEqual("apply-1", manager.LastIdempotencyKey);
+        Assert.AreEqual(7, manager.LastStagedRevision);
+        CollectionAssert.AreEqual(new[] { "commit" }, manager.ExecutedOperations.ToArray());
+    }
+
+    [TestMethod]
+    public async Task ManagerClient_RejectsReadWhenLiveStandardPinDiffersAsync()
+    {
+        string wrongVersion = CreateVersionJson().Replace(
+            SpecAttestInterchangeContract.StandardCommit,
+            new string('0', 40),
+            StringComparison.Ordinal);
+        RecordingHandler handler = new(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["/version"] = wrongVersion,
+            ["/api/v1/projects/manager-project-1/canonical-export"] = CreateManagerExportJson()
+        });
+        using HttpClient httpClient = new(handler);
+        SpecAttestManagerClient client = new(httpClient, CreateOptions());
 
         ResourceProviderProtocolException exception = await Assert.ThrowsAsync<ResourceProviderProtocolException>(
-            () => provider.PlanChangesAsync(request));
+            () => client.GetCanonicalExportAsync("manager-project-1"));
 
-        Assert.AreEqual("specattest.manager.safe-mutation.unavailable", exception.Error.Code);
+        Assert.AreEqual("specattest.manager.standard-pin.conflict", exception.Error.Code);
+        Assert.HasCount(1, handler.RequestUris);
+    }
+
+    [TestMethod]
+    public async Task ManagerClient_ExercisesCompleteSafeMutationRestSurfaceAsync()
+    {
+        RecordingHandler handler = new(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["/api/v1/interoperability/specattest"] = CreateCapabilitiesJson(),
+            ["/api/v1/projects/manager-project-1/interoperability/specattest/mutations/stage"] = CreateOperationJson("staged", 1),
+            ["/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1"] = CreateOperationJson("staged", 1),
+            ["/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1/commit"] = CreateOperationJson("completed", 2),
+            ["/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1/cancel"] = CreateOperationJson("canceled", 2),
+            ["/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1/resume"] = CreateOperationJson("completed", 2)
+        });
+        using HttpClient httpClient = new(handler);
+        SpecAttestManagerClient client = new(httpClient, CreateOptions());
+        JsonElement stageRequest = JsonSerializer.SerializeToElement(new { test = true });
+
+        SpecAttestSafeMutationOperation staged = await client.StageSafeMutationAsync(
+            "manager-project-1",
+            stageRequest,
+            "idempotency-1");
+        _ = await client.GetSafeMutationAsync("manager-project-1", staged.ImportRunId);
+        _ = await client.ExecuteSafeMutationAsync("manager-project-1", staged.ImportRunId, "commit", 7, 1);
+        _ = await client.ExecuteSafeMutationAsync("manager-project-1", staged.ImportRunId, "cancel", 7, 1);
+        _ = await client.ExecuteSafeMutationAsync("manager-project-1", staged.ImportRunId, "resume", 7, 1);
+
+        Assert.AreEqual("idempotency-1", handler.IdempotencyKeys.Single(static value => value is not null));
+        CollectionAssert.IsSubsetOf(
+            new[]
+            {
+                "/api/v1/projects/manager-project-1/interoperability/specattest/mutations/stage",
+                "/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1",
+                "/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1/commit",
+                "/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1/cancel",
+                "/api/v1/projects/manager-project-1/interoperability/specattest/mutations/import-1/resume"
+            },
+            handler.RequestUris.Select(static uri => uri.AbsolutePath).ToArray());
+        string commitBody = handler.RequestBodies.Single(item => item.Key.EndsWith("/commit", StringComparison.Ordinal)).Value;
+        StringAssert.Contains(commitBody, "\"expectedProjectVersion\":7", StringComparison.Ordinal);
+        StringAssert.Contains(commitBody, "\"expectedOperationVersion\":1", StringComparison.Ordinal);
     }
 
     [TestMethod]
@@ -412,13 +542,113 @@ public sealed class SpecAttestProviderTests
             """;
     }
 
+    private static string CreateVersionJson()
+    {
+        JsonObject value = new()
+        {
+            ["version"] = "0.0.0-ci.test",
+            ["standardPin"] = SpecAttestInterchangeContract.ManagerPin(CreatePin())
+        };
+        return value.ToJsonString();
+    }
+
+    private static string CreateCapabilitiesJson()
+    {
+        JsonObject value = new()
+        {
+            ["contract"] = SpecAttestInterchangeContract.SafeMutationContract,
+            ["standardPin"] = SpecAttestInterchangeContract.ManagerPin(CreatePin()),
+            ["operations"] = new JsonArray("stage", "inspect", "commit", "cancel", "resume"),
+            ["idempotencyKeysRequired"] = true,
+            ["expectedVersionsRequired"] = true,
+            ["atomicCommit"] = true,
+            ["automaticMerge"] = false,
+            ["immutableAuditAndVersions"] = true,
+            ["deterministicRetry"] = true
+        };
+        return value.ToJsonString();
+    }
+
+    private static string CreateOperationJson(string status, long version)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            importRunId = "import-1",
+            projectId = "manager-project-1",
+            status,
+            recordVersion = version,
+            expectedProjectVersion = 7,
+            requestDigest = new string('a', 64)
+        });
+    }
+
     private sealed class FakeManagerClient(SpecAttestManagerExport export) : ISpecAttestManagerClient
     {
+        public string? LastIdempotencyKey { get; private set; }
+
+        public long LastStagedRevision { get; private set; }
+
+        public List<string> ExecutedOperations { get; } = [];
+
+        public Task VerifyStandardPinAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<SpecAttestSafeMutationCapabilities> GetSafeMutationCapabilitiesAsync(
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new SpecAttestSafeMutationCapabilities(
+                SpecAttestInterchangeContract.SafeMutationContract,
+                ["stage", "inspect", "commit", "cancel", "resume"],
+                true,
+                true,
+                true,
+                false,
+                true,
+                true));
+
         public Task<SpecAttestManagerExport> GetCanonicalExportAsync(
             string projectId,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(export);
+        }
+
+        public Task<JsonElement> GetIntakePackageAsync(
+            string projectId,
+            CancellationToken cancellationToken = default)
+        {
+            using JsonDocument document = JsonDocument.Parse(IntakePackageJson());
+            return Task.FromResult(document.RootElement.Clone());
+        }
+
+        public Task<SpecAttestSafeMutationOperation> StageSafeMutationAsync(
+            string projectId,
+            JsonElement stageRequest,
+            string idempotencyKey,
+            CancellationToken cancellationToken = default)
+        {
+            this.LastIdempotencyKey = idempotencyKey;
+            this.LastStagedRevision = stageRequest.GetProperty("package").GetProperty("requirements")[0]
+                .GetProperty("revision").GetInt64();
+            return Task.FromResult(Operation("staged", 1));
+        }
+
+        public Task<SpecAttestSafeMutationOperation> GetSafeMutationAsync(
+            string projectId,
+            string importRunId,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(Operation("staged", 1));
+
+        public Task<SpecAttestSafeMutationOperation> ExecuteSafeMutationAsync(
+            string projectId,
+            string importRunId,
+            string operation,
+            long expectedProjectVersion,
+            long expectedOperationVersion,
+            CancellationToken cancellationToken = default)
+        {
+            this.ExecutedOperations.Add(operation);
+            return Task.FromResult(Operation(
+                string.Equals(operation, "cancel", StringComparison.Ordinal) ? "canceled" : "completed",
+                expectedOperationVersion + 1));
         }
 
         public Task<SpecAttestManagerStatus> GetStatusAsync(
@@ -427,24 +657,74 @@ public sealed class SpecAttestProviderTests
         {
             return Task.FromResult(new SpecAttestManagerStatus(ProviderHealthState.Healthy, "test", []));
         }
+
+        private static SpecAttestSafeMutationOperation Operation(string status, long version)
+        {
+            JsonElement content = JsonSerializer.SerializeToElement(new { status });
+            return new SpecAttestSafeMutationOperation(
+                "import-1",
+                "manager-project-1",
+                status,
+                version,
+                7,
+                new string('a', 64),
+                content);
+        }
+
+        private static string IntakePackageJson()
+        {
+            return $$"""
+                {
+                  "packageVersion": "spec-trace-manager.intake.v1",
+                  "expectedProjectVersion": 7,
+                  "expectedVersions": { "requirement:REQ-DEMO-0001": 3 },
+                  "sourceDocuments": [],
+                  "requirementGroups": [],
+                  "requirements": [
+                    {
+                      "requirementId": "REQ-DEMO-0001",
+                      "revision": 7,
+                      "recordVersion": 3,
+                      "title": "Preserve extensions",
+                      "statement": "The adapter MUST preserve extension fields."
+                    }
+                  ]
+                }
+                """;
+        }
     }
 
-    private sealed class RecordingHandler(string responseJson) : HttpMessageHandler
+    private sealed class RecordingHandler(IReadOnlyDictionary<string, string> responses) : HttpMessageHandler
     {
-        public Uri? RequestUri { get; private set; }
+        public List<Uri> RequestUris { get; } = [];
+
+        public List<string?> IdempotencyKeys { get; } = [];
+
+        public Dictionary<string, string> RequestBodies { get; } = new(StringComparer.Ordinal);
 
         public AuthenticationHeaderValue? Authorization { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            this.RequestUri = request.RequestUri;
+            Uri requestUri = request.RequestUri ?? throw new InvalidOperationException("Request URI was unavailable.");
+            this.RequestUris.Add(requestUri);
             this.Authorization = request.Headers.Authorization;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            this.IdempotencyKeys.Add(request.Headers.TryGetValues("Idempotency-Key", out IEnumerable<string>? values)
+                ? values.Single()
+                : null);
+            if (request.Content is not null)
             {
-                Content = new StringContent(responseJson)
-            });
+                this.RequestBodies[requestUri.AbsolutePath] = await request.Content
+                    .ReadAsStringAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(responses[requestUri.AbsolutePath])
+            };
         }
     }
 

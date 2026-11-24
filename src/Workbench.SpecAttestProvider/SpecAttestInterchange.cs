@@ -132,6 +132,79 @@ public static class SpecAttestInterchange
             package.AuditReferences);
     }
 
+    public static SpecAttestInterchangePackage ImportPayloadArchive(
+        ReadOnlyMemory<byte> archiveBytes,
+        SpecAttestInterchangeManifest manifest)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        string archiveSha256 = Convert.ToHexStringLower(SHA256.HashData(archiveBytes.Span));
+        if (!string.Equals(archiveSha256, manifest.Payload.Sha256, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Interchange archive does not match the manifest payload digest.");
+        }
+
+        using MemoryStream input = new(archiveBytes.ToArray(), writable: false);
+        using ZipArchive archive = new(input, ZipArchiveMode.Read);
+        Dictionary<string, ZipArchiveEntry> files = archive.Entries.ToDictionary(
+            static entry => entry.FullName,
+            StringComparer.Ordinal);
+        JsonElement entryManifest = ReadJson(files, "entry-manifest.json");
+        if (entryManifest.ValueKind != JsonValueKind.Array)
+        {
+            throw new InvalidDataException("Interchange entry manifest must be an array.");
+        }
+
+        List<SpecAttestInterchangeEntry> entries = [];
+        foreach (JsonElement coordinate in entryManifest.EnumerateArray())
+        {
+            string stableId = RequiredText(coordinate, "stable_id");
+            string entryKind = RequiredText(coordinate, "entry_kind");
+            string path = RequiredText(coordinate, "path");
+            string sha256 = RequiredText(coordinate, "sha256");
+            JsonElement content = ReadJson(files, path);
+            SpecAttestInterchangeEntry entry = new(stableId, entryKind, path, sha256, content);
+            ValidateArchiveEntry(entry);
+            if (!string.Equals(SpecAttestCanonicalJson.Sha256(content), sha256, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException($"Interchange entry '{stableId}' failed its content digest.");
+            }
+
+            entries.Add(entry);
+        }
+
+        entries.Sort(static (left, right) => StringComparer.Ordinal.Compare(left.StableId, right.StableId));
+        if (!string.Equals(ComputeEntryManifestSha256(entries), manifest.Payload.EntryManifestSha256, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("Interchange entry manifest digest does not match the package manifest.");
+        }
+
+        JsonElement retiredLedger = ReadJson(files, "retired-id-ledger.json");
+        IReadOnlyList<JsonElement> externalReferences = ReadJsonArray(files, "external-references.json");
+        JsonElement auditElement = ReadJson(files, "audit-references.json");
+        IReadOnlyList<SpecAttestAuditReference> auditReferences = auditElement.Deserialize(
+            SpecAttestProviderJsonContext.Default.IReadOnlyListSpecAttestAuditReference)
+            ?? throw new InvalidDataException("Interchange audit references are invalid.");
+        IReadOnlyList<JsonElement> evidence = files
+            .Where(static pair => pair.Key.StartsWith("evidence/", StringComparison.Ordinal))
+            .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
+            .Select(static pair => ReadJson(pair.Value))
+            .ToArray();
+        SpecAttestInterchangePackage package = new(
+            manifest,
+            entries,
+            retiredLedger,
+            externalReferences,
+            evidence,
+            auditReferences);
+        byte[] rebuilt = BuildPayloadArchive(package);
+        if (!archiveBytes.Span.SequenceEqual(rebuilt))
+        {
+            throw new InvalidDataException("Interchange archive is not in canonical deterministic form.");
+        }
+
+        return package;
+    }
+
     private static byte[] BuildPayloadArchive(
         IReadOnlyList<SpecAttestInterchangeEntry> entries,
         JsonElement retiredIdLedger,
@@ -285,6 +358,28 @@ public static class SpecAttestInterchange
         entry.LastWriteTime = new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
         using Stream stream = entry.Open();
         stream.Write(content);
+    }
+
+    private static JsonElement ReadJson(IReadOnlyDictionary<string, ZipArchiveEntry> files, string path)
+        => files.TryGetValue(path, out ZipArchiveEntry? entry)
+            ? ReadJson(entry)
+            : throw new InvalidDataException($"Interchange archive is missing '{path}'.");
+
+    private static JsonElement ReadJson(ZipArchiveEntry entry)
+    {
+        using Stream stream = entry.Open();
+        using JsonDocument document = JsonDocument.Parse(stream);
+        return document.RootElement.Clone();
+    }
+
+    private static IReadOnlyList<JsonElement> ReadJsonArray(
+        IReadOnlyDictionary<string, ZipArchiveEntry> files,
+        string path)
+    {
+        JsonElement value = ReadJson(files, path);
+        return value.ValueKind == JsonValueKind.Array
+            ? value.EnumerateArray().Select(static item => item.Clone()).ToArray()
+            : throw new InvalidDataException($"Interchange archive entry '{path}' must be an array.");
     }
 
     private static void ValidateArchiveEntry(SpecAttestInterchangeEntry entry)

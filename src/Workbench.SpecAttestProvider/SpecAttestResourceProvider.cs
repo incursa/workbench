@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using Workbench.Core;
 
@@ -11,6 +12,7 @@ public sealed class SpecAttestResourceProvider : IResourceProvider
     private readonly SpecAttestProviderOptions options;
     private readonly TimeProvider timeProvider;
     private readonly string providerVersion;
+    private readonly ConcurrentDictionary<string, SpecAttestStoredPlan> plans = new(StringComparer.Ordinal);
 
     public SpecAttestResourceProvider(
         ISpecAttestManagerClient manager,
@@ -31,6 +33,7 @@ public sealed class SpecAttestResourceProvider : IResourceProvider
 
     public Task<ProviderCapabilities> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
     {
+        bool managerAuthority = string.Equals(this.options.AuthorityMode, SpecAttestAuthorityModes.Manager, StringComparison.Ordinal);
         return Task.FromResult(new ProviderCapabilities(
             this.options.ProviderId,
             "SpecAttest Manager",
@@ -40,16 +43,17 @@ public sealed class SpecAttestResourceProvider : IResourceProvider
                 ResourceProviderOperations.Query,
                 ResourceProviderOperations.Get,
                 ResourceProviderOperations.Validate,
+                .. managerAuthority ? [ResourceProviderOperations.PlanChanges, ResourceProviderOperations.ApplyChanges] : Array.Empty<string>(),
                 ResourceProviderOperations.Health
             ],
             [SpecAttestInterchangeContract.ResourceType],
-            [ResourceProviderRole.ReadOnlyEnricher],
+            [managerAuthority ? ResourceProviderRole.Authority : ResourceProviderRole.ReadOnlyEnricher],
             new ProviderBatchCapabilities(
-                this.options.MaximumBatchSize,
-                AtomicApply: false,
+                MaxItems: 1,
+                AtomicApply: managerAuthority,
                 OrderedResults: true),
-            SupportsIdempotency: false,
-            SupportsOptimisticConcurrency: false,
+            SupportsIdempotency: managerAuthority,
+            SupportsOptimisticConcurrency: managerAuthority,
             SupportsOfflineSnapshots: true));
     }
 
@@ -139,18 +143,228 @@ public sealed class SpecAttestResourceProvider : IResourceProvider
         return Task.FromResult(new ProviderValidateResponse(results));
     }
 
-    public Task<ProviderPlanChangesResponse> PlanChangesAsync(
+    public async Task<ProviderPlanChangesResponse> PlanChangesAsync(
         ProviderPlanChangesRequest request,
         CancellationToken cancellationToken = default)
     {
-        throw SafeMutationUnavailable();
+        this.EnsureManagerAuthority();
+        this.EnsureScope(request.ResourceType, request.ResourceSet);
+        if (!string.Equals(request.ExpectedAuthorityEpoch, this.options.AuthorityEpoch, StringComparison.Ordinal))
+        {
+            throw Failure("specattest.authority-epoch.conflict", "Configured Manager authority epoch does not match the request.");
+        }
+
+        if (request.Changes.Count != 1)
+        {
+            throw Failure("specattest.change-count.invalid", "SpecAttest set mutation requires exactly one atomic set change.");
+        }
+
+        ResourceChange change = request.Changes[0];
+        this.EnsureAddress(change.Address);
+        if (change.Kind != ResourceChangeKind.Update || change.Content is null || change.PayloadSha256 is null)
+        {
+            return InvalidPlan(request, change, "specattest.change.unsupported", "SpecAttest Manager accepts one payload-bearing set update.", this.timeProvider.GetUtcNow());
+        }
+
+        string contentDigest = SpecAttestCanonicalJson.Sha256(change.Content.Value);
+        if (!string.Equals(contentDigest, change.PayloadSha256, StringComparison.Ordinal))
+        {
+            return InvalidPlan(request, change, "specattest.change.digest-mismatch", "Change content does not match its declared digest.", this.timeProvider.GetUtcNow());
+        }
+
+        SpecAttestInterchangePackage? desired = change.Content.Value.Deserialize(
+            SpecAttestProviderJsonContext.Default.SpecAttestInterchangePackage);
+        if (desired is null)
+        {
+            return InvalidPlan(request, change, "specattest.interchange.empty", "Change content is not a SpecAttest interchange package.", this.timeProvider.GetUtcNow());
+        }
+
+        ProviderDiagnostic[] validationErrors = SpecAttestInterchangeValidator.ValidateForAcceptance(
+                desired,
+                this.options.StandardPin,
+                this.options.SetId,
+                SpecAttestAuthorityModes.Manager)
+            .Where(static diagnostic => diagnostic.Severity == ProviderDiagnosticSeverity.Error)
+            .ToArray();
+        if (validationErrors.Length > 0)
+        {
+            DateTimeOffset invalidAt = this.timeProvider.GetUtcNow();
+            ProviderPlannedChange invalid = new(
+                change.ChangeId,
+                ProviderChangeDisposition.Invalid,
+                change.ExpectedVersionToken,
+                validationErrors);
+            return new ProviderPlanChangesResponse(
+                "specattest-invalid",
+                SpecAttestCanonicalJson.Sha256(change.ChangeId),
+                request.ExpectedAuthorityEpoch,
+                invalidAt,
+                ExpiresAtUtc: null,
+                RequiresExplicitApproval: true,
+                [invalid],
+                validationErrors);
+        }
+
+        SpecAttestManagerExport current = await this.manager
+            .GetCanonicalExportAsync(this.options.ManagerProjectId, cancellationToken)
+            .ConfigureAwait(false);
+        string observedVersion = $"{current.PackageVersion}:{current.RecordVersion}";
+        if (!string.Equals(change.ExpectedVersionToken, observedVersion, StringComparison.Ordinal))
+        {
+            return InvalidPlan(request, change, "specattest.concurrency.version-conflict", "Manager project version changed before planning.", this.timeProvider.GetUtcNow(), ProviderChangeDisposition.Conflict, observedVersion);
+        }
+
+        SpecAttestInterchangePackage currentPackage = SpecAttestInterchange.FromManagerExport(current, this.options, this.providerVersion);
+        bool nonRequirementsMatch = desired.Entries
+            .Where(static entry => !string.Equals(entry.EntryKind, "requirement", StringComparison.Ordinal))
+            .Select(static entry => (entry.StableId, entry.Sha256))
+            .SequenceEqual(
+                currentPackage.Entries
+                    .Where(static entry => !string.Equals(entry.EntryKind, "requirement", StringComparison.Ordinal))
+                    .Select(static entry => (entry.StableId, entry.Sha256)));
+        if (!nonRequirementsMatch)
+        {
+            return InvalidPlan(request, change, "specattest.manager.artifact-mutation.unsupported", "Manager safe intake cannot mutate specification artifacts through this contract.", this.timeProvider.GetUtcNow());
+        }
+
+        string[] desiredRequirementIds = desired.Entries
+            .Where(static entry => string.Equals(entry.EntryKind, "requirement", StringComparison.Ordinal))
+            .Select(static entry => entry.StableId)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        string[] currentRequirementIds = currentPackage.Entries
+            .Where(static entry => string.Equals(entry.EntryKind, "requirement", StringComparison.Ordinal))
+            .Select(static entry => entry.StableId)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (currentRequirementIds.Except(desiredRequirementIds, StringComparer.Ordinal).Any())
+        {
+            return InvalidPlan(request, change, "specattest.manager.requirement-delete.unsupported", "Manager safe intake cannot delete requirements; retire or supersede them explicitly.", this.timeProvider.GetUtcNow());
+        }
+
+        JsonElement currentIntake = await this.manager
+            .GetIntakePackageAsync(this.options.ManagerProjectId, cancellationToken)
+            .ConfigureAwait(false);
+        JsonElement stageRequest = SpecAttestSafeMutation.BuildStageRequest(
+            desired,
+            currentIntake,
+            this.options.StandardPin,
+            change.PayloadSha256);
+        DateTimeOffset createdAt = this.timeProvider.GetUtcNow();
+        JsonElement planCoordinates = JsonSerializer.SerializeToElement(new
+        {
+            request.ExpectedAuthorityEpoch,
+            change.ChangeId,
+            change.ExpectedVersionToken,
+            change.PayloadSha256,
+            stageRequest
+        });
+        string planDigest = SpecAttestCanonicalJson.Sha256(planCoordinates);
+        string planId = "specattest-plan-" + planDigest[..24];
+        SpecAttestStoredPlan stored = new(
+            planId,
+            planDigest,
+            request.ExpectedAuthorityEpoch,
+            createdAt,
+            change,
+            stageRequest);
+        this.plans[planId] = stored;
+        ProviderPlannedChange ready = new(
+            change.ChangeId,
+            ProviderChangeDisposition.Ready,
+            observedVersion,
+            []);
+        return new ProviderPlanChangesResponse(
+            planId,
+            planDigest,
+            request.ExpectedAuthorityEpoch,
+            createdAt,
+            ExpiresAtUtc: null,
+            RequiresExplicitApproval: true,
+            [ready],
+            []);
     }
 
-    public Task<ProviderApplyChangesResponse> ApplyChangesAsync(
+    public async Task<ProviderApplyChangesResponse> ApplyChangesAsync(
         ProviderApplyChangesRequest request,
         CancellationToken cancellationToken = default)
     {
-        throw SafeMutationUnavailable();
+        this.EnsureManagerAuthority();
+        this.EnsureScope(request.ResourceType, request.ResourceSet);
+        if (string.IsNullOrWhiteSpace(request.IdempotencyKey)
+            || !this.plans.TryGetValue(request.PlanId, out SpecAttestStoredPlan? plan)
+            || !string.Equals(plan.PlanDigest, request.PlanDigest, StringComparison.Ordinal)
+            || !string.Equals(plan.AuthorityEpoch, request.ExpectedAuthorityEpoch, StringComparison.Ordinal)
+            || !string.Equals(plan.AuthorityEpoch, this.options.AuthorityEpoch, StringComparison.Ordinal))
+        {
+            return ApplyConflict(request, "specattest.plan.coordinates.conflict", "Stored SpecAttest plan does not match the apply coordinates.");
+        }
+
+        JsonElement stageRequest = SpecAttestSafeMutation.WithIdempotencyKey(plan.StageRequest, request.IdempotencyKey);
+        long expectedProjectVersion = SpecAttestSafeMutation.ExpectedProjectVersion(stageRequest);
+        SpecAttestSafeMutationOperation staged;
+        try
+        {
+            staged = await this.manager.StageSafeMutationAsync(
+                this.options.ManagerProjectId,
+                stageRequest,
+                request.IdempotencyKey,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (ResourceProviderProtocolException exception)
+        {
+            return ApplyConflict(request, exception.Error.Code, exception.Error.Message);
+        }
+
+        bool alreadyApplied = string.Equals(staged.Status, "completed", StringComparison.OrdinalIgnoreCase);
+        SpecAttestSafeMutationOperation completed;
+        try
+        {
+            completed = await this.manager.ExecuteSafeMutationAsync(
+                this.options.ManagerProjectId,
+                staged.ImportRunId,
+                "commit",
+                expectedProjectVersion,
+                staged.RecordVersion,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (ResourceProviderProtocolException exception)
+        {
+            return ApplyConflict(request, exception.Error.Code, exception.Error.Message);
+        }
+        if (!string.Equals(completed.Status, "completed", StringComparison.OrdinalIgnoreCase))
+        {
+            return ApplyConflict(request, "specattest.manager.commit.incomplete", "Manager did not complete the safe mutation.");
+        }
+
+        SpecAttestManagerExport export = await this.manager
+            .GetCanonicalExportAsync(this.options.ManagerProjectId, cancellationToken)
+            .ConfigureAwait(false);
+        ResourceDocument document = this.Translate(export);
+        ResourceSnapshot snapshot = new(
+            $"specattest-{completed.ImportRunId}",
+            SpecAttestInterchangeContract.ResourceType,
+            this.options.SetId,
+            this.timeProvider.GetUtcNow(),
+            document.PayloadSha256,
+            Authoritative: true,
+            new ResourceAuthorityDeclaration(
+                SpecAttestInterchangeContract.ResourceType,
+                this.options.SetId,
+                this.options.ProviderId,
+                this.options.AuthorityEpoch,
+                this.timeProvider.GetUtcNow(),
+                DeclarationDigest: null),
+            this.options.StandardPin,
+            [document],
+            document.Provenance);
+        return new ProviderApplyChangesResponse(
+            alreadyApplied ? ProviderApplyStatus.AlreadyApplied : ProviderApplyStatus.Applied,
+            request.PlanId,
+            request.IdempotencyKey,
+            request.ExpectedAuthorityEpoch,
+            snapshot,
+            []);
     }
 
     public async Task<ProviderHealthResponse> GetHealthAsync(
@@ -309,11 +523,45 @@ public sealed class SpecAttestResourceProvider : IResourceProvider
         return new ProviderDiagnostic(code, ProviderDiagnosticSeverity.Error, message, target);
     }
 
-    private static ResourceProviderProtocolException SafeMutationUnavailable()
+    private void EnsureManagerAuthority()
     {
-        const string Message = "Current SpecAttest Manager APIs do not expose a pin-aware, staged, atomic, idempotent interchange apply contract; mutation is disabled fail-closed.";
-        return new ResourceProviderProtocolException(
-            new ProviderError("specattest.manager.safe-mutation.unavailable", Message),
-            [Error("specattest.manager.safe-mutation.unavailable", Message)]);
+        if (!string.Equals(this.options.AuthorityMode, SpecAttestAuthorityModes.Manager, StringComparison.Ordinal))
+        {
+            throw Failure("specattest.manager.safe-mutation.unavailable", "Safe mutation requires Manager authority mode.");
+        }
     }
+
+    private static ProviderPlanChangesResponse InvalidPlan(
+        ProviderPlanChangesRequest request,
+        ResourceChange change,
+        string code,
+        string message,
+        DateTimeOffset createdAt,
+        ProviderChangeDisposition disposition = ProviderChangeDisposition.Invalid,
+        string? observedVersion = null)
+    {
+        ProviderDiagnostic diagnostic = Error(code, message, change.ChangeId);
+        ProviderPlannedChange planned = new(change.ChangeId, disposition, observedVersion ?? change.ExpectedVersionToken, [diagnostic]);
+        return new ProviderPlanChangesResponse(
+            "specattest-invalid",
+            SpecAttestCanonicalJson.Sha256(change.ChangeId),
+            request.ExpectedAuthorityEpoch,
+            createdAt,
+            ExpiresAtUtc: null,
+            RequiresExplicitApproval: true,
+            [planned],
+            [diagnostic]);
+    }
+
+    private static ProviderApplyChangesResponse ApplyConflict(ProviderApplyChangesRequest request, string code, string message)
+        => new(
+            ProviderApplyStatus.Conflict,
+            request.PlanId,
+            request.IdempotencyKey,
+            request.ExpectedAuthorityEpoch,
+            Snapshot: null,
+            [Error(code, message, request.PlanId)]);
+
+    private static ResourceProviderProtocolException Failure(string code, string message)
+        => new(new ProviderError(code, message), [Error(code, message)]);
 }

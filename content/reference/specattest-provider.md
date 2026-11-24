@@ -24,6 +24,9 @@ The provider currently supports:
 - lossless canonical JSON and `x_` extension round-trip;
 - fail-closed validation of authority mode, immutable source coordinates,
   Standard pin, stable IDs, retired IDs, scope, and every payload digest.
+- exact live Manager pin verification before reads;
+- deterministic canonical ZIP import/export round trips; and
+- atomic Manager-authority mutation over the safe-mutation REST contract.
 
 Manager's current canonical export does not contain its exact Standard pin and
 cross-tool parity receipt. The adapter therefore marks translated exports
@@ -48,8 +51,9 @@ Build or publish `Workbench.SpecAttestProvider`, then configure its
 | `--token-env` | no | Token environment-variable name; defaults to `WORKBENCH_SPECATTEST_TOKEN` |
 | `--provider-id` | no | Stable provider ID; defaults to `specattest` |
 
-The current provider advertises only `readOnlyEnricher`. For a Git-canonical
-set, configure another provider as authority and place SpecAttest in
+With `authority-mode=git-workbench`, the provider advertises
+`readOnlyEnricher`. For a Git-canonical set, configure another provider as
+authority and place SpecAttest in
 `ReadOnlyEnrichers`:
 
 ```json
@@ -106,23 +110,31 @@ The pin file has no default and must never use `main` or `latest`:
   "revision": "<40-hex-commit>",
   "schemaPath": "model/model.schema.json",
   "schemaSha256": "<64-lower-hex>",
+  "editionManifestSha256": "<64-lower-hex>",
+  "editionManifestSchemaPath": "schemas/standard-edition.schema.json",
+  "editionManifestSchemaSha256": "<64-lower-hex>",
+  "payloadSha256": "<64-lower-hex>",
+  "conformanceCorpusSha256": "<64-lower-hex>",
+  "signatureReference": "refs/tags/<immutable-edition-tag>",
+  "signatureSha256": "<64-lower-hex>",
   "canonicalization": "utf8-json-sorted-object-keys-v1",
-  "profile": "core"
+  "profile": "core",
+  "canonicalProfiles": ["core", "traceable", "auditable"],
+  "proofProfile": "auditable"
 }
 ```
 
 Never place a bearer token in repository configuration, process arguments,
 provider output, or store-and-forward packages.
 
-## Fail-closed mutation boundary
+## Safe mutation boundary
 
-The provider does not advertise `planChanges` or `applyChanges`. Manager's
-current canonical import writes artifacts and requirements through separate
-operations. Its atomic administrative project import cannot reconstruct
-Manager-owned audit and provenance safely from portable canonical content.
-Neither path supplies the exact-pin, staged full-set transaction,
-optimistic-concurrency, idempotency, and provenance guarantees required for an
-authority change.
+With `authority-mode=manager`, the provider advertises `authority`,
+`planChanges`, and `applyChanges`. Planning verifies the live complete Standard
+pin, exact project version, attested interchange package, and unchanged
+artifact entries. Applying obtains Manager intake versions and uses staged,
+atomic, idempotent safe mutation. The intake mapping sends normative
+requirement `revision` separately from Manager `recordVersion`.
 
 Workbench's generic v1 protocol also has no operation for staging a
 non-authoritative snapshot or for listing/creating baselines. Treating those
@@ -130,9 +142,10 @@ transitions as `create`, `publish`, or authority transfer would change their
 meaning. The adapter reports these as upstream contract gaps instead of
 inventing private CRUD or synchronization behavior.
 
-Until the owning contracts close those gaps:
+The boundary remains deliberately narrow:
 
-- do not configure this provider as authority or publication target;
+- artifact creation or modification is rejected because the safe-intake
+  contract does not carry specification artifacts;
 - do not infer authority transfer from export, import, endpoint availability,
   or timestamps;
 - do not automatically merge or bidirectionally synchronize normative JSON;

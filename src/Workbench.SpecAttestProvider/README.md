@@ -18,20 +18,26 @@ Workbench process.
 - fail-closed validation of set authority, pin, stable IDs, scope, retired IDs,
   and digests;
 - immutable, deterministic store-and-forward ZIP payloads with a JSON manifest.
+- byte-for-byte canonical ZIP import/export round trips that retain normative
+  requirement revisions and lineage;
+- live Manager `/version` verification against the complete configured pin
+  before canonical or intake reads; and
+- Manager-authority `planChanges`/`applyChanges` backed by the deployed
+  `specattest.manager-safe-mutation.v1` stage/inspect/commit/cancel/resume REST
+  contract.
 
 The current Manager contract does not expose an exact Standard pin and parity
 receipt on canonical exports. Exported snapshots are therefore marked
 `canonicalProfilePassed=false`; they are inspectable but cannot be accepted as
 an authority transition.
 
-The current Manager canonical import writes artifacts and requirements through
-separate operations, while its atomic administrative project import cannot
-safely reconstruct Manager-owned audit/provenance from portable canonical
-content. The provider consequently advertises only `readOnlyEnricher` and does
-not advertise `planChanges` or `applyChanges`. It fails closed if those methods
-are invoked. Do not configure it as the authority or publication target until
-Manager provides a pin-aware, staged, atomic, optimistic-concurrency-protected,
-idempotent interchange apply API.
+When configured with `authority-mode=manager`, the provider advertises
+`authority`, plans exactly one atomic specification-set update, obtains the
+Manager intake concurrency coordinates, and stages and commits it through safe
+mutation. Requirement records carry top-level normative `revision` separately
+from Manager `recordVersion`. Artifact mutations remain fail-closed because the
+safe-intake contract currently covers requirements, sources, and groups rather
+than specification artifacts.
 
 ## Configuration
 
@@ -68,8 +74,17 @@ the provider has no default and never follows `main` or `latest`.
   "revision": "<40-hex-commit>",
   "schemaPath": "model/model.schema.json",
   "schemaSha256": "<64-lower-hex>",
+  "editionManifestSha256": "<64-lower-hex>",
+  "editionManifestSchemaPath": "schemas/standard-edition.schema.json",
+  "editionManifestSchemaSha256": "<64-lower-hex>",
+  "payloadSha256": "<64-lower-hex>",
+  "conformanceCorpusSha256": "<64-lower-hex>",
+  "signatureReference": "refs/tags/<immutable-edition-tag>",
+  "signatureSha256": "<64-lower-hex>",
   "canonicalization": "utf8-json-sorted-object-keys-v1",
-  "profile": "core"
+  "profile": "core",
+  "canonicalProfiles": ["core", "traceable", "auditable"],
+  "proofProfile": "auditable"
 }
 ```
 
@@ -102,11 +117,10 @@ The adapter does not emulate missing lifecycle operations with CRUD calls:
 - The generic contract carries immutable baseline coordinates but has no
   baseline list/create operation. Manager baselines therefore remain Manager
   references rather than silently projected resources.
-- Current Manager exports do not carry the exact Standard tuple, parity result,
-  or authority manifest required for acceptance.
-- Current Manager import/publication endpoints do not jointly provide the
-  staged full-set transaction, optimistic concurrency, idempotency,
-  provenance, and exact-pin checks required by `SPEC-001`.
+- Current Manager canonical exports still do not carry a parity result, so they
+  remain unattested until an independent validator supplies that evidence.
+- Safe mutation cannot change specification artifacts; only unchanged artifact
+  entries may accompany a requirement mutation.
 
 Those gaps must be resolved in their owning contracts. This adapter must not
 add automatic bidirectional sync, last-writer-wins behavior, or a private
