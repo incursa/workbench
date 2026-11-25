@@ -72,6 +72,24 @@ The Manager evidence validation-subject SHA-256 is
 `d39abdea846f06af91c45e593e51ab3f22de3cac10502a5aec50dd7c3f14a819`.
 No production mutation or persistent qualification credential was used.
 
+## Soak Observations
+
+### 2026-11-25 — production pin and Workbench repeat
+
+- `https://app.specattest.com/health/ready` and
+  `https://spectrace.incursa.com/health/ready` returned HTTP 200.
+- Both canonical production hostnames returned byte-identical, sorted `/version`
+  documents with SHA-256
+  `5e83dcf82a9ca5abeed77dfe9e5c5e85c5f9f0d3e408165849482e393835c647`.
+- The live Manager remained `0.0.0-ci.168`, read-write, and pinned to the
+  complete `0.1.0-rc.1` tuple, including source commit, manifest, schemas,
+  payload, corpus, signed tag, canonicalization, and profiles.
+- Workbench `main` at `ebc1acef2ae7accf880219a4d247709b6b07ed46`
+  retained the same complete tuple. The Release configuration run of
+  `Workbench.SpecAttestProvider.Tests` passed 22/22 tests, including the RC1
+  conformance corpus and fail-closed pin checks.
+- No normative, interoperability, integrity, or rollback incident was found.
+
 ## Soak and Exit Gates
 
 | Gate | State | Pass condition |
